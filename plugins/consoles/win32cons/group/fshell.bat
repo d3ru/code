@@ -9,5 +9,5 @@
 @REM Initial Contributors:
 @REM Accenture - Initial contribution
 @REM
-@%epocroot%epoc32\release\winscw\udeb\fshell.exe -mltkconsole -dnogui  -- --console win32cons.dll %*
+@%epocroot%epoc32\release\winscw\udeb\fshell.exe -mfshellconsole -dnogui  -- --console win32cons.dll %*
 @if %ERRORLEVEL% NEQ 0 echo fshell.exe exited with error %ERRORLEVEL%

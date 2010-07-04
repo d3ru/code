@@ -77,7 +77,7 @@ sub BuildSis {
   #
   # 1) Run the pre-processor over the supplied .iby file and capture the output
   #    to a temporary file.
-  my $tempFileName = "$ENV{TEMP}\\ltkbs_temp.pkg";
+  my $tempFileName = "$ENV{TEMP}\\fsh-buildsis_temp.pkg";
   if (-e $tempFileName) {
     unlink $tempFileName;
   }

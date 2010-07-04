@@ -124,6 +124,10 @@ sub MakePath ($) {
       mkpath($dir) or die "Couldn't make path \"$dir\": $!\n";
     }
   }
+  if ($dir =~ /^\\epoc32/) {
+    # If it starts with \epoc32, chop the leading backslash and stick on $EPOCROOT
+    $dir =~ s/^\\/$ENV{EPOCROOT}/;
+  }
 }
 
 sub CopyFile {

@@ -13,6 +13,11 @@
 #include <fshell/common.mmh>
 #endif
 
+PRJ_EXPORTS
+
+.\fshell.bat                           \epoc32\tools\fshell.bat
+.\fshellconsole.ini                    \epoc32\data\fshellconsole.ini
+
 PRJ_MMPFILES
 
 #if defined(WINS)
