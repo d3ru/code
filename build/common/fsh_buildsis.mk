@@ -1,4 +1,4 @@
-# bldsis.mk
+# fsh_buildsis.mk
 # 
 # Copyright (c) 2010 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
