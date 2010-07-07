@@ -515,9 +515,10 @@
 #define FSHELL_UID_LOCALDRIVE                 0x10286F6D
 #define FSHELL_UID_PIPSRUN                    0x102866DB
 #define FSHELL_UID_USB                        0x10286F6E
-#define FSHELL_UID_EXTRABTRACE                0x10286F6B
-#define FSHELL_UID_MEMSPY                     0x10286F6C
-#define FSHELL_UID_EXTRABTRACEK               0x10286F6D
+#define FSHELL_UID_EXTRABTRACE                0x10286F6F
+#define FSHELL_UID_MEMSPY                     0x10286F70
+#define FSHELL_UID_EXTRABTRACEK               0x10286F71
+#define FSHELL_UID_TESTEXECUTE                0x10286F72
 
 #else // Not FSHELL_PROTECTED_UIDS
 
@@ -645,9 +646,10 @@
 #define FSHELL_UID_LOCALDRIVE                 0xE0286F6D
 #define FSHELL_UID_PIPSRUN                    0xE02866DB
 #define FSHELL_UID_USB                        0xE0286F6E
-#define FSHELL_UID_EXTRABTRACE                0xE0286F6B
-#define FSHELL_UID_MEMSPY                     0xE0286F6C
-#define FSHELL_UID_EXTRABTRACEK               0xE0286F6D
+#define FSHELL_UID_EXTRABTRACE                0xE0286F6F
+#define FSHELL_UID_MEMSPY                     0xE0286F70
+#define FSHELL_UID_EXTRABTRACEK               0xE0286F71
+#define FSHELL_UID_TESTEXECUTE                0xE0286F72
 
 #endif // FSHELL_PROTECTED_UIDS
 

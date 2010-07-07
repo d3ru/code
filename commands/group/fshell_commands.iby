@@ -369,4 +369,7 @@ FSHELL_EXECUTABLE_FILE(top.exe)
 FSHELL_COMMAND_INFO_FILE(fshell,top.cif)
 #endif
 
+FSHELL_EXECUTABLE_FILE(fshell_testexecute.exe)
+FSHELL_COMMAND_INFO_FILE(fshell,testexecute.cif)
+
 #endif // __FSHELL_COMMANDS_IBY__
