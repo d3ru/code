@@ -33,7 +33,9 @@
 #include "..\..\plugins\consoles\rcons\group\bld.inf"
 #include "..\..\plugins\consoles\vt100cons\group\bld.inf"
 #include "..\..\plugins\consoles\win32cons\group\bld.inf"
+#ifdef FSHELL_TESTEXECUTE_SUPPORT
 #include "..\..\plugins\consoles\tefcons\bld.inf"
+#endif
 #include "..\..\plugins\networking\nullnif\group\bld.inf"
 #include "..\..\plugins\networking\tcpcsy\group\bld.inf"
 #include "..\..\plugins\networking\winsockprt\group\bld.inf"

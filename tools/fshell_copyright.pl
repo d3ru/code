@@ -48,7 +48,7 @@ sub update_copyright($$)
   my @newlines = ();
   
   my $commentstart = "//";
-  if ($name =~ /\.(pl|pm|script|pod|ini|idf|esk|mk|cif)/i || !($name =~ /\./))
+  if ($name =~ /\.(pl|pm|script|pod|ini|idf|esk|mk|cif|flm)/i || !($name =~ /\./))
 	{
 	# Need to use # instead of //
 	# Second part of conditional is for perl scripts that don't specify any ending

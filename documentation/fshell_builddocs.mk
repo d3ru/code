@@ -9,7 +9,7 @@
 # Initial Contributors:
 # Accenture - Initial contribution
 #
-MAKMAKE :
+BLD :
 	..\tools\fsh-builddocs -i $(EPOCROOT)epoc32/include pod-list.txt
 
 RELEASABLES :
@@ -18,4 +18,4 @@ RELEASABLES :
 CLEAN :
 	..\tools\fsh-builddocs -i $(EPOCROOT)epoc32/include pod-list.txt -c
 
-BLD FREEZE LIB CLEANLIB RESOURCE SAVESPACE FINAL : 
+MAKMAKE FREEZE LIB CLEANLIB RESOURCE SAVESPACE FINAL : 

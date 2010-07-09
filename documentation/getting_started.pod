@@ -14,6 +14,8 @@
 
 __END__
 
+=head1 Getting started with FShell
+
 =head1 Retreiving the FShell Source Code
 
 I<Todo - add instructions for accessing the Mercurial repository.>
@@ -32,7 +34,7 @@ FShell is normally distributed in source code form, and so needs to be compiled 
 
 =back
 
-Each of these platforms have a separate directory with F<\fshell\build>. In some platforms there may be further separate sub-directories for specific variants of the platform. You need to identify a suitable directory (that contains a file named F<bld.inf>) from which to build from. Open a command prompt and C<cd> to this directory.
+Each of these platforms have a separate directory with F<\fshell\build>. In some platforms there may be further separate sub-directories for specific variants of the platform. You need to identify a suitable directory (that contains a file named F<bld.inf>) from which to build from. For example to build for the Symbian^3 release you need to build from F<\fshell\build\sf\3>. Open a command prompt and C<cd> to this directory.
 
 You also need to identify the type of binaries you want to build. Common ones are:
 
@@ -48,11 +50,11 @@ Used for running fshell on either physical or simulated ARM hardware. Requires a
 
 =item * C<gcce>
 
-Used for running fshell on either physical or simulated ARM hardware. Requires an installation of the GCC-E. I<Todo - does the SF provide builds of GCC-E?>
+Used for running fshell on either physical or simulated ARM hardware. Requires an installation of the GCC crosscompiler (for arm-none-symbianelf) - see here for more information: http://developer.symbian.org/wiki/index.php/The_GCCE_toolchain_initiative
 
 =back
 
-Lastly, you need to identify the build variant you plan to use, either debug (C<udeb>) or release (C<urel>). Commonly, C<udeb> is used on the emulator whereas C<urel> is used on target hardward. For the purposes of this introduction we will assume that you will be building C<winscw udeb> and C<armv5 urel>.
+Lastly, you need to identify the build variant you plan to use, either debug (C<udeb>) or release (C<urel>). Commonly, C<udeb> is used on the emulator whereas C<urel> is used on target hardware. For the purposes of this introduction we will assume that you will be building C<winscw udeb> and C<armv5 urel>.
 
 =head2 SBSv1 (aka abld)
 
@@ -62,7 +64,10 @@ Lastly, you need to identify the build variant you plan to use, either debug (C<
 
 =head2 SBSv2 (aka Raptor)
 
-  M:\fshell\build\sf\2>sbs -c armv5_urel -c winscw_udeb
+  M:\fshell\build\sf\2>sbs -c armv5_urel
+  M:\fshell\build\sf\2>sbs -c winscw_udeb
+
+I<Note:> There are currently some concurrency issues in the build process that mean we don't recommend building multiple platforms in a single invocation of sbs. Ie do the above rather than C<sbs -c armv5_urel -c winscw_udeb>. We'll fix this as soon as we can!
 
 =head1 Installation
 

@@ -202,7 +202,7 @@ MD4 message digest implementation is available.
 
 Indicates that the baseline is recent enough to be aware of the flexible memory model. It doesn't necessarily mean that the flexible model is actually the one being used. It generally guards kernel APIs that weren't introduced until the FMM was (such as Kern::ChunkUserBase).
 
-=item FSHELL_SPCRE_SUPPORT
+=item FSHELL_[NO_]SPCRE_SUPPORT
 
 The regular expression libraries spcre.dll and libpcre.dll are available.
 
@@ -213,6 +213,10 @@ The Dynamic Startup Configuration (DSC) APIs such as RDscStore are available.
 =item FSHELL_MEMSPY_SUPPORT
 
 The MemSpy Engine APIs are available.
+
+=item FSHELL_TESTEXECUTE_SUPPORT
+
+The TestExecute APIs are available.
 
 =back
 
