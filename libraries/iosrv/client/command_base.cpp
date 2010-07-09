@@ -3067,7 +3067,12 @@ void CCommandBase::FormatErrorText(TDes& aDes, TInt aError, TRefByValue<const TD
 	TOverflowTruncate overflow;
 	aDes = _L("Error: ");
 	aDes.AppendFormatList(aFmt, aList, &overflow);
-	aDes.AppendFormat(_L(" : %S (%d)\r\n"), &overflow, Stringify::Error(aError), aError);
+	const TDesC* errorDesc = NULL;
+	// See if we have an extension that knows about this error
+	if (iExtension) errorDesc = iExtension->StringifyError(aError);
+	// If the extension didn't know, fall back to Stringify::Error() to handle the system ones
+	if (errorDesc == NULL) errorDesc = Stringify::Error(aError);
+	aDes.AppendFormat(_L(" : %S (%d)\r\n"), &overflow, errorDesc, aError);
 	}
 
 void CCommandBase::FormatWarningText(TDes& aDes, TRefByValue<const TDesC> aFmt, VA_LIST& aList) const
@@ -3835,4 +3840,19 @@ void CReaderChangeNotifier::DoCancel()
 	iReadHandle.CancelNotifyChange();
 	}
 
-	
+// 
+
+EXPORT_C TCommandExtensionVersion MCommandExtensionsV1::ExtensionVersion() const
+	{
+	return ECommandExtensionV1;
+	}
+
+EXPORT_C const TDesC* MCommandExtensionsV1::StringifyError(TInt /*aError*/) const
+	{
+	return NULL; // By default we don't have anything additional
+	}
+
+EXPORT_C void CCommandBase::SetExtension(MCommandExtensionsV1* aExtension)
+	{
+	iExtension = aExtension;
+	}

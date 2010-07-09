@@ -614,4 +614,9 @@ EXPORTS
 	_ZNK7IoUtils6TValue4TypeEv @ 613 NONAME
 	_ZNK7IoUtils6TValue8ValuePtrEv @ 614 NONAME
 	_ZNK7IoUtils6TValue13EnumValueListEv @ 615 NONAME
+	_ZN7IoUtils12CCommandBase12SetExtensionEPNS_20MCommandExtensionsV1E @ 616 NONAME
+	_ZNK7IoUtils20MCommandExtensionsV114StringifyErrorEi @ 617 NONAME
+	_ZNK7IoUtils20MCommandExtensionsV116ExtensionVersionEv @ 618 NONAME
+	_ZTIN7IoUtils20MCommandExtensionsV1E @ 619 NONAME
+	_ZTVN7IoUtils20MCommandExtensionsV1E @ 620 NONAME
 

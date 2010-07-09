@@ -542,4 +542,7 @@ EXPORTS
 	?Type@TValue@IoUtils@@QBEIXZ @ 541 NONAME ; unsigned int IoUtils::TValue::Type(void) const
 	?ValuePtr@TValue@IoUtils@@QBEPAXXZ @ 542 NONAME ; void * IoUtils::TValue::ValuePtr(void) const
 	?EnumValueList@TValue@IoUtils@@QBEABVTDesC16@@XZ @ 543 NONAME ; class TDesC16 const & IoUtils::TValue::EnumValueList(void) const
+	?StringifyError@MCommandExtensionsV1@IoUtils@@UBEPBVTDesC16@@H@Z @ 544 NONAME ; class TDesC16 const * IoUtils::MCommandExtensionsV1::StringifyError(int) const
+	?ExtensionVersion@MCommandExtensionsV1@IoUtils@@UBE?AW4TCommandExtensionVersion@2@XZ @ 545 NONAME ; enum IoUtils::TCommandExtensionVersion IoUtils::MCommandExtensionsV1::ExtensionVersion(void) const
+	?SetExtension@CCommandBase@IoUtils@@IAEXPAVMCommandExtensionsV1@2@@Z @ 546 NONAME ; void IoUtils::CCommandBase::SetExtension(class IoUtils::MCommandExtensionsV1 *)
 

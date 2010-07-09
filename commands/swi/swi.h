@@ -178,7 +178,7 @@ private:
 // CCmdSwi
 // Fshell-console based class handling swi related functionality
 //
-class CCmdSwi : public CCommandBase, public MCmdSwiParent
+class CCmdSwi : public CCommandBase, public MCmdSwiParent, public MCommandExtensionsV1
 	{
 public:
 	static CCommandBase* NewLC();
@@ -194,11 +194,12 @@ private:
 	virtual void DoRunL();
 	virtual void ArgumentsL(RCommandArgumentList& aArguments);
 	virtual void OptionsL(RCommandOptionList& aOptions);
+	const TDesC* StringifyError(TInt aError) const;
 		
 	// MCmdSwiParent hooks 	
 	virtual RIoConsoleReadHandle& Input();
 	virtual RIoConsoleWriteHandle& Output(TInt aError);
-	virtual void Finished(const TInt aError);
+	virtual void Finished(TInt aError);
 	virtual TBool GetAnswer();
 private:
 #ifndef SYMBIAN_JAVA_NOT_INCLUDED

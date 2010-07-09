@@ -638,6 +638,20 @@ private:
 	static HBufC* ReadLC(TLex& aLex, const TChar& aEscapeChar, CCommandBase* aErrorContext, TUint aReadMode);
 	};
 
+enum TCommandExtensionVersion
+	{
+	ECommandExtensionV1 = 1,
+	};
+
+class MCommandExtensionsV1
+	{
+public:
+	IMPORT_C virtual TCommandExtensionVersion ExtensionVersion() const; // Don't override this yourself!
+	
+	// Override this if you have custom error codes you want CCommandBase to understand
+	IMPORT_C virtual const TDesC* StringifyError(TInt aError) const;
+	};
+
 class CCommandBase : public CActive
 	{
 public:
@@ -713,6 +727,7 @@ public:
 protected:
 	IMPORT_C CCommandBase();
 	IMPORT_C CCommandBase(TUint aFlags);
+	IMPORT_C void SetExtension(MCommandExtensionsV1* aExtension);
 	IMPORT_C virtual void BaseConstructL();
 	IMPORT_C void CreateEnvironmentL(CEnvironment* aEnv);
 
@@ -796,11 +811,11 @@ private:
 	CReaderChangeNotifier* iReadChangeNotifier;
 	TInt iCompletionReason;
 	CCommandInfoFile* iCif;
+	MCommandExtensionsV1* iExtension;
 	void* iSpare1;
 	void* iSpare2;
 	void* iSpare3;
 	void* iSpare4;
-	void* iSpare5;
 	};
 
 

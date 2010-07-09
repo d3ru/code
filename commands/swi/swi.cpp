@@ -49,6 +49,7 @@ CCmdSwi::~CCmdSwi()
 CCmdSwi::CCmdSwi():
 CCommandBase(CCommandBase::EManualComplete)
 	{
+	SetExtension(this);
 	}
 
 const TDesC& CCmdSwi::Name() const
@@ -196,9 +197,86 @@ RIoConsoleWriteHandle& CCmdSwi::Output(TInt aError)
 // CCmdSwi::Finished
 // callback from the underlying AO's RunL
 //
-void CCmdSwi::Finished(const TInt aError)
+void CCmdSwi::Finished(TInt aError)
 	{
 	Complete(aError);
+	}
+
+#define CASE_RETURN_LIT(XXX, YYY) case XXX: { _LIT(_KLit, #YYY); return &_KLit; }
+const TDesC* CCmdSwi::StringifyError(TInt aError) const
+	{
+	switch (aError)
+		{
+		CASE_RETURN_LIT(-10100, KErrSISFieldIdMissing);
+		CASE_RETURN_LIT(-10101, KErrSISFieldLengthMissing);
+		CASE_RETURN_LIT(-10102, KErrSISFieldLengthInvalid);
+		CASE_RETURN_LIT(-10103, KErrSISStringInvalidLength);
+		CASE_RETURN_LIT(-10104, KErrSISSignedControllerSISControllerMissing);
+		CASE_RETURN_LIT(-10105, KErrSISControllerSISInfoMissing);
+		CASE_RETURN_LIT(-10106, KErrSISInfoSISUidMissing);
+		CASE_RETURN_LIT(-10107, KErrSISInfoSISNamesMissing);
+		CASE_RETURN_LIT(-10108, KErrSISFieldBufferTooShort);
+		CASE_RETURN_LIT(-10109, KErrSISStringArrayInvalidElement);
+		CASE_RETURN_LIT(-10110, KErrSISInfoSISVendorNamesMissing);
+		CASE_RETURN_LIT(-10111, KErrSISInfoSISVersionMissing);
+		CASE_RETURN_LIT(-10112, KErrSISControllerSISSupportedLanguagesMissing);
+		CASE_RETURN_LIT(-10113, KErrSISSupportedLanguagesInvalidElement);
+		CASE_RETURN_LIT(-10114, KErrSISLanguageInvalidLength);
+		CASE_RETURN_LIT(-10115, KErrSISContentsSISSignedControllerMissing);
+		CASE_RETURN_LIT(-10116, KErrSISContentsSISDataMissing);
+		CASE_RETURN_LIT(-10117, KErrSISDataSISFileDataUnitMissing);
+		CASE_RETURN_LIT(-10118, KErrSISFileDataUnitTargetMissing);
+		CASE_RETURN_LIT(-10119, KErrSISFileOptionsMissing);
+		CASE_RETURN_LIT(-10120, KErrSISFileDataUnitDescriptorMissing);
+		CASE_RETURN_LIT(-10121, KErrSISFileDataDescriptionMissing);
+		CASE_RETURN_LIT(-10122, KErrSISContentsMissing);
+		CASE_RETURN_LIT(-10123, KErrSISEmbeddedControllersMissing);
+		CASE_RETURN_LIT(-10124, KErrSISEmbeddedDataUnitsMissing);
+		CASE_RETURN_LIT(-10125, KErrSISControllerOptionsMissing);
+		CASE_RETURN_LIT(-10126, KErrSISExpressionMissing);
+		CASE_RETURN_LIT(-10127, KErrSISExpressionStringValueMissing);
+		CASE_RETURN_LIT(-10128, KErrSISOptionsStringMissing);
+		CASE_RETURN_LIT(-10129, KErrSISFileOptionsExpressionMissing);
+		CASE_RETURN_LIT(-10130, KErrSISExpressionHeadValueMissing);
+		CASE_RETURN_LIT(-10131, KErrSISEmbeddedSISOptionsMissing);
+		CASE_RETURN_LIT(-10132, KErrSISInfoSISUpgradeRangeMissing);
+		CASE_RETURN_LIT(-10133, KErrSISDependencyMissingUid);
+		CASE_RETURN_LIT(-10134, KErrSISDependencyMissingVersion);
+		CASE_RETURN_LIT(-10135, KErrSISDependencyMissingNames);
+		CASE_RETURN_LIT(-10136, KErrSISPrerequisitesMissingDependency);
+		CASE_RETURN_LIT(-10137, KErrSISControllerMissingPrerequisites);
+		CASE_RETURN_LIT(-10138, KErrSISUpgradeRangeMissingVersion);
+		CASE_RETURN_LIT(-10139, KErrSISUnexpectedFieldType);
+		CASE_RETURN_LIT(-10140, KErrSISExpressionUnknownOperator);
+		CASE_RETURN_LIT(-10141, KErrSISArrayReadError);
+		CASE_RETURN_LIT(-10142, KErrSISArrayTypeMismatch);
+		CASE_RETURN_LIT(-10143, KErrSISInvalidStringLength);
+		CASE_RETURN_LIT(-10144, KErrSISCompressionNotSupported);
+		CASE_RETURN_LIT(-10145, KErrSISTooDeeplyEmbedded);
+		CASE_RETURN_LIT(-10146, KErrSISInvalidTargetFile);
+		CASE_RETURN_LIT(-10147, KErrSISWouldOverWrite);
+		CASE_RETURN_LIT(-10148, KErrSISInfoMissingRemoveDirectories);
+		CASE_RETURN_LIT(-10149, KErrSISNotEnoughSpaceToInstall);
+		CASE_RETURN_LIT(-10200, KErrInstallerLeave);
+		CASE_RETURN_LIT(-10250, KErrPolicyFileCorrupt);
+		CASE_RETURN_LIT(-10251, KErrSignatureSchemeNotSupported);
+		CASE_RETURN_LIT(-10252, KErrDigestNotSupported);
+		CASE_RETURN_LIT(-10253, KErrBadHash);
+		CASE_RETURN_LIT(-10254, KErrSecurityError);
+		CASE_RETURN_LIT(-10263, KErrBadUsage);
+		CASE_RETURN_LIT(-10260, KErrInvalidType); 
+		CASE_RETURN_LIT(-10261, KErrInvalidExpression); 
+		CASE_RETURN_LIT(-10262, KErrExpressionToComplex); 
+		CASE_RETURN_LIT(-10255, KErrMissingBasePackage); 
+		CASE_RETURN_LIT(-10256, KErrInvalidUpgrade); 
+		CASE_RETURN_LIT(-10257, KErrInvalidEclipsing);
+		CASE_RETURN_LIT(-10258, KErrWrongHeaderFormat);
+		CASE_RETURN_LIT(-10259, KErrCapabilitiesMismatch); 
+		CASE_RETURN_LIT(-10270, KErrLegacySisFile);
+		CASE_RETURN_LIT(-10271, KErrInvalidSoftwareTypeRegistrationFile); 
+		default:
+			return NULL;
+		}
 	}
 
 //
