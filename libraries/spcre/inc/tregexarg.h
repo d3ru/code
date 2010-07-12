@@ -51,8 +51,8 @@ class TRegExArg
 	 
 // Type-specific parsers
 #define PCRE_MAKE_PARSER(type,name)															\
-	IMPORT_C TRegExArg(type* aType) : iArg(aType), iParser(name) { }						\
-	IMPORT_C TRegExArg(type* aType, Parser aParser) : iArg(aType), iParser(aParser) { }	
+	inline TRegExArg(type* aType) : iArg(aType), iParser(name) { }						\
+	inline TRegExArg(type* aType, Parser aParser) : iArg(aType), iParser(aParser) { }	
 	
 	PCRE_MAKE_PARSER(TChar,				ParseTChar)
 	PCRE_MAKE_PARSER(TInt8,				ParseTInt8)

@@ -1496,7 +1496,7 @@ void DDebuggerEventHandler::RemoveAllHardwareBreakpointsForThread(DThread* aThre
 
 TInt DDebuggerEventHandler::MoveBreakpointToNextInstructionForThread(DThread* aThread, SBreakpoint* aBreakpoint)
 	{
-#ifdef __EABI__
+#ifdef SUPPORT_BREAKPOINT_STUFF
 	ASSERT_BREAKPOINT_LOCKED();
 	TUint32 notUsed = 0;
 	TBool aModeChange = EFalse;

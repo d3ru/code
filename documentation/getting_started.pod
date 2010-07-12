@@ -50,7 +50,7 @@ Used for running fshell on either physical or simulated ARM hardware. Requires a
 
 =item * C<gcce>
 
-Used for running fshell on either physical or simulated ARM hardware. Requires an installation of the GCC crosscompiler (for arm-none-symbianelf) - see here for more information: http://developer.symbian.org/wiki/index.php/The_GCCE_toolchain_initiative
+Used for running fshell on either physical or simulated ARM hardware. Requires an installation of the GCC crosscompiler (for arm-none-symbianelf) - see here for more information: http://developer.symbian.org/wiki/index.php/The_GCCE_toolchain_initiative.
 
 =back
 
@@ -67,7 +67,22 @@ Lastly, you need to identify the build variant you plan to use, either debug (C<
   M:\fshell\build\sf\2>sbs -c armv5_urel
   M:\fshell\build\sf\2>sbs -c winscw_udeb
 
-I<Note:> There are currently some concurrency issues in the build process that mean we don't recommend building multiple platforms in a single invocation of sbs. Ie do the above rather than C<sbs -c armv5_urel -c winscw_udeb>. We'll fix this as soon as we can!
+I<Note:> There are currently some concurrency issues in the build process that mean we don't recommend building multiple platforms in a single invocation of sbs. Ie do the above rather than C<sbs -c armv5_urel -c winscw_udeb>. In some cases you may even need to add the option C<-j 1> to sbs to have it run completely single-threaded. We'll fix this as soon as we can!
+
+=head2 Notes on building for GCC
+
+Fshell has only been tested to build with GCC-E 4.4.1, and the legacy 3.4.2.
+
+I<Note:> The SF website appears to be out of date with regards to how to build with GCC-E on Raptor - at the time of writing the way to build is as follows:
+
+  S:\fshell\build\sf\3>set SBS_GCCE432BIN=Nothing
+  S:\fshell\build\sf\3>set SBS_GCCE433BIN=Nothing
+  S:\fshell\build\sf\3>set SBS_GCCE441BIN=c:/apps/gcce/bin
+  S:\fshell\build\sf\3>sbs -c arm.v5.urel.gcce4_4_1
+
+You may also need to update the compiler support libraries - I had to unzip rt_3_1_bin.zip from \sf\os\kernelhwsrv\kernel\eka\compsupp from a different baseline. (Unzip over \epoc32\release\armv5). The working libraries I used had datestamp of 28/1/2009, the non-working ones were 1/1/2009.
+
+There's one final gotcha if you want to build with GCC-E - at the time of writing the makefiles produced by SBS for PIPS executables is incorrect, therefore you need to add C<#define FSHELL_NO_PIPS_SUPPORT> to \fshell\build\sf\platform_shared.mmh. Hopefully this is a temporary measure.
 
 =head1 Installation
 

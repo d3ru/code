@@ -36,7 +36,9 @@ source		hwbreak_cia.cpp
 source		hwbreak.cia
 #endif
 
-#ifdef EABI
+#if defined(EABI) && !defined(GCCE)
+macro		SUPPORT_BREAKPOINT_STUFF
+// This doesn't build with GCC-E
 source		TrkNextInstructionAfterPC.cpp
 #endif
 
