@@ -472,10 +472,6 @@ void CCommandFactory::FindExternalCommandsL()
 			}
 		}
 
-	//_LIT(KDllExtension, ".dll");
-	//TUidType dllUids(KNullUid, KFshellDllUid, KNullUid);
-	//AppendExternalCommandsL(dllUids, KDllExtension);
-
 	_LIT(KExeExtension, ".exe");
 	TUidType exeUids(KNullUid, KFshellExeUid, KNullUid);
 	AppendExternalCommandsL(exeUids, KExeExtension);
