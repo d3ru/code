@@ -67,7 +67,7 @@ Displays the time and date as the number of microseconds since 2000AD (Symbian O
 
 ==option bool j just-display
 
-Rather than going ahead and setting the specified time and date, do a dry run and just displays it in human readable form. Must be used in conjunction with C<--set>. In effect it is an option to check that the set string has been parsed correctly before actually making the change.
+Rather than going ahead and setting the specified time and date, do a dry run and just displays it in human readable form. Must be used in conjunction with C<--set> or <--raw-set>. In effect it is an option to check that the set string has been parsed correctly before actually making the change.
 
 ==option int64 R raw-set
 
@@ -76,6 +76,10 @@ Sets the time and date from a number corresponding to the number of microseconds
 ==option bool t timestamp
 
 Display the date in timestamp format C<YYYYMMDD-HHMM.SS> suitable for use in a file name.
+
+==option bool k kern
+
+Only applicable with C<--raw> and/or C<--raw-set>. Instead of using 2000AD as the epoc, use 0AD nominal Gregorian, the kernel's internal native time format.
 
 ==copyright
 

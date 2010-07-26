@@ -15,6 +15,10 @@
 #include <kernel.h>
 #include <kern_priv.h>
 
+#ifdef __EPOC32__
+#include <memmodel/epoc/plat_priv.h> // For DEpocCodeSeg
+#endif
+
 #include <fshell/common.mmh>
 
 #ifdef FSHELL_DOBJECTIX_SUPPORT
@@ -119,6 +123,7 @@ private:
 	TInt GetObjectAddresses(TObjectType aObjectType, const TDesC8& aOwningProcess, TDes8* aKernelInfoBuf);
 	TInt GetChunkAddresses(TUint aControllingProcessId, TDes8* aKernelInfoBuf);
 	TInt AcquireCodeSegMutex();
+	TInt AcquireCodeSegMutexAndFilterCodesegsForProcess(TUint aProcessId);
 	TInt ReleaseCodeSegMutex();
 	TInt GetNextCodeSegInfo(TDes8* aCodeSegInfoBuf);
 	TInt ObjectDie(TObjectKillParamsBuf& aObjectKillParamsBuf);
@@ -173,12 +178,19 @@ private: // From MDebuggerEventClient
 private:
 	DThread* iClient;
 	TBool iLocks[ENumObjectTypes];
-	TBool iCodeSegLock;
-	DCodeSeg* iCurrentCodeSeg;
+	enum TCodesegLogStatus
+		{
+		ENotHeld,
+		EHeld,
+		EHeldAndTraversing,
+		} iCodeSegLock;
+	SDblQueLink* iCurrentCodeSegLink;
 	DThreadChangeHandler* iEventHandler;
 	DPropertyAccess* iPropertyAccess;
 	TAny* iClientBreakpointNotifyPkg;
 	TRequestStatus* iClientBreakpointNotifyStatus;
+
+	SDblQue iFilteredCodesegQue;
 	};
 
 
@@ -563,6 +575,8 @@ TInt DMemoryAccess::DoControl(TInt aFunction, TAny* a1, TAny* a2)
 		}
     case RMemoryAccess::EControlAcquireCodeSegMutex:
     	return AcquireCodeSegMutex();
+    case RMemoryAccess::EControlAcquireCodeSegMutexAndFilterCodesegsForProcess:
+		return AcquireCodeSegMutexAndFilterCodesegsForProcess((TUint)a1);
     case RMemoryAccess::EControlReleaseCodeSegMutex:
     	return ReleaseCodeSegMutex();
     case RMemoryAccess::EControlGetNextCodeSegInfo:
@@ -1201,7 +1215,7 @@ TInt DMemoryAccess::AcquireCodeSegMutex()
 		if (codeSegLock)
 			{
 			Kern::MutexWait(*codeSegLock);
-			iCodeSegLock = ETrue;
+			iCodeSegLock = EHeld;
 			}
 		else
 			{
@@ -1210,6 +1224,34 @@ TInt DMemoryAccess::AcquireCodeSegMutex()
 		}
 	// Kern::Printf("[DMemoryAccess] ::AcquireCodeSegMutex returning %d", err);
 	return err;    	
+	}
+
+TInt DMemoryAccess::AcquireCodeSegMutexAndFilterCodesegsForProcess(TUint aProcessId)
+	{
+	TInt err = KErrNone;
+	NKern::ThreadEnterCS();
+	Kern::Containers()[EProcess]->Wait();
+	DProcess* process = Kern::ProcessFromId(aProcessId);
+	if (process == NULL || process->Open() != KErrNone)
+		{
+		err = KErrNotFound;
+		}
+	Kern::Containers()[EProcess]->Signal();
+
+	if (!err)
+		{
+		err = AcquireCodeSegMutex();
+		}
+	if (!err)
+		{
+		iCodeSegLock = EHeldAndTraversing;
+		TInt numTraversed = process->TraverseCodeSegs(&iFilteredCodesegQue, NULL, DCodeSeg::EMarkDebug, DProcess::ETraverseFlagAdd);
+		err = numTraversed;
+		}
+
+	if (process) process->Close(NULL);
+	NKern::ThreadLeaveCS();
+	return err;
 	}
 
 TInt DMemoryAccess::GetObjectAddresses(TObjectType aObjectType, const TDesC8& aOwningProcess, TDes8* aKernelInfoBuf)
@@ -1325,30 +1367,20 @@ TInt DMemoryAccess::GetChunkAddresses(TUint aControllingProcessId, TDes8* aKerne
 TInt DMemoryAccess::ReleaseCodeSegMutex()
 	{
 	// Kern::Printf("[DMemoryAccess] ::ReleaseCodeSegMutex");
-	TInt err=KErrNone;
-
-	if (!iCodeSegLock)
-		{ //Check the lock on code segs is not currently held
-		Kern::ThreadKill(iClient, EExitPanic, EMemAccessMutexNotHeld, KMemAccessPanicCategory);
-		err = KErrAbort;
-		}
-
-	DMutex* const codeSegLock = Kern::CodeSegLock();
-
-	if (!err)
+	if (iCodeSegLock == ENotHeld)
 		{
-		if (codeSegLock)
-			{
-			Kern::MutexSignal(*codeSegLock);
-			iCodeSegLock = EFalse;
-			}
-		else
-			{
-			err = KErrNotFound;
-			}
+		return KErrNotReady;
 		}
+
+	if (iCodeSegLock == EHeldAndTraversing)
+		{
+		DCodeSeg::EmptyQueue(iFilteredCodesegQue, DCodeSeg::EMarkDebug);
+		}
+
+	Kern::MutexSignal(*Kern::CodeSegLock());
+	iCodeSegLock = ENotHeld;
 	// Kern::Printf("[DMemoryAccess] ::ReleaseCodeSegMutex returning %d", err);
-	return err;    	
+	return KErrNone;
 	}
 
 
@@ -1357,28 +1389,37 @@ TInt DMemoryAccess::GetNextCodeSegInfo(TDes8* aCodeSegInfoBuf)
 	// Kern::Printf("[DMemoryAccess] ::GetNextCodeSegInfo");
 	TInt err = KErrNone;
 	
-	SDblQue* p = Kern::CodeSegList();
-	SDblQueLink* anchor=&p->iA;
-
-	if (!iCurrentCodeSeg)
+	SDblQue* p;
+	if (iCodeSegLock == EHeldAndTraversing)
 		{
-		iCurrentCodeSeg = _LOFF(anchor->iNext, DCodeSeg, iLink);
-		}
-
-	if (iCurrentCodeSeg->iLink.iNext != anchor)
-		{
-		iCurrentCodeSeg = _LOFF(iCurrentCodeSeg->iLink.iNext, DCodeSeg, iLink);
+		p = &iFilteredCodesegQue;
 		}
 	else
 		{
-		iCurrentCodeSeg = NULL;
+		p = Kern::CodeSegList();
+		}
+	SDblQueLink* anchor=&p->iA;
+
+	if (!iCurrentCodeSegLink)
+		{
+		iCurrentCodeSegLink = anchor;
+		}
+
+	if (iCurrentCodeSegLink->iNext != anchor)
+		{
+		iCurrentCodeSegLink = iCurrentCodeSegLink->iNext;
+		}
+	else
+		{
+		iCurrentCodeSegLink = NULL;
 		err = KErrNotFound;
 		}
 		
 	if (!err)
 		{
 		//TCodeSegKernelInfoBuf* localInfoBuf = new TCodeSegKernelInfoBuf;
-		TPckgBuf<TTomsciCodeSegKernelInfo>* localInfoBuf = new TPckgBuf<TTomsciCodeSegKernelInfo>;
+		DCodeSeg* currentCodeseg = (iCodeSegLock == EHeldAndTraversing) ? _LOFF(iCurrentCodeSegLink, DCodeSeg, iTempLink) : _LOFF(iCurrentCodeSegLink, DCodeSeg, iLink);
+		TPckgBuf<TCodeSegKernelInfo>* localInfoBuf = new TPckgBuf<TCodeSegKernelInfo>;
 		if (!localInfoBuf)
 			{
 			err = KErrNoMemory;
@@ -1386,14 +1427,21 @@ TInt DMemoryAccess::GetNextCodeSegInfo(TDes8* aCodeSegInfoBuf)
 		else
 			{	
 			//Get the code seg info
-			(*localInfoBuf)().iRunAddress = iCurrentCodeSeg->iRunAddress;
-			(*localInfoBuf)().iSize = iCurrentCodeSeg->iSize;
-			(*localInfoBuf)().iFileName = iCurrentCodeSeg->iFileName->Right((*localInfoBuf)().iFileName.MaxLength());
-			(*localInfoBuf)().iAccessCount = iCurrentCodeSeg->iAccessCount;
-			(*localInfoBuf)().iAddressOfKernelObject = (TUint8*)iCurrentCodeSeg;
-			(*localInfoBuf)().iName = iCurrentCodeSeg->iRootName;
-			(*localInfoBuf)().iDepCount = iCurrentCodeSeg->iDepCount;
-
+			(*localInfoBuf)().iRunAddress = currentCodeseg->iRunAddress;
+			(*localInfoBuf)().iSize = currentCodeseg->iSize;
+			if (currentCodeseg->iFileName)
+				{
+				(*localInfoBuf)().iFileName = currentCodeseg->iFileName->Right((*localInfoBuf)().iFileName.MaxLength());
+				}
+			(*localInfoBuf)().iAccessCount = currentCodeseg->iAccessCount;
+			(*localInfoBuf)().iAddressOfKernelObject = (TUint8*)currentCodeseg;
+			(*localInfoBuf)().iName = currentCodeseg->iRootName;
+			(*localInfoBuf)().iDepCount = currentCodeseg->iDepCount;
+#ifdef __EPOC32__
+			(*localInfoBuf)().iXip = ((DEpocCodeSeg*)currentCodeseg)->iXIP;
+#else
+			(*localInfoBuf)().iXip = EFalse;
+#endif
 			//Copy the local info buffer into the client's address space
 		    err = Kern::ThreadDesWrite(iClient, aCodeSegInfoBuf, *localInfoBuf, 0, KTruncateToMaxLength, NULL);
 			delete localInfoBuf;

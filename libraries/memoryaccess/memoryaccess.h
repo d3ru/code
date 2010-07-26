@@ -305,23 +305,26 @@ public:
 	};
 typedef TPckgBuf<TCondVarKernelInfo> TCondVarKernelInfoBuf;	 
 
-class TCodeSegKernelInfo
+class TCodeSegKernelInfoBase
 	{
 public:
 	TUint32 iRunAddress;
 	TInt iSize;
 	TFileName8 iFileName;
 	};
-typedef TPckgBuf<TCodeSegKernelInfo> TCodeSegKernelInfoBuf;	 
 
-class TTomsciCodeSegKernelInfo : public TCodeSegKernelInfo
+// We don't really need a base class, it's just for BC reasons 
+class TCodeSegKernelInfo : public TCodeSegKernelInfoBase
 	{
 public:
 	TUint8* iAddressOfKernelObject;
 	TFullName8 iName;
 	TInt iAccessCount;
 	TInt iDepCount;
+	TBool iXip;
 	};
+typedef TPckgBuf<TCodeSegKernelInfo> TCodeSegKernelInfoBuf;	 
+
 
 class TProp
 	{
@@ -451,6 +454,7 @@ public:
 		EControlPropertyNotify,
 		EControlPropertyNotifyCancel,
 		EControlSubscribeToProperty,
+		EControlAcquireCodeSegMutexAndFilterCodesegsForProcess,
 		ENumRequests,  // Add new commands above this line
         };
 public:
@@ -492,6 +496,7 @@ public:
 	TInt GetObjectInfoByHandle (TObjectType aObjectType, TInt aThreadId, TInt aObjectHandle, TDes8& aObjectInfoBuf);
 	//Wait on the kernel's code seg mutex
 	TInt AcquireCodeSegMutex();
+	TInt AcquireCodeSegMutexAndFilterCodesegsForProcess(TUint aProcessId);
 	//Signal the kernel's code seg mutex
 	TInt ReleaseCodeSegMutex();
 	//Get info about the next code seg.  Call repeatedly to iterate all code segs.  Call AcquireCodeSegMutex before calling.
@@ -683,6 +688,8 @@ inline TInt RMemoryAccess::GetObjectInfoByHandle (TObjectType aObjectType, TInt 
 	}
 inline TInt RMemoryAccess::AcquireCodeSegMutex()
 	{	return DoControl(EControlAcquireCodeSegMutex, NULL, NULL);		}
+inline TInt RMemoryAccess::AcquireCodeSegMutexAndFilterCodesegsForProcess(TUint aProcessId)
+	{	return DoControl(EControlAcquireCodeSegMutexAndFilterCodesegsForProcess, (TAny*)aProcessId);	}
 inline TInt RMemoryAccess::ReleaseCodeSegMutex()
 	{	return DoControl(EControlReleaseCodeSegMutex, NULL, NULL);		}
 inline TInt RMemoryAccess::GetNextCodeSegInfo(TDes8& aCodeSegInfoBuf)

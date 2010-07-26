@@ -12,7 +12,7 @@
 
 =head1 common.mmh and platform.mmh Syntax
 
-The fshell build system uses a number of macros to control what should be built and how. These are defined in F<fshell/build/common/common.mmh> and F<fshell/platforms/E<lt>PLATFORME<gt>/platform.mmh>. Each platform defines the things it does and doesn't support in its platform.mmh. common.mmh takes these and defines some derived macros. This system allows fshell to be built in a large number of configurations, ranging from minimal base textshell on Symbian OS v9.1 to full GUI on the latest Symbian Foundation codeline.
+The fshell build system uses a number of macros to control what should be built and how. These are defined in F<fshell/build/common/common.mmh> and F<fshell/build/E<lt>PLATFORME<gt>/platform.mmh>. Each platform defines the things it does and doesn't support in its platform.mmh. common.mmh takes these and defines some derived macros. This system allows fshell to be built in a large number of configurations, ranging from minimal base textshell on Symbian OS v9.1 to full GUI on the latest Symbian Foundation codeline.
 
 Any code wishing to use the fshell conditional system should C<< #include <fshell/common.mmh> >> and use the macros below and/or the ones defined in common.mmh to decide how to behave. Below follows the complete list of things that the platform.mmh can define. This isn't the complete list of all the macros that can be I<used>, for that see common.mmh directly. common.mmh can be included anywhere that the preprocessor is used - eg in source code, MMP files, RSS files or bld.infs.
 
@@ -24,7 +24,7 @@ The macros that have a [NO_] in are assumed to be supported unless the [NO_] var
 
 =item FSHELL_[NO_]BTRACE_SUPPORT
 
-BTrace (including timestamp2) supported in kernel.
+BTrace (including timestamp2) supported in kernel. Everything except legacy v9.1-based platforms support btrace.
 
 =item FSHELL_[NO_]PIPS_SUPPORT
 
@@ -132,7 +132,7 @@ Create a launch icon for running fshell remotely via rcons.
 
 =item FSHELL_CORE_SUPPORT_LICENSE
 
-Build platform specific license support into fshell. Note, the platform must export F<\epoc32\build\fshell\core\generated\license.cpp> that provides the implementation of the interface defined in F<\fshell\core\src\license.h>.
+Build platform specific license support into fshell. Note, the platform must export F<\epoc32\build\fshell\core\generated\license.cpp> that provides the implementation of the interface defined in F<\fshell\core\src\license.h>. Obsolete.
 
 =item FSHELL_[NO_]SAMPLINGPROFILER_SUPPORT
 
@@ -231,6 +231,7 @@ A couple of further macros follow - these are specifically for platforms that pr
 An example platform.mmh is included below. This is for an imaginary platform based on the S^4 release, that is text-only but supports most other things. Generally the older and/or more restricted the platform is, the more C<FSHELL_NO_...> macros you have to define.
 
 	// platform.mmh for the imaginary Mythic platform
+	// This would belong in \fshell\build\mythic\platform.mmh
 
 	#ifndef FSHELL_PLATFORM_MMH
 	#define FSHELL_PLATFORM_MMH

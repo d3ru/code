@@ -123,13 +123,16 @@ void CCmdKill::DoFindIdAndKillL(const TDesC& aPattern)
 			PrintWarning(_L("Couldn't open %S (err=%d)"), &fullName);
 			}
 		}
-	if (numFound == 0)
+	if (!iAll)
 		{
-		LeaveIfErr(KErrNotFound, _L("No matches for pattern \"%S\", or all matches are zombies"), &aPattern);
-		}
-	else if (numFound > 1 && !iAll)
-		{
-		PrintWarning(_L("%d further matches for pattern \"%S\" found, be more specific or use --all option"), numFound-1, &aPattern);
+		if (numFound == 0)
+			{
+			LeaveIfErr(KErrNotFound, _L("No matches for pattern \"%S\", or all matches are zombies"), &aPattern);
+			}
+		else if (numFound > 1)
+			{
+			PrintWarning(_L("%d further matches for pattern \"%S\" found, be more specific or use --all option"), numFound-1, &aPattern);
+			}
 		}
 	}
 
