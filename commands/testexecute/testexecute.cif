@@ -17,7 +17,9 @@ Fshell wrapper for testexecute.exe.
 
 ==long-description
 
-An fshell exe that wraps up a Test Execute script run and redirects its output to the fshell console.
+An fshell exe that wraps up a Test Execute script run and redirects its log output to the fshell console.
+
+Important note: Older versions of Test Execute do not support the C<-tci> and C<-txi> options. Therefore, C<--include> and C<--exclude> may have no effect.
 
 ==option bool d debug
 
@@ -47,7 +49,7 @@ A .tcs file containing the test case IDs delimited by a new-line character.
 
 You can specify the test case IDs using all the three different ways listed above. For example, in the following testexecute command, the test cases list is a combination of comma-separated test case IDs, test case ID range and a .tcs file containing IDs of the test cases to be included during execution: 
 
- c:\>testexecute c:\tefintegrationtest\TEFIntegrationTest-regular.script -tci TEST-001,TEST-002,TEST-008:TEST-015,some.tcs
+    c:\>testexecute c:\tefintegrationtest\TEFIntegrationTest-regular.script -tci TEST-001,TEST-002,TEST-008:TEST-015,some.tcs
 
 ==option bool t ignore
 

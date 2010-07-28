@@ -555,6 +555,7 @@ private:
 	TBool iJustDisplay;
 	TInt64 iRawTimeToSet;
 	TBool iUseTimestampFormat;
+	TBool iUseKernelFormat;
 	};
 
 

@@ -169,6 +169,11 @@ void CCmdPs::OptionsL(RCommandOptionList& aOptions)
 
 	_LIT(KOptAddresses, "addresses");
 	aOptions.AppendBoolL(iAddresses, KOptAddresses);
+
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+	_LIT(KOptCodeSegs, "codesegs");
+	aOptions.AppendBoolL(iPrintCodesegs, KOptCodeSegs);
+#endif
 	}
 
 #if defined(__WINS__) && !defined(EKA2)
@@ -316,6 +321,10 @@ void CCmdPs::PrintInfoL(RProcess& aProcess)
 			{
 			iFormatter->AppendFormatL(_L("\tAddress: 0x%08x\r\n"), objectInfo.iAddressOfKernelObject);
 			}
+		}
+	if (iPrintCodesegs && iMemoryAccess.Handle())
+		{
+		PrintCodeSegsL(aProcess);
 		}
 #endif // FSHELL_MEMORY_ACCESS_SUPPORT
 	
@@ -540,6 +549,30 @@ void CCmdPs::PrintSizeL(const TDesC& aCaption, TInt aSize)
 		_LIT(KFormat, "%S%d\r\n");
 		iFormatter->AppendFormatL(KFormat, &aCaption, aSize);
 		}
+	}
+
+void ReleaseCodesegMutex(TAny* aMemAccess)
+	{
+	static_cast<RMemoryAccess*>(aMemAccess)->ReleaseCodeSegMutex();
+	}
+
+void CCmdPs::PrintCodeSegsL(RProcess& aProcess)
+	{
+	TInt count = iMemoryAccess.AcquireCodeSegMutexAndFilterCodesegsForProcess(aProcess.Id());
+	LeaveIfErr(count, _L("Couldn't acquire codeseg mutex"));
+	CleanupStack::PushL(TCleanupItem(&ReleaseCodesegMutex, &iMemoryAccess));
+
+	iFormatter->AppendFormatL(_L("\t%d code segments:\r\n"), count);
+
+	TCodeSegKernelInfo codeSegInfo;
+	TPckg<TCodeSegKernelInfo> pkg(codeSegInfo);
+	while (iMemoryAccess.GetNextCodeSegInfo(pkg) == KErrNone)
+		{
+		// Reuse iChunkName, I'm sure it doesn't mind
+		iChunkName.Copy(codeSegInfo.iFileName);
+		iFormatter->AppendFormatL(_L("\t\t%S\r\n"), &iChunkName);
+		}
+	CleanupStack::PopAndDestroy(); // ReleaseCodesegMutex
 	}
 
 #ifdef EXE_BUILD

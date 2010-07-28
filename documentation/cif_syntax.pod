@@ -16,7 +16,7 @@ I<This documentation is only useful for developers of fshell commands.>
 
 =head2 Introduction
 
-Command Info Files (CIFs) can be used to define the interface and documentation for fshell commands that are implemented using CCommandBase. Where previously details of arguments and options etc. were specified in C++ source code, the majority of this information can now be defined in a CIF, which is a plain text file. The format of CIFs is similar to POD (Perl's documentation source format), but with an additional set of key-words that relate to the specifics of command interfaces.
+Command Info Files (CIFs) can be used to define the interface and documentation for fshell commands that are implemented using CCommandBase. Where previously details of arguments and options etc. were specified in C++ source code, the majority of this information can now be defined in a CIF, which is a plain text file. The format of CIFs is similar to POD (Perl's documentation source format), but with an additional set of keywords that relate to the specifics of command interfaces.
 
 CIF files for fshell commands live in F<\resource\cif\fshell> and should be named I<commandname>.cif where I<commandname> is the same as what is returned by the command's Name() function.
 
@@ -72,7 +72,7 @@ An argument with just the C<multiple> attribute can be specified one or more tim
 
 =item *
 
-Only the final argument is allowed to have the C<last> attribute. It indicates that further arguments are allowed without needing to quote them and will be merged into this argument. C<last> may not be combined with C<multiple>. If a string provided for a C<last> argument naturally (i.e. as a result of normal string quote and escape handling) forms a single argument and consumes the whole of the remainder of the command line, the resulting single argument will be used as is. Otherwise, the string will be used without any quote or escape handling. Here are some example (using fshell's 'time' command, which takes a single argument that uses the C<last> attribute):
+Only the final argument is allowed to have the C<last> attribute. It indicates that further arguments are allowed without needing to quote them and will be merged into this argument. C<last> may not be combined with C<multiple>. If a string provided for a C<last> argument naturally (i.e. as a result of normal string quote and escape handling) forms a single argument and consumes the whole of the remainder of the command line, the resulting single argument will be used as is. Otherwise, the string will be used without any quote or escape handling. Here are some examples (using fshell's 'time' command, which takes a single argument that uses the C<last> attribute):
 
       Input command-line            Argument receive by the 'time' command
 
@@ -167,7 +167,7 @@ The order of the values in the CIF file must match how the enum is defined in th
     ...
     void CMyCommand::ArgumentsL(RCommandArgumentList& aArguments)
         {
-        aArguments.AppendEnum((TInt&)iOperation, _L("operation"));
+        aArguments.AppendEnumL((TInt&)iOperation, _L("operation"));
         }
 
 The CIF file would therefore contain:

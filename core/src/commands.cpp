@@ -2335,6 +2335,10 @@ void CCmdRDebug::ArgumentsL(RCommandArgumentList& aArguments)
 // CCmdDate.
 //
 
+// Appearently kernel reckons to 365.2485 days per year between 0AD (nominal gregorian) and 2000AD, which comes to 730497 days in total.
+// timeanddate.com agrees once you factor in Julian->Gregorian and assuming 0AD wasn't a leap year (it refuses to allow you to directly enter 0AD nominal Gregorian)
+const TInt64 KY2kInMicroSeconds = 730497 * 24 * 60 * (TInt64)(60 * 1000 * 1000);
+
 CCommandBase* CCmdDate::NewLC()
 	{
 	CCmdDate* self = new(ELeave) CCmdDate();
@@ -2356,7 +2360,9 @@ void CCmdDate::Display(const TTime& aTime)
 	{
 	if (iRaw)
 		{
-		Printf(_L("%Ld\r\n"), aTime.Int64());
+		TInt64 time = aTime.Int64();
+		if (iUseKernelFormat) time += KY2kInMicroSeconds;
+		Printf(_L("%Ld\r\n"), time);
 		}
 	else if (iUseTimestampFormat)
 		{
@@ -2412,6 +2418,7 @@ void CCmdDate::DoRunL()
 	else
 		{
 		_LIT(KSettingError, "Cannot set the time");
+		if (iUseKernelFormat) iRawTimeToSet -= KY2kInMicroSeconds;
 		TTime time(iRawTimeToSet);
 		if (iDateToSet)
 			{
@@ -2469,7 +2476,8 @@ void CCmdDate::OptionsL(RCommandOptionList& aOptions)
 	_LIT(KCmdDateOptRaw, "raw");
 	_LIT(KCmdDateOptJustDisplay, "just-display");
 	_LIT(KCmdDateOptSetRaw, "raw-set");
-	_LIT(KCmdDataOptTimestamp, "timestamp");
+	_LIT(KCmdDateOptTimestamp, "timestamp");
+	_LIT(KCmdDateOptKern, "kern");
 
 	aOptions.AppendBoolL(iUniversalTime, KCmdDateOptUniversal);
 	aOptions.AppendStringL(iDateToSet, KCmdDateOptSet);
@@ -2480,7 +2488,8 @@ void CCmdDate::OptionsL(RCommandOptionList& aOptions)
 	aOptions.AppendBoolL(iRaw, KCmdDateOptRaw);
 	aOptions.AppendBoolL(iJustDisplay, KCmdDateOptJustDisplay);
 	aOptions.AppendIntL(iRawTimeToSet, KCmdDateOptSetRaw);
-	aOptions.AppendBoolL(iUseTimestampFormat, KCmdDataOptTimestamp);
+	aOptions.AppendBoolL(iUseTimestampFormat, KCmdDateOptTimestamp);
+	aOptions.AppendBoolL(iUseKernelFormat, KCmdDateOptKern);
 	}
 
 

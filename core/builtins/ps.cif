@@ -96,6 +96,10 @@ Print the command line arguments. Only available on non-emulated builds of EKA1.
 
 Print C<System>, C<Protected> and C<LoadedFromRam> flag values. Only available on EKA1.
 
+==option bool C codesegs
+
+Print the code segments loaded into the process.
+
 ==copyright
 
 Copyright (c) 2005-2010 Accenture. All rights reserved.

@@ -42,6 +42,7 @@ private:
 	void PrintCpuTimeL(RThread& aThread, const TDesC& aThreadName);
 	void PrintChunkInfoL(const TDesC& aProcessName);
 	void PrintSizeL(const TDesC& aCaption, TInt aSize);
+	void PrintCodeSegsL(RProcess& aProcess);
 private:
 	TUint iProcessId;
 	HBufC* iMatch;
@@ -55,6 +56,7 @@ private:
 	TBool iPrintCommandLine;
 	TBool iPrintFlags;
 	TBool iPrintMemoryInfo;
+	TBool iPrintCodesegs;
 	TBool iVerbose;
 	TBool iHuman;
 	TBool iExcludeDead;

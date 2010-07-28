@@ -289,7 +289,7 @@ void CKernListBoxData::DoFormatL(TObjectKernelInfo* aInfo, RBuf& name, RBuf& mor
 		}
 	case EListCodeSeg:
 		{
-		TTomsciCodeSegKernelInfo& info = *reinterpret_cast<TTomsciCodeSegKernelInfo*>(aInfo);
+		TCodeSegKernelInfo& info = *reinterpret_cast<TCodeSegKernelInfo*>(aInfo);
 		name.Copy(info.iName);
 
 		TBuf<16> size;
@@ -418,7 +418,7 @@ void CKernListBoxData::DumpToCloggerL(RClogger& clogger, TInt i, TInt count)
 	case EListCodeSeg:
 		{
 		if (i == 0) clogger.Log(KCodesegDesc);
-		TTomsciCodeSegKernelInfo& info = *reinterpret_cast<TTomsciCodeSegKernelInfo*>(aInfo);
+		TCodeSegKernelInfo& info = *reinterpret_cast<TCodeSegKernelInfo*>(aInfo);
 		TBuf8<16> size;
 		HR(size, info.iSize);
 		clogger.Log(KCodesegFmt, &info.iName, info.iSize, &size, info.iAccessCount, info.iDepCount);
@@ -598,7 +598,7 @@ void CKernListBoxData::DoInfoForDialogL(RBuf& aTitle, RBuf& inf, TDes* aTemp)
 			}
 		case EListCodeSeg:
 			{
-			TTomsciCodeSegKernelInfo& info = *reinterpret_cast<TTomsciCodeSegKernelInfo*>(iInfo);
+			TCodeSegKernelInfo& info = *reinterpret_cast<TCodeSegKernelInfo*>(iInfo);
 			_LIT(KInfo, "Code segment info");
 			aTitle.Copy(KInfo);
 			inf.Copy(info.iName);
@@ -985,9 +985,9 @@ void CKernListBoxModel::RefreshDataL(TInt aIndex)
 	if (iCurrentList == EListCodeSeg)
 		{
 		mem.AcquireCodeSegMutex();
-		TTomsciCodeSegKernelInfo* inf = new(ELeave) TTomsciCodeSegKernelInfo;
+		TCodeSegKernelInfo* inf = new(ELeave) TCodeSegKernelInfo;
 		info = reinterpret_cast<TObjectKernelInfo*>(inf); // These aren't actually related classes, just convenient
-		buf.Set(TPckg<TTomsciCodeSegKernelInfo>(*inf));
+		buf.Set(TPckg<TCodeSegKernelInfo>(*inf));
 		while (mem.GetNextCodeSegInfo(buf) == KErrNone)
 			{
 			TRAPD(err, model.NewKernDataL(iCurrentList, info));
@@ -996,8 +996,8 @@ void CKernListBoxModel::RefreshDataL(TInt aIndex)
 				break;
 				}
 			inf = NULL;
-			inf = new(ELeave) TTomsciCodeSegKernelInfo;
-			buf.Set(TPckg<TTomsciCodeSegKernelInfo>(*inf));
+			inf = new(ELeave) TCodeSegKernelInfo;
+			buf.Set(TPckg<TCodeSegKernelInfo>(*inf));
 			info = reinterpret_cast<TObjectKernelInfo*>(inf); // These aren't actually related classes, just convenient
 			}
 		delete inf;
