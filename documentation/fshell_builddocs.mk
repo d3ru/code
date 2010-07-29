@@ -10,12 +10,12 @@
 # Accenture - Initial contribution
 #
 BLD :
-	..\tools\fsh-builddocs -i $(EPOCROOT)epoc32/include pod-list.txt
+	..\tools\fsh-builddocs -i epoc32/include pod-list.txt
 
 RELEASABLES :
-	..\tools\fsh-builddocs -i $(EPOCROOT)epoc32/include pod-list.txt -w
+	..\tools\fsh-builddocs -i epoc32/include pod-list.txt -w
 
 CLEAN :
-	..\tools\fsh-builddocs -i $(EPOCROOT)epoc32/include pod-list.txt -c
+	..\tools\fsh-builddocs -i epoc32/include pod-list.txt -c
 
 MAKMAKE FREEZE LIB CLEANLIB RESOURCE SAVESPACE FINAL : 

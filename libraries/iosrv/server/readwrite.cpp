@@ -362,8 +362,13 @@ void CIoReadObject::AttachL(MIoReadEndPoint& aEndPoint, RIoEndPoint::TReadMode a
 		ReadEndPoint()->IorepDetach(*this);
 		}
 
-	aEndPoint.IorepAttachL(*this, aMode);
 	iEndPoint = &aEndPoint;
+	TRAPD(err, aEndPoint.IorepAttachL(*this, aMode));
+	if (err)
+		{
+		iEndPoint = NULL;
+		User::Leave(err);
+		}
 	}
 
 void CIoReadObject::SetReadMode(RIoReadHandle::TReadMode aMode)
@@ -954,8 +959,13 @@ void CIoWriteObject::AttachL(MIoWriteEndPoint& aEndPoint)
 		WriteEndPoint()->IowepDetach(*this);
 		}
 
-	aEndPoint.IowepAttachL(*this);
 	iEndPoint = &aEndPoint;
+	TRAPD(err, aEndPoint.IowepAttachL(*this));
+	if (err)
+		{
+		iEndPoint = NULL;
+		User::Leave(err);
+		}
 	}
 
 void CIoWriteObject::WriteL(const RMsg& aMessage)
