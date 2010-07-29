@@ -14,6 +14,10 @@ __END__
 
 =head1 FShell Change History
 
+=head2 Release 000.4
+
+Fixed a defect in iosrv.exe that caused a panic if a foreground read object was attached to a different end point. This was due to the read object being notified of a change in foreground before its iEndPoint member was updated. This member is now updated before attempting the attach, and is set to NULL in the event of a leave (resulting in the read object being left in an unattached state).
+
 =head2 Release 000.3
 
 Build fixes.
