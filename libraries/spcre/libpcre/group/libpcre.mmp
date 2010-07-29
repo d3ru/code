@@ -67,4 +67,4 @@ library         estlib.lib
 // Warning:  #546-D: transfer of control bypasses initialization of:
 // Warning:  #1134-D: literal treated as "long long"
 // Warning: C2874W: othercase may be used before being set
-option ARMCC --diag-supress 1134,2874,546
+option ARMCC --diag_suppress 1134,2874,546

@@ -14,11 +14,11 @@ __END__
 
 =head1 FShell Change History
 
-=head2 Release 000.3
+=head2 Release 000.4
 
-Build fixes.
+Added C<--codesegs> option to C<ps>. Build fixes.
 
-=head2 Release 000.2
+=head2 Release 000.2, 000.3
 
 Build fixes.
 

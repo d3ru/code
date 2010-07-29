@@ -448,7 +448,7 @@ PRJ_MMPFILES
 
 #ifdef FSHELL_TESTEXECUTE_SUPPORT
 PRJ_EXPORTS
-..\testexecute\testexecute.mmp
-PRJ_MMPFILES
 ..\testexecute\testexecute.cif           z:\resource\cif\fshell\testexecute.cif
+PRJ_MMPFILES
+..\testexecute\testexecute.mmp
 #endif
