@@ -218,6 +218,10 @@ The MemSpy Engine APIs are available.
 
 The TestExecute APIs are available.
 
+=item FSHELL_[NO_]ARMCC_DIAG_SUPPRESS_SUPPORT
+
+Defines whether ARM's RVCT compiler supports a C<--diag-supress> option (older versions appear not to), and hence whether fshell's build will try to use it.
+
 =back
 
 A couple of further macros follow - these are specifically for platforms that provide an custom implementation of the relevant command rather than using fshell's built-in version.

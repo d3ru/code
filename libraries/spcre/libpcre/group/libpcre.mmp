@@ -63,8 +63,10 @@ source          pcre_study.c
 library         euser.lib
 library         estlib.lib
 
+#ifdef FSHELL_ARMCC_DIAG_SUPPRESS_SUPPORT
 // Remove some of the many warnings that armcc doesn't like
 // Warning:  #546-D: transfer of control bypasses initialization of:
 // Warning:  #1134-D: literal treated as "long long"
 // Warning: C2874W: othercase may be used before being set
 option ARMCC --diag-supress 1134,2874,546
+#endif
