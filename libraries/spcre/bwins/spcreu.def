@@ -31,8 +31,8 @@ EXPORTS
 	?FullMatchL@CRegEx@@QBEHABVTDesC8@@@Z @ 30 NONAME ; int CRegEx::FullMatchL(class TDesC8 const &) const
 	??0TRegExArg@@QAE@PAK@Z @ 31 NONAME ABSENT ; TRegExArg::TRegExArg(unsigned long *)
 	?PartialMatchL@CRegEx@@QBEHABVTDesC8@@ABVTRegExArg@@111@Z @ 32 NONAME ; int CRegEx::PartialMatchL(class TDesC8 const &, class TRegExArg const &, class TRegExArg const &, class TRegExArg const &, class TRegExArg const &) const
-	??0TRegExArg@@QAE@PAIP6AHABVTDesC8@@PAX@Z@Z @ 33 NONAME ; TRegExArg::TRegExArg(unsigned int *, int (*)(class TDesC8 const &, void *))
-	??0TRegExArg@@QAE@PANP6AHABVTDesC8@@PAX@Z@Z @ 34 NONAME ; TRegExArg::TRegExArg(double *, int (*)(class TDesC8 const &, void *))
+	??0TRegExArg@@QAE@PAIP6AHABVTDesC8@@PAX@Z@Z @ 33 NONAME ABSENT ; TRegExArg::TRegExArg(unsigned int *, int (*)(class TDesC8 const &, void *))
+	??0TRegExArg@@QAE@PANP6AHABVTDesC8@@PAX@Z@Z @ 34 NONAME ABSENT ; TRegExArg::TRegExArg(double *, int (*)(class TDesC8 const &, void *))
 	?ParseTReal64@TRegExArg@@CAHABVTDesC8@@PAX@Z @ 35 NONAME ; int TRegExArg::ParseTReal64(class TDesC8 const &, void *)
 	?ParseTUint16Octal@TRegExArg@@SAHABVTDesC8@@PAX@Z @ 36 NONAME ; int TRegExArg::ParseTUint16Octal(class TDesC8 const &, void *)
 	?PartialMatchL@CRegEx@@QBEHABVTDesC8@@ABVTRegExArg@@1@Z @ 37 NONAME ; int CRegEx::PartialMatchL(class TDesC8 const &, class TRegExArg const &, class TRegExArg const &) const
@@ -76,7 +76,7 @@ EXPORTS
 	?ConsumeL@CRegEx@@QBEHAAVTDes8@@ABVTRegExArg@@@Z @ 75 NONAME ; int CRegEx::ConsumeL(class TDes8 &, class TRegExArg const &) const
 	?ParseTUint8Radix@TRegExArg@@CAHABVTDesC8@@PAXW4TRadix@@@Z @ 76 NONAME ; int TRegExArg::ParseTUint8Radix(class TDesC8 const &, void *, enum TRadix)
 	?ParseTUint32Hex@TRegExArg@@SAHABVTDesC8@@PAX@Z @ 77 NONAME ; int TRegExArg::ParseTUint32Hex(class TDesC8 const &, void *)
-	??0TRegExArg@@QAE@PAH@Z @ 78 NONAME ; TRegExArg::TRegExArg(int *)
+	??0TRegExArg@@QAE@PAH@Z @ 78 NONAME ABSENT ; TRegExArg::TRegExArg(int *)
 	?ConsumeL@CRegEx@@QBEHAAVTDes8@@@Z @ 79 NONAME ; int CRegEx::ConsumeL(class TDes8 &) const
 	?ParseTUint16Hex@TRegExArg@@SAHABVTDesC8@@PAX@Z @ 80 NONAME ; int TRegExArg::ParseTUint16Hex(class TDesC8 const &, void *)
 	??0TRegExArg@@QAE@PA_J@Z @ 81 NONAME ABSENT ; TRegExArg::TRegExArg(long long *)
