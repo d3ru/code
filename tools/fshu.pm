@@ -94,6 +94,11 @@ sub TidyPath {
   }
   $path = join('\\', @collapsedPath);
 
+  if ($path =~ m|^\\epoc32|) {
+    # If it starts with \epoc32, chop the leading backslash and stick on $EPOCROOT
+    $path =~ s|^\\|$ENV{EPOCROOT}|;
+  }
+
   return $path;
 }
 
@@ -124,9 +129,9 @@ sub MakePath ($) {
       mkpath($dir) or die "Couldn't make path \"$dir\": $!\n";
     }
   }
-  if ($dir =~ /^\\epoc32/) {
+  if ($dir =~ m|^\\epoc32|) {
     # If it starts with \epoc32, chop the leading backslash and stick on $EPOCROOT
-    $dir =~ s/^\\/$ENV{EPOCROOT}/;
+    $dir =~ s|^\\|$ENV{EPOCROOT}|;
   }
 }
 

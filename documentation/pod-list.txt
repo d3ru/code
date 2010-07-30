@@ -1,5 +1,3 @@
-#include <fshell/common.mmh>
-
 doc-root    \epoc32\documentation
 temp-root   \epoc32\build\documentation
 css         documentation-style.css
