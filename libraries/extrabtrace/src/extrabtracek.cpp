@@ -14,7 +14,9 @@
 #include <kern_priv.h>
 
 #include "common.h"
+#ifndef __SMP__
 #include "sampler.h"
+#endif
 #include "eventhandler.h"
 
 class DExtraBTraceChannel : public DLogicalChannelBase
@@ -38,8 +40,10 @@ TInt DExtraBTraceFactory::Install()
 	err = Open();
 	if (err) return err;
 
+#ifndef __SMP__
 	iSampler = new DCpuSampler();
 	if (!iSampler) err = KErrNoMemory;
+#endif
 
 	if (!err) iEventHandler = new DExtraBtraceEventHandler(this);
 	if (!iEventHandler) err = KErrNoMemory;
@@ -72,18 +76,24 @@ TInt DExtraBTraceFactory::Create(DLogicalChannelBase*& aChannel)
 
 DExtraBTraceFactory::~DExtraBTraceFactory()
 	{
+#ifndef __SMP__
 	delete iSampler;
+#endif
 	delete iEventHandler;
 	}
 
 void DExtraBTraceFactory::SetCpuUsageSampling(MExtraBtrace::TCpuUsageCallback aCallbackFn)
 	{
+#ifndef __SMP__
 	iSampler->SetCpuUsageSampling(aCallbackFn);
+#endif
 	}
 
 void DExtraBTraceFactory::SetProfilingSampling(TBool aEnabled)
 	{
+#ifndef __SMP__
 	iSampler->SetProfilingSampling(aEnabled);
+#endif
 	}
 
 TAny* DExtraBTraceFactory::GetVersion(TInt /*aVersion*/)
@@ -111,10 +121,12 @@ TInt DExtraBTraceChannel::DoCreate(TInt /*aUnit*/, const TDesC8* /*aInfo*/, cons
 	return KErrNone;
 	}
 
+#ifndef __SMP__
 DCpuSampler* DExtraBTraceChannel::Sampler()
 	{
 	return static_cast<DExtraBTraceFactory*>(iDevice)->iSampler;
 	}
+#endif
 
 TInt DExtraBTraceChannel::RequestUserHandle(DThread* /*aThread*/, TOwnerType /*aType*/)
 	{
@@ -129,6 +141,9 @@ TInt DExtraBTraceChannel::Request(TInt aReqNo, TAny* a1, TAny* /*a2*/)
 		{
 	case EControlEnableProfiling:
 		{
+#ifdef __SMP__
+		return KErrNotSupported;
+#else
 		TInt enable = (a1 == 0) ? 0 : 1; // We still ignore the rate, currently
 		TInt err = BTrace::SetFilter(BTrace::EProfiling, enable);
 		if (err >= 0)
@@ -136,6 +151,7 @@ TInt DExtraBTraceChannel::Request(TInt aReqNo, TAny* a1, TAny* /*a2*/)
 			Sampler()->SetProfilingSampling(enable);
 			}
 		return err;
+#endif
 		}
 	default:
 		return KErrNotSupported;

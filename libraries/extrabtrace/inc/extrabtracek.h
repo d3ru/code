@@ -46,7 +46,9 @@ public: // From MExtraBtrace
 	void MExtraBtrace_Close();
 
 public:
+#ifndef __SMP__
 	DCpuSampler* iSampler;
+#endif
 	DExtraBtraceEventHandler* iEventHandler;
 	};
 

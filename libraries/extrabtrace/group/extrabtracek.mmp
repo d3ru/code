@@ -25,17 +25,20 @@ userinclude		..\src
 
 sourcepath		..\src
 
-#if defined(MARM)
-	#ifdef GCCE
-		// Workaround for the gcce makmake module doing weird things with -S when compiling .cia files
-		// And for GCCE.h's definition of __NAKED__ being wrong
-		source			usampler_cia.cpp
-	#else
-		source			usampler.cia
+#ifndef SMP // Sampler not supported on smp
+	#if defined(MARM)
+		#ifdef GCCE
+			// Workaround for the gcce makmake module doing weird things with -S when compiling .cia files
+			// And for GCCE.h's definition of __NAKED__ being wrong
+			source			usampler_cia.cpp
+		#else
+			source			usampler.cia
+		#endif
 	#endif
+source			sampler.cpp
 #endif
 
-source			extrabtracek.cpp sampler.cpp
+source			extrabtracek.cpp
 source			eventhandler.cpp
 
 start wins
