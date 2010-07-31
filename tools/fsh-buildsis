@@ -127,7 +127,7 @@ sub BuildSis {
   my $unsignedSisFileName = $sisFileName;
   $unsignedSisFileName =~ s/\.sis/\.unsigned\.sis/i;
   fshu::MakePath(dirname($unsignedSisFileName));
-  $command = "makesis -d$ENV{EPOCROOT} $tempFileName $unsignedSisFileName 2>&1";
+  $command = "$ENV{EPOCROOT}epoc32\\tools\\makesis -d$ENV{EPOCROOT} $tempFileName $unsignedSisFileName 2>&1";
   print "Running \"$command\"\n" if ($options{verbose});
   my $exitcode = system($command) >> 8;
   print "\n"; # Makesis doesn't do this
