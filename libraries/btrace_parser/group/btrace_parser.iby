@@ -12,6 +12,8 @@
 #ifndef BTRACE_PARSER_IBY
 #define BTRACE_PARSER_IBY
 
+#ifdef FSHELL_TRACE_SUPPORT
 FSHELL_EXECUTABLE_FILE(btrace_parser.dll)
+#endif
 
 #endif // BTRACE_PARSER_IBY

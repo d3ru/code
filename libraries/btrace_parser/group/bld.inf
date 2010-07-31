@@ -17,6 +17,8 @@ PRJ_EXPORTS
 
 FSHELL_ROM_INCLUDE(btrace_parser.iby)
 
+#ifdef FSHELL_TRACE_SUPPORT
+
 ..\inc\btrace_parser.h          fshell/btrace_parser.h
 ..\inc\btrace_parser_defs.h     fshell/btrace_parser_defs.h
 
@@ -24,3 +26,4 @@ PRJ_MMPFILES
 
 ..\src\btrace_parser.mmp
 
+#endif

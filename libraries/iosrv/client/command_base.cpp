@@ -1274,21 +1274,9 @@ EXPORT_C TPtrC RCommandArgumentList::AsString(void* aValuePointer) const
 // CCommandBase.
 //
 
-EXPORT_C TInt CCommandBase::RunCommand()
-	{
-	TRAPD(err, RunCommandL());
-	return err;
-	}
-
 EXPORT_C void CCommandBase::RunCommandL()
 	{
 	RunCommandL(NULL, NULL);
-	}
-
-EXPORT_C TInt CCommandBase::RunCommand(const TDesC* aCommandLine, CEnvironment* aEnv)
-	{
-	TRAPD(err, RunCommandL(aCommandLine, aEnv));
-	return err;
 	}
 
 NONSHARABLE_CLASS(TExitController) : public MCommandBaseObserver
@@ -1516,27 +1504,7 @@ EXPORT_C void CCommandBase::RunCommandL(const TDesC* aCommandLine, CEnvironment*
 		}
 	}
 
-EXPORT_C TInt CCommandBase::RunCommand(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, const TDesC* aCommandLine, CEnvironment* aEnv)
-	{
-	TExitController exitController;
-	RunCommand(aIoSession, aStdin, aStdout, aStderr, aCommandLine, aEnv, &exitController);
-	if (exitController.IsComplete())
-		{
-		return exitController.CompletionError();
-		}
-	else
-		{
-		exitController.WaitForCompletion();
-		return exitController.CompletionError();
-		}
-	}
-
-EXPORT_C void CCommandBase::RunCommandL(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, const TDesC* aCommandLine, CEnvironment* aEnv)
-	{
-	User::LeaveIfError(RunCommand(aIoSession, aStdin, aStdout, aStderr, aCommandLine, aEnv));
-	}
-
-EXPORT_C void CCommandBase::RunCommand(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, const TDesC* aCommandLine, CEnvironment* aEnv, MCommandBaseObserver* aObserver)
+void CCommandBase::RunCommand(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, const TDesC* aCommandLine, CEnvironment* aEnv, MCommandBaseObserver* aObserver)
 	{
 	TRAPD(err, RunCommandL(aIoSession, aStdin, aStdout, aStderr, aCommandLine, aEnv, aObserver));
 	if (err)

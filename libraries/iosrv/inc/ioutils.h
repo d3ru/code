@@ -666,13 +666,9 @@ public:
 		};
 public:
 	IMPORT_C ~CCommandBase();
-	IMPORT_C TInt RunCommand();
 	IMPORT_C void RunCommandL();
-	IMPORT_C TInt RunCommand(const TDesC* aCommandLine, CEnvironment* aEnv);
 	IMPORT_C void RunCommandL(const TDesC* aCommandLine, CEnvironment* aEnv);
-	IMPORT_C TInt RunCommand(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, const TDesC* aCommandLine, CEnvironment* aEnv);
-	IMPORT_C void RunCommandL(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, const TDesC* aCommandLine, CEnvironment* aEnv);
-	IMPORT_C void RunCommand(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, const TDesC* aCommandLine, CEnvironment* aEnv, MCommandBaseObserver* aObserver);
+	void RunCommand(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, const TDesC* aCommandLine, CEnvironment* aEnv, MCommandBaseObserver* aObserver);
 	IMPORT_C TUint Flags() const;
 	IMPORT_C void SetFlags(TUint aFlags);
 	IMPORT_C const RFs& Fs() const;

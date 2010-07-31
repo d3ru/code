@@ -156,14 +156,15 @@
 // extrabtrace
 //
 
-#ifdef FSHELL_CAP_ALL
-#define FSHELL_EXTRABTRACE_SUPPORT
-#endif
 
 #if !defined(FSHELL_TRACE_SUPPORT) && defined(FSHELL_BTRACE_SUPPORT)
 // FSHELL_TRACE_SUPPORT tells you that the BTraceX() functions are available, either via atrace or btrace,
 // for the situations where you don't care which it is
 #define FSHELL_TRACE_SUPPORT
+#endif
+
+#if defined(FSHELL_TRACE_SUPPORT) && defined(FSHELL_CAP_ALL)
+#define FSHELL_EXTRABTRACE_SUPPORT
 #endif
 
 // The FSHELL_TRACE_xyz macros must appear before any other systeminclude/#include/library statements in your MMP.
