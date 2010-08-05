@@ -59,5 +59,4 @@ FSHELL_ROM_INCLUDE2(common.mmh, fshell\common.mmh)
 
 PRJ_MMPFILES
 
-//TODO figure out why SBS doesn't like this...
-//gnumakefile ..\..\tools\export_templates.mk
+gnumakefile ..\..\tools\export_templates.mk

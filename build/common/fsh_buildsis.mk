@@ -16,7 +16,7 @@ endif
 
 RELEASABLES :
 ifneq ($(PLATFORM), WINSCW)
-	echo $(EPOCROOT)epoc32\fshell\fshell.unsigned.sis
+	@echo $(EPOCROOT)epoc32\fshell\fshell.unsigned.sis
 endif
 
 MAKMAKE BLD FREEZE LIB CLEANLIB RESOURCE CLEAN SAVESPACE : 

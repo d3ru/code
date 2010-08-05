@@ -13,7 +13,7 @@ BLD :
 	..\tools\fsh-builddocs -i epoc32/include pod-list.txt
 
 RELEASABLES :
-	..\tools\fsh-builddocs -i epoc32/include pod-list.txt -w
+	@..\tools\fsh-builddocs -i epoc32/include pod-list.txt -w
 
 CLEAN :
 	..\tools\fsh-builddocs -i epoc32/include pod-list.txt -c

@@ -77,9 +77,26 @@ source          xmodem.cpp
 source          ymodem.cpp
 source          version.cpp
 
-sourcepath      \epoc32\build\fshell\core\generated
+// There doesn't seem to be a nice way of turning the platform into a string, like you have $(PLATFORM) in extension makefiles, sigh.
+#if defined(WINSCW)
+#define PLAT platform_WINSCW
+#elif defined(GCCE)
+#define PLAT platform_GCCE
+#elif defined(MARM_ARM4)
+#define PLAT platform_ARM4
+#elif defined(MARM_ARMV5)
+#define PLAT platform_ARMV5
+#endif
+
+#ifdef SBSV2
+sourcepath      /epoc32/build/fshell/core/generated/PLAT
+#else
+sourcepath      \epoc32\build\fshell\core\generated\ ## PLAT
+#endif
 source          fshell_version.cpp
+
 #ifdef FSHELL_CORE_SUPPORT_LICENSE
+sourcepath      \epoc32\build\fshell\core\generated
 source          license.cpp
 #endif
 
@@ -89,7 +106,3 @@ library         hal.lib
 library         iocli.lib
 library			lineeditor.lib
 library			ltkutils-tcb.lib
-
-START WINS
-win32_library   kernel32.lib
-END

@@ -11,17 +11,17 @@
 #
 BLD :
 ifeq ($(PLATFORM), WINSCW)
-	.\exportall .\createsrc-templates %EPOCROOT%epoc32\tools\createsrc-templates
+	.\exportall .\createsrc-templates $(EPOCROOT)epoc32\tools\createsrc-templates
 endif
 
 RELEASABLES :
 ifeq ($(PLATFORM), WINSCW)
-	.\exportall -w .\createsrc-templates %EPOCROOT%epoc32\tools\createsrc-templates
+	@.\exportall -w .\createsrc-templates $(EPOCROOT)epoc32\tools\createsrc-templates
 endif
 
 CLEAN :
 ifeq ($(PLATFORM), WINSCW)
-	.\exportall -c .\createsrc-templates %EPOCROOT%epoc32\tools\createsrc-templates
+	.\exportall -c .\createsrc-templates $(EPOCROOT)epoc32\tools\createsrc-templates
 endif
 
-MAKMAKE  FINAL FREEZE LIB CLEANLIB RESOURCE SAVESPACE : 
+MAKMAKE FINAL FREEZE LIB CLEANLIB RESOURCE SAVESPACE : 

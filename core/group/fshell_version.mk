@@ -9,7 +9,7 @@
 # Initial Contributors:
 # Accenture - Initial contribution
 #
-GENERATED_SOURCE_DIR = $(EPOCROOT)epoc32\build\fshell\core\generated
+GENERATED_SOURCE_DIR = $(EPOCROOT)epoc32\build\fshell\core\generated\platform_$(PLATFORM)
 GENERATED_SOURCE = $(GENERATED_SOURCE_DIR)\fshell_version.cpp
 
 MAKMAKE :

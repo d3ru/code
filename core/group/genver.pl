@@ -81,5 +81,16 @@ sub CompilerVersion {
     }
     close (COMPILER);
   }
+  elsif ($platform =~ /^winscw$/i) {
+    open (COMPILER, "mwccsym2.exe 2>&1 |") or die "Couldn't run \"mwccsym2.exe\": $!\n";
+    while (my $line = <COMPILER>) {
+      if ($line =~ /^Version/) {
+	chomp $line;
+	$version = "mwccsym2 $line";
+	last;
+      }
+    }
+    close (COMPILER);
+  }
   return $version;
 }
