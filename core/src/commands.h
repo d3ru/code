@@ -196,6 +196,7 @@ private:
 	CFileMan* iFileMan;
 	TBool iRecurse;
 	TBool iForce;
+	RPointerArray<HBufC> iNonExpandedFilenames; // This is to prevent the normal behaviour of fshell expanding a '*' in iFileNames, in the case where the number of matches would be huge
 	};
 
 

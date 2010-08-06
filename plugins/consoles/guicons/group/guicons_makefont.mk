@@ -9,14 +9,13 @@
 # Initial Contributors:
 # Accenture - Initial contribution
 #
-GENERATED_SOURCE_DIR = $(EPOCROOT)epoc32\build\fshell/guicons\generated
+GENERATED_SOURCE_DIR = $(EPOCROOT)epoc32\build\fshell\guicons\generated
 GENERATED_SOURCE = $(GENERATED_SOURCE_DIR)\defaultfontdata.inl
 
 MAKMAKE : $(GENERATED_SOURCE)
 
 $(GENERATED_SOURCE) : ..\data\font_6x10.PNG
 	perl $(EPOCROOT)epoc32\tools\emkdir.pl $(GENERATED_SOURCE_DIR)
-	echo perl .\bin2lit.pl KDefaultFontImageData ^< ..\data\font_6x10.PNG ^> $(GENERATED_SOURCE)
 	perl .\bin2lit.pl KDefaultFontImageData < ..\data\font_6x10.PNG > $(GENERATED_SOURCE)
 
 CLEAN :

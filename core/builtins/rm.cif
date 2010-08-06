@@ -28,6 +28,10 @@ Also delete files in sub-directories.
 
 Force delete the file even if it is read-only (won't allow you to delete a directory containing read-only files).
 
+==option string n noexpand multiple
+
+This option takes a filename similar to the C<filename> argument. The difference is that it doesn't attempt to expand wildcards and instead passes them straight through to CFileMan. This can be useful when a directory has a huge number of files and C<rm *> fails with KErrNoMemory. In this case, try doing C<rm --noexpand *> instead.
+
 ==copyright
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.

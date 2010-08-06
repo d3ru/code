@@ -84,7 +84,7 @@ void CCmdLocalDrive::OptionsL(RCommandOptionList& aOptions)
 
 // More GCC issues (see qresources3\src\utils.cpp). Happily the compiler is happier with SLitC and DESC than it is with TLitC and _LIT
 #include <fshell/descriptorutils.h>
-#define CASE_LIT(x) case x: { LtkUtils::SLitC KName = DESC(#x); return &KName; }
+#define CASE_LIT(x) case x: { static const LtkUtils::SLitC KName = DESC(#x); return &KName; }
 
 const TDesC* MediaTypeDesc(TMediaType aType)
 	{

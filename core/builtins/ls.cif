@@ -18,6 +18,8 @@ List the contents of a directory.
 
 ==long-description
 
+By default ls will columnize the output list. On very large directory listings this may cause the ls command to run out of memory. If this happens, try using the C<-1>/C<--one> option, which will not attempt to format the output.
+
 Note, C<cd> can be used to navigate between drives, but the DOS approach of switching between drives with commands like C<c:> and C<e:> is also supported.
 
 ==argument filename dir_name optional

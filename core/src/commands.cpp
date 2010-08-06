@@ -698,6 +698,7 @@ CCmdRm::~CCmdRm()
 	{
 	delete iFileMan;
 	iFileNames.Close();
+	iNonExpandedFilenames.ResetAndDestroy();
 	}
 
 CCmdRm::CCmdRm()
@@ -748,7 +749,13 @@ void CCmdRm::DoRunL()
 				err = DoDelete(fileName);
 				}
 			}
-		User::LeaveIfError(err);
+		LeaveIfErr(err, _L("Couldn't delete '%S'"), &fileName);
+		}
+
+	for (TInt i = 0; i < iNonExpandedFilenames.Count(); i++)
+		{
+		TInt err = DoDelete(*iNonExpandedFilenames[i]);
+		LeaveIfErr(err, _L("Couldn't delete '%S'"), iNonExpandedFilenames[i]);
 		}
 	}
 
@@ -770,8 +777,10 @@ void CCmdRm::OptionsL(RCommandOptionList& aOptions)
 	{
 	_LIT(KCmdRmOptRecurse, "recurse");
 	_LIT(KCmdRmOptForce, "force");
+	_LIT(KCmdRmOptNoexpand, "noexpand");
 	aOptions.AppendBoolL(iRecurse, KCmdRmOptRecurse);
 	aOptions.AppendBoolL(iForce, KCmdRmOptForce);
+	aOptions.AppendStringL(iNonExpandedFilenames, KCmdRmOptNoexpand);
 	}
 
 void CCmdRm::ArgumentsL(RCommandArgumentList& aArguments)
