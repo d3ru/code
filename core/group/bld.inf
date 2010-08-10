@@ -98,6 +98,7 @@ FSHELL_ROM_INCLUDE(fshell_core.iby)
 
 .\autostart.script                     z:\system\console\scripts\autostart.script
 .\comm.script                          z:\system\console\scripts\comm.script
+.\fshell_autoexec.bat                  z:\fshell_autoexec.bat
 
 PRJ_MMPFILES
 gnumakefile .\fshell_version.mk

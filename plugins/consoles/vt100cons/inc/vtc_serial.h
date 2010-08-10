@@ -24,13 +24,14 @@
 class TPortConfig
 	{
 public:
-	TPortConfig() : iRate(EBpsAutobaud) {}
+	TPortConfig() : iRate(EBpsAutobaud), iDebug(EFalse) {}
 
 	TPtrC iPdd;
 	TPtrC iLdd;
 	TPtrC iCsy;
 	TPtrC iPort;
 	TBps iRate;
+	TBool iDebug;
 	};
 	
 

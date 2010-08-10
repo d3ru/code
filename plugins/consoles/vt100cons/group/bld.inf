@@ -29,7 +29,9 @@ PRJ_MMPFILES
 #ifdef FSHELL_COMMS_SUPPORT
 .\vt100serial.mmp
 .\vt100cons.mmp
+#ifdef FSHELL_BLUETOOTH_SUPPORT
 .\vt100btcons.mmp
+#endif
 .\vt100tcpcons.mmp
 .\vt100usbcons.mmp
 #endif

@@ -21,7 +21,9 @@ FSHELL_EXECUTABLE_FILE(vt100busdevcons.dll)
 #ifdef FSHELL_COMMS_SUPPORT
 FSHELL_EXECUTABLE_FILE(vt100serial.dll)
 FSHELL_EXECUTABLE_FILE(vt100cons.dll)
+#ifdef FSHELL_BLUETOOTH_SUPPORT
 FSHELL_EXECUTABLE_FILE(vt100btcons.dll)
+#endif
 FSHELL_EXECUTABLE_FILE(vt100tcpcons.dll)
 FSHELL_EXECUTABLE_FILE(vt100usbcons.dll)
 #endif
@@ -29,13 +31,5 @@ FSHELL_EXECUTABLE_FILE(vt100usbcons.dll)
 #ifndef FSHELL_WSERV_SUPPORT
 FSHELL_EXECUTABLE_FILE(vt100debugport.dll)
 #endif
-
-// Note, not #including loopback.iby because its doesn't use the
-// tool-kit's .iby file macros, and so breaks SIS file generation
-// via .iby files.
-//#ifndef __LOOPBACK_IBY__
-//#define __LOOPBACK_IBY__
-//FSHELL_EXECUTABLE_FILE(LOOPBACK.CSY)
-//#endif
 
 #endif

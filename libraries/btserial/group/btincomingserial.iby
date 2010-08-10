@@ -16,7 +16,7 @@
 #include <fsh_config.iby>
 #include <vt100.iby>
 
-#ifdef FSHELL_COMMS_SUPPORT
+#ifdef FSHELL_BLUETOOTH_SUPPORT
 FSHELL_EXECUTABLE_FILE(btincomingserial.dll)
 #endif
 

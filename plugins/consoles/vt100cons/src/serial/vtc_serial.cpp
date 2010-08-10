@@ -15,7 +15,7 @@
 
 const TInt KMaxWriteLength = 2 * 1024; // Some serial drivers fail with KErrNoMemory if writes are too big, so they have to be broken up.
 
-#define LEAVE_IF_ERROR_ALLOW_ALREADY_EXISTS(_x) { TInt _err = _x; if ((_err < 0) && (_err != KErrAlreadyExists)) { User::Leave(_err); } }
+#define ErrOrDebug(err) (((err) < 0  && (err) != KErrAlreadyExists) ? EError : EDebug)
 
 EXPORT_C CVtcSerialConsole::CVtcSerialConsole()
 	{
@@ -34,6 +34,7 @@ TInt CVtcSerialConsole::ReadConfig(const TDesC& aConfigDes, TPortConfig& aConfig
 	_LIT(KKeywordCsy, "csy");
 	_LIT(KKeywordPort, "port");
 	_LIT(KKeywordRate, "rate");
+	_LIT(KKeywordDebug, "debug");
 
 	TBool keywordFound(EFalse);
 	TLex lex(aConfigDes);
@@ -89,6 +90,11 @@ TInt CVtcSerialConsole::ReadConfig(const TDesC& aConfigDes, TPortConfig& aConfig
 				}
 			keywordFound = ETrue;
 			}
+		else if (keyword == KKeywordDebug)
+			{
+			aConfig.iDebug = ETrue;
+			keywordFound = ETrue;
+			}
 		}
 
 	if (!keywordFound)
@@ -103,18 +109,29 @@ TInt CVtcSerialConsole::ReadConfig(const TDesC& aConfigDes, TPortConfig& aConfig
 EXPORT_C void CVtcSerialConsole::ConstructL(const TDesC& aTitle)
 	{
 	TPortConfig portConfig;
-	User::LeaveIfError(ReadConfig(aTitle, portConfig));
+	TInt err = ReadConfig(aTitle, portConfig);
+	if (err)
+		{
+		Message(EError, _L("Error reading config: %d"), err);
+		User::LeaveIfError(err);
+		}
+
 	if (portConfig.iPort.Length() == 0)
 		{
 		User::Leave(KErrArgument);
 		}
+
+	if (portConfig.iDebug) SetDebug(ETrue);
+
 	if (portConfig.iPdd.Length())
 		{
-		LEAVE_IF_ERROR_ALLOW_ALREADY_EXISTS(User::LoadPhysicalDevice(portConfig.iPdd));
+		err = User::LoadPhysicalDevice(portConfig.iPdd);
+		Message(ErrOrDebug(err), _L("Loading PDD %S returned %d"), &portConfig.iPdd, err);
+		if (err != KErrAlreadyExists) User::LeaveIfError(err);
 		}
 	else
 		{
-		// If not specified, assume they probably intended the standard ones (but don't error if they fail, since the user might actually know what they're doing
+		// If not specified, assume they probably intended the standard ones (but don't error if they fail, since the user might actually know what they're doing)
 #ifdef __WINS__
 		User::LoadPhysicalDevice(_L("ecdrv"));
 #else
@@ -124,23 +141,31 @@ EXPORT_C void CVtcSerialConsole::ConstructL(const TDesC& aTitle)
 
 	if (portConfig.iLdd.Length())
 		{
-		LEAVE_IF_ERROR_ALLOW_ALREADY_EXISTS(User::LoadLogicalDevice(portConfig.iLdd));
+		err = User::LoadLogicalDevice(portConfig.iLdd);
+		Message(ErrOrDebug(err), _L("Loading LDD %S returned %d"), &portConfig.iLdd, err);
+		if (err != KErrAlreadyExists) User::LeaveIfError(err);
 		}
 	else
 		{
 		User::LoadLogicalDevice(_L("ecomm"));
 		}
 
-	User::LeaveIfError(iCommServ.Connect());
+	err = iCommServ.Connect();
+	Message(ErrOrDebug(err), _L("Connecting to RCommServ returned %d"), err);
+	User::LeaveIfError(err);
 	if (portConfig.iCsy.Length())
 		{
-		LEAVE_IF_ERROR_ALLOW_ALREADY_EXISTS(iCommServ.LoadCommModule(portConfig.iCsy));
+		err = iCommServ.LoadCommModule(portConfig.iCsy);
+		Message(ErrOrDebug(err), _L("Loading CSY %S returned %d"), &portConfig.iCsy, err);
+		if (err != KErrAlreadyExists) User::LeaveIfError(err);
 		}
 	else
 		{
 		iCommServ.LoadCommModule(_L("ecuart"));
 		}
-	User::LeaveIfError(iCommPort.Open(iCommServ, portConfig.iPort, ECommExclusive));
+	err = iCommPort.Open(iCommServ, portConfig.iPort, ECommExclusive);
+	Message(ErrOrDebug(err), _L("Opening port %S returned %d"), &portConfig.iPort, err);
+	User::LeaveIfError(err);
 
 #ifdef __WINS__
 	// For BC reasons, we always set rate on WINS
@@ -160,7 +185,9 @@ EXPORT_C void CVtcSerialConsole::ConstructL(const TDesC& aTitle)
 		cfg().iSpecialRate = 0;
 		cfg().iTerminatorCount = 0;
 		cfg().iSIREnable = ESIRDisable;
-		User::LeaveIfError(iCommPort.SetConfig(cfg));
+		err = iCommPort.SetConfig(cfg);
+		Message(ErrOrDebug(err), _L("Setting port config returned %d"), err);
+		User::LeaveIfError(err);
 		}
 	
 	User::LeaveIfError(iCommPort.ResetBuffers());

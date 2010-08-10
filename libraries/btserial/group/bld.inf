@@ -17,11 +17,11 @@
 PRJ_EXPORTS
 FSHELL_ROM_INCLUDE(btincomingserial.iby)
 
-#ifdef FSHELL_COMMS_SUPPORT
+#ifdef FSHELL_BLUETOOTH_SUPPORT
 ..\inc\btincomingserial.h	+\include\fshell\btincomingserial.h
 ..\inc\btserialclient.h		+\include\fshell\btserialclient.h
 
 PRJ_MMPFILES
-BtSerial
+BtSerial.mmp
 
 #endif

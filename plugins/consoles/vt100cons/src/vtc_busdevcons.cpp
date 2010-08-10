@@ -23,8 +23,10 @@ public:
 	TPtrC iLdd;
 	TInt iPort;
 	TBps iRate;
+	TBool iDebug;
 	};
 
+#define ErrOrDebug(err) (((err) < 0  && (err) != KErrAlreadyExists) ? EError : EDebug)
 
 NONSHARABLE_CLASS(CVtcBusDevCommConsole) : public CVtcConsoleBase
 	{
@@ -67,7 +69,7 @@ _LIT(KPdd, "euart");
 _LIT(KLdd, "ecomm");
 
 TPortConfig::TPortConfig()
-	:iPdd(KNullDesC), iLdd(KNullDesC), iPort(-1), iRate(EBpsAutobaud)
+	:iPdd(KNullDesC), iLdd(KNullDesC), iPort(-1), iRate(EBpsAutobaud), iDebug(EFalse)
 	{
 	}
 
@@ -77,6 +79,7 @@ TInt CVtcBusDevCommConsole::ReadConfig(const TDesC& aConfigDes, TPortConfig& aCo
 	_LIT(KKeywordLdd, "ldd");
 	_LIT(KKeywordPort, "port");
 	_LIT(KKeywordRate, "rate");
+	_LIT(KKeywordDebug, "debug");
 
 	TBool keywordFound(EFalse);
 	TLex lex(aConfigDes);
@@ -128,6 +131,11 @@ TInt CVtcBusDevCommConsole::ReadConfig(const TDesC& aConfigDes, TPortConfig& aCo
 				}
 			keywordFound = ETrue;
 			}
+		else if (keyword == KKeywordDebug)
+			{
+			aConfig.iDebug = ETrue;
+			keywordFound = ETrue;
+			}
 		}
 
 	if (!keywordFound)
@@ -146,20 +154,22 @@ void CVtcBusDevCommConsole::ConstructL(const TDesC& aTitle)
 	User::LeaveIfError(ReadConfig(aTitle, portConfig));
 	if (portConfig.iPort < 0) User::Leave(KErrArgument);
 
+	if (portConfig.iDebug) SetDebug(ETrue);
+
 	TPtrC pdd(portConfig.iPdd);
 	if (pdd.Length() == 0) pdd.Set(KPdd());
 	TPtrC ldd(portConfig.iLdd);
 	if (ldd.Length() == 0) ldd.Set(KLdd());
 
 	TInt err = User::LoadPhysicalDevice(pdd);
-	Message(EDebug, _L("Loading %S returned %d"), &pdd, err);
+	Message(ErrOrDebug(err), _L("Loading PDD %S returned %d"), &pdd, err);
 	if (err != KErrAlreadyExists && portConfig.iPdd.Length()) User::LeaveIfError(err); // Don't error if we failed to load the default PDD
 
 	err = User::LoadLogicalDevice(ldd);
-	Message(EDebug, _L("Loading %S returned %d"), &ldd, err);
+	Message(ErrOrDebug(err), _L("Loading LDD %S returned %d"), &ldd, err);
 	if (err != KErrAlreadyExists && portConfig.iLdd.Length()) User::LeaveIfError(err); // Don't error if we failed to load the default LDD
 	err = iComm.Open(portConfig.iPort);
-	Message(EDebug, _L("Opening port %d returned %d"), portConfig.iPort, err);
+	Message(ErrOrDebug(err), _L("Opening port %d returned %d"), portConfig.iPort, err);
 	User::LeaveIfError(err);
 
 	if (portConfig.iRate != EBpsAutobaud)
@@ -176,7 +186,7 @@ void CVtcBusDevCommConsole::ConstructL(const TDesC& aTitle)
 		cfg().iTerminatorCount = 0;
 		cfg().iSIREnable = ESIRDisable;
 		err = iComm.SetConfig(cfg);
-		Message(EDebug, _L("RBusDevComm::SetConfig returned %d"), err);
+		Message(ErrOrDebug(err), _L("RBusDevComm::SetConfig returned %d"), err);
 		User::LeaveIfError(err);
 		}
 	iComm.ResetBuffers();

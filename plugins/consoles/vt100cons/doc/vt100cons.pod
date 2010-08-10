@@ -78,6 +78,10 @@ Specifies the serial port name to be opened. Must be specified. If no other conf
 
 If present, set the baud rate of the serial port. Allowed values are: 115200, 57600, 19200, 9600. If specified, the port is configured with the following settings: rate as specified; data bits 8; stop bits 1; parity none; handshake 0, terminator count 0. For virtual serial ports (eg USB ACMs or Bluetooth serial ports) it is generally not necessary to configure hardware attributes so the rate parameter should not be specified.
 
+=item * C<debug>
+
+If present, the console will print out some debugging diagnostics to the underlying console during construction.
+
 =back
 
 Each keyword and value must be separated by an equals ('=') character. There may be whitespace either side of this. Each keword / value pair must be separated by a comma (',') character. Again, there may be whitespace either side of this. The name values may not contain either equals or comma characters as no form of escaping is currently supported.
@@ -264,7 +268,7 @@ This console is intended for early on in board bring-up when C32 is not availabl
 
     fshell --console vt100busdevcons.dll --console-title port=2
 
-If an option isn't specified, the following are assumed: pdd=euart, ldd=ecomm, rate=115200.
+If an option isn't specified, the following are assumed: pdd=euart (ecdrv on emulator), ldd=ecomm, rate=EBpsAutobaud.
 
 =head1 Copyright
 

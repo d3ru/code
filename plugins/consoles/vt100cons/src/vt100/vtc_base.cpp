@@ -27,7 +27,6 @@ public:
 	
 EXPORT_C CVtcConsoleBase::CVtcConsoleBase()
 	{
-	//SetDebug(ETrue); // debug
 	}
 
 EXPORT_C CVtcConsoleBase::~CVtcConsoleBase()
@@ -128,7 +127,9 @@ EXPORT_C void CVtcConsoleBase::Message(TVerbosity aVerbosity, TRefByValue<const 
 			}
 		else
 			{
+			// Cover all the bases
 			User::InfoPrint(buf);
+			RDebug::Print(buf);
 			}
 		}
 	}
