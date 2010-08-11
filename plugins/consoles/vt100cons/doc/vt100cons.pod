@@ -246,7 +246,7 @@ Binary mode is not available. This means that xmodem/ymodem cannot be used.
 
 =item *
 
-Console size detection is not supported, and must be disabled in vt100.ini and iosrv.ini (eg by including vt100.ini.noautodetect and iosrv.ini.noautodetect). The console will always be assumed to be 80x24.
+Console size detection is not supported, and must be disabled in iosrv.ini (eg by including iosrv.ini.noautodetect). The console will always be assumed to be 80x24.
 
 =item *
 
@@ -260,7 +260,9 @@ Navigation keys such as pageup/down, home/end, function keys, fwd delete and esc
 
 There are no C<--console-title> options for vt100debugport.dll. Usage:
 
-    fshell --console vt100debugport.dll
+    fshell --console vt100debugport
+
+Note that use of vt100debugport is incompatible with using the C<FSHELL_REPLACE_ECONS> macro. If you intend to use vt100debugport you must not specify the replace econs macro.
 
 =head2 RBusDevComm variant
 

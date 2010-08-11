@@ -69,12 +69,17 @@ EXPORT_C TInt CVtcConsoleBase::Create(const TDesC& aTitle, TSize /*aSize*/)
 	return err;
 	}
 
-EXPORT_C void CVtcConsoleBase::ConstructL(const TDesC&)
+EXPORT_C void CVtcConsoleBase::ConstructL(const TDesC& aTitle)
+	{
+	ConstructL(aTitle, ETrue);
+	}
+
+EXPORT_C void CVtcConsoleBase::ConstructL(const TDesC&, TBool aConsoleSupportsSizeDetect)
 	{
 	iIniFile = LtkUtils::CIniFile::NewL(KIniFileName, KIniDesciptionFile);
 
 	TSize screenSize(80, 24); // If sizeDetect is not specified, we default to (and only support) 80x24
-	if (iIniFile->GetBool(KAttConsoleSizeDetect))
+	if (aConsoleSupportsSizeDetect && iIniFile->GetBool(KAttConsoleSizeDetect))
 		{
 		DetectScreenSizeL(screenSize);
 		}

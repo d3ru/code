@@ -37,4 +37,5 @@ EXPORTS
 	?SetAttributes@CVtConsoleOutputController@@QAEHIW4TColor@ConsoleAttributes@@0@Z @ 36 NONAME ; int CVtConsoleOutputController::SetAttributes(unsigned int, enum ConsoleAttributes::TColor, enum ConsoleAttributes::TColor)
 	?ResetAttributes@CVtConsoleOutputController@@QAEHXZ @ 37 NONAME ; int CVtConsoleOutputController::ResetAttributes(void)
 	?ReadKeywordValuePair@CVtcConsoleBase@@KAHAAVTLex16@@AAVTPtrC16@@1@Z @ 38 NONAME ; int CVtcConsoleBase::ReadKeywordValuePair(class TLex16 &, class TPtrC16 &, class TPtrC16 &)
+	?ConstructL@CVtcConsoleBase@@IAEXABVTDesC16@@H@Z @ 39 NONAME ; void CVtcConsoleBase::ConstructL(class TDesC16 const &, int)
 

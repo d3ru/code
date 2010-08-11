@@ -82,7 +82,7 @@ void CVtcDebugPortConsole::ConstructL(const TDesC& aTitle)
 	iReader = new(ELeave) CReaderObject(this);
 	User::LeaveIfError(iConsole.Create());
 	User::LeaveIfError(iConsole.Init(_L("fshell"), TSize(KConsFullScreen,KConsFullScreen)));
-	CVtcConsoleBase::ConstructL(aTitle);
+	CVtcConsoleBase::ConstructL(aTitle, EFalse);
 	}
 	
 TInt CVtcDebugPortConsole::Output(const TDesC8& aDes)

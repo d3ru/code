@@ -45,4 +45,5 @@ EXPORTS
 	_ZN26CVtConsoleOutputController13SetAttributesEjN17ConsoleAttributes6TColorES1_ @ 44 NONAME
 	_ZN26CVtConsoleOutputController15ResetAttributesEv @ 45 NONAME
 	_ZN15CVtcConsoleBase20ReadKeywordValuePairER6TLex16R7TPtrC16S3_ @ 46 NONAME
+	_ZN15CVtcConsoleBase10ConstructLERK7TDesC16i @ 47 NONAME
 

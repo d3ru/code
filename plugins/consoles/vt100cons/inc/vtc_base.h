@@ -51,6 +51,7 @@ protected:
 protected:
 	IMPORT_C CVtcConsoleBase();
 	IMPORT_C virtual void ConstructL(const TDesC& aTitle);
+	IMPORT_C void ConstructL(const TDesC& aTitle, TBool aConsoleSupportsSizeDetect); // Note this is NOT virtual, only used for baseclasses to call up to from their overload of ConstructL(const TDesC&) if they explicitly don't support console size detect
 	IMPORT_C static TInt ReadKeywordValuePair(TLex& aLex, TPtrC& aKeyword, TPtrC& aValue);
 
 private:
