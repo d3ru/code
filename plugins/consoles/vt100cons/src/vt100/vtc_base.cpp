@@ -17,14 +17,6 @@ _LIT(KIniFileName, "\\system\\console\\vt100.ini");
 _LIT(KIniDesciptionFile, "\\resource\\vt100.idf");
 _LIT(KAttConsoleSizeDetect, "console_size_detect");
 
-_LIT(KNewLine, "\r\n");
-
-class TOverflowTruncate : public TDes16Overflow
-	{
-public:
-	virtual void Overflow(TDes16&) {}
-	};
-	
 EXPORT_C CVtcConsoleBase::CVtcConsoleBase()
 	{
 	}
@@ -34,38 +26,13 @@ EXPORT_C CVtcConsoleBase::~CVtcConsoleBase()
 	delete iIniFile;
 	delete iInputController;
 	delete iOutputController;
-	delete iUnderlyingConsole; // In case of leave during construction, this might still be non-null
+	CleanupUnderlyingConsole();
 	}
 
 EXPORT_C TInt CVtcConsoleBase::Create(const TDesC& aTitle, TSize /*aSize*/)
 	{
 	TRAPD(err, ConstructL(aTitle));
-	if (err)
-		{
-		TBuf<512> message;
-		message.Format(_L("Failed to create console (%d)."), err);
-			
-		if (iUnderlyingConsole && (LazyConsole::IsConstructed(iUnderlyingConsole) || !LazyConsole::IsLazy(iUnderlyingConsole)))
-		// if we have an underlyconsole, which is either not lazy or is lazy but already constructed, then print the error to it.
-			{
-			iUnderlyingConsole->Write(message);
-			iUnderlyingConsole->Write(KNewLine);
-			}
-		else
-		// else display a dialog
-			{
-			RNotifier notifier;
-			if (notifier.Connect() == KErrNone)
-				{
-				TInt buttonVal;
-				TRequestStatus notifierStatus;
-				notifier.Notify(_L("vt100"), message, _L("OK"), KNullDesC, buttonVal, notifierStatus);
-				User::WaitForRequest(notifierStatus);
-				notifier.Close();
-				}
-			}
-		}
-	Message(EDebug, _L("VT100 console create completed with err=%d"), err);
+	HandleConsoleCreationError(_L("VT100"), err);
 	return err;
 	}
 
@@ -86,8 +53,7 @@ EXPORT_C void CVtcConsoleBase::ConstructL(const TDesC&, TBool aConsoleSupportsSi
 	iOutputController = CVtConsoleOutputController::NewL(*this, *iIniFile, screenSize);
 	iInputController = CVtConsoleInputController::NewL(*this, *iIniFile);
 	ClearScreen();
-	delete iUnderlyingConsole;
-	iUnderlyingConsole = NULL;
+	CleanupUnderlyingConsole();
 	}
 	
 EXPORT_C TInt CVtcConsoleBase::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
@@ -99,11 +65,6 @@ EXPORT_C TInt CVtcConsoleBase::Extension_(TUint aExtensionId, TAny*& a0, TAny* a
 		iOutputController->SetMode(mode);
 		return KErrNone;
 		}
-	else if (aExtensionId == UnderlyingConsole::KSetUnderlyingConsoleExtension)
-		{
-		iUnderlyingConsole = (CConsoleBase*)a1;
-		return KErrNone;
-		}
 	else if (aExtensionId == ConsoleAttributes::KSetConsoleAttributesExtension)
 		{
 		ConsoleAttributes::TAttributes* attributes = (ConsoleAttributes::TAttributes*)a1;
@@ -111,42 +72,13 @@ EXPORT_C TInt CVtcConsoleBase::Extension_(TUint aExtensionId, TAny*& a0, TAny* a
 		}
 	else
 		{
-		return CConsoleBase::Extension_(aExtensionId, a0, a1);
-		}
-	}
-
-EXPORT_C void CVtcConsoleBase::Message(TVerbosity aVerbosity, TRefByValue<const TDesC> aFmt, ...)
-	{
-	if (Debug() || (aVerbosity == EInformation) || (aVerbosity == EError))
-		{
-		TOverflowTruncate overflow;
-		VA_LIST list;
-		VA_START(list, aFmt);
-		TBuf<0x100> buf;
-		buf.AppendFormatList(aFmt, list, &overflow);
-		
-		if (iUnderlyingConsole)
+		TInt ret = MIosrvConsoleHelper_Extension(aExtensionId, a0, a1);
+		if (ret == KErrExtensionNotSupported)
 			{
-			iUnderlyingConsole->Write(buf);
-			iUnderlyingConsole->Write(KNewLine);
+			ret = CConsoleBase::Extension_(aExtensionId, a0, a1);
 			}
-		else
-			{
-			// Cover all the bases
-			User::InfoPrint(buf);
-			RDebug::Print(buf);
-			}
+		return ret;
 		}
-	}
-	
-EXPORT_C TBool CVtcConsoleBase::Debug()
-	{
-	return iDebug;
-	}
-	
-EXPORT_C void CVtcConsoleBase::SetDebug(TBool aDebug)
-	{
-	iDebug = aDebug;
 	}
 		
 EXPORT_C void CVtcConsoleBase::Read(TRequestStatus& aStatus)

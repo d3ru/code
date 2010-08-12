@@ -39,9 +39,9 @@ EXPORTS
 	_ZN25CVtConsoleInputController4NewLER21MConsoleInputObserver @ 38 NONAME ABSENT
 	_ZN25CVtConsoleInputController5NewLCER21MConsoleInputObserver @ 39 NONAME ABSENT
 	_ZN25CVtConsoleInputController9QueueBufLERK6TDesC8 @ 40 NONAME ABSENT
-	_ZN15CVtcConsoleBase5DebugEv @ 41 NONAME
-	_ZN15CVtcConsoleBase7MessageENS_10TVerbosityE11TRefByValueIK7TDesC16Ez @ 42 NONAME
-	_ZN15CVtcConsoleBase8SetDebugEi @ 43 NONAME
+	_ZN15CVtcConsoleBase5DebugEv @ 41 NONAME ABSENT
+	_ZN15CVtcConsoleBase7MessageENS_10TVerbosityE11TRefByValueIK7TDesC16Ez @ 42 NONAME ABSENT
+	_ZN15CVtcConsoleBase8SetDebugEi @ 43 NONAME ABSENT
 	_ZN26CVtConsoleOutputController13SetAttributesEjN17ConsoleAttributes6TColorES1_ @ 44 NONAME
 	_ZN26CVtConsoleOutputController15ResetAttributesEv @ 45 NONAME
 	_ZN15CVtcConsoleBase20ReadKeywordValuePairER6TLex16R7TPtrC16S3_ @ 46 NONAME

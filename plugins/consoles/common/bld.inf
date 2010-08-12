@@ -30,6 +30,7 @@ FSHELL_ROM_INCLUDE2(..\rcons\client\group\rcons.iby, rcons.iby)
 
 PRJ_MMPFILES
 
+.\consoleextensions.mmp
 ..\consoleproxy\group\consoleproxy.mmp
 ..\defcons\src\defcons.mmp
 ..\iocons\group\iocons.mmp

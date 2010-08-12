@@ -49,12 +49,7 @@ More specifally:
   
 Piping into the emulator process via this console is as yet untested.
 */
-#ifdef EKA2
-NONSHARABLE_CLASS(CWin32Console)
-#else
-class CWin32Console
-#endif
-	 : public CConsoleBase
+NONSHARABLE_CLASS(CWin32Console) : public CConsoleBase, public MIosrvConsoleHelper
 	{
 public:
 	CWin32Console();
@@ -76,7 +71,9 @@ public: // From CConsoleBase.
 	virtual TUint KeyModifiers() const;
 	virtual TInt Extension_(TUint aExtensionId, TAny*& a0, TAny* a1);
 	
-	virtual void WriteStdErr(const TDesC& aDes);
+private: // From MIosrvConsoleHelper
+	TInt WriteStdErr(const TDesC& aDes);
+
 private:
 	TInt CreateNewConsole(const TDesC& aTitle, TSize aSize);
 	TInt FindClientThreadId(TThreadId& aThreadId);

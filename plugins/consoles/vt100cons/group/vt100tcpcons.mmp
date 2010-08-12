@@ -29,5 +29,6 @@ library			esock.lib
 library			vt100.lib
 library			insock.lib
 library			commdb.lib
+library			consoleextensions.lib
 
 deffile			vt100cons.def

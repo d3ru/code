@@ -27,5 +27,6 @@ source			vtc_serial.cpp
 library			euser.lib
 library			c32.lib
 library			vt100.lib
+library			consoleextensions.lib
 
 deffile			vt100serial.def

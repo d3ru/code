@@ -81,9 +81,10 @@ void CWin32Console::Write(const TDesC& aDes)
 	iWin32.Write(aDes.Ptr(), aDes.Length());
 	}
 	
-void CWin32Console::WriteStdErr(const TDesC& aDes)
+TInt CWin32Console::WriteStdErr(const TDesC& aDes)
 	{
 	iWin32.WriteStdErr(aDes.Ptr(), aDes.Length());
+	return KErrNone;
 	}
 
 TPoint CWin32Console::CursorPos() const
@@ -159,13 +160,7 @@ TUint CWin32Console::KeyModifiers() const
 
 TInt CWin32Console::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
 	{
-	if (aExtensionId == ConsoleStdErr::KWriteStdErrConsoleExtension)
-		{
-		TDesC* des = (TDesC*)a1;
-		WriteStdErr(*des);
-		return KErrNone;
-		}
-	else if (aExtensionId == ConsoleAttributes::KSetConsoleAttributesExtension)
+	if (aExtensionId == ConsoleAttributes::KSetConsoleAttributesExtension)
 		{
 		ConsoleAttributes::TAttributes* attributes = (ConsoleAttributes::TAttributes*)a1;
 		int res = iWin32.SetAttributes(attributes->iAttributes, (TWin32Console::TColor)attributes->iForegroundColor, (TWin32Console::TColor)attributes->iBackgroundColor);
@@ -173,7 +168,12 @@ TInt CWin32Console::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
 		}
 	else
 		{
-		return CConsoleBase::Extension_(aExtensionId, a0, a1);
+		TInt ret = MIosrvConsoleHelper_Extension(aExtensionId, a0, a1);
+		if (ret == KErrExtensionNotSupported)
+			{
+			ret = CConsoleBase::Extension_(aExtensionId, a0, a1);
+			}
+		return ret;
 		}
 	
 	}

@@ -102,7 +102,7 @@ TInt CVtcTcpConsole::Query(TRequestStatus& stat, TRefByValue<const TDesC> aFmt, 
 	TBuf<0x100> buf;
 	buf.AppendFormatList(aFmt, list, &overflow);
 
-	if (iUnderlyingConsole)
+	if (UnderlyingConsole())
 		{
 		Message(EInformation, buf);
 		// when using a console, the accept can be cancelled by hitting ctrl-c

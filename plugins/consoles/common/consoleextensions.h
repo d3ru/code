@@ -119,7 +119,33 @@ public:
 	*/
 	static inline TInt Write(CBase* aConsole, const TDesC& aDes);
 	};
+
+// BC on this interface is not guaranteed - only for use by things inside /fshell/plugins/consoles
+class MIosrvConsoleHelper
+	{
+protected:
+	enum TVerbosity
+		{
+		EInformation,
+		EError,
+		EDebug,
+		};
+	IMPORT_C void Message(TVerbosity aVerbosity, TRefByValue<const TDesC> aFmt, ...);
+	IMPORT_C TBool Debug() const;
+	IMPORT_C void SetDebug(TBool aDebug);
+	IMPORT_C void HandleConsoleCreationError(const TDesC& aConsoleName, TInt aError);
+	IMPORT_C void CleanupUnderlyingConsole();
+	IMPORT_C CConsoleBase* UnderlyingConsole() const;
+
+	IMPORT_C TInt MIosrvConsoleHelper_Extension(TUint aExtensionId, TAny*& a0, TAny* a1);
 	
+	IMPORT_C virtual TInt WriteStdErr(const TDesC& aDes); // Default returns KErrExtensionNotSupported
+	
+private:
+	TBool iDebug;
+	CConsoleBase* iUnderlyingConsole;
+	};
+
 #include <fshell/consoleextensions.inl>
 	
 #endif //__CONSOLEEXTENSIONS_H__

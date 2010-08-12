@@ -17,8 +17,9 @@
 #include <e32cons.h>
 #include <fshell/settings.h>
 #include <fshell/vtc_controller.h>
+#include <fshell/consoleextensions.h>
 
-class CVtcConsoleBase : public CConsoleBase, public MConsoleOutput, public MConsoleInput
+class CVtcConsoleBase : public CConsoleBase, public MConsoleOutput, public MConsoleInput, public MIosrvConsoleHelper
 	{
 public:
 	IMPORT_C virtual ~CVtcConsoleBase();
@@ -38,17 +39,6 @@ public:
 	IMPORT_C virtual TUint KeyModifiers() const;
 	IMPORT_C virtual TInt Extension_(TUint aExtensionId, TAny*& a0, TAny* a1);
 protected:
-	enum TVerbosity
-		{
-		EInformation,
-		EError,
-		EDebug,
-		};
-protected:
-	IMPORT_C void Message(TVerbosity aVerbosity, TRefByValue<const TDesC> aFmt, ...);
-	IMPORT_C TBool Debug();
-	IMPORT_C void SetDebug(TBool aDebug);
-protected:
 	IMPORT_C CVtcConsoleBase();
 	IMPORT_C virtual void ConstructL(const TDesC& aTitle);
 	IMPORT_C void ConstructL(const TDesC& aTitle, TBool aConsoleSupportsSizeDetect); // Note this is NOT virtual, only used for baseclasses to call up to from their overload of ConstructL(const TDesC&) if they explicitly don't support console size detect
@@ -63,9 +53,6 @@ private:
 	CVtConsoleOutputController* iOutputController;
 	CVtConsoleInputController* iInputController;
 	LtkUtils::CIniFile* iIniFile;
-	TInt iDebug;
-protected:
-	CConsoleBase* iUnderlyingConsole;
 	};
 
 

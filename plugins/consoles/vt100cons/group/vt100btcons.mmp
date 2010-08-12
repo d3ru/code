@@ -27,5 +27,6 @@ source			vtc_bt.cpp
 library			euser.lib
 library			btincomingserial.lib bluetooth.lib
 library			vt100.lib
+library			consoleextensions.lib
 
 deffile			vt100btcons.def

@@ -166,8 +166,8 @@ void CCmdGrabscreen::WriteEncodedL(TUid aEncodingUid)
 		CleanupStack::PushL(imageData);
 		imageData->iSampleScheme = iGreyscale ? TJpegImageData::EMonochrome : TJpegImageData::EColor444;
 		imageData->iQualityFactor = iQuality;
-		iFrameImageData = CFrameImageData::NewL();
-		User::LeaveIfError(iFrameImageData->AppendImageData(imageData));
+		TRAPL(iFrameImageData = CFrameImageData::NewL(), _L("Couldn't create CFrameImageData"));
+		LeaveIfErr(iFrameImageData->AppendImageData(imageData), _L("Failed to write image data to TJpegImageData"));
 		CleanupStack::Pop(imageData);
 		}
 	else if (aEncodingUid == KImageTypeGIFUid)
@@ -225,7 +225,7 @@ void CCmdGrabscreen::WriteEncodedL(TUid aEncodingUid)
 	
 void CCmdGrabscreen::RunL()
 	{
-	User::LeaveIfError(iStatus.Int());
+	LeaveIfErr(iStatus.Int(), _L("Error returned from CImageEncoder::Convert"));
 	if (!iArguments.IsPresent(0))
 		{
 		User::LeaveIfNull(iImageData);

@@ -28,5 +28,6 @@ source			vtc_cursor_tracker.cpp
 
 library			euser.lib
 library			ltkutils.lib
+library			consoleextensions.lib
 
 deffile			vt100.def

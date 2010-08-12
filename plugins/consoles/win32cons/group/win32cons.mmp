@@ -20,12 +20,13 @@ capability		FSHELL_CAP_MMP_NORMAL
 sourcepath		..\src
 userinclude		..\src
 #include <fshell/fsh_system_include.mmh>
-systeminclude	\epoc32\build\fshell/win32cons\generated
+systeminclude	\epoc32\build\fshell\win32cons\generated
 
 source			console.cpp win32cons.cpp keymappings.cpp
 
 library			euser.lib
 library			emulator.lib
+library			consoleextensions.lib
 
 deffile			win32cons.def
 
