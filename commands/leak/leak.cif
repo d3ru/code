@@ -52,6 +52,10 @@ Use a ChunkHeap to consume the memory rather than a straight RChunk.
 
 If specified, when an allocation fails retry using a smaller increment amount.
 
+==option bool l logging-allocator
+
+If specified, install the logging allocator before starting to leak memory. Assumes the C<--heap> option.
+
 ==copyright
 
 Copyright (c) 2007-2010 Accenture. All rights reserved.

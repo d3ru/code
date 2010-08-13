@@ -62,7 +62,7 @@ void CCmdZip::DoRunL()
 				PrintWarning(_L("Ignoring \'-r\' recurse option."));
 				}
 			}
-		TRAPL(ExpandArchiveL(), _L("Couldn't expand archive"));
+		ExpandArchiveL();
 		}
 	else
 		{
@@ -323,7 +323,8 @@ void CCmdZip::ExpandZipArchiveL()
 		{
 		Printf(_L("Opening\t\t\'%S\'\r\n"), &iArchive);
 		}
-	CZipFile* zip = CZipFile::NewL(Fs(), iArchive);
+	CZipFile* zip = NULL;
+	TRAPL(zip = CZipFile::NewL(Fs(), iArchive), _L("Couldn't create CZipFile for %S"), &iArchive);
 	CleanupStack::PushL(zip);
 	CZipFileMemberIterator* zipIterator = zip->GetMembersL();
 	CleanupStack::PushL(zipIterator);
@@ -344,10 +345,6 @@ void CCmdZip::ExpandZipArchiveL()
 //
 void CCmdZip::ExtractZipFileL(CZipFile& aZip, const CZipFileMember& aMember)
 	{
-	// prep. the stream
-	RZipFileMemberReaderStream* readStream;
-	aZip.GetInputStreamL(&aMember, readStream);
-	CleanupStack::PushL(readStream);
 	// prep. the destination file. 
 	// note if iUnzipPath is not specified, it'll stuff the extracted file in the current directory from which fzip.exe runs
 	RFile newFile;
@@ -356,9 +353,16 @@ void CCmdZip::ExtractZipFileL(CZipFile& aZip, const CZipFileMember& aMember)
 	TInt err = Fs().MkDirAll(dest);
 	if ((err != KErrNone) && (err != KErrAlreadyExists))
 		{
-		User::Leave(err);
+		LeaveIfErr(err, _L("Couldn't create directory for file %S"), &dest);
 		}
-	User::LeaveIfError(newFile.Replace(Fs(), dest, EFileShareExclusive));
+	if (aMember.Name()->Right(1) == _L("\\")) return; // It's a directory entry, nothing more to be done
+
+	// prep. the stream
+	RZipFileMemberReaderStream* readStream;
+	aZip.GetInputStreamL(&aMember, readStream);
+	CleanupStack::PushL(readStream);
+
+	LeaveIfErr(newFile.Replace(Fs(), dest, EFileShareExclusive), _L("Couldn't create file %S"), &dest);
 	CleanupClosePushL(newFile);
 	if (iVerbose)
 		{
@@ -376,8 +380,8 @@ void CCmdZip::ExtractZipFileL(CZipFile& aZip, const CZipFileMember& aMember)
 	TPtr8 ptr = data->Des();
 	do
 		{
-		User::LeaveIfError(readStream->Read(ptr, length));
-		User::LeaveIfError(newFile.Write(ptr));
+		LeaveIfErr(readStream->Read(ptr, length), _L("Error reading from zip stream"));
+		LeaveIfErr(newFile.Write(ptr), _L("Error writing to file %S"), &dest);
 		bytesRead += length;
 		if ((aMember.UncompressedSize() - bytesRead) < KDefaultZipBufferLength)
 			{

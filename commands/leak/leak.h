@@ -12,6 +12,8 @@
 
 #include <fshell/ioutils.h>
 
+class RLoggingAllocator;
+
 using namespace IoUtils;
 
 class CCmdLeak : public CCommandBase
@@ -37,9 +39,12 @@ private:
 	TUint iHeapAddr;
 	TBool iUseHeap;
 	TBool iRetry;
+	TBool iUseLoggingAllocator;
 
 	RChunk iChunk;
 	RAllocator* iChunkHeap;
+	RLoggingAllocator* iLoggingAllocator;
+	RAllocator* iAllocatorToUse;
 
 	TInt iCurrentLeak;
 	};

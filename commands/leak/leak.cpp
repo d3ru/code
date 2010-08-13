@@ -12,6 +12,9 @@
 
 #include "leak.h"
 #include <fshell/common.mmh>
+#ifdef FSHELL_QR3_SUPPORT_LOGGINGALLOCATOR
+#include <fshell/loggingallocator.h>
+#endif
 
 const TInt KMinChunkSize = 4 * 1024;
 const TInt KMaxChunkSize = 512 * 1024 * 1024;
@@ -26,6 +29,12 @@ CCommandBase* CCmdLeak::NewLC()
 
 CCmdLeak::~CCmdLeak()
 	{
+#ifdef FSHELL_QR3_SUPPORT_LOGGINGALLOCATOR
+	if (iLoggingAllocator)
+		{
+		// Hmm how do I clean up a logging allocator created with RLoggingAllocator::New()?
+		}
+#endif
 	iChunk.Close();
 	if (iChunkHeap)
 		{
@@ -67,10 +76,21 @@ void CCmdLeak::DoRunL()
 			}
 		}
 
+	if (iUseLoggingAllocator) iUseHeap = ETrue; // Using the logging allocator implies the --heap option
+
 	if (iUseHeap)
 		{
 		iChunkHeap = UserHeap::ChunkHeap(NULL, KMinChunkSize, 256*1024*1024);
 		if (!iChunkHeap) LeaveIfErr(KErrNoMemory, _L("Couldn't create chunk heap"));
+		iAllocatorToUse = iChunkHeap;
+
+#ifdef FSHELL_QR3_SUPPORT_LOGGINGALLOCATOR
+		if (iUseLoggingAllocator)
+			{
+			LeaveIfErr(RLoggingAllocator::New(0, iChunkHeap, iLoggingAllocator), _L("Couldn't create logging allocator"));
+			iAllocatorToUse = iLoggingAllocator;
+			}
+#endif
 		}
 	else
 		{
@@ -137,6 +157,11 @@ void CCmdLeak::OptionsL(RCommandOptionList& aOptions)
 
 	_LIT(KOptRetry, "retry");
 	aOptions.AppendBoolL(iRetry, KOptRetry);
+
+#ifdef FSHELL_QR3_SUPPORT_LOGGINGALLOCATOR
+	_LIT(KOptUseLoggingAllocator, "logging-allocator");
+	aOptions.AppendBoolL(iUseLoggingAllocator, KOptUseLoggingAllocator);
+#endif
 	}
 
 void CCmdLeak::ArgumentsL(RCommandArgumentList& aArguments)
@@ -153,9 +178,9 @@ EXE_BOILER_PLATE(CCmdLeak)
 TInt CCmdLeak::LeakStep(TInt aAmount)
 	{
 	TInt err = KErrNone;
-	if (iChunkHeap)
+	if (iAllocatorToUse)
 		{
-		TAny* cell = iChunkHeap->Alloc(aAmount);
+		TAny* cell = iAllocatorToUse->Alloc(aAmount);
 		if (!cell) err = KErrNoMemory;
 		}
 	else
