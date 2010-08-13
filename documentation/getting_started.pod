@@ -18,7 +18,11 @@ __END__
 
 =head1 Retreiving the FShell Source Code
 
-I<Todo - add instructions for accessing the Mercurial repository.>
+fshell is hosted on the Symbian Foundation here: http://developer.symbian.org/main/source/packages/fshell
+
+To clone the MCL repository, do:
+
+    hg clone https://developer.symbian.org/oss/MCL/sf/os/fshell/
 
 =head1 Building FShell
 
@@ -34,7 +38,7 @@ FShell is normally distributed in source code form, and so needs to be compiled 
 
 =back
 
-Each of these platforms have a separate directory with F<\fshell\build>. In some platforms there may be further separate sub-directories for specific variants of the platform. You need to identify a suitable directory (that contains a file named F<bld.inf>) from which to build from. For example to build for the Symbian^3 release you need to build from F<\fshell\build\sf\3>. Open a command prompt and C<cd> to this directory.
+Each of these platforms have a separate directory within F<\fshell\build>. For some platforms there may be further separate sub-directories for specific variants of the platform. You need to identify a suitable directory (that contains a file named F<bld.inf>) from which to build from. For example to build for the Symbian^3 release you need to build from F<\fshell\build\sf\3>. Open a command prompt and C<cd> to this directory.
 
 You also need to identify the type of binaries you want to build. Common ones are:
 
