@@ -16,6 +16,12 @@
 #include <e32std.h>
 
 
+class MConsoleScrollHandler
+	{
+public:
+	virtual void ConsoleScrolled(TInt aNumberOfLines) = 0; // Positive aNumberOfLines means scrolled off the bottom. Negative means scrolled up
+	};
+
 /**
  * This class is responsible for tracking the cursor position within the console
  * window based on the data that is written to it. The cursor position is tracked
@@ -26,9 +32,10 @@
 class TCursorTracker
 	{
 public:
-	TCursorTracker(TSize aConsoleSize);
+	TCursorTracker(TSize aConsoleSize, MConsoleScrollHandler* aScrollHander = NULL);
 	void Write(const TDesC& aDes);
 	void Write(const TDesC8& aDes);
+	void WriteChar(TChar aChar);
 	void SetCursorPosAbs(const TPoint& aPoint);
 	void SetCursorPosRel(const TPoint& aPoint);
 	void Reset();
@@ -39,11 +46,10 @@ private:
 	void CursorRight();
 	void LineFeed();
 	void CarriageReturn();
-	void WriteChar(TChar aChar);
 private:
 	const TSize iConsoleSize;
 	TPoint iCursorPos;
+	MConsoleScrollHandler* iScrollHandler;
 	};
-
 
 #endif // VTC_CURSOR_TRACKER_H

@@ -17,15 +17,15 @@
 // Constants.
 //
 
-const TInt KTabSize = 8;
+const TInt KTabSize = 4;
 
 
 //
 // TCursorTracker.
 //
 
-TCursorTracker::TCursorTracker(TSize aConsoleSize)
-	: iConsoleSize(aConsoleSize), iCursorPos(TPoint(0, 0))
+TCursorTracker::TCursorTracker(TSize aConsoleSize, MConsoleScrollHandler* aScrollHander)
+	: iConsoleSize(aConsoleSize), iCursorPos(TPoint(0, 0)), iScrollHandler(aScrollHander)
 	{
 	}
 
@@ -135,6 +135,7 @@ void TCursorTracker::CursorRight()
 		{
 		// Reached the end of the line and there's no space below - console will scroll up a line and jump to the beginning of the newly exposed line.
 		iCursorPos.iX = 0;
+		if (iScrollHandler) iScrollHandler->ConsoleScrolled(1);
 		}
 	}
 
@@ -148,6 +149,7 @@ void TCursorTracker::LineFeed()
 	else
 		{
 		iCursorPos.iX = 0;
+		if (iScrollHandler) iScrollHandler->ConsoleScrolled(1);
 		}
 	}
 
