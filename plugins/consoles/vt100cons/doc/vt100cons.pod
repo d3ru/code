@@ -16,7 +16,7 @@ __END__
 
 =head2 Introduction
 
-A Symbian console implementation (sub-class of C<CConsoleBase>) for communicating with a VT100 terminal (or, more likely, a terminal emulator such as the Windows HyperTerminal program) over a C32 hosted serial connection. This console makes it possible to run console based tools on any handset that can be connected to via a serial connection.
+A Symbian console implementation (sub-class of C<CConsoleBase>) for communicating with a VT100 terminal (or, more likely, a terminal emulator such as the Windows HyperTerminal program) over a C32 hosted serial connection. This console makes it possible to run console based tools on any handset that can be connected to via a serial connection. See the L<main consoles page|consoles> for a comparison of the various consoles.
 
 Note, the console provides no mechanism for remote clients to automatically connect and launch console tools. The launching of the required console tool must be initiated on the handset, causing F<vt100cons.dll> to be loaded. It will then attempt to establish a serial connection to the terminal that is expected to be listening on the other end of the connection.
 

@@ -16,6 +16,8 @@ __END__
 
 =head1 Getting started with FShell
 
+B< I<Note:> > This guide is in the process of being migrated to the wiki, here: http://developer.symbian.org/wiki/index.php/Fshell/Getting_Started
+
 =head1 Retreiving the FShell Source Code
 
 fshell is hosted on the Symbian Foundation here: http://developer.symbian.org/main/source/packages/fshell

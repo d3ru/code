@@ -25,6 +25,7 @@ pod ..\plugins\consoles\rcons\documentation\rcons.dll.pod          fshell\plugin
 pod ..\plugins\consoles\rcons\documentation\rcons.exe.pod          fshell\plugins\consoles\rcons.exe.html
 pod ..\plugins\consoles\rcons\documentation\rcons.pod              fshell\plugins\consoles\rcons.html
 pod ..\plugins\consoles\vt100cons\doc\vt100cons.pod                fshell\plugins\consoles\vt100cons.html
+pod ..\plugins\consoles\terminalkeyboardcons\terminalkeyboardcons.pod fshell\plugins\consoles\terminalkeyboardcons.html
 
 index fshell\plugins\networking
 pod ..\plugins\networking\tcpcsy\doc\tcpcsy.pod                    fshell\plugins\networking\tcpcsy.html

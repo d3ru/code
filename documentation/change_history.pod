@@ -14,9 +14,13 @@ __END__
 
 =head1 FShell Change History
 
-=head2 Release 000.4
+=head2 Release 001 [Not yet officially made]
 
 =over 5
+
+=item *
+
+Added L<terminal keyboard|terminalkeyboardcons> console, for platforms that support Terminal Keyboard and Trace Core.
 
 =item *
 
@@ -28,11 +32,7 @@ More build fixes. Changed the documentation builder to automatically prepend C<%
 
 =item *
 
-Added C<--codesegs> option to C<ps>.
-
-=head2 Release 000.2, 000.3
-
-Build fixes.
+Added C<--codesegs> option to L<ps|commands::ps>.
 
 =head2 Release 000.1
 
