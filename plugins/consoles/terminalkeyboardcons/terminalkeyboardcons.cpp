@@ -62,6 +62,7 @@ CTerminalKeyboardCons::CTerminalKeyboardCons()
 
 CTerminalKeyboardCons::~CTerminalKeyboardCons()
 	{
+	delete iIdleUpdateTimer;
 	CleanupUnderlyingConsole();
 	delete iWatcher;
 	iDriver.Close();
@@ -89,6 +90,8 @@ void CTerminalKeyboardCons::ConstructL(const TDesC& aTitle, const TSize& aSize)
 #ifdef SHOW_TEXTSHELL_BORDERS
 	iMungedTextBuffer.CreateL((ScreenSize().iWidth + 2) * (ScreenSize().iHeight + 2));
 #endif
+
+	iIdleUpdateTimer = CPeriodic::NewL(CActive::EPriorityLow); // Lower priority than the message watcher
 
 	TInt err = User::LoadLogicalDevice(KTcLddDriverName);
 	if (err && err != KErrAlreadyExists)
@@ -311,6 +314,25 @@ enum
 
 void CTerminalKeyboardCons::Update()
 	{
+	// Delay updates to the screen, to improve performance
+	static const TInt KDelay = 100000; // 0.1s
+	if (!iIdleUpdateTimer->IsActive())
+		{
+		// Don't reset timer if we're already running - otherwise constant typing will never show up until you stop pressing keys
+		iIdleUpdateTimer->Start(KDelay, KDelay, TCallBack(&UpdateCallback, this));
+		}
+	}
+
+TInt CTerminalKeyboardCons::UpdateCallback(TAny* aSelf)
+	{
+	static_cast<CTerminalKeyboardCons*>(aSelf)->DoUpdate();
+	return 0;
+	}
+
+void CTerminalKeyboardCons::DoUpdate()
+	{
+	iIdleUpdateTimer->Cancel(); // Stop any further updates
+
 #ifdef SHOW_TEXTSHELL_BORDERS
 	// Update munged buffer
 	const TInt contentWidth = ScreenSize().iWidth;

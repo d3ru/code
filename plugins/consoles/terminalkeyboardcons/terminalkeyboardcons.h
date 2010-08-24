@@ -50,8 +50,10 @@ private: // From MConsoleScrollHandler
 private:
 	virtual void ConstructL(const TDesC& aTitle, const TSize& aSize);
 	void Update();
+	void DoUpdate();
 	void MessageReceived(TInt aError);
 	void Transmit(const TDesC& aBuf, TInt aWidth, TInt aHeight);
+	static TInt UpdateCallback(TAny* aSelf);
 
 protected:
 	TRequestStatus* iClientStatus;
@@ -67,6 +69,7 @@ protected:
 	CMessageWatcher* iWatcher;
 	friend class CMessageWatcher;
 	TBool iBacktickModifierDown;
+	CPeriodic* iIdleUpdateTimer;
 	};
 
 #endif // TERMINALKEYBOARDCONS_H
