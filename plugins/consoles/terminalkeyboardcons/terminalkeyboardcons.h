@@ -60,7 +60,6 @@ protected:
 	TBool iGotKey;
 	TKeyCode iKeyCode;
 	TUint iKeyModifiers;
-	CConsoleBase* iUnderlyingConsole;
 	RTcDriver iDriver;
 
 	RBuf iTextBuffer;
