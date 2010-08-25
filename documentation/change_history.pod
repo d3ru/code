@@ -20,6 +20,10 @@ __END__
 
 =item *
 
+First release of fshell through the Symbian Foundation.
+
+=item *
+
 Added L<terminal keyboard|terminalkeyboardcons> console, for platforms that support Terminal Keyboard and Trace Core.
 
 =item *
@@ -33,6 +37,14 @@ More build fixes. Changed the documentation builder to automatically prepend C<%
 =item *
 
 Added C<--codesegs> option to L<ps|commands::ps>.
+
+=item *
+
+Added C<ENotifyKeypresses> and C<ECaptureCtrlC> flags to CCommandBase, so commands can get keypresses and handle ctrl-C via callbacks instead of having to implement custom active objects. As part of this extended the CCommandBase extension interface to MCommandExtensionsV2 for the new virtual functions KeyPressed(TUint aKeyCode, TUint aModifiers) and CtrlCPressed(). sudo now cleans up correctly by using ECaptureCtrlC.
+
+=head2 Release 000.2-000.5
+
+Test releases with build fixes.
 
 =head2 Release 000.1
 

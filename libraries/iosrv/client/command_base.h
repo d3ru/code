@@ -52,6 +52,20 @@ namespace IoUtils
 		};
 
 	void Panic(TCmdBasePanic aReason);
+
+	NONSHARABLE_CLASS(CKeypressWatcher) : public CActive
+		{
+	public:
+		CKeypressWatcher(IoUtils::MCommandExtensionsV2& aCmd, RIoConsoleReadHandle& aReadHandle);
+		~CKeypressWatcher();
+		void Notify();
+	private:
+		virtual void RunL();
+		virtual void DoCancel();
+	private:
+		IoUtils::MCommandExtensionsV2& iCmd;
+		RIoConsoleReadHandle& iReadHandle;
+		};
 	}
 	
 #endif //__COMMAND_BASE_H__

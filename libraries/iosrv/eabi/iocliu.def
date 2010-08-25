@@ -619,4 +619,10 @@ EXPORTS
 	_ZNK7IoUtils20MCommandExtensionsV116ExtensionVersionEv @ 618 NONAME
 	_ZTIN7IoUtils20MCommandExtensionsV1E @ 619 NONAME
 	_ZTVN7IoUtils20MCommandExtensionsV1E @ 620 NONAME
+	_ZN7IoUtils12CCommandBase7ReadKeyEv @ 621 NONAME
+	_ZN7IoUtils20MCommandExtensionsV210KeyPressedEjj @ 622 NONAME
+	_ZN7IoUtils20MCommandExtensionsV212CtrlCPressedEv @ 623 NONAME
+	_ZNK7IoUtils20MCommandExtensionsV216ExtensionVersionEv @ 624 NONAME
+	_ZTIN7IoUtils20MCommandExtensionsV2E @ 625 NONAME
+	_ZTVN7IoUtils20MCommandExtensionsV2E @ 626 NONAME
 

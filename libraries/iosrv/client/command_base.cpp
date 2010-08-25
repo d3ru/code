@@ -14,7 +14,7 @@
 #include "ioutils.h"
 #include "command_base.h"
 #include <fshell/ltkutils.h>
-
+#include <fshell/line_editor.h> // for definition of CTRL()
 using namespace IoUtils;
 
 #define RETURN_IF_ERROR(x) {TInt _err = (x); if (_err<0) return _err;}
@@ -1523,9 +1523,14 @@ EXPORT_C void CCommandBase::SetFlags(TUint aFlags)
 	TUint privateFlags = (iFlags & KPrivateFlagsMask);
 	iFlags = (aFlags & KPublicFlagsMask);
 	iFlags |= privateFlags;
+	// Make sure implied flags are set
 	if (iFlags & ECompleteOnRunL)
 		{
 		iFlags |= EManualComplete;
+		}
+	if (iFlags & ECaptureCtrlC)
+		{
+		iFlags |= ENotifyKeypresses;
 		}
 	}
 
@@ -1588,6 +1593,17 @@ void CCommandBase::RunL(const TDesC& aCommandLine)
 			UpdateHandlesL();
 			}
 
+		if (iFlags & ENotifyKeypresses)
+			{
+			__ASSERT_ALWAYS(iExtension && iExtension->ExtensionVersion() >= ECommandExtensionV2, IoUtils::Panic(EENotifyKeypressesSpecifiedWithoutExtensionBeingSet));
+			iKeypressWatcher = new(ELeave) CKeypressWatcher(*static_cast<MCommandExtensionsV2*>(iExtension), Stdin());
+			if (iFlags & ECaptureCtrlC)
+				{
+				User::LeaveIfError(Stdin().CaptureKey(CTRL('c'), 0, 0));
+				}
+			iKeypressWatcher->Notify();
+			}
+
 		TBool deleted(EFalse);
 		iDeleted = &deleted;	
 		// Note, commands that manually complete may call CCommandBase::Complete from their DoRunL, which in the case 
@@ -1626,7 +1642,7 @@ EXPORT_C CCommandBase::CCommandBase()
 	}
 
 EXPORT_C CCommandBase::CCommandBase(TUint aFlags)
-	: CActive(CActive::EPriorityStandard), iFlags(aFlags)
+	: CActive(CActive::EPriorityStandard)
 	{
 	CActiveScheduler::Add(this);
 	if (Dll::Tls() == NULL)
@@ -1635,14 +1651,15 @@ EXPORT_C CCommandBase::CCommandBase(TUint aFlags)
 		iFlags |= ETlsSet;
 		}
 
-	// Ensure EManualComplete is set if ECompleteOnRunL is.
-	SetFlags(Flags());
+	// Don't initialise iFlags directly - SetFlags checks that private flags aren't being set
+	SetFlags(aFlags);
 	}
 
 EXPORT_C CCommandBase::~CCommandBase()
 	{
 	delete iReadChangeNotifier;
 	delete iCompleter;
+	delete iKeypressWatcher;
 	iFs.Close();
 	if (iFlags & EOwnsHandles)
 		{
@@ -1779,6 +1796,15 @@ EXPORT_C void CCommandBase::ReadL(TDes& aData)
 EXPORT_C void CCommandBase::Write(const TDesC& aData)
 	{
 	iStdout.Write(aData); // Ignore error.
+	}
+
+EXPORT_C TUint CCommandBase::ReadKey()
+	{
+	// Make sure keypresswatcher doesn't get in the way (some commands do some synchronous ReadKeys followed by use of async ENotifyKeypresses callbacks)
+	if (iKeypressWatcher) iKeypressWatcher->Cancel();
+	TUint result = iStdin.ReadKey();
+	if (iKeypressWatcher) iKeypressWatcher->Notify();
+	return result;
 	}
 
 EXPORT_C void CCommandBase::Printf(TRefByValue<const TDesC> aFmt, ...)
@@ -3538,7 +3564,7 @@ void RChildProcess::DoCreateL(const TDesC& aExecutableName, const TDesC& aComman
 	// This makes them attached to the same I/O end-points (consoles, files, etc)
 	// as the passed in handles.
 	User::LeaveIfError(iStdin.Duplicate(aStdin));
-	User::LeaveIfError(iStdin.SetToForeground());
+	// iStdin.SetToForeground() moved to Run() so the child doesn't steal foreground until it actually runs
 	User::LeaveIfError(iStdout.Duplicate(aStdout));
 	User::LeaveIfError(iStderr.Duplicate(aStderr));
 
@@ -3579,6 +3605,7 @@ void RChildProcess::ProcessCreateL(const TDesC& aExecutableName, const TDesC& aC
 
 EXPORT_C void RChildProcess::Run(TRequestStatus& aStatus)
 	{
+	iStdin.SetToForeground();
 	iProcess.Logon(aStatus);
 	if (aStatus != KRequestPending)
 		{
@@ -3808,7 +3835,45 @@ void CReaderChangeNotifier::DoCancel()
 	iReadHandle.CancelNotifyChange();
 	}
 
+//
+// CKeypressWatcher
 // 
+
+CKeypressWatcher::CKeypressWatcher(IoUtils::MCommandExtensionsV2& aCmd, RIoConsoleReadHandle& aReadHandle)
+	: CActive(CActive::EPriorityStandard), iCmd(aCmd), iReadHandle(aReadHandle)
+	{
+	CActiveScheduler::Add(this);
+	}
+
+CKeypressWatcher::~CKeypressWatcher()
+	{
+	Cancel();
+	}
+
+void CKeypressWatcher::Notify()
+	{
+	iReadHandle.WaitForKey(iStatus);
+	SetActive();
+	}
+
+void CKeypressWatcher::RunL()
+	{
+	TUint code = iReadHandle.KeyCode();
+	TUint modifiers = iReadHandle.KeyModifiers();
+	Notify();
+	iCmd.KeyPressed(code, modifiers);
+	if (code == CTRL('c'))
+		{
+		iCmd.CtrlCPressed();
+		}
+	}
+
+void CKeypressWatcher::DoCancel()
+	{
+	iReadHandle.WaitForKeyCancel();
+	}
+
+//
 
 EXPORT_C TCommandExtensionVersion MCommandExtensionsV1::ExtensionVersion() const
 	{
@@ -3823,4 +3888,19 @@ EXPORT_C const TDesC* MCommandExtensionsV1::StringifyError(TInt /*aError*/) cons
 EXPORT_C void CCommandBase::SetExtension(MCommandExtensionsV1* aExtension)
 	{
 	iExtension = aExtension;
+	}
+
+EXPORT_C TCommandExtensionVersion MCommandExtensionsV2::ExtensionVersion() const
+	{
+	return ECommandExtensionV2;
+	}
+
+EXPORT_C void MCommandExtensionsV2::KeyPressed(TUint /*aKeyCode*/, TUint /*aModifiers*/)
+	{
+	// Default is to do nothing
+	}
+
+EXPORT_C void MCommandExtensionsV2::CtrlCPressed()
+	{
+	// Default is to do nothing
 	}

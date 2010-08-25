@@ -545,4 +545,8 @@ EXPORTS
 	?StringifyError@MCommandExtensionsV1@IoUtils@@UBEPBVTDesC16@@H@Z @ 544 NONAME ; class TDesC16 const * IoUtils::MCommandExtensionsV1::StringifyError(int) const
 	?ExtensionVersion@MCommandExtensionsV1@IoUtils@@UBE?AW4TCommandExtensionVersion@2@XZ @ 545 NONAME ; enum IoUtils::TCommandExtensionVersion IoUtils::MCommandExtensionsV1::ExtensionVersion(void) const
 	?SetExtension@CCommandBase@IoUtils@@IAEXPAVMCommandExtensionsV1@2@@Z @ 546 NONAME ; void IoUtils::CCommandBase::SetExtension(class IoUtils::MCommandExtensionsV1 *)
+	?CtrlCPressed@MCommandExtensionsV2@IoUtils@@UAEXXZ @ 547 NONAME ; void IoUtils::MCommandExtensionsV2::CtrlCPressed(void)
+	?ExtensionVersion@MCommandExtensionsV2@IoUtils@@UBE?AW4TCommandExtensionVersion@2@XZ @ 548 NONAME ; enum IoUtils::TCommandExtensionVersion IoUtils::MCommandExtensionsV2::ExtensionVersion(void) const
+	?KeyPressed@MCommandExtensionsV2@IoUtils@@UAEXII@Z @ 549 NONAME ; void IoUtils::MCommandExtensionsV2::KeyPressed(unsigned int, unsigned int)
+	?ReadKey@CCommandBase@IoUtils@@QAEIXZ @ 550 NONAME ; unsigned int IoUtils::CCommandBase::ReadKey(void)
 

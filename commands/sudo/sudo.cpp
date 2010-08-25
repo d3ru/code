@@ -18,7 +18,7 @@
 
 using namespace IoUtils;
 
-class CCmdSudo : public CMemoryAccessCommandBase
+class CCmdSudo : public CMemoryAccessCommandBase, public MCommandExtensionsV2
 	{
 public:
 	static CCommandBase* NewLC();
@@ -42,6 +42,10 @@ private: // From CCommandBase.
 	virtual void DoRunL();
 	virtual void ArgumentsL(RCommandArgumentList& aArguments);
 	virtual void OptionsL(RCommandOptionList& aOptions);
+	virtual void RunL();
+
+private: // From MCommandExtensionsV2
+	virtual void CtrlCPressed();
 
 private:
 	HBufC* iCmd;
@@ -68,6 +72,8 @@ private:
 	// following 2 are temporaries needed during CopyExeLC
 	TFileName iTempSrc;
 	TFileName iTempDest;
+
+	RChildProcess iChildProcess;
 	};
 
 
@@ -97,10 +103,13 @@ CCmdSudo::~CCmdSudo()
 			}
 		}
 	delete iPathsToCleanup;
+	iChildProcess.Close();
 	}
 
 CCmdSudo::CCmdSudo()
+	: CMemoryAccessCommandBase(EManualComplete | ECaptureCtrlC)
 	{
+	SetExtension(this);
 	}
 
 TCapability CapabilityFromString(const TDesC& aName)
@@ -304,25 +313,22 @@ void CCmdSudo::RunExeL()
 		}
 #endif
 
-	RChildProcess childProcess;
-	TRAPL(childProcess.CreateL(iNewPath, iArgs ? *iArgs : KNullDesC(), IoSession(), Stdin(), Stdout(), Stderr(), Env()), _L("Failed to execute %S"), &iNewPath);
+	TRAPL(iChildProcess.CreateL(iNewPath, iArgs ? *iArgs : KNullDesC(), IoSession(), Stdin(), Stdout(), Stderr(), Env()), _L("Failed to execute %S"), &iNewPath);
 	if (iKeep)
 		{
 		Printf(_L("Executing %S...\r\n"), &iNewPath);
-		CleanupStack::Pop(); // Don't delete if user asked for --keep
 		}
-	else
-		{
-		CleanupStack::PopAndDestroy(); // DeleteModifiedBinary - remove the binary before we actually start running it, so it is guaranteed cleaned up even if the user kills us with ctrl-c
-		}
+	CleanupStack::Pop(); // DeleteModifiedBinary
+
+
 	if (!iChangeBinaryOnDisk)
 		{
 		// Time to get memaccess involved
-		TRAPD(err, FixupExeInMemoryL(childProcess.Process()));
+		TRAPD(err, FixupExeInMemoryL(iChildProcess.Process()));
 		if (err)
 			{
-			childProcess.Process().Kill(err);
-			childProcess.Close();
+			iChildProcess.Process().Kill(err);
+			iChildProcess.Close();
 			User::Leave(err);
 			}
 		}
@@ -330,15 +336,12 @@ void CCmdSudo::RunExeL()
 	if (iWait)
 		{
 		Printf(_L("Process is created but not yet resumed. Press a key to continue...\r\n"));
-		Stdin().ReadKey();
+		ReadKey();
+		Printf(_L("Resuming process...\r\n"));
 		}
 
-	TRequestStatus stat;
-	childProcess.Run(stat);
-	User::WaitForRequest(stat);
-	TInt err = stat.Int();
-	childProcess.Close();
-	User::LeaveIfError(err); // This gets translated to our exe's return code I hope
+	iChildProcess.Run(iStatus);
+	SetActive();
 	}
 
 const TDesC& CCmdSudo::Name() const
@@ -534,4 +537,20 @@ void CCmdSudo::FixupCoreExeLC()
 #else
 	LeaveIfErr(KErrNotSupported, _L("Can't fixup an exe in Core image without memoryaccess"));
 #endif
+	}
+
+void CCmdSudo::CtrlCPressed()
+	{
+	Printf(_L("Ctrl-C pressed, killing %S and cleaning up.\r\n"), &iNewPath);
+	SetErrorReported(ETrue);
+	iChildProcess.Process().Kill(KErrAbort);
+	}
+
+void CCmdSudo::RunL()
+	{
+	if (!iKeep)
+		{
+		DeleteModifiedBinary();
+		}
+	Complete(iStatus.Int());
 	}
