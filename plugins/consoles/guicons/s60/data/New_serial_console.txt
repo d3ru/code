@@ -1,1 +1,0 @@
-fshell --console vt100cons --console-title pdd=euart1,ldd=ecomm,csy=ecuart,rate=115200,port=comm::0

@@ -19,10 +19,8 @@ FSHELL_ROM_INCLUDE(s60_guicons.iby)
 
 ..\data\guicons.idf	z:\resource\guicons.idf
 
-..\data\New_BT_console.txt z:\system\console\commands\100-New_BT_console.txt
-..\data\New_TCP_console.txt z:\system\console\commands\101-New_TCP_console.txt
-..\data\New_serial_console.txt z:\system\console\commands\102-New_serial_console.txt
-..\data\New_busdevcomm_console.txt z:\system\console\commands\103-New_busdevcomm_console.txt
+..\data\comm.script.txt z:\system\console\commands\100-comm.script.txt
+..\data\Terminal_Keyboard.txt z:\system\console\commands\101-Terminal_Keyboard.txt
 
 PRJ_MMPFILES
 s60_guicons.mmp

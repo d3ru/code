@@ -1,1 +1,0 @@
-fshell --console vt100busdevcons --console-title pdd=euart1,ldd=ecomm,rate=115200,port=0

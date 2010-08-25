@@ -1,1 +1,0 @@
-fshell --console vt100tcpcons --console-title port=8080

@@ -23,9 +23,9 @@ FSHELL_DATA_FILE(ZRESOURCE\guicons.idf, resource\guicons.idf)
 FSHELL_DATA_FILE(ZRESOURCE\guiconsbg.png, \resource\guiconsbg.png)
 #endif
 
-FSHELL_DATA_FILE(ZSYSTEM\console\commands\100-New_BT_console.txt, system\console\commands\100-New_BT_console.txt)
-FSHELL_DATA_FILE(ZSYSTEM\console\commands\101-New_TCP_console.txt, system\console\commands\101-New_TCP_console.txt)
-FSHELL_DATA_FILE(ZSYSTEM\console\commands\102-New_serial_console.txt, system\console\commands\102-New_serial_console.txt)
-FSHELL_DATA_FILE(ZSYSTEM\console\commands\103-New_busdevcomm_console.txt, system\console\commands\103-New_busdevcomm_console.txt)
+FSHELL_DATA_FILE(ZSYSTEM\console\commands\100-comm.script.txt, system\console\commands\100-comm.script.txt)
+#ifdef FSHELL_TRACECORE_SUPPORT
+FSHELL_DATA_FILE(ZSYSTEM\console\commands\101-Terminal_Keyboard.txt, system\console\commands\101-Terminal_Keyboard.txt)
+#endif
 
 #endif //__S60_GUICONS_IBY__
