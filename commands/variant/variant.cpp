@@ -72,6 +72,19 @@ const TInt KMachineIdVariantCount = sizeof(KMachineIdVariants) / sizeof(TVariant
 
 void CCmdVariant::DoRunL()
 	{
+	if (iList)
+		{
+		Printf(_L("Supported variants: "));
+		for (TInt i = 0; i < KMachineIdVariantCount; i++)
+			{
+			Printf(_L("%S, "), &KMachineIdVariants[i].iName);
+			}
+		// Finally add the ones which don't appear in KMachineIdVariants
+		Write(_L("wins, target\r\n"));
+		Complete(KErrNone);
+		return;
+		}
+
 	if (iMachineId.Count() == 0 && iVariant.Count() == 0)
 		{
 		LeaveIfErr(KErrArgument, _L("You must specify at least one <variantname> argument or --uid option"));
@@ -137,6 +150,8 @@ void CCmdVariant::OptionsL(RCommandOptionList& aOptions)
 	aOptions.AppendUintL(iMachineId, KCmdOptUid);
 	_LIT(KOptVerbose, "verbose");
 	aOptions.AppendBoolL(iVerbose, KOptVerbose);
+	_LIT(KOptList, "list");
+	aOptions.AppendBoolL(iList, KOptList);
 	}
 
 //

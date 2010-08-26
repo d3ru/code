@@ -32,4 +32,5 @@ private:
 	RArray<TUint> iMachineId;
 	RPointerArray<HBufC> iVariant;
 	TBool iVerbose;
+	TBool iList;
 	};

@@ -36,6 +36,10 @@ Test whether the device matches any of the specified machine UIDs.
 
 Display verbose output.
 
+==option bool l list
+
+List the variant names that this command understands. Note this is all of them, not just the ones that match the current platform.
+
 ==argument string variantname optional multiple
 
 A symbolic name for the hardware variant may be specified instead of having to know the machine uid. This maximises compatibility with platforms that provide a custom variant.exe and/or that need more than just the machine UID to determine the variant. Check the platform-specific documentation for what variant string is used to identify that platform's hardware. If multiple variant names are specified KErrNone is returned if any one of them matches.
