@@ -100,13 +100,14 @@ enum TCmdBasePanic
 	EEnumValueListAlreadySet = 50,
 	EEnumDescriptionListAlreadySet = 51,
 	EIncompleteArgumentOrOptionInitialization = 52,
+	EENotifyKeypressesSpecifiedWithoutExtensionBeingSet = 53,
 	};
 
 class CCommandBase;
 class CReaderChangeNotifier;
 class CCommandCompleter;
 class MLineReader;
-
+class CKeypressWatcher;
 
 class TOverflowTruncate : public TDes16Overflow
 	{
@@ -641,6 +642,7 @@ private:
 enum TCommandExtensionVersion
 	{
 	ECommandExtensionV1 = 1,
+	ECommandExtensionV2 = 2,
 	};
 
 class MCommandExtensionsV1
@@ -652,6 +654,17 @@ public:
 	IMPORT_C virtual const TDesC* StringifyError(TInt aError) const;
 	};
 
+class MCommandExtensionsV2 : public MCommandExtensionsV1
+	{
+public:
+	IMPORT_C virtual TCommandExtensionVersion ExtensionVersion() const; // Don't override this yourself!
+
+	IMPORT_C virtual void KeyPressed(TUint aKeyCode, TUint aModifiers);
+
+	// Override this and set the ECaptureCtrlC flag to get a callback for custom cleanup when ctrl-c is pressed
+	IMPORT_C virtual void CtrlCPressed();
+	};
+
 class CCommandBase : public CActive
 	{
 public:
@@ -661,8 +674,9 @@ public:
 		ESharableIoSession		= 0x00000002,
 		EReportAllErrors		= 0x00000004,
 		ENotifyStdinChanges		= 0x00000008,
-		//EDeprecated			= 0x00000010,
-		ECompleteOnRunL			= 0x00000020,
+		ENotifyKeypresses		= 0x00000010,
+		ECompleteOnRunL			= 0x00000020, // Implies EManualComplete
+		ECaptureCtrlC			= 0x00000040, // Implies ENotifyKeypresses
 		};
 public:
 	IMPORT_C ~CCommandBase();
@@ -688,6 +702,7 @@ public:
 	IMPORT_C CEnvironment& Env();
 	IMPORT_C const CEnvironment& Env() const;
 	IMPORT_C void ReadL(TDes& aData);
+	IMPORT_C TUint ReadKey();
 	IMPORT_C void Write(const TDesC& aData);
 	IMPORT_C void Printf(TRefByValue<const TDesC> aFmt, ...);
 	IMPORT_C void Printf(TRefByValue<const TDesC8> aFmt, ...);
@@ -808,10 +823,10 @@ private:
 	TInt iCompletionReason;
 	CCommandInfoFile* iCif;
 	MCommandExtensionsV1* iExtension;
+	CKeypressWatcher* iKeypressWatcher;
 	void* iSpare1;
 	void* iSpare2;
 	void* iSpare3;
-	void* iSpare4;
 	};
 
 
