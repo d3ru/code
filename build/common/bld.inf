@@ -45,6 +45,8 @@ FSHELL_ROM_INCLUDE2(common.mmh, fshell\common.mmh)
 ..\..\tools\createsrc		\epoc32\tools\createsrc
 ..\..\tools\createsrc.bat	\epoc32\tools\createsrc.bat
 ..\..\tools\exportall		\epoc32\tools\exportall
+..\..\tools\baserom			\epoc32\tools\baserom
+..\..\tools\baserom.bat		\epoc32\tools\baserom.bat
 
 PRJ_MMPFILES
 

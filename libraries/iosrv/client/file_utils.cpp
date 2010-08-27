@@ -511,3 +511,22 @@ EXPORT_C void TFileName2::FindFileL(RFs& aFs)
 	User::LeaveIfError(FindFile(aFs));
 	}
 
+EXPORT_C void TFileName2::Normalize(RFs& aFs)
+	{
+	// Change this so that the case of each component matches what the file system reckons. ie C:\SYS\Bin would be changed to c:\sys\bin
+	ASSERT(IsAbsolute());
+	TInt err = KErrNone;
+	TEntry entry;
+	TParse parse;
+	parse.Set(*this, NULL, NULL);
+
+	while (!err)
+		{
+		err = aFs.Entry(parse.FullName(), entry);
+		if (!err) err = parse.PopDir();
+		if (!err)
+			{
+			Replace(parse.FullName().Length(), entry.iName.Length(), entry.iName);
+			}
+		}
+	}

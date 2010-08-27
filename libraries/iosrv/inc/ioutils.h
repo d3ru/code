@@ -186,6 +186,7 @@ public:
 	IMPORT_C void SetIsDirectoryL(); // Ensure the descriptor ends in a slash
 	IMPORT_C TInt FindFile(RFs& aFs);
 	IMPORT_C void FindFileL(RFs& aFs);
+	IMPORT_C void Normalize(RFs& aFs);
 private:
 	void CheckSpaceL(TInt aLengthToAdd) const;
 private:

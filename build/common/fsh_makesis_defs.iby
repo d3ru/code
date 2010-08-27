@@ -25,6 +25,7 @@
 #define ABI_DIR \epoc32\release\ ## ABI
 #define ABI_FOR(file) ABI_DIR ## \file
 
+#define DATAZ_ \epoc32\data\z
 #define ZPRIVATE \epoc32\data\z\private
 #define ZSYSTEM \epoc32\data\z\system
 #define ZRESOURCE \epoc32\data\z\resource
@@ -39,6 +40,7 @@
 #define FSHELL_DEBUG_EXECUTABLE_FILE(fileName) FSHELL_EXECUTABLE_FILE_ABI(fileName, ABI_FOR(udeb\ ## fileName))
 #define FSHELL_RENAMED_EXECUTABLE_FILE(fileNameFrom, fileNameTo) FSHELL_EXECUTABLE_FILE_ABI(fileNameTo, ABI_FOR(urel\ ## fileNameFrom))
 #define FSHELL_RENAMED_DEBUG_EXECUTABLE_FILE(fileNameFrom, fileNameTo) FSHELL_EXECUTABLE_FILE_ABI(fileNameTo, ABI_FOR(udeb\ ## fileNameFrom))
+#define FSHELL_EXECUTABLE_AS_DATA(fileNameFrom, fileNameTo) FSHELL_RENAMED_EXECUTABLE_FILE(fileNameFrom, fileNameTo)
 #define FSHELL_KERNEL_EXTENSION(fileName) FSHELL_EXECUTABLE_FILE(fileName)
 #define FSHELL_DEBUG_KERNEL_EXTENSION(fileName) FSHELL_DEBUG_EXECUTABLE_FILE(fileName)
 #define FSHELL_DEVICE_DRIVER(fileName) FSHELL_EXECUTABLE_FILE(fileName)

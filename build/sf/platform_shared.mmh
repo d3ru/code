@@ -29,7 +29,7 @@
 #define FSHELL_CORE_SUPPORT_SERIAL_ICON "port=COMM::1, rate=115200"
 #endif
 
-#define FSHELL_NO_SAMPLINGPROFILER_SUPPORT
+//#define FSHELL_NO_SAMPLINGPROFILER_SUPPORT
 #define FSHELL_NO_EGL_SUPPORT // The lib exists but not the dll itself...
 #define FSHELL_NO_OPENVG_SUPPORT // ditto
 

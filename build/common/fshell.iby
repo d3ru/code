@@ -43,5 +43,6 @@
 #include <guicons.iby>
 #include <defcons.iby>
 #include <consoleproxy.iby>
+FSHELL_EXECUTABLE_FILE(consoleextensions.dll) // TODO move this to the new fshell_consoles.iby
 
 #endif // FSHELL_IBY

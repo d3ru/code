@@ -1,4 +1,4 @@
-// bld_shared.inf
+// bld.inf
 // 
 // Copyright (c) 2010 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
@@ -9,23 +9,16 @@
 // Initial Contributors:
 // Accenture - Initial contribution
 //
+
+// The macroing here is a little messy to get things included in the right order...
+#define FSHELL_PLATFORM_SHARED_MMH
 #include "platform.mmh"
-#include "../common/common.mmh"
-
-PRJ_PLATFORMS
-WINSCW
-ARMV5
-
-#include "../common/bld.inf"
+#undef FSHELL_PLATFORM_SHARED_MMH
+#include "../platform_shared.mmh"
+#define PLATFORM_IBY_EXPORTED
+#include "../bld_shared.inf"
 
 PRJ_EXPORTS
-.\platform_shared.mmh       \epoc32\include\fshell\platform_shared.mmh
-FSHELL_ROM_INCLUDE2(platform_shared.mmh, fshell\platform_shared.mmh)
-
-#ifndef PLATFORM_IBY_EXPORTED
+.\platform.mmh       \epoc32\include\fshell\platform.mmh
+FSHELL_ROM_INCLUDE2(platform.mmh, fshell\platform.mmh)
 FSHELL_ROM_INCLUDE(fshell_platform.iby)
-#endif
-
-PRJ_MMPFILES
-gnumakefile    ..\common\fsh_buildsis.mk
-

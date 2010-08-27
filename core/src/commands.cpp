@@ -356,6 +356,7 @@ void CCmdCd::DoRunL()
 		}
 	else
 		{
+		iDir.Normalize(FsL());
 		LeaveIfFileNotFound(iDir);
 		if (!iDir.IsDirL(FsL()))
 			{

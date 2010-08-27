@@ -549,4 +549,5 @@ EXPORTS
 	?ExtensionVersion@MCommandExtensionsV2@IoUtils@@UBE?AW4TCommandExtensionVersion@2@XZ @ 548 NONAME ; enum IoUtils::TCommandExtensionVersion IoUtils::MCommandExtensionsV2::ExtensionVersion(void) const
 	?KeyPressed@MCommandExtensionsV2@IoUtils@@UAEXII@Z @ 549 NONAME ; void IoUtils::MCommandExtensionsV2::KeyPressed(unsigned int, unsigned int)
 	?ReadKey@CCommandBase@IoUtils@@QAEIXZ @ 550 NONAME ; unsigned int IoUtils::CCommandBase::ReadKey(void)
+	?Normalize@TFileName2@IoUtils@@QAEXAAVRFs@@@Z @ 551 NONAME ; void IoUtils::TFileName2::Normalize(class RFs &)
 

@@ -389,6 +389,45 @@ void CShell::ConstructL()
 	// Possibly this isn't the best place to put it...
 	RMemoryAccess::LoadDriver();
 #endif
+
+#ifdef FSHELL_CAP_ALL // If we don't have all caps we can't hack around with sys\bin directory
+	// See if we were built/installed with FSHELL_REPLACE_ECONS and if so, do just that.
+	// A bit inefficient we do it every time, but can't see a better way
+	// The benefit of doing it like this is that it doesn't require us to remove other occurences of econs.dll (like econseik.dll) from the rombuild
+	RLibrary iocons;
+	TInt err = iocons.Load(_L("iocons.dll"));
+	if (err == KErrNone)
+		{
+		// We don't include iocons.dll unless FSHELL_REPLACE_ECONS was specified at buildrom time
+		CleanupClosePushL(iocons);
+		RFs fs;
+		CleanupClosePushL(fs);
+		User::LeaveIfError(fs.Connect());
+		_LIT(KPath, "%c:\\sys\\bin\\econs.dll");
+		TBuf<32> econsPath;
+		TChar systemDrive = 'c';
+		fs.DriveToChar(fs.GetSystemDrive(), systemDrive);
+		econsPath.Format(KPath, TUint(systemDrive));
+		TEntry ioconsEntry;
+		err = fs.Entry(iocons.FileName(), ioconsEntry);
+		if (err == KErrNone)
+			{
+			TEntry econsEntry;
+			if (fs.Entry(econsPath, econsEntry) == KErrNone && econsEntry.iSize == ioconsEntry.iSize)
+				{
+				// Then we've already copied iocons.dll to econs.dll, don't do it again
+				}
+			else
+				{
+				CFileMan* fm = CFileMan::NewL(fs);
+				fm->Copy(iocons.FileName(), econsPath, CFileMan::ERecurse | CFileMan::EOverWrite);
+				// Ignore the error - if it fails it shouldn't prevent fshell starting up
+				delete fm;
+				}
+			}
+		CleanupStack::PopAndDestroy(2, &iocons); // fs, iocons
+		}
+#endif
 	}
 
 void CShell::PrintPrompt()

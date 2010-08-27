@@ -86,6 +86,8 @@ source          version.cpp
 #define PLAT platform_ARM4
 #elif defined(MARM_ARMV5)
 #define PLAT platform_ARMV5
+#else
+#error "Platform not understood in fshell.mmp!"
 #endif
 
 #ifdef SBSV2
