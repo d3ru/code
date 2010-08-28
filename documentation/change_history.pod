@@ -46,6 +46,8 @@ Added C<ENotifyKeypresses> and C<ECaptureCtrlC> flags to CCommandBase, so comman
 
 fshell's current working directory is now normalised (via new TFileName2::Normalize function) so that the case matches what's on the filesystem).
 
+=back
+
 =head2 Release 000.2-000.5
 
 Test releases with build fixes.
