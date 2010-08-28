@@ -1,1 +1,1 @@
-fshell autostart
+start fshell autostart
