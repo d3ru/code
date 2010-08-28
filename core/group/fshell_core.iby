@@ -170,19 +170,16 @@ FSHELL_COMMAND_INFO_FILE(fshell,reboot.cif)
 #endif
 
 #ifdef FSHELL_REPLACE_ECONS
-//FSHELL_RENAMED_EXECUTABLE_FILE(iocons.dll, econs.dll)
-// New method that doesn't involve removing other occurences of econs.dll from your IBYs. See TODO
-FSHELL_EXECUTABLE_AS_DATA(iocons.dll, iocons.dll)
+FSHELL_EXECUTABLE_AS_DATA(iocons.dll,iocons.dll)
 
 #ifdef FSHELL_USE_BLUETOOTH_CONSOLE
-FSHELL_DATA_FILE(ZSYSTEM\console\iosrv.ini.bluetooth, system\console\iosrv.ini)
+FSHELL_DATA_FILE(ZSYSTEM\console\iosrv.ini.bluetooth,system\console\iosrv.ini)
 #else
-//TomS: I don't think this should be here any more - the VT100 consoles don't need it and I get by quite happily without it
-//FSHELL_DATA_FILE(ZSYSTEM\console\iosrv.ini.econs_fb, system\console\iosrv.ini)
+FSHELL_DATA_FILE(ZSYSTEM\console\iosrv.ini.econs_fb,system\console\iosrv.ini)
 #ifdef FSHELL_WSERV_SUPPORT
-FSHELL_RENAMED_EXECUTABLE_FILE(econseik.dll, econs_fb.dll)
+FSHELL_RENAMED_EXECUTABLE_FILE(econseik.dll,econs_fb.dll)
 #else
-FSHELL_RENAMED_EXECUTABLE_FILE(econs.dll, econs_fb.dll)
+FSHELL_RENAMED_EXECUTABLE_FILE(econs.dll,econs_fb.dll)
 #endif
 #endif // FSHELL_USE_BLUETOOTH_CONSOLE
 

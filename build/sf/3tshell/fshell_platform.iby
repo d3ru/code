@@ -21,6 +21,8 @@ HASH{"fshell (SF)"},(FSHELL_UID_SIS),FSHELL_VERSION,0,FSHELL_TIMESTAMP,TYPE=SA
 
 #else
 
+#define FSHELL_REPLACE_ECONS
+
 // The minimum that fshell requires to rombuild successfully
 
 // Don't ask me...
