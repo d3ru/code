@@ -11,6 +11,8 @@
 # Accenture - Initial contribution
 #
 
+variant wins && error -5 "comm.script is not supported on the emulator"
+
 # NaviEngine, port next to VGA
 variant naviengine && export ARGS "--console vt100busdevcons --console-title pdd=euart1,ldd=ecomm,port=1,rate=115200"
 
@@ -30,6 +32,11 @@ variant opp-mid-size && export ARGS "--console vt100busdevcons --console-title p
 variant qemu && export ARGS "--console vt100busdevcons --console-title pdd=eserial,ldd=ecomm,rate=115200,port=1"
 
 # Add new variants here
+
+
+# Only try terminal keyboard if there hasn't been a better match for the hardware (and tracecore is supported)
+# Therefore, this rule should stay near the bottom of the file
+var ARGS not-defined && variant tracecore-support && export ARGS "--console terminalkeyboardcons --console-size 120,40" 
 
 # And finally, start fshell with the given configuration
 var ARGS defined || error -5 "Variant not recognised, can't open serial connection"

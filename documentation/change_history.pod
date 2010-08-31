@@ -24,7 +24,7 @@ First release of fshell through the Symbian Foundation.
 
 =item *
 
-Added L<terminal keyboard|terminalkeyboardcons> console, for platforms that support Terminal Keyboard and Trace Core.
+Added L<terminal keyboard|terminalkeyboardcons> console, for platforms that support Terminal Keyboard and Trace Core. On such platforms comm.script (and thus -DFSHELL_AUTOSTART) will use it if there is no better match for the hardware platform.
 
 =item *
 

@@ -31,12 +31,20 @@ EXPORT_C TInt LtkUtils::RProxyAllocatorHelper::Open(RMemoryAccess& aMem, TUint a
 #ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	TUint8* allocatorAddress;
 	TInt err = iMemoryAccess->GetAllocatorAddress(iThreadId, allocatorAddress);
-	if (!err)
+	if (err == KErrNone)
 		{
-		iAllocatorAddress = (TLinAddr)allocatorAddress;
-		TInt udeb = EuserIsUdeb();
-		if (udeb < 0) return udeb; // error
-		err = IdentifyAllocatorType(udeb);
+		if (allocatorAddress == NULL)
+			{
+			// If the thread has not yet been resumed it's valid for it not to have an allocator yet
+			err = KErrNotReady;
+			}
+		else
+			{
+			iAllocatorAddress = (TLinAddr)allocatorAddress;
+			TInt udeb = EuserIsUdeb();
+			if (udeb < 0) return udeb; // error
+			err = IdentifyAllocatorType(udeb);
+			}
 		}
 	return err;
 #else

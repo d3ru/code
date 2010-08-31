@@ -12,6 +12,7 @@
 
 #include <hal.h>
 #include "variant.h"
+#include <fshell/common.mmh>
 #include <fshell/descriptorutils.h>
 
 //
@@ -71,27 +72,52 @@ const TVariant KMachineIdVariants[] = {
 	};
 const TInt KMachineIdVariantCount = sizeof(KMachineIdVariants) / sizeof(TVariant);
 
+// This is a list of things configured in or out at compile time based on the platform.mmh macros and similar
+const LtkUtils::SLitC KOtherSupportedVariants[] =
+	{
+#ifdef __WINS__
+	DESC("wins"),
+#else
+	DESC("target"),
+#endif
+#ifdef FSHELL_TRACECORE_SUPPORT
+	DESC("tracecore-support"),
+#endif
+	};
+const TInt KOtherSupportedVariantsCount = sizeof(KOtherSupportedVariants) / sizeof(LtkUtils::SLitC);
+
 void CCmdVariant::DoRunL()
 	{
-	if (iList)
+	TInt localMachineUid = GetMachineUidL();
+
+	if (iMachineId.Count() == 0 && iVariant.Count() == 0)
 		{
-		Printf(_L("Supported variants: "));
+		Printf(_L("Variant names understood by this command: "));
 		for (TInt i = 0; i < KMachineIdVariantCount; i++)
 			{
 			Printf(_L("%S, "), &KMachineIdVariants[i].iName);
 			}
-		// Finally add the ones which don't appear in KMachineIdVariants
-		Write(_L("wins, target\r\n"));
+		// Finally add the ones which can appear in KOtherSupportedVariants
+		Printf(_L("wins, target, tracecore-support\r\n"));
+
+		Printf(_L("Variant names supported by this device: "));
+		for (TInt i = 0; i < KMachineIdVariantCount; i++)
+			{
+			if (localMachineUid == KMachineIdVariants[i].iUid)
+				{
+				Printf(_L("%S, "), &KMachineIdVariants[i].iName);
+				}
+			}
+		for (TInt i = 0; i < KOtherSupportedVariantsCount; i++)
+			{
+			if (i > 0) Printf(_L(", "));
+			Printf(KOtherSupportedVariants[i]());
+			}
+		Printf(_L("\r\n"));
 		Complete(KErrNone);
 		return;
 		}
 
-	if (iMachineId.Count() == 0 && iVariant.Count() == 0)
-		{
-		LeaveIfErr(KErrArgument, _L("You must specify at least one <variantname> argument or --uid option"));
-		}
-
-	TInt localMachineUid = GetMachineUidL();
 	TBool match = EFalse;
 	if (iMachineId.Count())
 		{
@@ -116,11 +142,14 @@ void CCmdVariant::DoRunL()
 					match = ETrue;
 					}
 				}
-#ifdef __WINS__
-			if (iVariant[i]->CompareF(_L("wins")) == 0) match = ETrue;
-#else
-			if (iVariant[i]->CompareF(_L("target")) == 0) match = ETrue;
-#endif
+			
+			for (TInt j = 0; match == EFalse && j < KOtherSupportedVariantsCount; j++)
+				{
+				if (iVariant[i]->CompareF(KOtherSupportedVariants[j]) == 0)
+					{
+					match = ETrue;
+					}
+				}
 			}
 		}
 

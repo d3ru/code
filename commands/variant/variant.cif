@@ -20,13 +20,15 @@ Determines the hardware variant and whether or not that matches the variant spec
 
 If the device matches the given command line options, KErrNone is returned. If not, KErrNotSupported is returned. Note that the command will not print any error message in the case of the variant not being supported, so that it doesn't make script output untidy. If an error message is required, use the C<--verbose> option.
 
-In addition there are two special variants understood by all implementations of this command: C<wins> and C<target> for WINS[CW] emulator and non-emulator platforms respectively.
+In addition there are some other special variant names supported, that are derived at compile time from the platform.mmh macros and similar: run the tool with no arguments to see the full list.
 
 Example usage:
 
     variant h4 && do-something-h4-specific
     variant wins && do-something-emulator-specific
     variant h4 h6 && do-something-for-h4-and-h6
+
+If no arguments are specified, all the supported and understood variants are listed.
 
 ==option uint u uid multiple
 
@@ -38,7 +40,7 @@ Display verbose output.
 
 ==option bool l list
 
-List the variant names that this command understands. Note this is all of them, not just the ones that match the current platform.
+Has no effect, kept for compatability.
 
 ==argument string variantname optional multiple
 
