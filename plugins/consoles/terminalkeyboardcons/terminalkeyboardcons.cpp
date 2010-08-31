@@ -100,13 +100,14 @@ void CTerminalKeyboardCons::ConstructL(const TDesC& aTitle, const TSize& aSize)
 		User::Leave(err);
 		}
 
-	// Idiotic driver only accepts connections from processes with nokia vid - like that will stop us
+	// Annoying driver only accepts connections from processes with nokia vid - like that will stop us
 	TUint originalVid = RProcess().VendorId();
 	RMemoryAccess memAccess;
 	User::LeaveIfError(memAccess.Open());
 	TProcessProperties props;
 	props.iVid = 0x101FB657;
-	RProcess me; me.Open(RProcess().Id());
+	RProcess me;
+	User::LeaveIfError(me.Open(RProcess().Id()));
 	memAccess.SetProcessProperties(me, props);
 
 	err = iDriver.Open();
