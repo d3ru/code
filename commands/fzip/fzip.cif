@@ -38,11 +38,11 @@ The directory to extract files into. Must be used in conjunction with '--unzip'.
 
 ==option bool r recurse
 
-Include sub-directories and any files contained therein when archiving.  Must be used in conjunction with '--unzip'.
+Include sub-directories and any files contained therein when archiving.
 
 ==option filename f file multiple
 
-A file to archive. Only applicable when creating a new archive.
+A file or directory to archive. Only applicable when creating a new archive. If a directory is specified then it and any files contained immediately within that directory are archived. Use --recurse to archive all sub-directories and files within the directory. 
 
 ==option enum t compression-type
 
