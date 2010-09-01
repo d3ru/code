@@ -3428,16 +3428,19 @@ void CCmdVar::DoRunL()
 			break;
 		case EAdd:
 		case ESubtract:
+		case EMultiply:
 			{
-			if (iArg == NULL) LeaveIfErr(KErrArgument, _L("Argument must be specified for add and subtract operations"));
+			if (iArg == NULL) LeaveIfErr(KErrArgument, _L("Argument must be specified for add, subtract and multiply operations"));
 			TLex lex(*iArg);
 			TInt operand;
 			TInt err = lex.Val(operand);
 			LeaveIfErr(err, _L("Couldn't parse an integer from argument '%S'"), iArg);
-			if (iOperation == ESubtract) operand = -operand;
-			TInt current = 0;
-			TRAP_IGNORE(current = env.GetAsIntL(*iVar1)); // If it doesn't yet exist or isn't an int, we'll treat it as if it was zero
-			env.SetL(*iVar1, current + operand);
+			TInt value = 0;
+			TRAP_IGNORE(value = env.GetAsIntL(*iVar1)); // If it doesn't yet exist or isn't an int, we'll treat it as if it was zero
+			if (iOperation == ESubtract) value = value - operand;
+			else if (iOperation == EMultiply) value = value * operand;
+			else value = value + operand;
+			env.SetL(*iVar1, value);
 			break;
 			}
 		default:

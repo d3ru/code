@@ -68,6 +68,7 @@ private:
 	HBufC* iStringVal;
 	TInt iIntVal;
 	TBool iForce;
+	TBool iRaw;
 
 	TBool iNotify;
 	TBool iDefine;
@@ -342,15 +343,29 @@ void CCmdPubsub::PrintKey(TUint aCategory, TUint aKey, TBool aFull)
 		switch (type)
 			{
 			case EInt:
-				Printf(_L("0x%08x 0x%08x TInt: %d (0x%x)\r\n"), aCategory, aKey, valInt, valInt);
+				if (iRaw)
+					{
+					Printf(_L("%d"), valInt);
+					}
+				else
+					{
+					Printf(_L("0x%08x 0x%08x TInt: %d (0x%x)\r\n"), aCategory, aKey, valInt, valInt);
+					}
 				break;
 			case EDes:
 				{
-				TPtrC8 des(valDes);
-				if (!aFull) des.Set(valDes.Left(32)); // Don't print the whole thing, only 2 lines max
-				Printf(_L("0x%08x 0x%08x TDesC8 hex dump:\r\n"), aCategory, aKey);
-				LtkUtils::HexDumpToOutput(des, Stdout());
-				if (des.Length() < valDes.Length()) Write(_L("...\r\n"));
+				if (iRaw)
+					{
+					Printf(_L8("%S"), &valDes);
+					}
+				else
+					{
+					TPtrC8 des(valDes);
+					if (!aFull) des.Set(valDes.Left(32)); // Don't print the whole thing, only 2 lines max
+					Printf(_L("0x%08x 0x%08x TDesC8 hex dump:\r\n"), aCategory, aKey);
+					LtkUtils::HexDumpToOutput(des, Stdout());
+					if (des.Length() < valDes.Length()) Write(_L("...\r\n"));
+					}
 				break;
 				}
 			default:
@@ -376,6 +391,7 @@ void CCmdPubsub::OptionsL(RCommandOptionList& aOptions)
 #ifdef FSHELL_TRACE_SUPPORT
 	aOptions.AppendBoolL(iUseBtrace, _L("btrace"));
 #endif
+	aOptions.AppendBoolL(iRaw, _L("raw"));
 	//aOptions.AppendStringL(iStringVal, '8', _L("set-data"), _L("Sets the specified key to this 8-bit value"));
 	//aOptions.AppendBoolL(iDelete, 'l', _L("delete"), _L("Deletes the specified property"));
 	}

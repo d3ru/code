@@ -154,6 +154,11 @@ export A aaa
 #TODO with $A defined this no longer works - is this reasonable? I'm guessing the string is expanded left-to-right.
 #echo $A$INNER | export -s RESULT # I'd like this to expand to $ANEST then to "correct" but it expands to aaaNEST
 
+# Check what characters are allowed in an environment variable name - I'm assuming |&$^#;"' aren't a good idea
+export AWKWARD-!£%*()_+=/\[]{}:@ "really awkward thing"
+echo -n "Evil $AWKWARD-!£%*()_+=/\[]{}:@." | export -s RESULT
+var RESULT == "Evil really awkward thing." || $Error
+
 # Test that errors reported from scripts are reported with correct line numbers
 export EXPECTED_ERR "Error: Aborted ^"$SCRIPT_PATHprinterror.script^" at line 17 : KErrNotFound (-1)^r^n"
 

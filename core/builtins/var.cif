@@ -64,6 +64,10 @@ Assume that the specified environment variable holds an integer, and adds the va
 
 Subtracts the given value from the environment variable. Semantics as per add.
 
+==enum-value multiply
+
+Multiply the specified environment variable by the given value.
+
 ==argument string argument optional
 
 The argument to the operation.

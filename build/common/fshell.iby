@@ -44,6 +44,9 @@
 #include <defcons.iby>
 #include <consoleproxy.iby>
 FSHELL_EXECUTABLE_FILE(consoleextensions.dll) // TODO move this to the new fshell_consoles.iby
+
+#ifdef FSHELL_TRACECORE_SUPPORT
 FSHELL_EXECUTABLE_FILE(terminalkeyboardcons.dll) // TODO move this to the new fshell_consoles.iby
+#endif
 
 #endif // FSHELL_IBY

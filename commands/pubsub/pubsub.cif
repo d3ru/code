@@ -68,6 +68,10 @@ Force read / set this property, disregarding the C<TSecurityPolicy> restrictions
 
 When specified in conjunction with the C<notify> command, uses C<CBtracePubSub> to get the notifications instead of using C<RProperty::Subscribe> or C<memoryaccess>.
 
+==option bool r raw
+
+When specified in conjunction with the C<get> command, print out just the value, rather than the usual more verbose format that shows the category, key, type and value.
+
 ==copyright
 
 Copyright (c) 2008-2010 Accenture. All rights reserved.

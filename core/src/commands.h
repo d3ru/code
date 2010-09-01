@@ -729,6 +729,7 @@ private:
 		ENotEqual,
 		EAdd,
 		ESubtract,
+		EMultiply,
 		} iOperation;
 	HBufC* iVar1;
 	HBufC* iArg;
