@@ -9,9 +9,12 @@
 // Initial Contributors:
 // Accenture - Initial contribution
 //
+#include <fshell/ltkutils.h>
 #include <fshell/ltkhal.h>
 #include <fshell/descriptorutils.h>
+#include <fshell/common.mmh>
 #include <HAL.h>
+#include <f32file.h>
 
 LtkUtils::CHalAttribute::CHalAttribute(TInt aAttribute, TInt aDeviceNumber, TInt aValue, TInt aError, const TDesC& aAttributeName, HBufC* aDescription)
 	: iAttribute(aAttribute), iDeviceNumber(aDeviceNumber), iValue(aValue), iError(aError), iAttributeName(aAttributeName), iDescription(aDescription)
@@ -340,4 +343,17 @@ EXPORT_C LtkUtils::CHalAttribute* LtkUtils::GetHalInfoForValueL(TInt aDeviceNumb
 	CHalAttribute* attrib = new(ELeave) CHalAttribute(aAttribute, aDeviceNumber, aValue, KErrNone, attribName, buf.GetHBuf());
 	CleanupStack::Pop(&buf); // attrib now owns its HBufC*
 	return attrib;
+	}
+
+EXPORT_C char LtkUtils::GetSystemDrive()
+	{
+#ifdef FSHELL_9_1_SUPPORT
+	TInt ch = EDriveC;
+	HAL::Get(HAL::ESystemDrive, ch);
+	return 'a' + ch;
+#else
+	TChar systemDrive = 'c';
+	RFs::DriveToChar(RFs::GetSystemDrive(), systemDrive);
+	return (char)(TUint)systemDrive;
+#endif
 	}

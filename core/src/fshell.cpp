@@ -405,9 +405,7 @@ void CShell::ConstructL()
 		User::LeaveIfError(fs.Connect());
 		_LIT(KPath, "%c:\\sys\\bin\\econs.dll");
 		TBuf<32> econsPath;
-		TChar systemDrive = 'c';
-		fs.DriveToChar(fs.GetSystemDrive(), systemDrive);
-		econsPath.Format(KPath, TUint(systemDrive));
+		econsPath.Format(KPath, LtkUtils::GetSystemDrive());
 		TEntry ioconsEntry;
 		err = fs.Entry(iocons.FileName(), ioconsEntry);
 		if (err == KErrNone)

@@ -9,7 +9,7 @@ EXPORTS
 	GetKeyPress__25CVtConsoleInputControllerR9TKeyPressR14TRequestStatus @ 8 NONAME R3UNUSED ; CVtConsoleInputController::GetKeyPress(TKeyPress &, TRequestStatus &)
 	KeyCode__C15CVtcConsoleBase @ 9 NONAME R3UNUSED ; CVtcConsoleBase::KeyCode(void) const
 	KeyModifiers__C15CVtcConsoleBase @ 10 NONAME R3UNUSED ; CVtcConsoleBase::KeyModifiers(void) const
-	Message__15CVtcConsoleBaseQ215CVtcConsoleBase10TVerbosityGt11TRefByValue1ZC7TDesC16e @ 11 NONAME ; CVtcConsoleBase::Message(CVtcConsoleBase::TVerbosity, TRefByValue<TDesC16 const>,...)
+	Message__15CVtcConsoleBaseQ215CVtcConsoleBase10TVerbosityGt11TRefByValue1ZC7TDesC16e @ 11 NONAME ABSENT ; CVtcConsoleBase::Message(CVtcConsoleBase::TVerbosity, TRefByValue<TDesC16 const>,...)
 	NewLC__25CVtConsoleInputControllerR13MConsoleInputRQ28LtkUtils8CIniFile @ 12 NONAME R3UNUSED ; CVtConsoleInputController::NewLC(MConsoleInput &, LtkUtils::CIniFile &)
 	NewL__25CVtConsoleInputControllerR13MConsoleInputRQ28LtkUtils8CIniFile @ 13 NONAME R3UNUSED ; CVtConsoleInputController::NewL(MConsoleInput &, LtkUtils::CIniFile &)
 	NewL__26CVtConsoleOutputControllerR14MConsoleOutputRQ28LtkUtils8CIniFileRC5TSize @ 14 NONAME R3UNUSED ; CVtConsoleOutputController::NewL(MConsoleOutput &, LtkUtils::CIniFile &, TSize const &)
@@ -31,7 +31,8 @@ EXPORTS
 	__15CVtcConsoleBase @ 30 NONAME R3UNUSED ; CVtcConsoleBase::CVtcConsoleBase(void)
 	__9TKeyPress @ 31 NONAME R3UNUSED ; TKeyPress::TKeyPress(void)
 	CancelGetKeyPress__25CVtConsoleInputController @ 32 NONAME R3UNUSED ; CVtConsoleInputController::CancelGetKeyPress(void)
-	Debug__15CVtcConsoleBase @ 33 NONAME R3UNUSED ; CVtcConsoleBase::Debug(void)
-	SetDebug__15CVtcConsoleBasei @ 34 NONAME R3UNUSED ; CVtcConsoleBase::SetDebug(int)
+	Debug__15CVtcConsoleBase @ 33 NONAME R3UNUSED ABSENT ; CVtcConsoleBase::Debug(void)
+	SetDebug__15CVtcConsoleBasei @ 34 NONAME R3UNUSED ABSENT ; CVtcConsoleBase::SetDebug(int)
 	ReadKeywordValuePair__15CVtcConsoleBaseR6TLex16R7TPtrC16T2 @ 35 NONAME R3UNUSED ; CVtcConsoleBase::ReadKeywordValuePair(TLex16 &, TPtrC16 &, TPtrC16 &)
+	ConstructL__15CVtcConsoleBaseRC7TDesC16i @ 36 NONAME R3UNUSED ; CVtcConsoleBase::ConstructL(TDesC16 const &, int)
 

@@ -20,6 +20,7 @@ sourcepath		.
 userinclude		.
 userinclude		..\vt100cons\src\vt100 // For vtc_cursor_tracker.h
 #include <fshell/fsh_system_include.mmh>
+systeminclude	\epoc32\include\internal // this is where the tracecore headers live, and the platform paths macros don't consistantly include it across different versions of the platform...
 
 source			terminalkeyboardcons.cpp
 sourcepath		..\vt100cons\src\vt100

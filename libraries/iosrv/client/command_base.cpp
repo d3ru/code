@@ -3632,7 +3632,9 @@ EXPORT_C const RProcess& RChildProcess::Process() const
 	return iProcess;
 	}
 
-#define CASE_RETURN_LIT(XXX) case XXX: { _LIT(_KLit, #XXX); return &_KLit; }
+// Really should define a standard CASE_LIT macro that every compiler can handle...
+#include <fshell/descriptorutils.h>
+#define CASE_RETURN_LIT(x) case x: { static const LtkUtils::SLitC KName = DESC(#x); return &KName; }
 #define CASE_RETURN_LIT2(XXX, YYY) case XXX: { _LIT(_KLit, YYY); return &_KLit; }
 #define DEFAULT_RETURN_LIT(XXX) default: { _LIT(_KLit, XXX); return &_KLit; }
 	

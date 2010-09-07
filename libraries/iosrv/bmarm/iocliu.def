@@ -141,7 +141,7 @@ EXPORTS
 	ConnectL__10RIoSession @ 140 NONAME R3UNUSED ; RIoSession::ConnectL(void)
 	Connect__10RIoSession @ 141 NONAME R3UNUSED ; RIoSession::Connect(void)
 	ConsoleImplementation__Q27IoUtils12CCommandBase @ 142 NONAME R3UNUSED ; IoUtils::CCommandBase::ConsoleImplementation(void)
-	CopyL__Q27IoUtils12CEnvironmentRCQ27IoUtils12CEnvironment @ 143 NONAME R3UNUSED ; IoUtils::CEnvironment::CopyL(IoUtils::CEnvironment const &)
+	CopyL__Q27IoUtils12CEnvironmentRCQ27IoUtils12CEnvironment @ 143 NONAME R3UNUSED ABSENT ; IoUtils::CEnvironment::CopyL(IoUtils::CEnvironment const &)
 	Count__CQ27IoUtils12CEnvironment @ 144 NONAME R3UNUSED ; IoUtils::CEnvironment::Count(void) const
 	CreateImplementationLC__CQ27IoUtils25CServerCommandConstructor @ 145 NONAME R3UNUSED ; IoUtils::CServerCommandConstructor::CreateImplementationLC(void) const
 	CreateL__10RIoConsoleR10RIoSessionRC7TDesC16R10RIoConsoleT2RC5TSizeUi @ 146 NONAME ; RIoConsole::CreateL(RIoSession &, TDesC16 const &, RIoConsole &, TDesC16 const &, TSize const &, unsigned int)
@@ -196,8 +196,8 @@ EXPORTS
 	Exit__Q27IoUtils11CServerBasei @ 195 NONAME R3UNUSED ; IoUtils::CServerBase::Exit(int)
 	Ext__CQ27IoUtils10TFileName2 @ 196 NONAME R3UNUSED ; IoUtils::TFileName2::Ext(void) const
 	Extension___Q27IoUtils12CCommandBaseUiRPvPv @ 197 NONAME ; IoUtils::CCommandBase::Extension_(unsigned int, void *&, void *)
-	ExternalizeL__CQ27IoUtils12CEnvironmentR5TDes8 @ 198 NONAME R3UNUSED ; IoUtils::CEnvironment::ExternalizeL(TDes8 &) const
-	ExternalizedSize__CQ27IoUtils12CEnvironment @ 199 NONAME R3UNUSED ; IoUtils::CEnvironment::ExternalizedSize(void) const
+	ExternalizeL__CQ27IoUtils12CEnvironmentR5TDes8 @ 198 NONAME R3UNUSED ABSENT ; IoUtils::CEnvironment::ExternalizeL(TDes8 &) const
+	ExternalizedSize__CQ27IoUtils12CEnvironment @ 199 NONAME R3UNUSED ABSENT ; IoUtils::CEnvironment::ExternalizedSize(void) const
 	Factory__Q27IoUtils11CServerBase @ 200 NONAME R3UNUSED ; IoUtils::CServerBase::Factory(void)
 	Factory__Q27IoUtils18CServerCommandBase @ 201 NONAME R3UNUSED ; IoUtils::CServerCommandBase::Factory(void)
 	FindFileL__Q27IoUtils10TFileName2R3RFs @ 202 NONAME R3UNUSED ; IoUtils::TFileName2::FindFileL(RFs &)
@@ -371,11 +371,11 @@ EXPORTS
 	Reset__Q27IoUtils14CTextFormatter @ 370 NONAME R3UNUSED ; IoUtils::CTextFormatter::Reset(void)
 	RunCommandL__Q27IoUtils12CCommandBase @ 371 NONAME R3UNUSED ; IoUtils::CCommandBase::RunCommandL(void)
 	RunCommandL__Q27IoUtils12CCommandBasePC7TDesC16PQ27IoUtils12CEnvironment @ 372 NONAME R3UNUSED ; IoUtils::CCommandBase::RunCommandL(TDesC16 const *, IoUtils::CEnvironment *)
-	RunCommandL__Q27IoUtils12CCommandBaseR10RIoSessionR13RIoReadHandleR14RIoWriteHandleT3PC7TDesC16PQ27IoUtils12CEnvironment @ 373 NONAME ; IoUtils::CCommandBase::RunCommandL(RIoSession &, RIoReadHandle &, RIoWriteHandle &, RIoWriteHandle &, TDesC16 const *, IoUtils::CEnvironment *)
-	RunCommand__Q27IoUtils12CCommandBase @ 374 NONAME R3UNUSED ; IoUtils::CCommandBase::RunCommand(void)
-	RunCommand__Q27IoUtils12CCommandBasePC7TDesC16PQ27IoUtils12CEnvironment @ 375 NONAME R3UNUSED ; IoUtils::CCommandBase::RunCommand(TDesC16 const *, IoUtils::CEnvironment *)
-	RunCommand__Q27IoUtils12CCommandBaseR10RIoSessionR13RIoReadHandleR14RIoWriteHandleT3PC7TDesC16PQ27IoUtils12CEnvironment @ 376 NONAME ; IoUtils::CCommandBase::RunCommand(RIoSession &, RIoReadHandle &, RIoWriteHandle &, RIoWriteHandle &, TDesC16 const *, IoUtils::CEnvironment *)
-	RunCommand__Q27IoUtils12CCommandBaseR10RIoSessionR13RIoReadHandleR14RIoWriteHandleT3PC7TDesC16PQ27IoUtils12CEnvironmentPQ27IoUtils20MCommandBaseObserver @ 377 NONAME ; IoUtils::CCommandBase::RunCommand(RIoSession &, RIoReadHandle &, RIoWriteHandle &, RIoWriteHandle &, TDesC16 const *, IoUtils::CEnvironment *, IoUtils::MCommandBaseObserver *)
+	RunCommandL__Q27IoUtils12CCommandBaseR10RIoSessionR13RIoReadHandleR14RIoWriteHandleT3PC7TDesC16PQ27IoUtils12CEnvironment @ 373 NONAME ABSENT ; IoUtils::CCommandBase::RunCommandL(RIoSession &, RIoReadHandle &, RIoWriteHandle &, RIoWriteHandle &, TDesC16 const *, IoUtils::CEnvironment *)
+	RunCommand__Q27IoUtils12CCommandBase @ 374 NONAME R3UNUSED ABSENT ; IoUtils::CCommandBase::RunCommand(void)
+	RunCommand__Q27IoUtils12CCommandBasePC7TDesC16PQ27IoUtils12CEnvironment @ 375 NONAME R3UNUSED ABSENT ; IoUtils::CCommandBase::RunCommand(TDesC16 const *, IoUtils::CEnvironment *)
+	RunCommand__Q27IoUtils12CCommandBaseR10RIoSessionR13RIoReadHandleR14RIoWriteHandleT3PC7TDesC16PQ27IoUtils12CEnvironment @ 376 NONAME ABSENT ; IoUtils::CCommandBase::RunCommand(RIoSession &, RIoReadHandle &, RIoWriteHandle &, RIoWriteHandle &, TDesC16 const *, IoUtils::CEnvironment *)
+	RunCommand__Q27IoUtils12CCommandBaseR10RIoSessionR13RIoReadHandleR14RIoWriteHandleT3PC7TDesC16PQ27IoUtils12CEnvironmentPQ27IoUtils20MCommandBaseObserver @ 377 NONAME ABSENT ; IoUtils::CCommandBase::RunCommand(RIoSession &, RIoReadHandle &, RIoWriteHandle &, RIoWriteHandle &, TDesC16 const *, IoUtils::CEnvironment *, IoUtils::MCommandBaseObserver *)
 	RunError__Q27IoUtils12CCommandBasei @ 378 NONAME R3UNUSED ; IoUtils::CCommandBase::RunError(int)
 	RunL__Q27IoUtils12CCommandBase @ 379 NONAME R3UNUSED ; IoUtils::CCommandBase::RunL(void)
 	Run__Q27IoUtils13RChildProcessR14TRequestStatus @ 380 NONAME R3UNUSED ; IoUtils::RChildProcess::Run(TRequestStatus &)
@@ -519,4 +519,35 @@ EXPORTS
 	SubCommand__CQ27IoUtils16CCommandInfoFileRC7TDesC16 @ 518 NONAME R3UNUSED ; IoUtils::CCommandInfoFile::SubCommand(TDesC16 const &) const
 	TypeDescription__Q27IoUtils18CBranchCommandBase @ 519 NONAME R3UNUSED ; IoUtils::CBranchCommandBase::TypeDescription(void)
 	__as__Q27IoUtils5TEnumRCQ27IoUtils5TEnum @ 520 NONAME R3UNUSED ; IoUtils::TEnum::operator=(IoUtils::TEnum const &)
+	AllSet__CQ27IoUtils20RCommandArgumentList @ 521 NONAME R3UNUSED ; IoUtils::RCommandArgumentList::AllSet(void) const
+	Cif__CQ27IoUtils12CCommandBase @ 522 NONAME R3UNUSED ; IoUtils::CCommandBase::Cif(void) const
+	Copyright__CQ27IoUtils16CCommandInfoFile @ 523 NONAME R3UNUSED ; IoUtils::CCommandInfoFile::Copyright(void) const
+	Count__CQ27IoUtils20RCommandArgumentList @ 524 NONAME R3UNUSED ; IoUtils::RCommandArgumentList::Count(void) const
+	CreateEnvironmentL__Q27IoUtils12CCommandBasePQ27IoUtils12CEnvironment @ 525 NONAME R3UNUSED ; IoUtils::CCommandBase::CreateEnvironmentL(IoUtils::CEnvironment *)
+	CreateSharedEnvironmentL__Q27IoUtils12CEnvironment @ 526 NONAME R3UNUSED ; IoUtils::CEnvironment::CreateSharedEnvironmentL(void)
+	CtrlCPressed__Q27IoUtils20MCommandExtensionsV2 @ 527 NONAME R3UNUSED ; IoUtils::MCommandExtensionsV2::CtrlCPressed(void)
+	EnumValueList__CQ27IoUtils6TValue @ 528 NONAME R3UNUSED ; IoUtils::TValue::EnumValueList(void) const
+	EnvVar__CQ27IoUtils6TValue @ 529 NONAME R3UNUSED ; IoUtils::TValue::EnvVar(void) const
+	ExtensionVersion__CQ27IoUtils20MCommandExtensionsV1 @ 530 NONAME R3UNUSED ; IoUtils::MCommandExtensionsV1::ExtensionVersion(void) const
+	ExtensionVersion__CQ27IoUtils20MCommandExtensionsV2 @ 531 NONAME R3UNUSED ; IoUtils::MCommandExtensionsV2::ExtensionVersion(void) const
+	ExternalizeLC__CQ27IoUtils12CEnvironment @ 532 NONAME R3UNUSED ; IoUtils::CEnvironment::ExternalizeLC(void) const
+	GetKeysL__CQ27IoUtils12CEnvironmentRt13RPointerArray1Z7HBufC16 @ 533 NONAME R3UNUSED ; IoUtils::CEnvironment::GetKeysL(RPointerArray<HBufC16> &) const
+	IoSession__C12TIoHandleSet @ 534 NONAME R3UNUSED ; TIoHandleSet::IoSession(void) const
+	KeyPressed__Q27IoUtils20MCommandExtensionsV2UiUi @ 535 NONAME R3UNUSED ; IoUtils::MCommandExtensionsV2::KeyPressed(unsigned int, unsigned int)
+	Normalize__Q27IoUtils10TFileName2R3RFs @ 536 NONAME R3UNUSED ; IoUtils::TFileName2::Normalize(RFs &)
+	ReadKey__Q27IoUtils12CCommandBase @ 537 NONAME R3UNUSED ; IoUtils::CCommandBase::ReadKey(void)
+	RemoveAll__Q27IoUtils12CEnvironment @ 538 NONAME R3UNUSED ; IoUtils::CEnvironment::RemoveAll(void)
+	Session__C9RIoHandle @ 539 NONAME R3UNUSED ; RIoHandle::Session(void) const
+	SetCif__Q27IoUtils12CCommandBaseRCQ27IoUtils16CCommandInfoFile @ 540 NONAME R3UNUSED ; IoUtils::CCommandBase::SetCif(IoUtils::CCommandInfoFile const &)
+	SetExtension__Q27IoUtils12CCommandBasePQ27IoUtils20MCommandExtensionsV1 @ 541 NONAME R3UNUSED ; IoUtils::CCommandBase::SetExtension(IoUtils::MCommandExtensionsV1 *)
+	SetLocalL__Q27IoUtils12CEnvironmentRC7TDesC16 @ 542 NONAME R3UNUSED ; IoUtils::CEnvironment::SetLocalL(TDesC16 const &)
+	Stderr__C12TIoHandleSet @ 543 NONAME R3UNUSED ; TIoHandleSet::Stderr(void) const
+	Stdin__C12TIoHandleSet @ 544 NONAME R3UNUSED ; TIoHandleSet::Stdin(void) const
+	Stdout__C12TIoHandleSet @ 545 NONAME R3UNUSED ; TIoHandleSet::Stdout(void) const
+	StringifyError__CQ27IoUtils20MCommandExtensionsV1i @ 546 NONAME R3UNUSED ; IoUtils::MCommandExtensionsV1::StringifyError(int) const
+	Type__CQ27IoUtils6TValue @ 547 NONAME R3UNUSED ; IoUtils::TValue::Type(void) const
+	ValuePtr__CQ27IoUtils6TValue @ 548 NONAME R3UNUSED ; IoUtils::TValue::ValuePtr(void) const
+	__12TIoHandleSetR10RIoSessionR13RIoReadHandleR14RIoWriteHandleT3 @ 549 NONAME ; TIoHandleSet::TIoHandleSet(RIoSession &, RIoReadHandle &, RIoWriteHandle &, RIoWriteHandle &)
+	__vc__CQ27IoUtils20RCommandArgumentListi @ 550 NONAME R3UNUSED ; IoUtils::RCommandArgumentList::operator[](int) const
+	AcceptsMultiple__CQ27IoUtils6TValue @ 551 NONAME R3UNUSED ; IoUtils::TValue::AcceptsMultiple(void) const
 

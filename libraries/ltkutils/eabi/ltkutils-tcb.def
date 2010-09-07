@@ -182,4 +182,5 @@ EXPORTS
 	_ZN8LtkUtils10FormatSizeER5TDes8x @ 181 NONAME
 	_ZN8LtkUtils10FormatSizeER6TDes16x @ 182 NONAME
 	_ZNK8LtkUtils16RAllocatorHelper11DescriptionEv @ 183 NONAME
+	_ZN8LtkUtils14GetSystemDriveEv @ 184 NONAME
 
