@@ -9,6 +9,10 @@
 // Initial Contributors:
 // Accenture - Initial contribution
 //
+// Contributors:
+// Adrian Issott (Nokia) - Updates for kernel-side alloc helper
+//
+
 #ifdef TEST_HYBRIDHEAP_ASSERTS
 #define private public
 #include <e32def.h>
@@ -23,7 +27,7 @@
 
 #include <kern_priv.h>
 #define MEM Kern
-__ASSERT_COMPILE(sizeof(LtkUtils::RKernelSideAllocatorHelper) == 10*4);
+__ASSERT_COMPILE(sizeof(LtkUtils::RUserAllocatorHelper) == 10*4);
 #define KERN_ENTER_CS() NKern::ThreadEnterCS()
 #define KERN_LEAVE_CS() NKern::ThreadLeaveCS()
 #define LOG(args...)
@@ -104,6 +108,23 @@ const TInt KTempBitmapSize = 256; // KMaxSlabPayload / mincellsize, technically.
 
 #ifdef __KERNEL_MODE__
 
+TLinAddr LtkUtils::RAllocatorHelper::GetKernelAllocator(DChunk* aKernelChunk) 
+	{
+	TLinAddr allocatorAddress;
+#ifdef __WINS__
+	allocatorAddress = (TLinAddr)aKernelChunk->Base();
+#else
+	// Copied from P::KernelInfo
+	const TRomHeader& romHdr=Epoc::RomHeader();
+	const TRomEntry* primaryEntry=(const TRomEntry*)Kern::SuperPage().iPrimaryEntry;
+	const TRomImageHeader* primaryImageHeader=(const TRomImageHeader*)primaryEntry->iAddressLin;
+	TLinAddr stack = romHdr.iKernDataAddress + Kern::RoundToPageSize(romHdr.iTotalSvDataSize);
+	TLinAddr heap = stack + Kern::RoundToPageSize(primaryImageHeader->iStackSize);
+	allocatorAddress = heap;
+#endif
+	return allocatorAddress;
+	}
+
 TInt RAllocatorHelper::OpenKernelHeap()
 	{
 	_LIT(KName, "SvHeap");
@@ -123,19 +144,14 @@ TInt RAllocatorHelper::OpenKernelHeap()
 			}
 		}
 	iChunk = foundChunk;
-    chunkContainer->Signal();
-#ifdef __WINS__
-	TInt err = OpenChunkHeap((TLinAddr)foundChunk->Base(), 0); // It looks like DChunk::iBase/DChunk::iFixedBase should both be ok for the kernel chunk
-#else
-	// Copied from P::KernelInfo
-	const TRomHeader& romHdr=Epoc::RomHeader();
-	const TRomEntry* primaryEntry=(const TRomEntry*)Kern::SuperPage().iPrimaryEntry;
-	const TRomImageHeader* primaryImageHeader=(const TRomImageHeader*)primaryEntry->iAddressLin;
-	TLinAddr stack = romHdr.iKernDataAddress + Kern::RoundToPageSize(romHdr.iTotalSvDataSize);
-	TLinAddr heap = stack + Kern::RoundToPageSize(primaryImageHeader->iStackSize);
-	TInt err = OpenChunkHeap(heap, 0); // aChunkMaxSize is only used for trying the middle of the chunk for hybrid allocatorness, and the kernel heap doesn't use that (thankfully). So we can safely pass in zero.
+	chunkContainer->Signal();
 
-#endif
+	iAllocatorAddress = GetKernelAllocator(foundChunk);
+
+	// It looks like DChunk::iBase/DChunk::iFixedBase should both be ok for the kernel chunk
+	// aChunkMaxSize is only used for trying the middle of the chunk for hybrid allocatorness, and the kernel heap doesn't use that (thankfully). So we can safely pass in zero.
+	TInt err = OpenChunkHeap((TLinAddr)foundChunk->Base(), 0); 
+
 	if (!err) err = FinishConstruction();
 	NKern::ThreadLeaveCS();
 	return err;
@@ -288,11 +304,11 @@ TInt RAllocatorHelper::WriteData(TLinAddr aLocation, const TAny* aData, TInt aSi
 
 #ifdef __KERNEL_MODE__
 
-LtkUtils::RKernelSideAllocatorHelper::RKernelSideAllocatorHelper()
+LtkUtils::RUserAllocatorHelper::RUserAllocatorHelper()
 	: iThread(NULL)
 	{}
 
-void LtkUtils::RKernelSideAllocatorHelper::Close()
+void LtkUtils::RUserAllocatorHelper::Close()
 	{
 	NKern::ThreadEnterCS();
 	if (iThread)
@@ -304,27 +320,27 @@ void LtkUtils::RKernelSideAllocatorHelper::Close()
 	NKern::ThreadLeaveCS();
 	}
 
-TInt LtkUtils::RKernelSideAllocatorHelper::ReadData(TLinAddr aLocation, TAny* aResult, TInt aSize) const
+TInt LtkUtils::RUserAllocatorHelper::ReadData(TLinAddr aLocation, TAny* aResult, TInt aSize) const
 	{
 	return Kern::ThreadRawRead(iThread, (const TAny*)aLocation, aResult, aSize);
 	}
 
-TInt LtkUtils::RKernelSideAllocatorHelper::WriteData(TLinAddr aLocation, const TAny* aData, TInt aSize)
+TInt LtkUtils::RUserAllocatorHelper::WriteData(TLinAddr aLocation, const TAny* aData, TInt aSize)
 	{
 	return Kern::ThreadRawWrite(iThread, (TAny*)aLocation, aData, aSize);
 	}
 
-TInt LtkUtils::RKernelSideAllocatorHelper::TryLock()
+TInt LtkUtils::RUserAllocatorHelper::TryLock()
 	{
 	return KErrNotSupported;
 	}
 
-void LtkUtils::RKernelSideAllocatorHelper::TryUnlock()
+void LtkUtils::RUserAllocatorHelper::TryUnlock()
 	{
 	// Not supported
 	}
 
-TInt LtkUtils::RKernelSideAllocatorHelper::OpenUserHeap(TUint aThreadId, TLinAddr aAllocatorAddress, TBool aEuserIsUdeb)
+TInt LtkUtils::RUserAllocatorHelper::OpenUserHeap(TUint aThreadId, TLinAddr aAllocatorAddress, TBool aEuserIsUdeb)
 	{
 	NKern::ThreadEnterCS();
 	DObjectCon* threads = Kern::Containers()[EThread];
@@ -344,34 +360,102 @@ TInt LtkUtils::RKernelSideAllocatorHelper::OpenUserHeap(TUint aThreadId, TLinAdd
 	return err;
 	}
 
+LtkUtils::RKernelCopyAllocatorHelper::RKernelCopyAllocatorHelper()
+	: iCopiedChunk(NULL), iOffset(0)
+	{}
+
+TInt LtkUtils::RKernelCopyAllocatorHelper::OpenCopiedHeap(DChunk* aOriginalChunk, DChunk* aCopiedChunk, TInt aOffset)
+	{
+	TInt err = aCopiedChunk->Open();
+	if (!err)
+		{
+		iCopiedChunk = aCopiedChunk;
+		iOffset = aOffset;
+
+		// We need to set iAllocatorAddress to point to the allocator in the original chunk and not the copy
+		// because all the internal pointers will be relative to that. Instead we use iOffset in the Read / Write Data 
+		// calls
+		iAllocatorAddress = GetKernelAllocator(aOriginalChunk);
+		
+		// It looks like DChunk::iBase/DChunk::iFixedBase should both be ok for the kernel chunk
+		// aChunkMaxSize is only used for trying the middle of the chunk for hybrid allocatorness, and the kernel heap doesn't use that (thankfully). So we can safely pass in zero.
+		err = OpenChunkHeap((TLinAddr)aCopiedChunk->Base(), 0);
+		}
+	
+	return err;
+	}
+
+DChunk* LtkUtils::RKernelCopyAllocatorHelper::OpenUnderlyingChunk()
+	{
+	// We should never get here
+	__NK_ASSERT_ALWAYS(EFalse);
+	return NULL;
+	}
+
+void LtkUtils::RKernelCopyAllocatorHelper::Close()
+	{
+	if (iCopiedChunk)
+		{
+		NKern::ThreadEnterCS();
+		iCopiedChunk->Close(NULL);
+		iCopiedChunk = NULL;
+		NKern::ThreadLeaveCS();
+		}
+	iOffset = 0;
+	RAllocatorHelper::Close();
+	}
+
+TInt LtkUtils::RKernelCopyAllocatorHelper::ReadData(TLinAddr aLocation, TAny* aResult, TInt aSize) const
+	{
+	memcpy(aResult, (const TAny*)(aLocation+iOffset), aSize);
+	return KErrNone;
+	}
+
+TInt LtkUtils::RKernelCopyAllocatorHelper::WriteData(TLinAddr aLocation, const TAny* aData, TInt aSize)
+	{
+	memcpy((TAny*)(aLocation+iOffset), aData, aSize);
+	return KErrNone;
+	}
+
+TInt LtkUtils::RKernelCopyAllocatorHelper::TryLock()
+	{
+	return KErrNotSupported;
+	}
+
+void LtkUtils::RKernelCopyAllocatorHelper::TryUnlock()
+	{
+	// Not supported
+	}
+
 #endif // __KERNEL_MODE__
 
 TInt RAllocatorHelper::OpenChunkHeap(TLinAddr aChunkBase, TInt aChunkMaxSize)
 	{
-	iAllocatorAddress = aChunkBase;
 #ifdef __KERNEL_MODE__
 	// Must be in CS
 	// Assumes that this only ever gets called for the kernel heap. Otherwise goes through RKernelSideAllocatorHelper::OpenUserHeap.
 	TInt udeb = EFalse; // We can't figure this out until after we've got the heap
+	TBool isTheKernelHeap = ETrue;
 #else
 	// Assumes the chunk isn't the kernel heap. It's not a good idea to try messing with the kernel heap from user side...
 	TInt udeb = EuserIsUdeb();
 	if (udeb < 0) return udeb; // error
+	TBool isTheKernelHeap = EFalse;
 #endif
 
-	TInt err = IdentifyAllocatorType(udeb);
+	TInt err = IdentifyAllocatorType(udeb, isTheKernelHeap);
 	if (err == KErrNone && iAllocatorType == EAllocator)
 		{
 		// We've no reason to assume it's an allocator because we don't know the iAllocatorAddress actually is an RAllocator*
 		err = KErrNotFound;
 		}
-	if (err)
+	if (err && aChunkMaxSize > 0)
 		{
 		TInt oldErr = err;
 		TAllocatorType oldType = iAllocatorType;
 		// Try middle of chunk, in case it's an RHybridHeap
 		iAllocatorAddress += aChunkMaxSize / 2;
-		err = IdentifyAllocatorType(udeb);
+		err = IdentifyAllocatorType(udeb, isTheKernelHeap);
 		if (err || iAllocatorType == EAllocator)
 			{
 			// No better than before
@@ -389,7 +473,7 @@ TInt RAllocatorHelper::OpenChunkHeap(TLinAddr aChunkBase, TInt aChunkMaxSize)
 		TInt err = kernelAllocator->DebugFunction(7, NULL, NULL); // 7 is RAllocator::TAllocDebugOp::EGetFail
 		if (err == 9999)
 			{
-			// udeb new
+			// udeb new hybrid heap
 			udeb = ETrue;
 			}
 		else if (err == KErrNotSupported)
@@ -397,7 +481,7 @@ TInt RAllocatorHelper::OpenChunkHeap(TLinAddr aChunkBase, TInt aChunkMaxSize)
 			// Old heap - fall back to slightly nasty non-thread-safe method
 			kernelAllocator->DebugFunction(RAllocator::ESetFail, (TAny*)RAllocator::EFailNext, (TAny*)1);
 			TAny* res = Kern::Alloc(4);
-			if (res) udeb = ETrue;
+			if (!res) udeb = ETrue;
 			Kern::Free(res);
 			}
 		else
@@ -408,7 +492,7 @@ TInt RAllocatorHelper::OpenChunkHeap(TLinAddr aChunkBase, TInt aChunkMaxSize)
 		// Put everything back
 		kernelAllocator->DebugFunction(RAllocator::ESetFail, (TAny*)RAllocator::ENone, (TAny*)0);
 		// And update the type now we know the udeb-ness for certain
-		err = IdentifyAllocatorType(udeb);
+		err = IdentifyAllocatorType(udeb, isTheKernelHeap);
 		}
 #endif
 	return err;
@@ -535,7 +619,7 @@ HUEXPORT_C void RAllocatorHelper::Close()
 	KERN_LEAVE_CS();
 	}
 
-TInt RAllocatorHelper::IdentifyAllocatorType(TBool aAllocatorIsUdeb)
+TInt RAllocatorHelper::IdentifyAllocatorType(TBool aAllocatorIsUdeb, TBool aIsTheKernelHeap)
 	{
 	iAllocatorType = EUnknown;
 
@@ -543,7 +627,9 @@ TInt RAllocatorHelper::IdentifyAllocatorType(TBool aAllocatorIsUdeb)
 	TInt err = ReadWord(iAllocatorAddress + _FOFF(RHackAllocator, iHandles), handlesPtr);
 
 	if (err) return err;
-	if (handlesPtr == iAllocatorAddress + _FOFF(RHackHeap, iChunkHandle) || handlesPtr == iAllocatorAddress + _FOFF(RHackHeap, iLock))
+	if (aIsTheKernelHeap || 
+		handlesPtr == iAllocatorAddress + _FOFF(RHackHeap, iChunkHandle) || 
+		handlesPtr == iAllocatorAddress + _FOFF(RHackHeap, iLock))
 		{
 		// It's an RHeap of some kind - I doubt any other RAllocator subclass will use iHandles in this way
 		TUint32 base = 0;
@@ -971,6 +1057,7 @@ TInt RAllocatorHelper::OldSkoolWalk(TWalkFunc3 aCallbackFn, TAny* aContext)
 				return KErrCorrupt;
 				}
 			}
+		
 		while (pC!=pF)				// walk allocated cells up to next free cell
 			{
 			TInt l; // pC->len;
@@ -1450,6 +1537,7 @@ TInt RAllocatorHelper::TreeWalk(TUint32 aSlabRoot, TInt aSlabType, TWalkFunc3 aC
 		}
 	}
 
+// Really should be called TotalSizeForCellType(...)
 HUEXPORT_C TInt RAllocatorHelper::SizeForCellType(TExtendedCellType aType)
 	{
 	if (aType & EBadnessMask) return KErrArgument;
@@ -1596,7 +1684,7 @@ DChunk* LtkUtils::RAllocatorHelper::OpenUnderlyingChunk()
 	return iChunk;
 	}
 
-DChunk* LtkUtils::RKernelSideAllocatorHelper::OpenUnderlyingChunk()
+DChunk* LtkUtils::RUserAllocatorHelper::OpenUnderlyingChunk()
 	{
 	if (iAllocatorType != EUrelOldRHeap && iAllocatorType != EUdebOldRHeap && iAllocatorType != EUrelHybridHeap && iAllocatorType != EUdebHybridHeap) return NULL;
 	// Note RKernelSideAllocatorHelper doesn't use or access RAllocatorHelper::iChunk, because we figure out the chunk handle in a different way.
