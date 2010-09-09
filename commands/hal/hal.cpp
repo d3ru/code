@@ -14,6 +14,7 @@
 #include <hal.h>
 #include <fshell/common.mmh>
 #include <fshell/ltkhal.h>
+#include <fshell/ltkutils.h>
 
 using namespace IoUtils;
 
@@ -127,13 +128,7 @@ void CCmdHal::DoRunL()
 			{
 			if (!iOptions.IsPresent(&iDumpFileName))
 				{
-#ifdef FSHELL_9_1_SUPPORT
-				TInt ch = 'c';
-				HAL::Get(HAL::ESystemDrive, ch);
-				iDumpFileName[0] = 'A' + ch;
-#else
-				iDumpFileName[0] = 'A' + static_cast<TInt>(RFs::GetSystemDrive());
-#endif
+				iDumpFileName[0] = LtkUtils::GetSystemDrive();
 				}
 			RFile file;
 			LeaveIfErr(file.Open(FsL(), iDumpFileName, EFileRead), _L("Couldn't open \"%S\" for reading"), &iDumpFileName);

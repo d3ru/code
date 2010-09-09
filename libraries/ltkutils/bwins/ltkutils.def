@@ -181,4 +181,5 @@ EXPORTS
 	?FormatSize@LtkUtils@@YAXAAVTDes8@@_J@Z @ 180 NONAME ; void LtkUtils::FormatSize(class TDes8 &, long long)
 	?FormatSize@LtkUtils@@YAXAAVTDes16@@_J@Z @ 181 NONAME ; void LtkUtils::FormatSize(class TDes16 &, long long)
 	?Description@RAllocatorHelper@LtkUtils@@QBEABVTDesC16@@XZ @ 182 NONAME ; class TDesC16 const & LtkUtils::RAllocatorHelper::Description(void) const
+	?GetSystemDrive@LtkUtils@@YADXZ @ 183 NONAME ; char LtkUtils::GetSystemDrive(void)
 

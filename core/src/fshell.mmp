@@ -93,7 +93,7 @@ source          version.cpp
 #ifdef SBSV2
 sourcepath      /epoc32/build/fshell/core/generated/PLAT
 #else
-sourcepath      \epoc32\build\fshell\core\generated\ ## PLAT
+sourcepath      \epoc32\build\fshell\core\generated\PLAT
 #endif
 source          fshell_version.cpp
 

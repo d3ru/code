@@ -3538,8 +3538,6 @@ void CCmdSource::HandleParserComplete(CParser&, const TError& aError)
 	if (err < 0)
 		{
 		aError.Report();
-		const TDesC& scriptPath = Env().GetAsDes(KScriptPath);
-		const TDesC& scriptName = Env().GetAsDes(KScriptName);
 		PrintError(err, _L("Aborted \"%S\" at line %d"), &aError.ScriptFileName(), aError.ScriptLineNumber());
 		}
 	Complete(err);
