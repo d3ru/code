@@ -5262,7 +5262,11 @@ void CCmdPcons::CreateL(RIoPersistentConsole& aPcons)
 	RChildProcess proc;
 	TRAPL(proc.CreateL(command, args, IoSession(), aPcons, &Env()), _L("Could not create process %S"), &command);
 	
+	// Wait for process to rendezvous before returning to close aPcons - we have to give the child time to connect to the console.
+	TRequestStatus status;
+	proc.Process().Rendezvous(status);
 	proc.Detach();
+	User::WaitForRequest(status);
 	proc.Close();
 	}
 	

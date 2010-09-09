@@ -34,8 +34,10 @@ _LIT(KBackspace, "\x08 \x08");
 RConsole::RConsole(MAbstractConsoleWriter& aStdout)
 	: iStdout(aStdout), iCursorPos(TPoint(0, 0)), iCursorMode(EInsert), iCursorVisible(EFalse)
 	{
-	iStdout.GetScreenSize(iSize);
-	SetCursorVisible(ETrue);
+	// Calling these here cause fshell to deadlock if being launched within a "pcons start fshell".
+	// Doesn't appear to cause any problems removing them, as Start()/Refresh() get called shortly after.
+	//iStdout.GetScreenSize(iSize);
+	//SetCursorVisible(ETrue);
 	}
 
 void RConsole::Close()
