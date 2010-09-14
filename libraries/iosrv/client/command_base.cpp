@@ -1994,7 +1994,7 @@ void HandleEscapeL(TLex& aLex, CTextBuffer& aBuf)
 	_LIT(KFormFeed, "\f");
 	_LIT(KHorizontalTab, "\t");
 	_LIT(KVerticalTab, "\v");
-	_LIT(KNewLine, "\n");
+	_LIT(KLineFeed, "\n");
 	_LIT(KCarriageReturn, "\r");
 	if (!aLex.Eos())
 		{
@@ -2017,7 +2017,7 @@ void HandleEscapeL(TLex& aLex, CTextBuffer& aBuf)
 				aBuf.AppendL(KVerticalTab);
 				break;
 			case 'n':
-				aBuf.AppendL(KNewLine);
+				aBuf.AppendL(KLineFeed);
 				break;
 			case 'r':
 				aBuf.AppendL(KCarriageReturn);

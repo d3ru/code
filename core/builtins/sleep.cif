@@ -18,8 +18,7 @@ Pause for a specified number of seconds.
 
 ==argument uint duration optional
 
-The length of time to sleep for in seconds. If not specified, sleeps indefinately.
-
+The length of time to sleep for in seconds. If not specified, sleeps indefinitely.
 
 ==copyright
 

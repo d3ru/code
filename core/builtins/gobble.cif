@@ -14,11 +14,11 @@
 
 ==short-description
 
-A tool for purposefully wasting persistent storage space.
+A tool for purposefully wasting disk space.
 
 ==long-description
 
-If the specified file does not already exist, it will be created. If it does exist, it will be grown.
+If the specified file does not already exist, it will be created. If it does exist, it will be grown by the amount specified.
 
 ==see-also
 
@@ -28,13 +28,17 @@ L<leak|leak>
 
 Display more detailed output.
 
+==option bool n no-write
+
+By default the file is filled with a pattern of 'x' characters. Specify this option to only set the file size and not to actually write to it. Useful if you want to test low disk space without introducing delays (and wear to the disk) of actually writing lots of data.
+
 ==argument filename file_name
 
 The file to create or to append to.
 
-==argument uint amount
+==argument uint amount optional
 
-The total number of bytes to consume.
+The total number of bytes to consume. If zero or not specified, the file size is set to fill the free space on the disk.
 
 ==argument uint block_size optional
 

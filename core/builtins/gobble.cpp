@@ -11,6 +11,7 @@
 //
 
 #include "gobble.h"
+#include <fshell/ltkutils.h>
 
 
 CCommandBase* CCmdGobble::NewLC()
@@ -38,9 +39,20 @@ const TDesC& CCmdGobble::Name() const
 
 void CCmdGobble::DoRunL()
 	{
-	if (iAmount < iBlockSize)
+	RFs& fs = FsL();
+	if (iAmount == 0)
 		{
-		LeaveIfErr(KErrArgument, _L("The amount to consume must be less than the block size (%d)"), iBlockSize);
+		TInt drive = EDriveC;
+		if (iFileName.Length() == 0) LeaveIfErr(KErrBadName, _L("Bad file name"));
+		RFs::CharToDrive(iFileName[0], drive);
+		TVolumeInfo volInfo;
+		LeaveIfErr(fs.Volume(volInfo, drive), _L("Couldn't get volume information for drive %c"), iFileName[0]);
+		iAmount = volInfo.iFree;
+		}
+
+	if (!iNoWrite && iAmount < iBlockSize)
+		{
+		LeaveIfErr(KErrArgument, _L("The amount to consume must be greater than the block size (%d)"), iBlockSize);
 		}
 	if (iAmount & 0x80000000)
 		{
@@ -50,7 +62,6 @@ void CCmdGobble::DoRunL()
 		{
 		LeaveIfErr(KErrArgument, _L("The block size is too large (maximum is %d)"), KMaxTInt);
 		}
-	RFs& fs = FsL();
 	fs.MkDirAll(iFileName);
 	RFile file;
 	TInt err = file.Open(fs, iFileName, EFileWrite);
@@ -58,51 +69,64 @@ void CCmdGobble::DoRunL()
 		{
 		err = file.Create(fs, iFileName, EFileWrite);
 		}
-	User::LeaveIfError(err);
+	LeaveIfErr(err, _L("Couldn't create file %S"), &iFileName);
 	CleanupClosePushL(file);
-	TInt pos = 0;
-	User::LeaveIfError(file.Seek(ESeekEnd, pos));
 
-	HBufC8* buf = HBufC8::NewLC(iBlockSize);
-	TPtr8 ptr(buf->Des());
-	ptr.Fill(TChar('x'), iBlockSize);
-	
-	TInt toWrite = static_cast<TInt>(iAmount);
-	do
+	if (iNoWrite)
 		{
-		TInt writeSize;
-		if (toWrite > static_cast<TInt>(iBlockSize))
-			{
-			writeSize = static_cast<TInt>(iBlockSize);
-			}
-		else
-			{
-			writeSize = toWrite;
-			}
-		ptr.SetLength(writeSize);
-		err = file.Write(ptr);
-		if (err == KErrNone)
-			{
-			if (iVerbose)
-				{
-				Printf(_L("\rWrote %d"), iAmount - toWrite);
-				}
-			toWrite -= writeSize;
-			}
+		TInt size = 0;
+		LeaveIfErr(file.Size(size), _L("Couldn't get file size"));
+		size += iAmount;
+		LeaveIfErr(file.SetSize(size), _L("Couldn't set filesize to %d"), size);
 		}
+	else
+		{
+		TInt pos = 0;
+		User::LeaveIfError(file.Seek(ESeekEnd, pos));
+		HBufC8* buf = HBufC8::NewLC(iBlockSize);
+		TPtr8 ptr(buf->Des());
+		ptr.Fill(TChar('x'), iBlockSize);
+		
+		TInt toWrite = static_cast<TInt>(iAmount);
+		do
+			{
+			TInt writeSize;
+			if (toWrite > static_cast<TInt>(iBlockSize))
+				{
+				writeSize = static_cast<TInt>(iBlockSize);
+				}
+			else
+				{
+				writeSize = toWrite;
+				}
+			ptr.SetLength(writeSize);
+			err = file.Write(ptr);
+			if (err == KErrNone)
+				{
+				if (iVerbose)
+					{
+					Printf(_L("\rWrote %d"), iAmount - toWrite);
+					}
+				toWrite -= writeSize;
+				}
+			}
 		while ((err == KErrNone) && (toWrite > 0));
 		if (iVerbose)
 			{
 			Printf(_L("\rWrote %d"), iAmount - toWrite);
 			}
-		
-	CleanupStack::PopAndDestroy(2, &file);
+		CleanupStack::PopAndDestroy(buf);
+		}
+	CleanupStack::PopAndDestroy(&file);
 	}
 
 void CCmdGobble::OptionsL(RCommandOptionList& aOptions)
 	{
 	_LIT(KCmdOptVerbose, "verbose");
 	aOptions.AppendBoolL(iVerbose, KCmdOptVerbose);
+
+	_LIT(KCmdOptNoWrite, "no-write");
+	aOptions.AppendBoolL(iNoWrite, KCmdOptNoWrite);
 	}
 
 void CCmdGobble::ArgumentsL(RCommandArgumentList& aArguments)

@@ -83,11 +83,24 @@ void CCmdHelp::DoRunL()
 		RArray<TPtrC> commands;
 		CleanupClosePushL(commands);
 		gShell->CommandFactory().ListCommandsL(commands);
-		iFormatter = CTextFormatter::NewL(Stdout());
-		iFormatter->ColumnizeL(0, 2, commands.Array());
+		if (!Stdout().AttachedToConsole())
+			{
+			// Print them one per line (like how ls does it when not attached to a console)
+			for (TInt i = 0; i < commands.Count(); i++)
+				{
+				// The async writing is a legacy from when help was a local command. We don't need to observe it now.
+				Printf(_L("%S\r\n"), &commands[i]);
+				}
+			Complete();
+			}
+		else
+			{
+			iFormatter = CTextFormatter::NewL(Stdout());
+			iFormatter->ColumnizeL(0, 2, commands.Array());
+			Stdout().Write(iFormatter->Descriptor(), iStatus);
+			SetActive();
+			}
 		CleanupStack::PopAndDestroy(&commands);
-		Stdout().Write(iFormatter->Descriptor(), iStatus);
-		SetActive();
 		}
 	}
 
@@ -3622,7 +3635,6 @@ void CCmdStart::DoRunL()
 
 	if (iTimeout)
 		{
-		timer.After(timerStat, iTimeout * 1000 * 1000);
 		User::WaitForRequest(waitStatus, timerStat);
 		if (iMeasure) endTime = User::NTickCount();
 

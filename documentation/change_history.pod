@@ -28,7 +28,7 @@ Added L<terminal keyboard|terminalkeyboardcons> console, for platforms that supp
 
 =item *
 
-Fixed a defect in iosrv.exe that caused a panic if a foreground read object was attached to a different end point. This was due to the read object being notified of a change in foreground before its iEndPoint member was updated. This member is now updated before attempting the attach, and is set to NULL in the event of a leave (resulting in the read object being left in an unattached state).
+Fixed a defect in iosrv.exe that caused a panic if a foreground read object was attached to a different end point. This was due to the read object being notified of a change in foreground before its iEndPoint member was updated. This member is now updated before attempting the attach, and is set to NULL in the event of a leave (resulting in the read object being left in an unattached state). Fixed race condition and hang in C<pcons start>.
 
 =item *
 
@@ -36,7 +36,7 @@ More build fixes. Changed the documentation builder to automatically prepend C<%
 
 =item *
 
-Added C<--codesegs> option to L<ps|commands::ps>.
+Added C<--codesegs> option to L<ps|commands::ps> and C<--no-write> option to L<gobble|commands::gobble>.
 
 =item *
 
@@ -45,6 +45,10 @@ Added C<ENotifyKeypresses> and C<ECaptureCtrlC> flags to CCommandBase, so comman
 =item *
 
 fshell's current working directory is now normalised (via new TFileName2::Normalize function) so that the case matches what's on the filesystem).
+
+=item *
+
+Fixed crash in L<start's|commands::start> C<--timeout> option.
 
 =back
 

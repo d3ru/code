@@ -32,4 +32,5 @@ private:
 	TUint iAmount;
 	TUint iBlockSize;
 	TBool iVerbose;
+	TBool iNoWrite;
 	};

@@ -18,7 +18,7 @@ List the available commands.
 
 ==long-description
 
-Lists fshell's built-in and alias commands (e.g. C<dir> is an alias for C<ls -l>). Also lists external commands, DLLs that have a UID2 of 0x102864C8 and EXEs that have a UID2 of 0x102835BE.
+Lists fshell's built-in and alias commands (e.g. C<dir> is an alias for C<ls -l>). Also lists external commands, that is EXEs that have a UID2 of 0x102835BE (FSHELL_UID2_FSHELL_EXE).
 
 ==option bool c count
 
