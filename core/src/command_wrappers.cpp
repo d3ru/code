@@ -17,7 +17,7 @@
 // Constants.
 //
 
-const TInt KMaxHeapSize = KMinHeapSize * 1024;
+const TInt KMaxHeapSize = 1024*1024; // 1 MB
 
 
 //

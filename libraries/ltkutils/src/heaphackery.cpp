@@ -433,7 +433,7 @@ TInt RAllocatorHelper::OpenChunkHeap(TLinAddr aChunkBase, TInt aChunkMaxSize)
 	{
 #ifdef __KERNEL_MODE__
 	// Must be in CS
-	// Assumes that this only ever gets called for the kernel heap. Otherwise goes through RKernelSideAllocatorHelper::OpenUserHeap.
+	// Assumes that this only ever gets called for the kernel heap. Otherwise goes through RUserAllocatorHelper::OpenUserHeap.
 	TInt udeb = EFalse; // We can't figure this out until after we've got the heap
 	TBool isTheKernelHeap = ETrue;
 #else
@@ -443,13 +443,19 @@ TInt RAllocatorHelper::OpenChunkHeap(TLinAddr aChunkBase, TInt aChunkMaxSize)
 	TBool isTheKernelHeap = EFalse;
 #endif
 
+	if (iAllocatorAddress == 0)
+		{
+		// Subclasses with more knowledge about the layout of the allocator within the chunk may have already set the iAllocatorAddress (eg kernel heap's allocator doesn't start at the chunk base)
+		iAllocatorAddress = aChunkBase;
+		}
+
 	TInt err = IdentifyAllocatorType(udeb, isTheKernelHeap);
 	if (err == KErrNone && iAllocatorType == EAllocator)
 		{
 		// We've no reason to assume it's an allocator because we don't know the iAllocatorAddress actually is an RAllocator*
 		err = KErrNotFound;
 		}
-	if (err && aChunkMaxSize > 0)
+	if (err && aChunkMaxSize > 0 && iAllocatorAddress == aChunkBase)
 		{
 		TInt oldErr = err;
 		TAllocatorType oldType = iAllocatorType;
@@ -1687,7 +1693,7 @@ DChunk* LtkUtils::RAllocatorHelper::OpenUnderlyingChunk()
 DChunk* LtkUtils::RUserAllocatorHelper::OpenUnderlyingChunk()
 	{
 	if (iAllocatorType != EUrelOldRHeap && iAllocatorType != EUdebOldRHeap && iAllocatorType != EUrelHybridHeap && iAllocatorType != EUdebHybridHeap) return NULL;
-	// Note RKernelSideAllocatorHelper doesn't use or access RAllocatorHelper::iChunk, because we figure out the chunk handle in a different way.
+	// Note RUserAllocatorHelper doesn't use or access RAllocatorHelper::iChunk, because we figure out the chunk handle in a different way.
 	// It is for this reason that iChunk is private, to remove temptation
 	
 	// Enter and leave in CS and with no locks held. On exit the returned DChunk has been Open()ed.

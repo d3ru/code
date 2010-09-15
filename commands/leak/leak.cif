@@ -18,7 +18,7 @@ A tool for purposefully wasting memory.
 
 ==long-description
 
-Sits in a loop allocating memory. This continues until either the specified amount of memory has been consumed, or an error occurs. The allocations can be configured to come from a raw RChunk, or via an RHeap (C<User::ChunkHeap()>). The command waits for a keypress before exiting and freeing the memory.
+Sits in a loop allocating memory. This continues until either the specified amount of memory has been consumed, or an error occurs. The allocations are not done in the main application heap, rather the from a raw RChunk (the default), or via an RHeap (C<User::ChunkHeap()>) if the C<--heap> option is given. The command waits for a keypress before exiting and freeing the memory.
 
 ==see-also
 
@@ -39,10 +39,6 @@ The number of bytes to leak on each increment. If not specified and a target amo
 ==option uint r rate
 
 The amount of time (in milliseconds) to wait between each increment. Defaults to zero (i.e. no wait).
-
-==option uint a address
-
-The address of a heap to leak into. The value should be in the address space of the process given by the C<--processid> option.
 
 ==option bool H heap
 

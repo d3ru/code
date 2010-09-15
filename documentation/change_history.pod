@@ -48,7 +48,15 @@ fshell's current working directory is now normalised (via new TFileName2::Normal
 
 =item *
 
-Fixed crash in L<start's|commands::start> C<--timeout> option.
+Fixed crash in L<start's|commands::start> C<--timeout> option and in L<chunkinfo|commands::chunkinfo> when specifying a chunk address.
+
+=item *
+
+The L<dialog|commands::dialog> command no longer misreports the button that was pressed when running under the text windowserver.
+
+=item *
+
+Changed built-in commands maximum heap size from 256KB to 1MB. This is because on a current S60 device 256KB is just too small for commands like chunkinfo to display all the chunks on the system. Also have seen problems listing large directories and deleting large numbers of files, that this change should help with too.
 
 =back
 

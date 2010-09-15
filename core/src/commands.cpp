@@ -4731,48 +4731,23 @@ CCommandBase* CCmdDialog::NewLC()
 
 CCmdDialog::~CCmdDialog()
 	{
+	Cancel();
+	iNotifier.Close();
 	delete iTitle;
 	delete iBody;
 	delete iButton1;
 	delete iButton2;
 	}
 
-CCmdDialog::CCmdDialog() : CCommandBase(EManualComplete)
+CCmdDialog::CCmdDialog() : CCommandBase(EManualComplete|ECaptureCtrlC)
 	{
+	SetExtension(this);
 	}
 
 const TDesC& CCmdDialog::Name() const
 	{
 	_LIT(KName, "dialog");
 	return KName;
-	}
-
-CCmdDialog::TMode CCmdDialog::ModeL() const
-	{
-	_LIT(KDialogImpl, "DIALOG_IMPL");
-	_LIT(KImplNotifier, "notifier");
-	_LIT(KImplConsole, "console");
-	_LIT(KImplNull, "null");
-
-	TMode mode = EModeNotifier;
-	if (Env().IsDefined(KDialogImpl))
-		{
-		const TDesC& impl = Env().GetAsDesL(KDialogImpl);
-		if (impl == KImplNotifier)
-			{
-			mode = EModeNotifier;
-			}
-		else if (impl == KImplConsole)
-			{
-			mode = EModeConsole;
-			}
-		else if (impl == KImplNull)
-			{
-			mode = EModeNull;
-			}
-		}
-
-	return mode;
 	}
 
 void CCmdDialog::DoRunL()
@@ -4803,21 +4778,14 @@ void CCmdDialog::DoRunL()
 		Stdin().ReadL(ptr);
 		}
 	
-	switch (ModeL())
+	switch (iMode)
 		{
 		case EModeNotifier:
 			{
 			RNotifier notifier;
-			User::LeaveIfError(notifier.Connect());
-			CleanupClosePushL(notifier);
-
-			TInt buttonValue;
-			TRequestStatus status;
-			notifier.Notify(*iTitle, *iBody, *iButton1, *iButton2, buttonValue, status);
-			User::WaitForRequest(status);
-			Complete(buttonValue);
-
-			CleanupStack::PopAndDestroy(&notifier);
+			LeaveIfErr(iNotifier.Connect(), _L("Couldn't connect to RNotifier"));
+			iNotifier.Notify(*iTitle, *iBody, *iButton1, *iButton2, iReturnValue, iStatus);
+			SetActive();
 			break;
 			}
 		case EModeConsole:
@@ -4894,10 +4862,12 @@ void CCmdDialog::OptionsL(RCommandOptionList& aOptions)
 	_LIT(KOptTitle, "title");
 	_LIT(KOptButton1, "first-button");
 	_LIT(KOptButton2, "second-button");
+	_LIT(KOptMode, "mode");
 
 	aOptions.AppendStringL(iTitle, KOptTitle);
 	aOptions.AppendStringL(iButton1, KOptButton1);
 	aOptions.AppendStringL(iButton2, KOptButton2);
+	aOptions.AppendEnumL((TInt&)iMode, KOptMode);
 	}
 
 void CCmdDialog::ArgumentsL(RCommandArgumentList& aArguments)
@@ -4906,6 +4876,33 @@ void CCmdDialog::ArgumentsL(RCommandArgumentList& aArguments)
 	aArguments.AppendStringL(iBody, KArgBody);
 	}
 
+void CCmdDialog::DoCancel()
+	{
+	iNotifier.NotifyCancel();
+	}
+
+void CCmdDialog::RunL()
+	{
+	// text notifier gets the buttons the wrong way round, so check if it's running and if so swap the return value around
+	_LIT(KTextWindowServerName, "EWSRV.EXE[100000bf]0001"); // This is the same on winscw and target. The gui windowserver has a different UID
+	RProcess ewsrv;
+	TInt err = ewsrv.Open(KTextWindowServerName);
+	if (err == KErrNone)
+		{
+		if (iReturnValue) iReturnValue = 0;
+		else iReturnValue = 1;
+		ewsrv.Close();
+		}
+
+	Complete(iReturnValue);
+	}
+
+void CCmdDialog::CtrlCPressed()
+	{
+	//Cancel();
+	//Complete(KErrNone);
+	Printf(_L("Sorry, clients of RNotifier cannot safely be killed, and RNotifier::NotifyCancel() doesn't work. If you really want to risk it hit CTRL-Z and run \"kill -Tm *dialog*\". Otherwise you must dismiss the dialog on the device.\r\n"));
+	}
 
 //
 // CCmdJit.

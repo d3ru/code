@@ -962,32 +962,40 @@ private:
 	TFileName2 iFileName;
 	};
 
-class CCmdDialog : public CCommandBase
+class CCmdDialog : public CCommandBase, public MCommandExtensionsV2
 	{
 public:
 	static CCommandBase* NewLC();
 	~CCmdDialog();
 private:
-	enum TMode
-		{
-		EModeNotifier,
-		EModeConsole,
-		EModeNull
-		};
-private:
 	CCmdDialog();
-	TMode ModeL() const;
 	void ClearLineL(RIoConsoleWriteHandle& aWriteHandle);
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();
 	virtual void OptionsL(RCommandOptionList& aOptions);
 	virtual void ArgumentsL(RCommandArgumentList& aArguments);
+private: // From CActive
+	void RunL();
+	void DoCancel();
+private: // From MCommandExtensionsV2
+	void CtrlCPressed();
+
 private:
 	HBufC* iTitle;
 	HBufC* iBody;
 	HBufC* iButton1;
 	HBufC* iButton2;
+	enum TMode
+		{
+		EModeNotifier,
+		EModeConsole,
+		EModeNull
+		};
+	TMode iMode;
+
+	RNotifier iNotifier;
+	TInt iReturnValue;
 	};
 
 #ifdef __WINS__
