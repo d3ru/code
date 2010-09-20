@@ -51,6 +51,7 @@ void CUsbConsole::ConstructL(const TDesC& aTitle)
 		{
 		iUsb.TryStart(portConfig.iPersonality, stat);
 		User::WaitForRequest(stat);
+		User::After(500000); // Ugh need to wait for the TryStart to finish. There's probably some other async notification I could wait on but I'm in a hurry to get this working...
 		Message(ErrOrDebug(stat.Int()), _L("Starting USB personality %d returned %d"), portConfig.iPersonality, stat.Int());
 		}
 
