@@ -68,6 +68,9 @@ void CCmdUsb::OptionsL(RCommandOptionList& /*aOptions*/)
 	}
 
 #define CASE_LIT(x) case x: { _LIT(KName, #x); return &KName; }
+#define CASE_LIT2(x, y) case x: { _LIT(KName, y); return &KName; }
+
+_LIT(KUnknown, "?");
 
 const TDesC* DeviceState(TUsbDeviceState aState)
 	{
@@ -82,7 +85,6 @@ const TDesC* DeviceState(TUsbDeviceState aState)
 		CASE_LIT(EUsbDeviceStateSuspended);
 		default:
 			{
-			_LIT(KUnknown, "?");
 			return &KUnknown;
 			}
 		}
@@ -98,10 +100,19 @@ const TDesC* ServiceState(TUsbServiceState aState)
 		CASE_LIT(EUsbServiceStopping);
 		CASE_LIT(EUsbServiceFatalError);
 		default:
-			{
-			_LIT(KUnknown, "?");
 			return &KUnknown;
-			}
+		}
+	}
+
+const TDesC* ClassName(TUid aClass)
+	{
+	switch (aClass.iUid)
+		{
+		CASE_LIT2(0x101FBF22, "ACM");
+		CASE_LIT2(0x101fbf24, "Obex");
+		CASE_LIT2(0x10204bbc, "Mass storage");
+		default:
+			return &KUnknown;
 		}
 	}
 
@@ -118,10 +129,26 @@ void CCmdUsb::DoRunL()
 	Printf(_L("Usb Service state = %S (%d)\r\n"), ServiceState(servicestate), servicestate);
 
 	RArray<TInt> ids;
+	CleanupClosePushL(ids);
 	LeaveIfErr(iUsb.GetPersonalityIds(ids), _L("Couldn't get personalities ids"));
 	for (TInt i = 0; i < ids.Count(); i++)
 		{
 		Printf(_L("Personality %d\r\n"), ids[i]);
+		RArray<TUid> classUids;
+		CleanupClosePushL(classUids);
+		TInt err = iUsb.GetSupportedClasses(ids[i], classUids);
+		if (err)
+			{
+			PrintWarning(_L("Couldn't get classes for personality %d, err=%d"), ids[i], err);
+			}
+		else
+			{
+			for (TInt classIdx = 0; classIdx < classUids.Count(); classIdx++)
+				{
+				Printf(_L("    0x%08x (%S)\r\n"), classUids[classIdx], ClassName(classUids[classIdx]));
+				}
+			}
+		CleanupStack::PopAndDestroy(&classUids);
 		}
 
 	if (iArguments.IsPresent(&iPersonality))
@@ -132,4 +159,5 @@ void CCmdUsb::DoRunL()
 		LeaveIfErr(stat.Int(), _L("Couldn't start USB personality %d"), iPersonality);
 		Printf(_L("USB started ok.\r\n"));
 		}
+	CleanupStack::PopAndDestroy(&ids);
 	}

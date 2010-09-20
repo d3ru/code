@@ -17,6 +17,15 @@
 #include <usbman.h>
 #include "vtc_serial.h"
 
+class TUsbPortConfig
+	{
+public:
+	TUsbPortConfig();
+
+	TPtrC iPort;
+	TInt iPersonality;
+	};
+
 NONSHARABLE_CLASS(CUsbConsole) : public CVtcSerialConsole
 	{
 public:
@@ -24,6 +33,9 @@ public:
 	virtual ~CUsbConsole();
 private: // From CVtcSerialConsole.
 	virtual void ConstructL(const TDesC& aTitle);
+private:
+	TInt ReadConfig(const TDesC& aConfigDes, TUsbPortConfig& aConfig);
+
 private:
 	RUsb iUsb;
 	};

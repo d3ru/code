@@ -122,7 +122,27 @@ Alternatively, if L<fshell|fshell> (or any of F<fshell>'s external C<CCommandBas
 
 =head2 USB Variant
 
-Vt100usbcons behaves the same as the serial variant, with the exception that it waits for USB to enumerate into a personality that supports ACM if not already present. In other words it waits for the USB cable to be inserted before trying to open the port. If necessary it also waits for the user to select a config that includes some USB serial ports. It expects the C<--console-title> argument to be of the format C<ACM::x> where x is the port number. This number is platform-specific but is usually 0 or 1. Generally this will be taken care of already in the platform-specific build of the toolkit and you can just launch the "fshell (USB)" icon.
+Vt100usbcons behaves the same as the serial variant, with the exception that it waits for USB to enumerate into a personality that supports ACM if not already present. In other words it waits for the USB cable to be inserted before trying to open the port. If necessary it also waits for the user to select a config that includes some USB serial ports. 
+
+vt100usbcons.dll is configured via the C<--console-title> string in a similar way to the serial variant. The follow keyword / value pairs are supported:
+
+=over 5
+
+=item * C<port=name>
+
+The USB port name. This is platform specific but is usually C<ACM::0> or C<ACM::1>. Generally this will be taken care of already in the platform-specific configuration and you can just launch the "fshell (USB)" icon or run "comm.script".
+
+=item * C<personality=value>
+
+If it is necessary to start a USB personality before connecting, specify the personality number here, for example C<personality=1>. This parameter is not usually needed except on some text-shell builds.
+
+=back
+
+Example usage:
+
+  fshell --console vt100usbcons --console-title port=ACM::1,personality=1
+
+For compatibility with earlier releases, the C<port=> may be ommitted if there are no other configuration parameters. For example "fshell --console vt100usbcons --console-title ACM::1".
 
 =head2 Bluetooth Variant
 

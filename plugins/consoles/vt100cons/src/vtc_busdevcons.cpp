@@ -106,7 +106,8 @@ TInt CVtcBusDevCommConsole::ReadConfig(const TDesC& aConfigDes, TPortConfig& aCo
 		else if (keyword == KKeywordPort)
 			{
 			TLex lex(value);
-			User::LeaveIfError(lex.Val(aConfig.iPort));
+			TInt err = lex.Val(aConfig.iPort);
+			if (err) return err;
 			keywordFound = ETrue;
 			}
 		else if (keyword == KKeywordRate)

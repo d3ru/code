@@ -11,4 +11,4 @@
 # Accenture - Initial contribution
 #
 
-source $SCRIPT_PATH\comm.script
+source comm.script

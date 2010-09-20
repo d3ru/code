@@ -14,6 +14,16 @@ __END__
 
 =head1 FShell Change History
 
+=head2 Release 002 [Not yet released]
+
+=over 5
+
+=item *
+
+Added support for automatically starting a USB personality to vt100usbcons via a new C<personality=x> key-value pair. See the L<vt100usbcons|vt100cons/usb variant> documentation for more information.
+
+=back
+
 =head2 Release 001
 
 =over 5
