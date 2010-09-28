@@ -20,6 +20,10 @@ __END__
 
 =item *
 
+Fixed crash in fed's handling of UTF-8 sequences split over a block boundary.
+
+=item *
+
 Added support for automatically starting a USB personality to vt100usbcons via a new C<personality=x> key-value pair. See the L<vt100usbcons|vt100cons/usb variant> documentation for more information.
 
 =back

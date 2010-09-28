@@ -58,7 +58,7 @@ archived
 
 =back
 
-For example, C<d--s-> indicates a drectory with the system bit set.
+For example, C<d--s-> indicates a directory with the system bit set.
 
 ==option bool H human
 

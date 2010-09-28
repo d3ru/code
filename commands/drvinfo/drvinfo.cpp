@@ -155,20 +155,19 @@ void CCmdDrvinfo::FormatVolInfoL(const TVolumeInfo& volInfo, IoUtils::CTextBuffe
 		}
 	if (iVerbose)
 		{
-		aPrintBuf.AppendFormatL(_L("VolName:\t\'%S\'"), &volInfo.iName);
+		aPrintBuf.AppendFormatL(_L("VolName:\t\'%S\'\r\n"), &volInfo.iName);
 		}
-	aPrintBuf.AppendL(_L("\r\n"));
 	}
 
 void CCmdDrvinfo::PrintDriveInfoL(TInt aDriveNum)
 	{
 	IoUtils::CTextBuffer* buf = IoUtils::CTextBuffer::NewLC(0x100);
 
-	TDriveInfo 	driveInfo;
+	TDriveInfo driveInfo;
 	User::LeaveIfError(FsL().Drive(driveInfo, aDriveNum));
 
 	TVolumeInfo volInfo;
-	User::LeaveIfError(Fs().Volume(volInfo, aDriveNum));
+	TInt volErr = Fs().Volume(volInfo, aDriveNum);
 
 	if (iVerbose || (iDriveLetter == NULL))
 		{
@@ -191,7 +190,7 @@ void CCmdDrvinfo::PrintDriveInfoL(TInt aDriveNum)
 		FormatMediaAttInfoL(driveInfo, *buf);
 		}
 
-	FormatVolInfoL(volInfo, *buf);
+	if (volErr == KErrNone) FormatVolInfoL(volInfo, *buf);
 
 	CTextFormatter* formatter = CTextFormatter::NewLC(Stdout());
 	formatter->TabulateL(0, 2, buf->Descriptor());

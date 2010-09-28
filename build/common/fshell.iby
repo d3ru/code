@@ -49,4 +49,8 @@ FSHELL_EXECUTABLE_FILE(consoleextensions.dll) // TODO move this to the new fshel
 FSHELL_EXECUTABLE_FILE(terminalkeyboardcons.dll) // TODO move this to the new fshell_consoles.iby
 #endif
 
+#ifdef FSHELL_TESTEXECUTE_SUPPORT
+FSHELL_EXECUTABLE_FILE(tefcons.dll) // TODO move this to the new fshell_consoles.iby
+#endif
+
 #endif // FSHELL_IBY
