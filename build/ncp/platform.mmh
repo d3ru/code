@@ -21,5 +21,6 @@
 #define FSHELL_FLEXIBLEMM_AWARE
 #define FSHELL_ARM11XX_SUPPORT
 #define FSHELL_TRACECORE_SUPPORT
+#define FSHELL_NO_HTTP_SUPPORT // wk38 mislaid httpstringconstants.h
 
 #endif // FSHELL_PLATFORM_MMH
