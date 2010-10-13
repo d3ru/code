@@ -50,3 +50,11 @@ A symbolic name for the hardware variant may be specified instead of having to k
 
 Copyright (c) 2008-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+variant $Quiet
+
+# One of these has to be true
+variant wins || variant target || $Error
+# But they can't both be
+variant wins && variant target && $Error

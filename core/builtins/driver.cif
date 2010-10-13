@@ -48,3 +48,6 @@ The driver name, e.g. C<ECOMM>. Need not be specified for the C<list> operation.
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+driver list logical $Quiet

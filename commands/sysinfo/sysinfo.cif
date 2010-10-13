@@ -60,3 +60,6 @@ Display Machine UID only. Useful for getting the machine uid into an environment
 
 Copyright (c) 2008-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+sysinfo $Silent # Warnings about not being able to open TSY etc are acceptable so use $Silent

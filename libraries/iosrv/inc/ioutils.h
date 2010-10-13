@@ -579,11 +579,14 @@ public:
 	IMPORT_C static CCommandInfoFile* NewL(RFs& aFs, const TDesC& aFileName);
 	IMPORT_C static CCommandInfoFile* NewL(RFs& aFs, const CEnvironment& aEnvironment, const TDesC& aCommandName);
 	IMPORT_C ~CCommandInfoFile();
+	IMPORT_C const TDesC& CifFileName() const;
 	IMPORT_C const TDesC& Name() const;
 	IMPORT_C const TDesC& ShortDescription() const;
 	IMPORT_C const TDesC& LongDescription() const;
 	IMPORT_C const TDesC& SeeAlso() const;
 	IMPORT_C const TDesC& Copyright() const;
+	IMPORT_C const TDesC& SmokeTest() const;
+	IMPORT_C TInt GetSmokeTestStartingLineNumber() const;
 	IMPORT_C const RCommandArgumentList& Arguments();
 	IMPORT_C const RCommandOptionList& Options() const;
 	IMPORT_C void AssignL(RCommandArgumentList& aArguments, RCommandOptionList& aOptions) const;
@@ -609,6 +612,8 @@ private:
 	TPtrC iLongDescription;
 	TPtrC iSeeAlso;
 	TPtrC iCopyright;
+	TPtrC iSmokeTest;
+	TInt iSmokeTestLineNumber;
 	RCommandArgumentList iArguments;
 	RCommandOptionList iOptions;
 	RArray<RBuf> iBufs;

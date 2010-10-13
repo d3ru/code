@@ -25,6 +25,7 @@ CWin32Console::CWin32Console()
 
 CWin32Console::~CWin32Console()
 	{
+	CleanupUnderlyingConsole();
 	iWin32.FreeConsole();
 	// when call FreeConsole(), it should cause the reader thread to exit as the
 	// console read handle will become invalid, and windows will complete the
@@ -61,7 +62,8 @@ TInt CWin32Console::Create(const TDesC& aTitle, TSize /*aSize*/)
 	err = iReaderThread.Create(KReadThreadName, ReaderThread, 0x800, KMinHeapSize, KMinHeapSize*4, &iThreadParams);
 	if (err!=KErrNone) return err;
 	iReaderThread.Resume();	
-	
+	CleanupUnderlyingConsole();
+
 	return KErrNone;
 	}
 

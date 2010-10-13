@@ -15,6 +15,8 @@
 #include "vtc_usb.h"
 #include <usbclassuids.h>
 
+; // This semicolon is to hack around usbclassuids.h having a typo in it that *still* isn't fixed in s60\tb92 and ncp builds...
+
 EXPORT_C TAny* NewConsole()
 	{
 	return new CUsbConsole;

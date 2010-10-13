@@ -168,6 +168,7 @@ FSHELL_COMMAND_INFO_FILE(fshell,ps.cif)
 #ifdef FSHELL_CORE_SUPPORT_BUILTIN_REBOOT
 FSHELL_COMMAND_INFO_FILE(fshell,reboot.cif)
 #endif
+FSHELL_COMMAND_INFO_FILE(fshell,ciftest.cif)
 
 #ifdef FSHELL_REPLACE_ECONS
 FSHELL_EXECUTABLE_AS_DATA(iocons.dll,iocons.dll)
@@ -187,6 +188,31 @@ FSHELL_RENAMED_EXECUTABLE_FILE(econs.dll,econs_fb.dll)
 
 #ifdef FSHELL_PERL_SUPPORT
 FSHELL_DATA_FILE(ZSYSTEM\perl\lib\Fshell\TextServerClient.pm, system\perl\lib\Fshell\TextServerClient.pm)
+#endif
+
+#ifdef FSHELL_INCLUDE_TESTS
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\args.script, system\console\scripts\args.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\checkargs.script, system\console\scripts\checkargs.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\setenv.script, system\console\scripts\setenv.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\addenv.script, system\console\scripts\addenv.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\printerror.script, system\console\scripts\printerror.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\fshell-basic-test.script, system\console\scripts\fshell-basic-test.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\fshell-last-test.script, system\console\scripts\fshell-last-test.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\fshell-ccommandbase-test.script, system\console\scripts\fshell-ccommandbase-test.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\fshell-unicode-test.script, system\console\scripts\fshell-unicode-test.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\fshell-scriptcif-test.script, system\console\scripts\fshell-scriptcif-test.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\smoketest.script, system\console\scripts\smoketest.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\tscriptargs.script, system\console\scripts\tscriptargs.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\tlotsofscriptargs.script, system\console\scripts\tlotsofscriptargs.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\errordef.script, system\console\scripts\errordef.script)
+FSHELL_COMMAND_INFO_FILE(fshell,tenvarguments.cif)
+
+FSHELL_EXECUTABLE_FILE(tlast.exe)
+FSHELL_EXECUTABLE_FILE(tconsole.exe)
+FSHELL_EXECUTABLE_FILE(fshell_tinteger.exe)
+FSHELL_EXECUTABLE_FILE(tfshellarguments.exe)
+FSHELL_EXECUTABLE_FILE(tenvarguments.exe)
+FSHELL_EXECUTABLE_FILE(tnoncifenvarguments.exe)
 #endif
 
 #endif

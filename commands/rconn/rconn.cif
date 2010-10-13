@@ -48,3 +48,6 @@ The network identifier to use.
 
 Copyright (c) 2009-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+rconn list $Quiet

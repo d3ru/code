@@ -40,3 +40,6 @@ Return zero if the console implementation is F<nullcons.dll>.
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+console $Quiet

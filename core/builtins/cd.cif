@@ -16,11 +16,20 @@
 
 Change the current working directory.
 
+==long-description
+
+Note, C<cd> can be used to navigate between drives (eg C<cd e:\>), but the DOS approach of switching between drives with commands like C<c:> and C<e:> is also supported.
+
+The current working directory is stored in the environment variable C<PWD>, but you should use the cd command rather than updating this variable directly.
+
 ==argument filename directory
 
 The directory to change to.
 
+==see-also
+
+L<ls|ls>
+
 ==copyright
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
-

@@ -852,7 +852,7 @@ TInt CFileBlock::BlockDidLoad(TEncodingType& aEncoding, TDelimiterType& aDelimTy
 				{
 				// Can be null if charconv is busted
 				bytesLeft = aCharconvForUtf8Conversion->ConvertToUnicode(iData, data, state, numUnconverted, firstUnconverted);
-				ASSERT(bytesLeft <= 0); // Otherwise we didn't make our buffer big enough
+				ASSERT(bytesLeft <= 3); // Otherwise we didn't make our buffer big enough. There could be up to 3 bytes remaining if the block ends in a truncated UTF-8 sequence
 				// bytesLeft less than zero means an invalid sequence at the start of the buffer. Since our block size will never be so small there's no risk it's the start of a truncated sequence
 				}
 
@@ -865,16 +865,16 @@ TInt CFileBlock::BlockDidLoad(TEncodingType& aEncoding, TDelimiterType& aDelimTy
 			else if (firstUnconverted >= 0)
 				{
 				// Got some bad data
-				if (iNext && data.Length() - firstUnconverted < 4)
+				if (iNext && data.Length() - bytesLeft < 4 && firstUnconverted == data.Length() - bytesLeft)
 					{
 					// Possibly a UTF-8 sequence spread over a block boundary
 					blockEncoding = EEncodingUtf8;
-					TInt err = iNext->TransferDataFromPreviousBlock(this, data.Mid(firstUnconverted));
+					TInt err = iNext->TransferDataFromPreviousBlock(this, data.Right(bytesLeft));
 					if (!err)
 						{
-						iBlockSize = firstUnconverted;
+						iBlockSize -= bytesLeft;
 						}
-					iData.SetLength(iData.Locate(0xFFFD)); // No better way of figuring out where charconv barfed than to scan for the first instance of the substitution character
+					iData.SetLength(iData.LocateReverse(0xFFFD)); // No better way of figuring out where charconv barfed than to scan for the last instance of the substitution character
 					}
 				else
 					{

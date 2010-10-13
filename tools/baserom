@@ -152,6 +152,11 @@ sub CreateNewObeyFile() {
 	open TSHELL_NEW, ">$newObyName" or die "Can't write to $newObyName: $!\n";
 
 	print "Creating tshell_$obyName.oby\n";
+	
+	if ($extraInclude) {
+		print TSHELL_NEW "#include \"$obyName/$extraInclude\"\n";
+	}
+
 
 	while (my $line = <TSHELL_OBY>) {
 		print TSHELL_NEW "$line";
@@ -221,7 +226,6 @@ sub CreateNewObeyFile() {
 		open IBYCPP, "$cmd |" or die "Can't run '$cmd': $!\n";
 		while (my $line = <IBYCPP>) {
 			chomp $line;
-			#print "TOMSCI: $line\n";
 			if ($line =~ m/^BASEROMHASHINCLUDE\s+[<"](.*)[>"]/ ) {
 				my $iby = $1;
 				if (!$ibysProcessed{lc($iby)}) {

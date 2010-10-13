@@ -52,9 +52,9 @@ void MParserObserver::LineReturned(TInt)
 	{
 	}
 
-CParser* CParser::NewL(TUint aMode, const TDesC& aDes, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver)
+CParser* CParser::NewL(TUint aMode, const TDesC& aDes, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver, TInt aStartingLineNumber)
 	{
-	CParser* self = new(ELeave) CParser(aMode, aDes, aIoSession, aStdin, aStdout, aStderr, aEnv, aFactory, aObserver);
+	CParser* self = new(ELeave) CParser(aMode, aDes, aIoSession, aStdin, aStdout, aStderr, aEnv, aFactory, aObserver, aStartingLineNumber);
 	CleanupStack::PushL(self);
 	self->ConstructL();
 	CleanupStack::Pop();
@@ -78,8 +78,8 @@ CParser::~CParser()
 		}
 	}
 
-CParser::CParser(TUint aMode, const TDesC& aDes, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver)
-	: iMode(aMode), iData(aDes), iIoSession(aIoSession), iStdin(aStdin), iStdout(aStdout), iStderr(aStderr), iEnv(aEnv), iFactory(aFactory), iObserver(aObserver), iCompletionError(aStderr, aEnv), iNextLineNumber(1)
+CParser::CParser(TUint aMode, const TDesC& aDes, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver, TInt aStartingLineNumber)
+	: iMode(aMode), iData(aDes), iIoSession(aIoSession), iStdin(aStdin), iStdout(aStdout), iStderr(aStderr), iEnv(aEnv), iFactory(aFactory), iObserver(aObserver), iCompletionError(aStderr, aEnv), iNextLineNumber(aStartingLineNumber)
 	{
 	}
 

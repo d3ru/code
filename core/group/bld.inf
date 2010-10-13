@@ -81,6 +81,7 @@ FSHELL_ROM_INCLUDE(fshell_core.iby)
 ..\builtins\ymodem.cif            z:\resource\cif\fshell\ymodem.cif
 ..\builtins\version.cif           z:\resource\cif\fshell\version.cif
 ..\builtins\undertaker.cif        z:\resource\cif\fshell\undertaker.cif
+..\builtins\ciftest.cif           z:\resource\cif\fshell\ciftest.cif
 
 #ifdef FSHELL_CORE_SUPPORT_CHUNKINFO
 ..\builtins\chunkinfo.cif         z:\resource\cif\fshell\chunkinfo.cif

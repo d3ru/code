@@ -28,3 +28,6 @@ Instead of clearing the console completely, write a page's worth of newlines to 
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+cls --formfeed $Quiet

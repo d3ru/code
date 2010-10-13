@@ -28,3 +28,6 @@ Print sizes in human readable form.
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+variant target && rom --verbose $Quiet

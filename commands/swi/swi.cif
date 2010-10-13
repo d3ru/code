@@ -56,3 +56,6 @@ A pattern used to match package names and vendors for "list" (defaults to "*").
 
 Copyright (c) 2008-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+swi list $Quiet

@@ -30,7 +30,7 @@ Read the files even if they are open exclusively by another process. Runs a smal
 
 ==option bool b binary
 
-Legacy option, kept for compatability. Equivalent to C<--encoding binary>.
+Similar to C<--encoding binary>, but in addition sets the console mode to binary (so, for eg, line endings are not translated)
 
 ==option enum e encoding
 

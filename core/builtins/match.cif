@@ -43,3 +43,13 @@ Copyright (c) 2006-2010 Accenture. All rights reserved.
 ==see-also
 
 L<grep|grep>
+
+==smoke-test
+
+echo "Test line of some sort^r^nIsn't fshell great?^r^nSome other line" | export -s TESTDATA
+echo "$TESTDATA" | match *fshell* | export -s RESULT
+var RESULT == "Isn't fshell great?^r^n" || $Error
+
+# Test anchored search
+echo "$TESTDATA" | match Some* | export -s RESULT
+var RESULT == "Some other line^r^n" || $Error

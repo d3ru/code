@@ -24,7 +24,7 @@
 #include "xmodem.h"
 #include "ymodem.h"
 #include "version.h"
-
+#include "ciftest.h"
 
 //
 // Constants.
@@ -301,7 +301,7 @@ void CCommandFactory::ConstructL()
 	AddThreadCommandL(CCmdStart::NewLC);
 	AddThreadCommandL(CCmdCompare::NewLC);
 	AddThreadCommandL(CCmdTime::NewLC);
-	AddThreadCommandL(CCmdRepeat::NewLC);
+	AddThreadCommandL(CCmdRepeat::NewLC); // TODO: Should this have EUpdateEnvironment? It seems weird that source and foreach do but repeat doesn't. -TomS
 	AddThreadCommandL(CCmdDebug::NewLC);
 	AddThreadCommandL(CCmdReadMem::NewLC);
 	AddThreadCommandL(CCmdE32Header::NewLC);
@@ -323,6 +323,7 @@ void CCommandFactory::ConstructL()
 #ifdef FSHELL_CORE_SUPPORT_BUILTIN_REBOOT
 	AddThreadCommandL(CCmdReboot::NewLC);
 #endif
+	AddThreadCommandL(CCmdCifTest::NewLC);
 
 	// Add some DOS-style namings of common commands.
 	AddThreadCommandL(_L("del"), CCmdRm::NewLC, CCommandConstructorBase::EAttAlias);

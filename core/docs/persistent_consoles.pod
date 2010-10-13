@@ -79,7 +79,7 @@ This creates a new process in the background, which owns a a new persistent cons
 	my pcons      fshell::pcons_00  -       -
 	fshell_pcons  fshell(2)         -       -
 
-This equivilant to typing C<pcons new fshell_pcons>.
+This equivalent to typing C<pcons new fshell_pcons>.
 
 You can also specify a process to launch when using C<pcons new> by specifying a command and arguments after the console name. For example,
 

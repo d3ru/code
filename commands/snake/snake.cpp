@@ -16,7 +16,9 @@
 using namespace IoUtils;
 
 _LIT(KSnakeSeg, "*");
+_LIT(KUnicodeSnakeSeg, "\u2588"); // Full block
 _LIT(KBait, "$");
+_LIT(KUnicodeBait, "\u2665"); // heart
 
 class CKeyWatcher;
 
@@ -45,6 +47,7 @@ private: // From CCommandBase.
 	void SetBoard(TInt aX, TInt aY, TBool aSet);
 	TBool GetBoard(TInt aX, TInt aY);
 	void DrawBoardL();
+	TUint16 BoardCharacter(TInt aX, TInt aY);
 	void InitSnakeL(TInt aLen, TPoint aPos);
 	void DrawSnakeL();
 	void DrawScore();
@@ -64,6 +67,7 @@ private:
 	TPoint iBait;
 	TInt iScore;
 	TInt iSpeed;
+	TBool iUnicode;
 	
 	CKeyWatcher* iKeys;
 	CPeriodic* iTimer;
@@ -163,6 +167,8 @@ void CCmdSnake::OptionsL(RCommandOptionList& aOptions)
 	{
 	_LIT(KOptSpeed, "speed");
 	aOptions.AppendIntL(iSpeed, KOptSpeed);
+	_LIT(KOptUnicode, "unicode");
+	aOptions.AppendBoolL(iUnicode, KOptUnicode);
 	}
 	
 void CCmdSnake::ConstructL()
@@ -230,7 +236,8 @@ void CCmdSnake::DrawBoardL()
 		{
 		for (TInt x=0; x<iBoardSize.iWidth; ++x)
 			{
-			line[x] = GetBoard(x,y) ? '#' : ' ';
+			//line[x] = GetBoard(x,y) ? '#' : ' ';
+			line[x] = BoardCharacter(x, y);
 			}
 		User::LeaveIfError(iCons.SetCursorPosAbs(TPoint(0, y)));
 		User::LeaveIfError(iCons.Write(line));
@@ -239,7 +246,57 @@ void CCmdSnake::DrawBoardL()
 	
 	CleanupStack::PopAndDestroy();
 	}
-	
+
+TUint16 CCmdSnake::BoardCharacter(TInt aX, TInt aY)
+	{
+	if (!GetBoard(aX, aY))
+		{
+		return ' ';
+		}
+	else if (!iUnicode)
+		{
+		return '#';
+		}
+	else
+		{
+		// TODO this is too simplistic for anything other than the basic board
+		if (aX == 0)
+			{
+			if (aY == 0)
+				{
+				return 0x2554; // TL
+				}
+			else if (aY == iBoardSize.iHeight - 1)
+				{
+				return 0x255A; // BL
+				}
+			else
+				{
+				return 0x2551;
+				}
+			}
+		else if (aX == iBoardSize.iWidth - 1)
+			{
+			if (aY == 0)
+				{
+				return 0x2557; // TR
+				}
+			else if (aY == iBoardSize.iHeight - 1)
+				{
+				return 0x255D; // BR;
+				}
+			else
+				{
+				return 0x2551;
+				}
+			}
+		else
+			{
+			return 0x2550;
+			}
+		}
+	}
+
 void CCmdSnake::InitSnakeL(TInt aLen, TPoint aPos)
 	{
 	iSnake.Reset();
@@ -255,7 +312,7 @@ void CCmdSnake::DrawSnakeL()
 	for (TInt i=0; i<iSnake.Count(); ++i)
 		{
 		User::LeaveIfError(iCons.SetCursorPosAbs(iSnake[i]));
-		User::LeaveIfError(iCons.Write(KSnakeSeg));
+		User::LeaveIfError(iCons.Write(iUnicode ? KUnicodeSnakeSeg : KSnakeSeg));
 		}
 	}
 
@@ -355,7 +412,7 @@ void CCmdSnake::OnTimer()
 		iCons.Write(_L(" "));
 		}
 	iCons.SetCursorPosAbs(newHead);
-	iCons.Write(KSnakeSeg);
+	iCons.Write(iUnicode ? KUnicodeSnakeSeg : KSnakeSeg);
 	iSnakeHead = (iSnakeHead+1) % iSnake.Count();
 	iSnake[iSnakeHead] = newHead;
 	
@@ -398,7 +455,7 @@ void CCmdSnake::PlaceBait()
 			}
 		} while (!ok);
 	iCons.SetCursorPosAbs(iBait);
-	iCons.Write(KBait);
+	iCons.Write(iUnicode ? KUnicodeBait : KBait);
 	}
 
 void CCmdSnake::Grow()

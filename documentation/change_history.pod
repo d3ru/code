@@ -20,7 +20,19 @@ __END__
 
 =item *
 
+Commands can now define a C<==smoke-test> section in their CIF files, which defines a snippet of fshell script that will be run as part of C<fshell smoketest> or by invoking L<ciftest|commands::ciftest> directly. See the ciftest documentation for more details.
+
+=item *
+
+Fixed crash in fed's handling of UTF-8 sequences split over a block boundary.
+
+=item *
+
 Added support for automatically starting a USB personality to vt100usbcons via a new C<personality=x> key-value pair. See the L<vt100usbcons|vt100cons/usb variant> documentation for more information.
+
+=item *
+
+Added support for beagleboard to sf\3tshell platform.
 
 =back
 

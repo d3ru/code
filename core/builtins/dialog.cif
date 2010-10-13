@@ -60,3 +60,9 @@ The dialog is not shown to the user and it is assumed that the first button is a
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+# Don't actually post a dialog, the tests need to be unobtrusive (and non-blocking)
+export DIALOG_IMPL null
+dialog "Some question which isn't important"
+var ? == 0 || $Error

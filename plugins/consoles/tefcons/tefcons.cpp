@@ -47,6 +47,8 @@ CTefConsole::CTefConsole()
 	{
 	}
 
+_LIT(KDefaultLog, "c:\\logs\\testexecute\\fshell.htm");
+
 TInt CTefConsole::Create(const TDesC& aTitle, TSize /*aSize*/)
 	{
 	iLogger = new CTestExecuteLogger();
@@ -56,7 +58,11 @@ TInt CTefConsole::Create(const TDesC& aTitle, TSize /*aSize*/)
 	iLogger->SetLoggerOptions(logMode);
 	TInt err = iLogger->Connect();
 	if (err) return err;
-	const TDesC& logFilePath(aTitle);
+	TPtrC logFilePath(KDefaultLog);
+	if (aTitle.Left(5) == _L("name="))
+		{
+		logFilePath.Set(aTitle.Mid(5));
+		}
 	err = iLogger->HtmlLogger().CreateLog(logFilePath, RTestExecuteLogServ::ELogModeAppend);
 	if (err) return err;
 	iLogger->HtmlLogger().SetLogLevel(TLogSeverity(logLevel));

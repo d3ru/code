@@ -222,6 +222,8 @@ Works in GUI (DFS) builds - unlike the standard eshell plugin.
 
 Cons:
 
+=over 5
+
 =item *
 
 Requires Carbide and the Carbide Terminal Keyboard plugin to be installed.

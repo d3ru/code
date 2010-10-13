@@ -228,7 +228,14 @@ void CCmdLs::FormatEntryL(const TEntry& aEntry)
 			{
 			iFormatter->AppendFormatL(_L("%+ 10d  "), aEntry.iSize);
 			}
-		aEntry.iModified.FormatL(iTempBuf, _L("%1%/1%2%/2%3 %H%:1%T%:2%S "));
+		if (iOptNoLocalise)
+			{
+			iTempBuf.Format(_L("%+ 19Ld "), aEntry.iModified.Int64()); // 19 so the output is the same width whether or not iOptNoLocalise is specified (assuming roughly European date settings)
+			}
+		else
+			{
+			aEntry.iModified.FormatL(iTempBuf, _L("%1%/1%2%/2%3 %H%:1%T%:2%S "));
+			}
 		TPtrC pathRelativeToBaseDir = iFileName.Mid(iBaseDir.Length());
 		iFormatter->AppendFormatL(_L("%S%S%S\r\n"), &iTempBuf, &pathRelativeToBaseDir, &aEntry.iName);
 		}
@@ -289,13 +296,15 @@ void CCmdLs::OptionsL(RCommandOptionList& aOptions)
 	_LIT(KCmdLsOptLong, "long");
 	_LIT(KCmdLsOptHuman, "human");
 	_LIT(KCmdLsOptOnePerLine, "one");
-	_LIT(KCmdLsOpRecurse, "recurse");
+	_LIT(KCmdLsOptRecurse, "recurse");
+	_LIT(KCmdLsOptNoLocalise, "no-localise");
 
 	aOptions.AppendBoolL(iOptAll, KCmdLsOptAll);
 	aOptions.AppendBoolL(iOptLong, KCmdLsOptLong);
 	aOptions.AppendBoolL(iOptHuman, KCmdLsOptHuman);
 	aOptions.AppendBoolL(iOptOnePerLine, KCmdLsOptOnePerLine);
-	aOptions.AppendBoolL(iOptRecurse, KCmdLsOpRecurse);
+	aOptions.AppendBoolL(iOptRecurse, KCmdLsOptRecurse);
+	aOptions.AppendBoolL(iOptNoLocalise, KCmdLsOptNoLocalise);
 	}
 
 void CCmdLs::ArgumentsL(RCommandArgumentList& aArguments)
@@ -734,22 +743,17 @@ void CCmdRm::DoRunL()
 		{
 		TFileName2& fileName = iFileNames[i];
 		LeaveIfFileNotFound(fileName);
-		if (iRecurse)
+		if (fileName.IsDirL(FsL()))
 			{
-			if (fileName.IsDirL(FsL()))
+			if (iRecurse)
 				{
 				fileName.SetTypeL(TFileName2::EDirectory);
 				}
 			else
 				{
-				PrintError(KErrArgument, _L("Invalid use of \"-r\" option - \"%S\" is not a directory."), &fileName);
+				PrintError(KErrArgument, _L("Couldn't remove \"%S\" because it is a directory - use \"rm -r\" or \"rmdir\" instead."), &fileName);
 				User::Leave(KErrArgument);
 				}
-			}
-		else if (fileName.IsDirL(FsL()))
-			{
-			PrintError(KErrArgument, _L("Couldn't remove \"%S\" because it is a directory - use \"rm -r\" or \"rmdir\" instead."), &fileName);
-			User::Leave(KErrArgument);
 			}
 
 		TInt err = DoDelete(fileName);
@@ -776,7 +780,7 @@ void CCmdRm::DoRunL()
 TInt CCmdRm::DoDelete(const TDesC& aFileName)
 	{
 	TInt err;
-	if (iRecurse)
+	if (iRecurse && aFileName[aFileName.Length()-1] == '\\')
 		{
 		err = iFileMan->RmDir(aFileName);
 		}
@@ -2384,7 +2388,7 @@ void CCmdDate::Display(const TTime& aTime)
 	if (iRaw)
 		{
 		TInt64 time = aTime.Int64();
-		if (iUseKernelFormat) time += KY2kInMicroSeconds;
+		if (iUseY2k) time -= KY2kInMicroSeconds;
 		Printf(_L("%Ld\r\n"), time);
 		}
 	else if (iUseTimestampFormat)
@@ -2441,7 +2445,7 @@ void CCmdDate::DoRunL()
 	else
 		{
 		_LIT(KSettingError, "Cannot set the time");
-		if (iUseKernelFormat) iRawTimeToSet -= KY2kInMicroSeconds;
+		if (iUseY2k) iRawTimeToSet += KY2kInMicroSeconds;
 		TTime time(iRawTimeToSet);
 		if (iDateToSet)
 			{
@@ -2500,7 +2504,7 @@ void CCmdDate::OptionsL(RCommandOptionList& aOptions)
 	_LIT(KCmdDateOptJustDisplay, "just-display");
 	_LIT(KCmdDateOptSetRaw, "raw-set");
 	_LIT(KCmdDateOptTimestamp, "timestamp");
-	_LIT(KCmdDateOptKern, "kern");
+	_LIT(KCmdDateOptY2k, "y2k");
 
 	aOptions.AppendBoolL(iUniversalTime, KCmdDateOptUniversal);
 	aOptions.AppendStringL(iDateToSet, KCmdDateOptSet);
@@ -2512,7 +2516,7 @@ void CCmdDate::OptionsL(RCommandOptionList& aOptions)
 	aOptions.AppendBoolL(iJustDisplay, KCmdDateOptJustDisplay);
 	aOptions.AppendIntL(iRawTimeToSet, KCmdDateOptSetRaw);
 	aOptions.AppendBoolL(iUseTimestampFormat, KCmdDateOptTimestamp);
-	aOptions.AppendBoolL(iUseKernelFormat, KCmdDateOptKern);
+	aOptions.AppendBoolL(iUseY2k, KCmdDateOptY2k);
 	}
 
 

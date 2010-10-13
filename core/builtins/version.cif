@@ -24,3 +24,6 @@ Display verbose version information.
 
 Copyright (c) 2008-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+version $Quiet

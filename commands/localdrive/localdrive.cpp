@@ -226,7 +226,12 @@ TInt CCmdLocalDrive::OpenL(TInt aDrive, TBool aLeaveOnConnectErr)
 	if (err == KErrNone)
 		{
 		TPckg<TLocalDriveCapsV2> capsBuf(iCaps);
-		LeaveIfErr(iDrive.Caps(capsBuf), _L("Opened drive %d but couldn't read caps"), aDrive);
+		err = iDrive.Caps(capsBuf);
+		if (err)
+			{
+			iDrive.Close();
+			if (aLeaveOnConnectErr) LeaveIfErr(err, _L("Opened drive %d but couldn't read caps"), aDrive);
+			}
 		}
 	else if (aLeaveOnConnectErr)
 		{

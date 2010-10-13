@@ -32,3 +32,8 @@ Read uids one per line from stdin. All uids read from stdin are assumed to be in
 
 Copyright (c) 2009-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+# Use the fileserver as it's guaranteed to be there
+uidinfo 0x100039e3 | export -s RESULT
+var RESULT == "0x100039e3 efile.exe^r^n" || var RESULT == "0x100039e3 EFile.exe^r^n" || $Error # Emulator capitalises differently, sigh

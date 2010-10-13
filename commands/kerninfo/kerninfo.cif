@@ -86,3 +86,17 @@ Makes --match (and --regex-match) match against the verbose info rather than the
 
 Copyright (c) 2008-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+kerninfo process $Quiet
+kerninfo thread $Quiet
+kerninfo chunk $Quiet
+kerninfo server $Quiet
+kerninfo codeseg $Quiet
+kerninfo hal $Quiet
+# Don't test windowgroup, mimetype - we may be on tshell
+kerninfo openfile $Quiet
+kerninfo msgq $Quiet
+kerninfo mutex $Quiet
+kerninfo semaphore $Quiet
+kerninfo timer $Quiet

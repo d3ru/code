@@ -36,3 +36,6 @@ This option takes a filename similar to the C<filename> argument. The difference
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+# Tested by fshell-basic-test.script, this section is just so ciftest doesn't report it as a command without any tests

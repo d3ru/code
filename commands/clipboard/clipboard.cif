@@ -24,7 +24,16 @@ A string to put on the clipboard. If not specified, prints current clipboard con
 
 Read the text from C<stdin> instead of from the command line.
 
+==smoke-test
+
+clipboard "Test data"
+clipboard | export -s RESULT
+var RESULT == "Test data" || $Error
+
+echo "$RESULT" | clipboard --stdin
+clipboard | export -s RES2
+var RES2 == "Test data^r^n" || $Error
+
 ==copyright
 
 Copyright (c) 2008-2010 Accenture. All rights reserved.
-

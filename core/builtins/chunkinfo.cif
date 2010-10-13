@@ -48,3 +48,9 @@ Include current chunk size in the chunk summary list.
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+# This should fail with KErrNotFound, but shouldn't crash
+chunkinfo 1 $Silent &| var ? == "-1" || $Error
+
+chunkinfo $Quiet

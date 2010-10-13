@@ -60,3 +60,6 @@ Specify the name of the file to be dumped by the 'dump-file' operation.
 
 Copyright (c) 2009-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+hal $Quiet

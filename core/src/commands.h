@@ -91,6 +91,7 @@ private:
 	TBool iOptHuman;
 	TBool iOptOnePerLine;
 	TBool iOptRecurse;
+	TBool iOptNoLocalise;
 	};
 
 
@@ -556,7 +557,7 @@ private:
 	TBool iJustDisplay;
 	TInt64 iRawTimeToSet;
 	TBool iUseTimestampFormat;
-	TBool iUseKernelFormat;
+	TBool iUseY2k;
 	};
 
 
