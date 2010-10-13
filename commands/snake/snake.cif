@@ -26,6 +26,10 @@ Press escape at any time to exit the game.
 
 Speed of the game, in microseconds. This is the interval between each step forward the snake makes. Values in the range of 200000 (very easy) to 10000 (very hard) are reasonable.
 
+==option bool u unicode
+
+Draw the game using the unicode box drawing characters. Not guaranteed to display correctly on all consoles.
+
 ==copyright
 
 Copyright (c) 2009-2010 Accenture. All rights reserved.

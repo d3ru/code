@@ -34,6 +34,7 @@ private:
 	HBufC* iDriveLetter;
 	TBool iVerbose;
 	TBool iHuman;
+	TBool iLong;
 	};
 
 
@@ -56,7 +57,7 @@ CCmdDrvinfo::CCmdDrvinfo()
 
 void CCmdDrvinfo::ArgumentErrorL()
 	{
-	Stderr().Write(_L("Invalid drive specification - use \'<drive_letter>:\', e.g. \'drvinfo c:\'\r\n"));
+	Stderr().Write(_L("Invalid drive specification - use '<drive_letter>:', e.g. 'drvinfo c:'\r\n"));
 	User::Leave(KErrArgument);
 	}
 
@@ -161,13 +162,36 @@ void CCmdDrvinfo::FormatVolInfoL(const TVolumeInfo& volInfo, IoUtils::CTextBuffe
 
 void CCmdDrvinfo::PrintDriveInfoL(TInt aDriveNum)
 	{
-	IoUtils::CTextBuffer* buf = IoUtils::CTextBuffer::NewLC(0x100);
-
 	TDriveInfo driveInfo;
 	User::LeaveIfError(FsL().Drive(driveInfo, aDriveNum));
 
 	TVolumeInfo volInfo;
 	TInt volErr = Fs().Volume(volInfo, aDriveNum);
+	
+	if (iLong)
+		{
+		TText readonly = '-';
+		TText removable = '-';
+		TText ram = '-';
+		if (driveInfo.iMediaAtt & KMediaAttWriteProtected) readonly = 'r';
+		if (driveInfo.iDriveAtt & KDriveAttRemovable) removable = 'e';
+		if (driveInfo.iType == EMediaRam) ram = 'm';
+
+		Printf(_L("%c%c%c %c: "), readonly, removable, ram, 'a' + aDriveNum);
+		TInt64 free = 0;
+		TInt64 size = 0;
+		if (volErr == KErrNone)
+			{
+			free = volInfo.iFree;
+			size = volInfo.iSize;
+			}
+		Printf(_L("%Ld %Ld %S"), free, size, &volInfo.iName);
+		return;
+		}
+
+	User::LeaveIfError(volErr); // Long listing handles volErr itself so didn't want to leave
+
+	IoUtils::CTextBuffer* buf = IoUtils::CTextBuffer::NewLC(0x100);
 
 	if (iVerbose || (iDriveLetter == NULL))
 		{
@@ -230,7 +254,10 @@ void CCmdDrvinfo::DoRunL()
 			ArgumentErrorL();
 			}
 		}
-
+	if (iLong && (iVerbose || iHuman))
+		{
+		LeaveIfErr(KErrArgument, _L("--long cannot be specified at same time as either --human or --verbose"));
+		}
 
 	TDriveList driveList;
 	User::LeaveIfError(FsL().DriveList(driveList));
@@ -271,9 +298,11 @@ void CCmdDrvinfo::OptionsL(RCommandOptionList& aOptions)
 	{
 	_LIT(KOptVerbose, "verbose");
 	_LIT(KOptHuman, "human");
+	_LIT(KOptLong, "long");
 
 	aOptions.AppendBoolL(iVerbose, KOptVerbose);
 	aOptions.AppendBoolL(iHuman, KOptHuman);
+	aOptions.AppendBoolL(iLong, KOptLong);
 	}
 
 

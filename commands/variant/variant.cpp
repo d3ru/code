@@ -68,7 +68,8 @@ const TVariant KMachineIdVariants[] = {
 	{ 0x2000DA56, DESC("5800") },
 	{ 0x2001F0A1, DESC("satio") }, // I assume this is what it shipped with...
 	{ 0x20029a73, DESC("n8") }, // Likewise...
-	{ 0x102734e3, DESC("qemu") },
+	{ 0x102734e3, DESC("qemu") }, // This is the same as H4! Doh...
+	{ 0x10286F79, DESC("beagle") },
 	};
 const TInt KMachineIdVariantCount = sizeof(KMachineIdVariants) / sizeof(TVariant);
 

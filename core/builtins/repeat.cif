@@ -40,3 +40,6 @@ If specified, wait this number of milliseconds between iterations.
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+# Tested by fshell-last-test.script, this section is just so ciftest doesn't report it as a command without any tests

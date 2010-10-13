@@ -74,3 +74,6 @@ Print verbose output.
 
 Copyright (c) 2007-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+rcomm $Quiet

@@ -48,3 +48,6 @@ The screen mode to set. Only applicable to the C<set> command.
 
 Copyright (c) 2009-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+screenmode list $Quiet

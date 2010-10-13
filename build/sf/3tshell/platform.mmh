@@ -33,4 +33,6 @@
 #define FSHELL_NO_SPCRE_SUPPORT
 #define FSHELL_NO_CRYPTO_SUPPORT
 
+#define EXCLUDE_SERIALKEYBOARD // Needed on beagleboard to stop serial keyboard getting in the way on the uart
+
 #endif

@@ -416,6 +416,7 @@ void TValue::SetValueL(HBufC* aString)
 			{
 			*(TInt*)iValue = value;
 			}
+		delete aString; // Because the command class knows nothing about how enums are converted from HBufCs in this case, it cannot be responsible for deleting the HBufC like it would be for a normal string argument. So we delete it here.
 		iIsSet = ETrue;
 		}
 	else // string
@@ -2392,8 +2393,8 @@ void CCommandBase::SetValueL(TLex& aLex, TValue& aValue)
 			case KValueTypeEnum:
 				{
 				HBufC* string = ReadStringLC(aLex, EDisallowLeadingHyphen);
-				aValue.SetValueL(string);	
-				CleanupStack::PopAndDestroy(string);
+				aValue.SetValueL(string);
+				CleanupStack::Pop(string); // SetValueL takes ownership
 				break;
 				}
 			default:

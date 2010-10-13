@@ -572,9 +572,9 @@ void CShell::ArgumentsL(RCommandArgumentList& aArguments)
 	aArguments.AppendStringL(iScriptArgs, KArgArgs);
 	}
 	
-void CShell::StdinChange(TUint)
+void CShell::StdinChange(TUint aChange)
 	{
-	if (iLineEditor && !iIgnoreNextStdinChange)
+	if (iLineEditor && !iIgnoreNextStdinChange && (aChange & RIoReadHandle::EGainedForeground)) // We don't care if the console has just resized
 		{
 		iLineEditor->Redraw();
 		}

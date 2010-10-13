@@ -132,6 +132,7 @@ void CCmdCat::DoRunL()
 		else
 			{
 			iEncoding = EBinary;
+			LeaveIfErr(Stdout().SetMode(RIoReadWriteHandle::EBinary), _L("Unable to set stdout to binary mode")); // To tell iosrv to not mess about with line endings.
 			}
 		}
 

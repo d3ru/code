@@ -76,6 +76,7 @@ source          gobble.cpp
 source          xmodem.cpp
 source          ymodem.cpp
 source          version.cpp
+source          ciftest.cpp
 
 // There doesn't seem to be a nice way of turning the platform into a string, like you have $(PLATFORM) in extension makefiles, sigh.
 #if defined(WINSCW)

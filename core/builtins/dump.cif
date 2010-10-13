@@ -28,3 +28,7 @@ Read from C<stdin> in binary mode. This prevents the console from intercepting e
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+echo "123" | dump | export -s RESULT
+var RESULT == "00000000: 31 00 32 00 33 00 0D 00 0A 00                   1.2.3.....^r^n" || $Error

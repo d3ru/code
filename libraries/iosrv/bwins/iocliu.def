@@ -550,4 +550,7 @@ EXPORTS
 	?KeyPressed@MCommandExtensionsV2@IoUtils@@UAEXII@Z @ 549 NONAME ; void IoUtils::MCommandExtensionsV2::KeyPressed(unsigned int, unsigned int)
 	?ReadKey@CCommandBase@IoUtils@@QAEIXZ @ 550 NONAME ; unsigned int IoUtils::CCommandBase::ReadKey(void)
 	?Normalize@TFileName2@IoUtils@@QAEXAAVRFs@@@Z @ 551 NONAME ; void IoUtils::TFileName2::Normalize(class RFs &)
+	?SmokeTest@CCommandInfoFile@IoUtils@@QBEABVTDesC16@@XZ @ 552 NONAME ; class TDesC16 const & IoUtils::CCommandInfoFile::SmokeTest(void) const
+	?CifFileName@CCommandInfoFile@IoUtils@@QBEABVTDesC16@@XZ @ 553 NONAME ; class TDesC16 const & IoUtils::CCommandInfoFile::CifFileName(void) const
+	?GetSmokeTestStartingLineNumber@CCommandInfoFile@IoUtils@@QBEHXZ @ 554 NONAME ; int IoUtils::CCommandInfoFile::GetSmokeTestStartingLineNumber(void) const
 

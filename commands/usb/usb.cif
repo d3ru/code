@@ -24,3 +24,6 @@ Personality to start.
 
 Copyright (c) 2010 Accenture. All rights reserved.
 
+==smoke-test
+
+usb $Quiet

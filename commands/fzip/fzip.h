@@ -56,6 +56,7 @@ private:
 	TFileName2 iArchive;
 	TFileName2 iUnzipPath;
 	RArray<TFileName2> iFileToZip;
+	TBool iOverwrite;
 	};
 
 

@@ -36,9 +36,10 @@ Show all window groups, not just ones with standard priority.
 
 Display the details of the application with the specified window group identifier. If not specified, details of all currently running applications are displayed.
 
-
-
 ==copyright
 
 Copyright (c) 2007-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+listapps $Quiet

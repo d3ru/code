@@ -24,9 +24,15 @@ If file does not exist it is created and its size is set to zero bytes.
 
 The file to touch.
 
-
-
 ==copyright
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+date --timestamp | export -s TIMESTAMP
+export TEMPFILE temp$TIMESTAMP
+exists $TEMPFILE && $Error
+touch $TEMPFILE
+exists $TEMPFILE || $Error
+rm $TEMPFILE

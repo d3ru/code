@@ -24,3 +24,7 @@ The command or exe to locate.
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+which which | export -s RESULT
+var RESULT == "which: built-in command 'which'^r^n" || $Error

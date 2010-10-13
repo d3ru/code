@@ -15,6 +15,7 @@
 #include "fzip.h"
 
 _LIT(KGzExtension, ".gz");
+_LIT(KZipExtension, ".zip");
 
 CCommandBase* CCmdZip::NewLC()
 	{
@@ -26,8 +27,7 @@ CCommandBase* CCmdZip::NewLC()
 
 CCmdZip::~CCmdZip()
 	{
-	if (iFileToZip.Count() > 0)
-		iFileToZip.Close();
+	iFileToZip.Close();
 	}
 	
 CCmdZip::CCmdZip() : CCommandBase(CCommandBase::EManualComplete)
@@ -55,11 +55,11 @@ void CCmdZip::DoRunL()
 			// command-line sanity checks
 			if (iFileToZip.Count() > 0)
 				{
-				PrintWarning(_L("Ignoring \'-f\' file option."));
+				PrintWarning(_L("--file option is not relevant when unzipping."));
 				}
 			if (iRecurse)
 				{
-				PrintWarning(_L("Ignoring \'-r\' recurse option."));
+				PrintWarning(_L("--recurse option is not relevant when unzipping."));
 				}
 			}
 		ExpandArchiveL();
@@ -71,21 +71,14 @@ void CCmdZip::DoRunL()
 			// command-line sanity checks
 			if (iUnzipPath.Length() > 0)
 				{
-				PrintWarning(_L("Ignoring '-d' directory option."));	
+				PrintWarning(_L("--directory option is not relevant when zipping."));	
 				}
 			}
 		if (iFileToZip.Count() == 0)
 			{
-			PrintError(KErrArgument, _L("Use '-f' to specify source files."));
-			User::Leave(KErrArgument);
+			LeaveIfErr(KErrArgument, _L("Specify some files to zip up using --file option."));
 			}
-		TRAPD(err, CreateArchiveL());
-		if (err != KErrNone)
-			{
-			PrintError(err, _L("Couldn't create archive"));
-			Fs().Delete(iArchive); // ignore error
-			User::Leave(err);
-			}
+		TRAPL(CreateArchiveL(), _L("Couldn't create %S"), &iArchive);
 		}
 	if (iVerbose)
 		{
@@ -96,7 +89,7 @@ void CCmdZip::DoRunL()
 	
 void CCmdZip::ArgumentsL(RCommandArgumentList& aArguments)
 	{
-	_LIT(KArg1, "archive");
+	_LIT(KArg1, "zipfile");
 	aArguments.AppendFileNameL(iArchive, KArg1);
 	}
 
@@ -119,6 +112,9 @@ void CCmdZip::OptionsL(RCommandOptionList& aOptions)
 
 	_LIT(KOptCompressionType, "compression-type");
 	aOptions.AppendEnumL((TInt&)iCompressionType, KOptCompressionType);
+
+	_LIT(KOptOverwrite, "overwrite");
+	aOptions.AppendBoolL(iOverwrite, KOptOverwrite);
 	}
 
 
@@ -132,6 +128,24 @@ void CCmdZip::OptionsL(RCommandOptionList& aOptions)
 //
 void CCmdZip::CreateArchiveL()
 	{
+	if (iArchive.Length() == 0)
+		{
+		iArchive = iFileToZip[0];
+		iArchive.Append(iCompressionType == EGZip ? KGzExtension() : KZipExtension());
+		}
+
+	if (iArchive.Exists(FsL()))
+		{
+		if (iOverwrite)
+			{
+			FsL().Delete(iArchive);
+			}
+		else
+			{
+			LeaveIfErr(KErrAlreadyExists, _L("File %S already exists on disk. Use --overwrite or specify a different file"), &iArchive);
+			}
+		}
+
 	if (iCompressionType == EGZip)
 		{
 		CreateGzArchiveL();
@@ -158,23 +172,17 @@ void CCmdZip::CreateGzArchiveL()
 		LeaveIfErr(KErrArgument, _L("GNU Zip format can only handle a single file"));
 		}
 
-	if (iArchive.Length() == 0)
-		{
-		iArchive = iFileToZip[0];
-		iArchive.Append(KGzExtension);
-		}
-
-	RFile input;
 	if (iVerbose)
 		{
 		Printf(_L("Creating '%S'\r\n"), &iArchive);
 		}
 
 	// open the input file
-	User::LeaveIfError(input.Open(Fs(), iFileToZip[0], EFileStream | EFileRead | EFileShareAny));
+	RFile input;
+	User::LeaveIfError(input.Open(FsL(), iFileToZip[0], EFileStream | EFileRead | EFileShareAny));
 	CleanupClosePushL(input);
 
-	CEZFileToGZip* zip = CEZFileToGZip::NewLC(Fs(), iArchive, input);
+	CEZFileToGZip* zip = CEZFileToGZip::NewLC(FsL(), iArchive, input);
 	while (zip->DeflateL())
 		{
 		// do nothing
@@ -297,7 +305,15 @@ void CCmdZip::ExpandGzArchiveL()
 		{
 		LeaveIfErr(err, _L("Couldn't create path '%S'"), &dest);
 		}
-	User::LeaveIfError(newFile.Replace(Fs(), dest, EFileStream | EFileRead | EFileShareAny));
+	if (iOverwrite)
+		{
+		err = newFile.Replace(FsL(), dest, EFileStream | EFileRead | EFileWrite | EFileShareAny);
+		}
+	else
+		{
+		err = newFile.Create(FsL(), dest, EFileStream | EFileRead | EFileWrite | EFileShareAny);
+		}
+	LeaveIfErr(err, _L("Couldn't create file %S"), &dest);
 	CleanupClosePushL(newFile);
 
 	// inflate the compressed file
@@ -362,7 +378,15 @@ void CCmdZip::ExtractZipFileL(CZipFile& aZip, const CZipFileMember& aMember)
 	aZip.GetInputStreamL(&aMember, readStream);
 	CleanupStack::PushL(readStream);
 
-	LeaveIfErr(newFile.Replace(Fs(), dest, EFileShareExclusive), _L("Couldn't create file %S"), &dest);
+	if (iOverwrite)
+		{
+		err = newFile.Replace(Fs(), dest, EFileShareExclusive);
+		}
+	else
+		{
+		err = newFile.Create(Fs(), dest, EFileShareExclusive);
+		}
+	LeaveIfErr(err, _L("Couldn't create file %S"), &dest);
 	CleanupClosePushL(newFile);
 	if (iVerbose)
 		{

@@ -58,3 +58,6 @@ Encode the screen as greyscale rather than colour, for a smaller file size. Supp
 
 Copyright (c) 2008-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+grabscreen > /dev/null

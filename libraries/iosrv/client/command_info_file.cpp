@@ -27,6 +27,7 @@ _LIT(KCmndShortDescription, "short-description");
 _LIT(KCmndLongDescription, "long-description");
 _LIT(KCmndSeeAlso, "see-also");
 _LIT(KCmndCopyright, "copyright");
+_LIT(KCmndSmokeTest, "smoke-test");
 _LIT(KCmndArgument, "argument");
 _LIT(KCmndOption, "option");
 _LIT(KCmndInclude, "include");
@@ -314,6 +315,23 @@ void CCommandInfoFile::ReadDetailsL(TLex& aLex, RFs& aFs, const TDesC& aFileName
 		else if (command == KCmndCopyright)
 			{
 			iCopyright.Set(TextToNextCommand(aLex));
+			}
+		else if (command == KCmndSmokeTest)
+			{
+			// Hmm no easy way to get the line number we're currently on
+			iSmokeTestLineNumber = 1;
+			TLex lex(aLex);
+			lex.Inc(-aLex.Offset()); // Only way to put a TLex back to the beginning!
+			TPtrC preceding = lex.Remainder().Left(aLex.Offset());
+			const TUint16* ptr = preceding.Ptr();
+			const TUint16* end = ptr + preceding.Length();
+			while (ptr != end)
+				{
+				if (*ptr++ == '\n') iSmokeTestLineNumber++;
+				}
+			// At this point iSmokeTestLineNumber points to the "==smoketest" line - add 2 to skip this line and the blank line below it
+			iSmokeTestLineNumber += 2;
+			iSmokeTest.Set(TextToNextCommand(aLex));
 			}
 		else if (command == KCmndArgument)
 			{
@@ -813,6 +831,16 @@ EXPORT_C const TDesC& CCommandInfoFile::Copyright() const
 	return iCopyright;
 	}
 
+EXPORT_C const TDesC& CCommandInfoFile::SmokeTest() const
+	{
+	return iSmokeTest;
+	}
+
+EXPORT_C TInt CCommandInfoFile::GetSmokeTestStartingLineNumber() const
+	{
+	return iSmokeTestLineNumber;
+	}
+
 EXPORT_C const RCommandArgumentList& CCommandInfoFile::Arguments()
 	{
 	return iArguments;
@@ -890,4 +918,9 @@ CCommandInfoFile::CCommandInfoFile(const TDesC& aFileName)
 CCommandInfoFile::CCommandInfoFile(CCommandInfoFile& aParent)
 	: iFileName(aParent.iFileName), iParent(&aParent)
 	{
+	}
+
+EXPORT_C const TDesC& CCommandInfoFile::CifFileName() const
+	{
+	return iFileName;
 	}

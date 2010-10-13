@@ -41,7 +41,7 @@ public:
 		EExportLineNumbers	= 0x00000004
 		};
 public:
-	static CParser* NewL(TUint aMode, const TDesC& aDes, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver);
+	static CParser* NewL(TUint aMode, const TDesC& aDes, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver, TInt aStartingLineNumber = 1);
 	~CParser();
 	void Start();
 	void Start(TBool& aIsForeground);
@@ -62,7 +62,7 @@ private:
 		EAndOr
 		};
 private:
-	CParser(TUint aMode, const TDesC& aDes, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver);
+	CParser(TUint aMode, const TDesC& aDes, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver, TInt aStartingLineNumber=1);
 	void ConstructL();
 	void CreateNextPipeLine(TBool* aIsForeground);
 	void CreateNextPipeLineL(TBool* aIsForeground);

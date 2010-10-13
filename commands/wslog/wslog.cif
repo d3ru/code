@@ -42,3 +42,6 @@ A message to log. Valid only when the operation is 'message'.
 
 Copyright (c) 2009-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+wslog status $Quiet

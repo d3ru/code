@@ -20,8 +20,6 @@ List the contents of a directory.
 
 By default ls will columnize the output list. On very large directory listings this may cause the ls command to run out of memory. If this happens, try using the C<-1>/C<--one> option, which will not attempt to format the output.
 
-Note, C<cd> can be used to navigate between drives, but the DOS approach of switching between drives with commands like C<c:> and C<e:> is also supported.
-
 ==argument filename dir_name optional
 
 The directory to list (defaults to the current working directory).
@@ -64,6 +62,10 @@ For example, C<d--s-> indicates a directory with the system bit set.
 
 Display file sizes in human readable form.
 
+==option bool N no-localise
+
+Do not display localised time and date formats; instead use microseconds from 0AD nominal Gregorian.
+
 ==option bool 1 one
 
 Outputs one entry per line rather than trying to columnise the output. Is implied if C<stdout> is redirected or if C<--long> is specified.
@@ -71,6 +73,10 @@ Outputs one entry per line rather than trying to columnise the output. Is implie
 ==option bool r recurse
 
 Recursively list any directories that are encountered. Currently only supported for C<--long> listings.
+
+==see-also
+
+L<cd|cd>
 
 ==copyright
 

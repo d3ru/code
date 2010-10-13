@@ -20,3 +20,7 @@ Provides information about any mRouter PC connection that is currently establish
 
 Copyright (c) 2007-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+# Do any platforms still support this command?
+mrouter

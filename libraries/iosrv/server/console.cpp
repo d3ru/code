@@ -581,7 +581,7 @@ void CIoConsole::TConsoleSetCursorHeightRequest::CompleteD(TInt aError)
 //______________________________________________________________________________
 //						TConsoleSetTitleRequest
 CIoConsole::TConsoleSetTitleRequest::TConsoleSetTitleRequest(MIoWriter& aWriter)
-	: TConsoleWriterRequest(aWriter)
+	: TConsoleWriterRequest(aWriter), iTitle(NULL)
 	{
 	}
 

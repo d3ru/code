@@ -36,3 +36,15 @@ Display verbose information.
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+date --timestamp | export -s TIMESTAMP
+export Temp compare-test-$TIMESTAMP-
+echo "Stuff" > $Temp1
+echo "Stuff" > $Temp2
+echo "Stuff thats different" > $Temp3
+
+compare $Temp1 $Temp2 || $Error # Should be same
+compare $Temp1 $Temp3 && $Error # Should be different
+
+rm $Temp1 $Temp2 $Temp3

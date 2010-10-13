@@ -50,3 +50,6 @@ Use in conjunction with read and write to specify the file to read/write the raw
 
 Copyright (c) 2010 Accenture. All rights reserved.
 
+==smoke-test
+
+localdrive $Silent # Localdrive can print errors for drives that are ejected, etc

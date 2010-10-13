@@ -20,8 +20,11 @@ Shutdown fshell.
 
 Note, this causes fshell's command history to be persisted to a file.
 
-
 ==copyright
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+# This used to cause fshell problems
+fshell -e exit

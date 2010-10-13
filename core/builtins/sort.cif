@@ -24,9 +24,11 @@ Note, requires enough free memory to store all the input.
 
 Reverse the sort order.
 
-
-
 ==copyright
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+echo "wonderful^r^nfshell^r^njust^r^nis" | sort | export -s RESULT
+var RESULT == "fshell^r^nis^r^njust^r^nwonderful^r^n" || $Error

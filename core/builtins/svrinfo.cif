@@ -28,3 +28,6 @@ The address of the C<DServer> object to display information about. Note server a
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+svrinfo $Quiet

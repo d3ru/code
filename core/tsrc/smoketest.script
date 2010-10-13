@@ -18,3 +18,4 @@ fshell -k $SCRIPT_PATH\fshell-last-test.script > /dev/null # One of the last tes
 fshell -k $SCRIPT_PATH\fshell-ccommandbase-test.script
 fshell -k $SCRIPT_PATH\fshell-unicode-test.script
 fshell -k $SCRIPT_PATH\fshell-scriptcif-test.script
+ciftest -k

@@ -626,4 +626,7 @@ EXPORTS
 	_ZTIN7IoUtils20MCommandExtensionsV2E @ 625 NONAME
 	_ZTVN7IoUtils20MCommandExtensionsV2E @ 626 NONAME
 	_ZN7IoUtils10TFileName29NormalizeER3RFs @ 627 NONAME
+	_ZNK7IoUtils16CCommandInfoFile9SmokeTestEv @ 628 NONAME
+	_ZNK7IoUtils16CCommandInfoFile11CifFileNameEv @ 629 NONAME
+	_ZNK7IoUtils16CCommandInfoFile30GetSmokeTestStartingLineNumberEv @ 630 NONAME
 

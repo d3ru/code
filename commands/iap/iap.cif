@@ -20,8 +20,10 @@ Retrieves IAP records from the Comms Database.
 
 Add a dummy IAP for use with WinSockPrt (an ESock protocol module that replaces Symbian's TCP/IP stack with a shim over Microsoft's WinSock API).
 
-
 ==copyright
 
 Copyright (c) 2008-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+iap $Quiet

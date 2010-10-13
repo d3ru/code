@@ -63,7 +63,7 @@ Displays or sets the secure variant of the kernel's reckoning of time.
 
 ==option bool r raw
 
-Displays the time and date as the number of microseconds since 2000AD (Symbian OS's native time format).
+Displays the time and date as the number of microseconds since 0AD nominal Gregorian (Symbian OS's native time format).
 
 ==option bool j just-display
 
@@ -71,17 +71,22 @@ Rather than going ahead and setting the specified time and date, do a dry run an
 
 ==option int64 R raw-set
 
-Sets the time and date from a number corresponding to the number of microseconds since 2000AD (Symbian OS's native time format).
+Sets the time and date from a number corresponding to the number of microseconds since 0AD nominal Gregorian (Symbian OS's native time format).
 
 ==option bool t timestamp
 
 Display the date in timestamp format C<YYYYMMDD-HHMM.SS> suitable for use in a file name.
 
-==option bool k kern
+==option bool Y y2k
 
-Only applicable with C<--raw> and/or C<--raw-set>. Instead of using 2000AD as the epoc, use 0AD nominal Gregorian, the kernel's internal native time format.
+Only applicable with C<--raw> and/or C<--raw-set>. Instead of using 0AD as the epoc, assume 2000AD. Some APIs use 2000 instead of 0AD as the epoc so this option is occasionally useful for converting between the two.
 
 ==copyright
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+date $Quiet
+date --raw $Quiet
+date --timestamp $Quiet

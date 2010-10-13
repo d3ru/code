@@ -107,7 +107,9 @@ export OK
 
 export FILE c:\fshell-basic-test.txt
 rm $FILE 2>/dev/null &| echo -n "" # I don't like using "&| echo" syntax to indicate don't care if it fails. Probably rm -f should be quiet like unix version
+exists $FILE && $Error
 echo -n "Testing file redirection" > c:\fshell-basic-test.txt
+exists $FILE || $Error
 
 # The redirect stdin operation doesn't get used much
 export -s FILECONTENTS < $FILE
