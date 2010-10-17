@@ -20,6 +20,10 @@ __END__
 
 =item *
 
+Open signing of fshell SIS files is now supported for production S60 handsets. Build fshell with the C<FSHELL_OPEN_SIGNED> macro defined (and without defining C<FSHELL_CAP_ALL> or C<FSHELL_PROTECTED_UIDS>) in your platform.mmh and submit \epoc32\fshell\fshell.unsigned.sis to https://www.symbiansigned.com/app/page/public/openSignedOnline.do . The following commands are not available when using Open Signing due to Platform Security restrictions: fdb; kerninfo; chunkinfo; svrinfo; objinfo; sudo; fsck; localdrive; ramdefrag; readmem; reboot; setcritical; setpriority. Others such as chkdeps, e32header, ps, and fshell itself will run but in a restricted capacity (for example, fshell will no longer allow you to modify files in the \sys\bin directory).
+
+=item *
+
 Commands can now define a C<==smoke-test> section in their CIF files, which defines a snippet of fshell script that will be run as part of C<fshell smoketest> or by invoking L<ciftest|commands::ciftest> directly. See the ciftest documentation for more details.
 
 =item *

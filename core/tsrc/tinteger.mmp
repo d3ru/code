@@ -14,7 +14,7 @@
 
 target			fshell_tinteger.exe
 targettype		exe
-uid				FSHELL_UID2_FSHELL_EXE 0
+uid				FSHELL_UID2_FSHELL_EXE FSHELL_UID_TINTEGER
 capability		FSHELL_CAP_MMP_NORMAL
 
 userinclude		.

@@ -283,7 +283,9 @@ void CCmdLs::DoRunL()
 	else
 		{
 		CDir* files;
-		LeaveIfErr(FsL().GetDir(iFileName, iOptAll ? KEntryAttMaskSupported : KEntryAttNormal | KEntryAttDir, ESortByName, files), _L("Couldn't read whole directory into memory - try using -1"));
+		TInt err = FsL().GetDir(iFileName, iOptAll ? KEntryAttMaskSupported : KEntryAttNormal | KEntryAttDir, ESortByName, files);
+		if (err == KErrNoMemory) LeaveIfErr(err, _L("Couldn't read whole directory into memory - try using --one option"));
+		else LeaveIfErr(err, _L("Couldn't read directory"));
 		CleanupStack::PushL(files);
 		PrintDirContentL(*files);
 		CleanupStack::PopAndDestroy(files);
@@ -2520,6 +2522,8 @@ void CCmdDate::OptionsL(RCommandOptionList& aOptions)
 	}
 
 
+#ifdef FSHELL_CORE_SUPPORT_FSCK
+
 //
 // CCmdFsck.
 //
@@ -2583,6 +2587,8 @@ void CCmdFsck::ArgumentsL(RCommandArgumentList& aArguments)
 	_LIT(KCmdFsckArg, "drive_letter");
 	aArguments.AppendStringL(iDriveLetter, KCmdFsckArg);
 	}
+
+#endif // FSHELL_CORE_SUPPORT_FSCK
 
 
 //
@@ -2691,6 +2697,8 @@ void CCmdDriver::ArgumentsL(RCommandArgumentList& aArguments)
 	}
 
 
+#ifdef FSHELL_CORE_SUPPORT_CHUNKINFO
+
 //
 // CCmdChunkInfo.
 //
@@ -2716,7 +2724,6 @@ CCmdChunkInfo::CCmdChunkInfo()
 
 void CCmdChunkInfo::ListChunksL()
 	{
-#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	TInt bufSize = 1024;
 	TInt err = KErrNone;
 	HBufC8* addressesBuf;
@@ -2794,12 +2801,10 @@ void CCmdChunkInfo::ListChunksL()
 		}
 
 	CleanupStack::PopAndDestroy(addressesBuf);
-#endif
 	}
 
 void CCmdChunkInfo::PrintChunkInfoL()
 	{
-#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	TChunkKernelInfo chunkInfo;
 	TPckg<TChunkKernelInfo> chunkInfoPckg(chunkInfo);
 	TInt err = iMemAccess.GetObjectInfo(EChunk, (TUint8*)iAddress, chunkInfoPckg);
@@ -2870,7 +2875,6 @@ void CCmdChunkInfo::PrintChunkInfoL()
 			PrintWarning(_L("Unable to read RHeap info: %d"), err);
 			}
 		}
-#endif
 	}
 
 void CCmdChunkInfo::PrintSizeL(const TDesC& aCaption, TInt aSize)
@@ -2914,7 +2918,6 @@ void CCmdChunkInfo::DoPrintL()
 
 void CCmdChunkInfo::DoRunL()
 	{
-#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	iFormatter = CTextFormatter::NewL(Stdout());
 	iBuf = IoUtils::CTextBuffer::NewL(0x100);
 	LoadMemoryAccessL();
@@ -2941,10 +2944,6 @@ void CCmdChunkInfo::DoRunL()
 			DoPrintL();
 			}
 		}
-#else
-	PrintError(KErrNotSupported, _L("Unable to fetch chunk information because fshell was not built with FSHELL_MEMORY_ACCESS_SUPPORT defined. That probably means this plaform doesn't support the MemoryAccess device driver."));
-	User::Leave(KErrNotSupported);
-#endif
 	}
 
 void CCmdChunkInfo::OptionsL(RCommandOptionList& aOptions)
@@ -2969,6 +2968,10 @@ void CCmdChunkInfo::ArgumentsL(RCommandArgumentList& aArguments)
 	aArguments.AppendUintL(iAddress, KCmdChunkInfoArg);
 	}
 
+#endif // FSHELL_CORE_SUPPORT_CHUNKINFO
+
+
+#ifdef FSHELL_CORE_SUPPORT_SVRINFO
 
 //
 // CCmdSvrInfo.
@@ -2994,7 +2997,6 @@ CCmdSvrInfo::CCmdSvrInfo()
 
 void CCmdSvrInfo::ListServersL()
 	{
-#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	TInt bufSize = 1024;
 	TInt err = KErrNone;
 	HBufC8* addressesBuf;
@@ -3046,13 +3048,10 @@ void CCmdSvrInfo::ListServersL()
 		}
 
 	CleanupStack::PopAndDestroy(addressesBuf);
-
-#endif
 	}
 
 void CCmdSvrInfo::ListSessionsL()
 	{
-#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	TPckg<TServerKernelInfo> serverInfoPckg(iServerInfo);
 	TInt err = iMemAccess.GetObjectInfo(EServer, (TUint8*)iAddress, serverInfoPckg);
 	if (err)
@@ -3110,7 +3109,6 @@ void CCmdSvrInfo::ListSessionsL()
 				}
 			}
 		}
-#endif
 	}
 
 const TDesC& CCmdSvrInfo::Name() const
@@ -3121,7 +3119,6 @@ const TDesC& CCmdSvrInfo::Name() const
 
 void CCmdSvrInfo::DoRunL()
 	{
-#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	iFormatter = CTextFormatter::NewL(Stdout());
 	iBuf = IoUtils::CTextBuffer::NewL(0x100);
 	LoadMemoryAccessL();
@@ -3137,10 +3134,6 @@ void CCmdSvrInfo::DoRunL()
 
 	iFormatter->TabulateL(0, 2, iBuf->Descriptor(), ETruncateLongestColumn);
 	Write(iFormatter->Descriptor());
-#else
-	PrintError(KErrNotSupported, _L("Unable to fetch server information because fshell was not built with FSHELL_MEMORY_ACCESS_SUPPORT defined. That probably means this plaform doesn't support the MemoryAccess device driver."));
-	User::Leave(KErrNotSupported);
-#endif
 	}
 
 void CCmdSvrInfo::ArgumentsL(RCommandArgumentList& aArguments)
@@ -3149,6 +3142,7 @@ void CCmdSvrInfo::ArgumentsL(RCommandArgumentList& aArguments)
 	aArguments.AppendUintL(iAddress, KCmdSvrInfoArg);
 	}
 
+#endif // FSHELL_CORE_SUPPORT_SVRINFO
 
 //
 // CCmdTickle.
@@ -4146,6 +4140,8 @@ void CCmdDebug::InteractL(const TDesC& aExpandedLine)
 // CCmdReadMem.
 //
 
+#ifdef FSHELL_CORE_SUPPORT_READMEM
+
 CCommandBase* CCmdReadMem::NewLC()
 	{
 	CCmdReadMem* self = new(ELeave) CCmdReadMem();
@@ -4170,7 +4166,6 @@ const TDesC& CCmdReadMem::Name() const
 
 void CCmdReadMem::DoRunL()
 	{
-#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	LoadMemoryAccessL();
 
 	if (iFileName.Length() > 0)
@@ -4210,11 +4205,6 @@ void CCmdReadMem::DoRunL()
 			}
 		bytesRead += bytesToRead;
 		}
-
-#else
-	PrintError(KErrNotSupported, _L("Unable to read memory because fshell was not built with FSHELL_MEMORY_ACCESS_SUPPORT defined. That probably means this plaform doesn't support the MemoryAccess device driver."));
-	User::Leave(KErrNotSupported);
-#endif
 	}
 
 void CCmdReadMem::OptionsL(RCommandOptionList& aOptions)
@@ -4233,6 +4223,8 @@ void CCmdReadMem::ArgumentsL(RCommandArgumentList& aArguments)
 	aArguments.AppendUintL(iSize, KCmdArgSize);
 	aArguments.AppendFileNameL(iFileName, KCmdArgFileName);
 	}
+
+#endif // FSHELL_CORE_SUPPORT_READMEM
 
 
 //
@@ -4410,6 +4402,8 @@ void CCmdE32Header::ArgumentsL(RCommandArgumentList& aArguments)
 // CCmdObjInfo.
 //
 
+#ifdef FSHELL_CORE_SUPPORT_OBJINFO
+
 CCommandBase* CCmdObjInfo::NewLC()
 	{
 	CCmdObjInfo* self = new(ELeave) CCmdObjInfo();
@@ -4431,8 +4425,6 @@ const TDesC& CCmdObjInfo::Name() const
 	_LIT(KName, "objinfo");
 	return KName;
 	}
-
-#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 
 #define CASE_RETURN_LIT(XXX) case XXX: { _LIT(_KLit, #XXX); return &_KLit; }
 #define DEFAULT_RETURN_LIT(XXX) default: { _LIT(_KLit, XXX); return &_KLit; }
@@ -4593,11 +4585,8 @@ void CCmdObjInfo::PrintReferencedObjectDetailsL(TOwnerType aOwnerType, TUint aId
 	CleanupStack::PopAndDestroy(addressesBuf);
 	}
 
-#endif // FSHELL_MEMORY_ACCESS_SUPPORT
-
 void CCmdObjInfo::DoRunL()
 	{
-#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	LoadMemoryAccessL();
 
 	if (iObjectAddress)
@@ -4640,11 +4629,6 @@ void CCmdObjInfo::DoRunL()
 		{
 		PrintReferencedObjectDetailsL(EOwnerThread, iThreadId);
 		}
-
-#else
-	PrintError(KErrNotSupported, _L("Unable to fetch object information because fshell was not built with FSHELL_MEMORY_ACCESS_SUPPORT defined. That probably means this plaform doesn't support the MemoryAccess device driver."));
-	User::Leave(KErrNotSupported);
-#endif
 	}
 
 void CCmdObjInfo::OptionsL(RCommandOptionList& aOptions)
@@ -4665,6 +4649,8 @@ void CCmdObjInfo::ArgumentsL(RCommandArgumentList& aArguments)
 	_LIT(KCmdArgObjectAddress, "object_address");
 	aArguments.AppendUintL(iObjectAddress, KCmdArgObjectAddress);
 	}
+
+#endif // FSHELL_CORE_SUPPORT_OBJINFO
 
 //
 // CCmdTouch.

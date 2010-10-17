@@ -10,8 +10,11 @@
 // Accenture - Initial contribution
 //
 
+#include <fshell/common.mmh>
+
 target			tconsole.exe
 targettype		exe
+uid				FSHELL_UID2_FSHELL_EXE FSHELL_UID_TCONSOLE
 
 userinclude		.
 #include <fshell/fsh_system_include.mmh>

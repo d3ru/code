@@ -16,12 +16,12 @@
 #include "Utils.h"
 #include <HAL.h>
 #include <eikenv.h>
+#include <u32std.h>
 
 #ifdef INCLUDE_UIQ_DEFINITIONS
 #include <DeviceKeys.h>
 #endif
 
-#include <fshell/memoryaccess.h>
 #include <fshell/ltkutils.h>
 
 /* TomS: These don't seem to be used any more

@@ -561,6 +561,8 @@ private:
 	};
 
 
+#ifdef FSHELL_CORE_SUPPORT_FSCK
+
 class CCmdFsck : public CCommandBase
 	{
 public:
@@ -576,6 +578,7 @@ private:
 	HBufC* iDriveLetter;
 	};
 
+#endif
 
 class CCmdDriver : public CCommandBase
 	{
@@ -607,6 +610,8 @@ private:
 	};
 
 
+#ifdef FSHELL_CORE_SUPPORT_CHUNKINFO
+
 class CCmdChunkInfo : public CMemoryAccessCommandBase
 	{
 public:
@@ -636,6 +641,9 @@ private:
 	CTextBuffer* iBuf;
 	};
 
+#endif
+
+#ifdef FSHELL_CORE_SUPPORT_SVRINFO
 
 class CCmdSvrInfo : public CMemoryAccessCommandBase
 	{
@@ -654,16 +662,15 @@ private:
 	TUint iAddress;
 	TName iName;
 	TFullName iFullName;
-#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	TServerKernelInfo iServerInfo;
 	TThreadKernelInfo iThreadInfo;
 	TProcessKernelInfo iProcessInfo;
 	TSessionKernelInfo iSessionInfo;
-#endif
 	CTextFormatter* iFormatter;
 	CTextBuffer* iBuf;
 	};
 
+#endif // FSHELL_CORE_SUPPORT_SVRINFO
 
 class CCmdTickle : public CCommandBase
 	{
@@ -884,6 +891,8 @@ private:
 	};
 
 
+#ifdef FSHELL_CORE_SUPPORT_READMEM
+
 class CCmdReadMem : public CMemoryAccessCommandBase
 	{
 public:
@@ -904,6 +913,7 @@ private:
 	RFile iFile;
 	};
 
+#endif // FSHELL_CORE_SUPPORT_READMEM
 
 class CCmdE32Header : public CCommandBase
 	{
@@ -924,6 +934,7 @@ private:
 	CTextFormatter* iFormatter;
 	};
 
+#ifdef FSHELL_CORE_SUPPORT_OBJINFO
 
 class CCmdObjInfo : public CMemoryAccessCommandBase
 	{
@@ -947,6 +958,8 @@ private:
 	TUint iThreadId;
 	TBool iAll;
 	};
+
+#endif
 
 class CCmdTouch : public CCommandBase
 	{

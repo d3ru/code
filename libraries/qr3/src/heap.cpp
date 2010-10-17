@@ -9,7 +9,11 @@
 // Initial Contributors:
 // Accenture - Initial contribution
 //
+#include <fshell/common.mmh>
 #include <fshell/qr3dll.h>
+
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+
 #include <fshell/memoryaccess.h>
 #include <f32file.h>
 
@@ -245,3 +249,38 @@ void DumpCodeSegsL(RMemoryAccess& aMem, RFile& aDumpFile)
 	}
 
 //END nicked
+
+#else // FSHELL_MEMORY_ACCESS_SUPPORT
+
+EXPORT_C RProxyHeap::RProxyHeap(RMemoryAccess& aMem, TUint aThreadId)
+	: RHeap(), iMem(aMem), iThreadId(aThreadId)
+	{
+	}
+
+EXPORT_C void /*CHeapAnalyser::*/ GetHeapDetailsL(THeapDetails& aDetails, RProxyHeap& heap)
+	{
+	// This function retained for BC reasons
+	heap.GetHeapDetailsL(aDetails);
+	}
+
+EXPORT_C void RProxyHeap::GetHeapDetailsL(THeapDetails&)
+	{
+	User::Leave(KErrNotSupported);
+	}
+
+EXPORT_C void RProxyHeap::DumpHeapToSuitableFileInDirectoryL(TFileName&)
+	{
+	User::Leave(KErrNotSupported);
+	}
+
+EXPORT_C void RProxyHeap::DumpHeapToFileL(const TDesC&)
+	{
+	User::Leave(KErrNotSupported);
+	}
+
+EXPORT_C void RProxyHeap::DumpHeapL(RFile&)
+	{
+	User::Leave(KErrNotSupported);
+	}
+
+#endif // FSHELL_MEMORY_ACCESS_SUPPORT

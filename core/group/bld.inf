@@ -59,7 +59,9 @@ FSHELL_ROM_INCLUDE(fshell_core.iby)
 ..\builtins\time.cif              z:\resource\cif\fshell\time.cif
 ..\builtins\repeat.cif            z:\resource\cif\fshell\repeat.cif
 ..\builtins\debug.cif             z:\resource\cif\fshell\debug.cif
+#ifdef FSHELL_CORE_SUPPORT_READMEM
 ..\builtins\readmem.cif           z:\resource\cif\fshell\readmem.cif
+#endif
 ..\builtins\e32header.cif         z:\resource\cif\fshell\e32header.cif
 ..\builtins\objinfo.cif           z:\resource\cif\fshell\objinfo.cif
 ..\builtins\touch.cif             z:\resource\cif\fshell\touch.cif

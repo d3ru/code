@@ -125,12 +125,18 @@ FSHELL_COMMAND_INFO_FILE(fshell,exists.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,infoprint.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,rdebug.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,date.cif)
+#ifdef FSHELL_CORE_SUPPORT_FSCK
 FSHELL_COMMAND_INFO_FILE(fshell,fsck.cif)
+#endif
 FSHELL_COMMAND_INFO_FILE(fshell,fuser.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,gobble.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,driver.cif)
+#ifdef FSHELL_CORE_SUPPORT_CHUNKINFO
 FSHELL_COMMAND_INFO_FILE(fshell,chunkinfo.cif)
+#endif
+#ifdef FSHELL_CORE_SUPPORT_SVRINFO
 FSHELL_COMMAND_INFO_FILE(fshell,svrinfo.cif)
+#endif
 FSHELL_COMMAND_INFO_FILE(fshell,tickle.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,ticks.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,uptime.cif)
@@ -142,9 +148,13 @@ FSHELL_COMMAND_INFO_FILE(fshell,compare.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,time.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,repeat.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,debug.cif)
+#ifdef FSHELL_CORE_SUPPORT_READMEM
 FSHELL_COMMAND_INFO_FILE(fshell,readmem.cif)
+#endif
 FSHELL_COMMAND_INFO_FILE(fshell,e32header.cif)
+#ifdef FSHELL_CORE_SUPPORT_OBJINFO
 FSHELL_COMMAND_INFO_FILE(fshell,objinfo.cif)
+#endif
 FSHELL_COMMAND_INFO_FILE(fshell,touch.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,dialog.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,jit.cif)
@@ -209,6 +219,7 @@ FSHELL_COMMAND_INFO_FILE(fshell,tenvarguments.cif)
 
 FSHELL_EXECUTABLE_FILE(tlast.exe)
 FSHELL_EXECUTABLE_FILE(tconsole.exe)
+FSHELL_EXECUTABLE_FILE(fshell_tinteger.exe)
 FSHELL_EXECUTABLE_FILE(tfshellarguments.exe)
 FSHELL_EXECUTABLE_FILE(tenvarguments.exe)
 FSHELL_EXECUTABLE_FILE(tnoncifenvarguments.exe)

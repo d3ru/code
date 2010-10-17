@@ -242,7 +242,7 @@ void CDefaultConsole::CreateIfRequired() const
 TInt CDefaultConsole::TryCreateConsole(const TDesC& aImplementation)
 	{
 	TInt err = iConsoleLibrary.Load(aImplementation);
-	if ((err == KErrNone) && (iConsoleLibrary.Type()[1] == KSharedLibraryUid) && (iConsoleLibrary.Type()[2] == KConsoleDllUid))
+	if ((err == KErrNone) && (iConsoleLibrary.Type()[1] == KSharedLibraryUid))
 		{
 		TLibraryFunction entry = iConsoleLibrary.Lookup(1);
 		CConsoleBase* console = (CConsoleBase*)entry();

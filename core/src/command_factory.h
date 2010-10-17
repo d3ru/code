@@ -58,6 +58,8 @@ private:
 	TDriveList iDriveList;
 	TBool iFileSystemScanned;
 	TBool iFailedToScanFileSystem;
+	TThreadId iFactoryThreadId; // The one the CCommandFactory active object lives in
+	RAllocator* iFactoryAllocator;
 	};
 
 

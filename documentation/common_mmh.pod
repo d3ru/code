@@ -40,7 +40,7 @@ Kern::DynamicDfcQCreate API is present. Also used to guard TDfc::RawAdd.
 
 =item FSHELL_REPLACE_ECONS
 
-buildrom macro (on platforms that support it) to say that iosrv should replace econs.DLL with its own implementation.
+buildrom macro to say that iosrv should replace econs.DLL with its own implementation.
 
 =item FSHELL_PLATFORM_S60
 
@@ -48,7 +48,7 @@ S60 platform (value of this is either 3 or 5, for 3rd edition or 5th edition, or
 
 =item FSHELL_PLATFORM_FOUNDATION
 
-Symbian Foundation platform (value of this is n, where n is Symbian^n).
+Symbian Foundation platform (value of this is n, where n is Symbian^n). Currently 3 is used for Symbian^3 or greater.
 
 =item FSHELL_PLATFORM_SYMTB
 
@@ -64,7 +64,11 @@ All capabilities are available (platform.mmh must define either this macro or th
 
 =item FSHELL_PROTECTED_UIDS
 
-Protected uids (0x10xxxxxx) should be used, as opposed to unprotected (0xE0xxxxxx), for exe and dll UID3. The UIDs themselves are all defined at the bottom of common.mmh so nothing else uses this macro directly. Unprotected UIDs should only be specified if the platform produces an unsigned sis file.
+Protected uids (0x10xxxxxx) should be used, as opposed to unprotected (0xE0xxxxxx), for exe and dll UID3. The UIDs themselves are all defined at the bottom of common.mmh so nothing else uses this macro directly. Unprotected UIDs should only be specified if the platform produces an unsigned or self-signed sis file.
+
+=item FSHELL_OPEN_SIGNED
+
+Shorthand for defining the set of capabilties supported by Symbian Open Signing. For more information see https://www.symbiansigned.com/app/page/public/openSignedOnline.do . FSHELL_PROTECTED_UIDS must not be defined if open signing is being used. 
 
 =item FSHELL_BASE_ROM
 
@@ -120,7 +124,7 @@ Create a launch icon for running fshell remotely via Bluetooth.
 
 =item FSHELL_CORE_SUPPORT_USB_ICON
 
-Create a launch icon for running fshell remotely via USB. The value of the macro is the port name to use (eg C<"ACM::1">).
+Create a launch icon for running fshell remotely via USB. The value of the macro is the console-title arguments to use (eg C<"port=ACM::1">).
 
 =item FSHELL_CORE_SUPPORT_SERIAL_ICON
 
@@ -140,11 +144,11 @@ Samping profiler (profiler.h) is present. (foundation forgot to include it in S^
 
 =item FSHELL_CLOGGER_REPLACE_FLOGGER
 
-Put "FLOGGER_clogger_stub.DLL" into the ROM file as "flogger.dll". Probably won't work for SIS install.
+Put "FLOGGER_clogger_stub.DLL" into the ROM file as "flogger.dll". Should only be specified at rombuild time (ie not in the platform.mmh).
 
 =item FSHELL_CLOGGER_REPLACE_CDU
 
-Put "COMSDBGUTIL_clogger_stub.DLL" into the ROM file as "comsdbgutil.dll". Probably won't work for SIS install.
+Put "COMSDBGUTIL_clogger_stub.DLL" into the ROM file as "comsdbgutil.dll". Should only be specified at rombuild time (ie not in the platform.mmh).
 
 =item FSHELL_ROM_INCLUDE(ibyname)
 

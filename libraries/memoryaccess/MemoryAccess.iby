@@ -13,6 +13,9 @@
 #define __FSHELL_MEMORYACCESS_IBY__
 
 #include <fsh_config.iby>
+
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 FSHELL_DEVICE_DRIVER(memoryaccess-fshell.ldd)
+#endif
 
 #endif

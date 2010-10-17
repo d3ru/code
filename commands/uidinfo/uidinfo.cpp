@@ -77,7 +77,7 @@ void CCmdUidInfo::DoRunL()
 	if (iStdin)
 		{
 		Stdin().SetReadModeL(RIoReadHandle::ELine);
-		TBuf<512> lineBuf; // Note, the code below doesn't properly handle the situation where a given line of input in longer than this buffer.
+		TBuf<512> lineBuf; // Note, the code below doesn't properly handle the situation where a given line of input is longer than this buffer.
 		while (ETrue)
 			{
 			TInt err = Stdin().Read(lineBuf);

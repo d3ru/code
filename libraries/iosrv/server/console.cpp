@@ -880,7 +880,7 @@ CConsoleProxyServer* CIoConsoleProxyServerNewL(TAny* aParams)
 
 	User::LeaveIfError(lib.Load(*dllName));
 	CleanupClosePushL(lib);
-	if ((lib.Type()[1] == KSharedLibraryUid) && (lib.Type()[2] == KConsoleDllUid))
+	if ((lib.Type()[1] == KSharedLibraryUid))
 		{
 		TConsoleCreateFunction entry = (TConsoleCreateFunction)lib.Lookup(1);
 		if (!entry) User::Leave(KErrNotSupported);

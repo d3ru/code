@@ -9,12 +9,15 @@
 // Initial Contributors:
 // Accenture - Initial contribution
 //
+#include <fshell/common.mmh>
 #include <fshell/qr3dll.h>
-#include "KernLbxModel.h"
 #include "Utils.h"
 #include <e32uid.h>
-#include <fshell/common.mmh>
 #include <apgcli.h>
+
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+
+#include "KernLbxModel.h"
 
 EXPORT_C CKernelObjectList* CKernelObjectList::NewL(RMemoryAccess* aMemAccess)
 	{
@@ -117,6 +120,59 @@ CKernelObjectList::~CKernelObjectList()
 	delete iModel;
 	delete gPlugin;
 	}
+
+#else // not FSHELL_MEMORY_ACCESS_SUPPORT
+
+EXPORT_C CKernelObjectList* CKernelObjectList::NewL(RMemoryAccess*)
+	{
+	User::Leave(KErrNotSupported);
+	return NULL;
+	}
+
+EXPORT_C void CKernelObjectList::SetCurrentType(TKernelObjectType)
+	{
+	}
+
+EXPORT_C void CKernelObjectList::RefreshDataL(TInt)
+	{
+	}
+
+EXPORT_C MQikListBoxModel* CKernelObjectList::GetQikListBoxModel()
+	{
+	return NULL;
+	}
+
+EXPORT_C TInt CKernelObjectList::Count() const
+	{
+	return 0;
+	}
+
+EXPORT_C void CKernelObjectList::GetInfoL(TInt, RBuf&, RBuf&)
+	{
+	}
+
+EXPORT_C void CKernelObjectList::GetVerboseInfoL(TInt, RBuf&, RBuf&)
+	{
+	}
+
+EXPORT_C void CKernelObjectList::GetInfoByIdL(TInt, TBool, RBuf&, RBuf&)
+	{
+	}
+
+EXPORT_C TInt CKernelObjectList::GetInfoByIndexL(TInt, TBool, RBuf&, RBuf&)
+	{
+	return 0;
+	}
+
+EXPORT_C void CKernelObjectList::DumpAllInfoL(RClogger&)
+	{
+	}
+
+EXPORT_C void CKernelObjectList::SetInfoChangedCallback(TInt, const TCallBack&)
+	{
+	}
+
+#endif // FSHELL_MEMORY_ACCESS_SUPPORT
 
 
 void GetNameFromApparcL(TUint aSid, RBuf& aName);

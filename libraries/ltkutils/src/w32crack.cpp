@@ -10,12 +10,22 @@
 // Accenture - Initial contribution
 //
 
+#include <e32base.h>
+#include <e32property.h>
 #include <fshell/common.mmh>
 #include <fshell/ltkutils.h>
-#include <e32base.h>
 #include <fshell/iocli.h>
+
+#if !defined(FSHELL_WSERV_SUPPORT) || !defined(FSHELL_MEMORY_ACCESS_SUPPORT)
+
+EXPORT_C void LtkUtils::W32CrackL()
+	{
+	User::Leave(KErrNotSupported);
+	}
+
+#else
+
 #include <w32std.h>
-#include <fshell/ioutils.h>
 #include <fshell/memoryaccess.h>
 
 //
@@ -25,10 +35,6 @@
 //
 EXPORT_C void LtkUtils::W32CrackL()
 	{
-#ifndef FSHELL_WSERV_SUPPORT
-	User::Leave(KErrNotSupported);
-#else
-
 	// Check if P&S says it's already enabled, if so no need to do anything
 	if (W32CrackIsEnabled()) return;
 
@@ -111,8 +117,9 @@ EXPORT_C void LtkUtils::W32CrackL()
 	// cleanup
 	CleanupStack::PopAndDestroy(4, &fs);
 
-#endif // FSHELL_WSERV_SUPPORT
 	}
+
+#endif // supported
 
 EXPORT_C TBool LtkUtils::W32CrackIsEnabled()
 	{

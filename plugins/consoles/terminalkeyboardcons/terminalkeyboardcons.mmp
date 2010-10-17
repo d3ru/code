@@ -13,7 +13,7 @@
 
 target			terminalkeyboardcons.dll
 targettype		DLL
-uid				0x1000008d 0x100039e7 // Note this MUST be set to 0x100039e7
+uid				0x1000008d FSHELL_UID_TERMINALKEYBOARDCONS
 capability		FSHELL_CAP_MMP_NORMAL
 
 sourcepath		.

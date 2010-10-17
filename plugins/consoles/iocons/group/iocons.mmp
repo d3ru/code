@@ -14,7 +14,7 @@
 
 target			iocons.dll
 targettype		DLL
-uid				0x1000008d 0x100039e7
+uid				0x1000008d 0x100039e7 // This really does have to have the UID3 0x100039e7 because it is designed to replace econs.dll and euser checks the uid
 capability		FSHELL_CAP_MMP_MAX
 
 sourcepath		..\src

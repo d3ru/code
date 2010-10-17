@@ -14,7 +14,7 @@
 
 target			rcons.dll
 targettype		dll
-uid             0x1000008d 0x100039e7
+uid             0x1000008d FSHELL_UID_RCONS
 capability      FSHELL_CAP_MMP_NORMAL
 
 sourcepath		..\src

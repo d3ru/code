@@ -18,9 +18,10 @@ FSHELL_EXECUTABLE_FILE(CloggerServer.exe)
 FSHELL_EXECUTABLE_FILE(Clogger.dll)
 FSHELL_EXECUTABLE_FILE(Clogger-buffered.dll)
 
-#ifdef FSHELL_CLOGGER_REPLACE_FLOGGER
+#if defined(FSHELL_CLOGGER_REPLACE_FLOGGER)
 FSHELL_RENAMED_EXECUTABLE_FILE(FLOGGER_clogger_stub.DLL, flogger.dll)
-#else
+#elif defined(FSHELL_CAP_ALL)
+// No point including it unless we have all caps ability to rename it at runtime
 FSHELL_EXECUTABLE_FILE(FLOGGER_clogger_stub.DLL)
 #endif // FSHELL_CLOGGER_REPLACE_FLOGGER
 

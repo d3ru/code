@@ -99,11 +99,13 @@
 // PlatSec.
 //
 
-#ifdef FSHELL_CAP_ALL
+#if defined(FSHELL_CAP_ALL)
 
 #define FSHELL_CAP_MMP_MAX all
+#define FSHELL_CAP_MMP_NORMAL all -tcb
 
 // System Capabilities
+#define FSHELL_CAP_TCB
 #define FSHELL_CAP_ALLFILES
 #define FSHELL_CAP_COMMDD
 #define FSHELL_CAP_DISKADMIN
@@ -126,9 +128,28 @@
 #define FSHELL_CAP_USERENVIRONMENT
 #define FSHELL_CAP_WRITEUSERDATA
 
-#endif // FSHELL_CAP_ALL
+#elif defined(FSHELL_OPEN_SIGNED)
 
-#define FSHELL_CAP_MMP_NORMAL FSHELL_CAP_MMP_MAX -tcb
+// According to https://www.symbiansigned.com/app/page/public/openSignedOnline.do this is the subset we're allowed
+#define FSHELL_CAP_POWERMGMT
+#define FSHELL_CAP_PROTSERV
+#define FSHELL_CAP_READDEVICEDATA
+#define FSHELL_CAP_SURROUNDINGSDD
+#define FSHELL_CAP_SWEVENT
+#define FSHELL_CAP_TRUSTEDUI
+#define FSHELL_CAP_WRITEDEVICEDATA
+#define FSHELL_CAP_LOCALSERVICES
+#define FSHELL_CAP_LOCATION
+#define FSHELL_CAP_NETWORKSERVICES
+#define FSHELL_CAP_READUSERDATA
+#define FSHELL_CAP_USERENVIRONMENT
+#define FSHELL_CAP_WRITEUSERDATA
+
+#define FSHELL_CAP_MMP_MAX PowerMgmt ReadDeviceData WriteDeviceData TrustedUI ProtServ SwEvent NetworkServices LocalServices ReadUserData WriteUserData Location SurroundingsDD UserEnvironment
+#define FSHELL_CAP_MMP_NORMAL FSHELL_CAP_MMP_MAX
+// Don't define FSHELL_PROTECTED_UIDS
+
+#endif // FSHELL_CAP_ALL
 
 // Yuk the __GNUC__ checks are needed to support SBS which changed the CPP version that parses bld.infs and mmps...
 #ifndef FSHELL_ROM_INCLUDE
@@ -181,7 +202,8 @@
 //
 // fshell.
 //
-#ifdef FSHELL_WSERV_SUPPORT // Close enough
+
+#if defined(FSHELL_WSERV_SUPPORT) && defined(FSHELL_CAP_READUSERDATA) // Close enough
 #define FSHELL_CORE_SUPPORT_SWI
 #endif
 
@@ -204,7 +226,9 @@
 #ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 #define FSHELL_CORE_SUPPORT_GETSTACK
 #define FSHELL_CORE_SUPPORT_CHUNKINFO
+#define FSHELL_CORE_SUPPORT_OBJINFO
 #define FSHELL_CORE_SUPPORT_SVRINFO
+#define FSHELL_CORE_SUPPORT_READMEM
 #define FSHELL_CORE_SUPPORT_FDB
 #ifndef FSHELL_NO_SUPPORT_BUILTIN_REBOOT
 #define FSHELL_CORE_SUPPORT_BUILTIN_REBOOT
@@ -343,19 +367,17 @@
 #define FSHELL_CORE_SUPPORT_SMS
 #endif
 
+#ifdef FSHELL_CAP_DISKADMIN
+#define FSHELL_CORE_SUPPORT_FSCK
+#endif
 
 //
 // qr3.
 //
 
-#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
-#define FSHELL_QR3_SUPPORT
-
 #ifdef FSHELL_TRACE_SUPPORT
 #define FSHELL_QR3_SUPPORT_LOGGINGALLOCATOR
 #endif
-
-#endif // FSHELL_MEMORY_ACCESS_SUPPORT
 
 
 //
@@ -529,6 +551,25 @@
 #define FSHELL_UID_EXTRABTRACEK               0x10286F71
 #define FSHELL_UID_TESTEXECUTE                0x10286F72
 #define FSHELL_UID_CONSOLEEXTENSIONS          0x10286F73
+#define FSHELL_UID_TCONSOLE                   0x10286F7A
+#define FSHELL_UID_TENVARGUMENTS              0x10286F7B
+#define FSHELL_UID_TFSHELLARGUMENTS           0x10286F7C
+#define FSHELL_UID_TLAST                      0x10286F7D
+#define FSHELL_UID_TNONCIFARGUMENTS           0x10286F7E
+#define FSHELL_UID_TINTEGER                   0x10286F8C
+#define FSHELL_UID_DEFCONS                    0x10286F7F
+#define FSHELL_UID_GUICONS                    0x10286F80
+#define FSHELL_UID_NULLCONS                   0x10286F81
+#define FSHELL_UID_RCONS                      0x10286F82
+#define FSHELL_UID_TEFCONS                    0x10286F83
+#define FSHELL_UID_TERMINALKEYBOARDCONS       0x10286F84
+#define FSHELL_UID_VT100BTCONS                0x10286F85
+#define FSHELL_UID_VT100BUSDEVCONS            0x10286F86
+#define FSHELL_UID_VT100CONS                  0x10286F87
+#define FSHELL_UID_VT100DEBUGPORT             0x10286F88
+#define FSHELL_UID_VT100TCPCONS               0x10286F89
+#define FSHELL_UID_VT100USBCONS               0x10286F8A
+#define FSHELL_UID_WIN32CONS                  0x10286F8B
 
 #else // Not FSHELL_PROTECTED_UIDS
 
@@ -538,6 +579,8 @@
 #define FSHELL_UID_SMS                        0xE02864BE
 #define FSHELL_UID_BTRACE_PARSER              0xE0285E09
 #define FSHELL_UID_TINTERVAL                  0xE0285E0A
+#define FSHELL_UID_BTINCOMINGSERIAL           0xE0285E04
+#define FSHELL_UID_BTSERIALTEST               0xE0285e14
 #define FSHELL_UID_CLOGGERDEBUGROUTER         0xE02831C7
 #define FSHELL_UID_COMSDBGUTIL_CLOGGER_STUB   0xE0004d0a
 #define FSHELL_UID_FLOGGER_CLOGGER_STUB       0xE02866D3
@@ -661,6 +704,25 @@
 #define FSHELL_UID_EXTRABTRACEK               0xE0286F71
 #define FSHELL_UID_TESTEXECUTE                0xE0286F72
 #define FSHELL_UID_CONSOLEEXTENSIONS          0xE0286F73
+#define FSHELL_UID_TCONSOLE                   0xE0286F7A
+#define FSHELL_UID_TENVARGUMENTS              0xE0286F7B
+#define FSHELL_UID_TFSHELLARGUMENTS           0xE0286F7C
+#define FSHELL_UID_TINTEGER                   0xE0286F8C
+#define FSHELL_UID_TLAST                      0xE0286F7D
+#define FSHELL_UID_TNONCIFARGUMENTS           0xE0286F7E
+#define FSHELL_UID_DEFCONS                    0xE0286F7F
+#define FSHELL_UID_GUICONS                    0xE0286F80
+#define FSHELL_UID_NULLCONS                   0xE0286F81
+#define FSHELL_UID_RCONS                      0xE0286F82
+#define FSHELL_UID_TEFCONS                    0xE0286F83
+#define FSHELL_UID_TERMINALKEYBOARDCONS       0xE0286F84
+#define FSHELL_UID_VT100BTCONS                0xE0286F85
+#define FSHELL_UID_VT100BUSDEVCONS            0xE0286F86
+#define FSHELL_UID_VT100CONS                  0xE0286F87
+#define FSHELL_UID_VT100DEBUGPORT             0xE0286F88
+#define FSHELL_UID_VT100TCPCONS               0xE0286F89
+#define FSHELL_UID_VT100USBCONS               0xE0286F8A
+#define FSHELL_UID_WIN32CONS                  0xE0286F8B
 
 #endif // FSHELL_PROTECTED_UIDS
 

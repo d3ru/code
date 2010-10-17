@@ -276,7 +276,6 @@ void CCmdPubsub::PrintKey(TUint aCategory, TUint aKey, TBool aFull)
 	valDes.Zero();
 	enum TType { EUnknown, EInt, EDes };
 	TType type = EUnknown;
-	TInt reallen = 0;
 
 	TInt err = KErrNotFound;
 
@@ -290,6 +289,7 @@ void CCmdPubsub::PrintKey(TUint aCategory, TUint aKey, TBool aFull)
 			}
 		else
 			{
+			TInt reallen = 0;
 			err = iMemAccess.GetProperty(cat, aKey, valDes, reallen);
 			type = EDes;
 			}

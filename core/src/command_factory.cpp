@@ -238,7 +238,7 @@ TInt CCommandFactory::CountUniqueCommandsL()
 	}
 
 CCommandFactory::CCommandFactory(RFs& aFs)
-	: CActive(CActive::EPriorityStandard), iFs(aFs)
+	: CActive(CActive::EPriorityStandard), iFs(aFs), iFactoryThreadId(RThread().Id()), iFactoryAllocator(&User::Allocator())
 #ifdef __WINS__
 	, iFailedToScanFileSystem(ETrue)
 #endif
@@ -289,10 +289,16 @@ void CCommandFactory::ConstructL()
 	AddThreadCommandL(CCmdInfoPrint::NewLC);
 	AddThreadCommandL(CCmdRDebug::NewLC);
 	AddThreadCommandL(CCmdDate::NewLC);
+#ifdef FSHELL_CORE_SUPPORT_FSCK
 	AddThreadCommandL(CCmdFsck::NewLC);
+#endif
 	AddThreadCommandL(CCmdDriver::NewLC);
+#ifdef FSHELL_CORE_SUPPORT_CHUNKINFO
 	AddThreadCommandL(CCmdChunkInfo::NewLC);
+#endif
+#ifdef FSHELL_CORE_SUPPORT_SVRINFO
 	AddThreadCommandL(CCmdSvrInfo::NewLC);
+#endif
 	AddThreadCommandL(CCmdXmodem::NewLC);
 	AddThreadCommandL(CCmdYmodem::NewLC);
 	AddThreadCommandL(CCmdTickle::NewLC);
@@ -303,9 +309,13 @@ void CCommandFactory::ConstructL()
 	AddThreadCommandL(CCmdTime::NewLC);
 	AddThreadCommandL(CCmdRepeat::NewLC); // TODO: Should this have EUpdateEnvironment? It seems weird that source and foreach do but repeat doesn't. -TomS
 	AddThreadCommandL(CCmdDebug::NewLC);
+#ifdef FSHELL_CORE_SUPPORT_READMEM
 	AddThreadCommandL(CCmdReadMem::NewLC);
+#endif
 	AddThreadCommandL(CCmdE32Header::NewLC);
+#ifdef FSHELL_CORE_SUPPORT_OBJINFO
 	AddThreadCommandL(CCmdObjInfo::NewLC);
+#endif
 	AddThreadCommandL(CCmdVersion::NewLC);
 	AddThreadCommandL(CCmdTouch::NewLC);
 	AddThreadCommandL(CCmdDialog::NewLC);
@@ -317,7 +327,7 @@ void CCommandFactory::ConstructL()
 #endif
 	AddThreadCommandL(CCmdDebugPort::NewLC);
 	AddThreadCommandL(CCmdRom::NewLC);
-	AddThreadCommandL(CCmdWhich::NewLC, CThreadCommand::ESharedHeap);
+	AddThreadCommandL(CCmdWhich::NewLC, CThreadCommand::ESharedHeap); // The 'which' command might reasonably want the list of external commands to be generated, meaning it has to share the main heap
 	AddThreadCommandL(CCmdTee::NewLC);
 	AddThreadCommandL(CCmdError::NewLC);
 #ifdef FSHELL_CORE_SUPPORT_BUILTIN_REBOOT
@@ -360,7 +370,8 @@ void CCommandFactory::ConstructL()
 
 void CCommandFactory::WatchFileSystem()
 	{
-	if (!IsActive())
+	// We can't call NotifyChange if we're not the thread that the active object was originally queued in
+	if (RThread().Id() == iFactoryThreadId && !IsActive())
 		{
 		_LIT(KExecutableDir, "?:\\sys\\bin\\");
 		iFs.NotifyChange(ENotifyAll, iStatus, KExecutableDir);
@@ -444,7 +455,8 @@ void CCommandFactory::AddAliasCommandL(const TDesC& aAliasName, TCommandConstruc
 
 void CCommandFactory::CheckExternalCommands()
 	{
-	if (!iFailedToScanFileSystem && !iFileSystemScanned)
+	// We can't update anything if we're not using the same allocator as the factory object
+	if (&User::Allocator() == iFactoryAllocator && !iFailedToScanFileSystem && !iFileSystemScanned)
 		{
 		TRAPD(err, FindExternalCommandsL()); // Will fail with KErrPermissionDenied if we don't have TCB.
 		if (err == KErrNone)

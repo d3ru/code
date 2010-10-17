@@ -42,7 +42,7 @@ EXPORT_C void CMemoryAccessCommandBase::LoadMemoryAccessL()
 		}
 	LeaveIfErr(iMemAccess.Open(), _L("Couldn't open RMemoryAccess"));
 #else
-	LeaveIfErr(KErrNotSupported, _L("Can't load memoryaccess because FSHELL_MEMORY_ACCESS_SUPPORT is not defined");
+	LeaveIfErr(KErrNotSupported, _L("Can't load memoryaccess because FSHELL_MEMORY_ACCESS_SUPPORT is not defined"));
 #endif
 	}
 

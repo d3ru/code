@@ -14,15 +14,11 @@
 
 #include <fsh_config.iby>
 
-#ifdef FSHELL_QR3_SUPPORT
-
 FSHELL_EXECUTABLE_FILE(qr3.dll)
 
 #ifdef FSHELL_QR3_SUPPORT_LOGGINGALLOCATOR
 FSHELL_EXECUTABLE_FILE(QR3Sandbox.exe)
 FSHELL_EXECUTABLE_FILE(LoggingAllocator.dll)
-#endif
-
 #endif
 
 #endif // QR3_IBY

@@ -13,7 +13,7 @@
 #include <e32notif.h>
 #include <e32ver.h>
 
-#ifndef FSHELL_WSERV_SUPPORT
+#if !defined(FSHELL_WSERV_SUPPORT) || !defined(FSHELL_MEMORY_ACCESS_SUPPORT)
 
 EXPORT_C TInt StartNotifierProxyThreadFunction(TAny*)
 	{
