@@ -38,6 +38,10 @@ Added support for automatically starting a USB personality to vt100usbcons via a
 
 Added support for beagleboard to sf\3tshell platform.
 
+=item *
+
+Updated chkdeps command so that it works with byte-pair compressed binaries (experimental).
+
 =back
 
 =head2 Release 001

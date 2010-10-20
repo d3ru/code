@@ -108,11 +108,9 @@ TUint CBytePairReader::GetPageL(TUint aPageNum, TUint8* aTarget, TInt aLength, T
 	User::LeaveIfError(size);
 	if (size != aLength)
 		LEAVE_FAILURE(KErrCorrupt);
-	if (iNextPage + iIndexTable[aPageNum] != nextPage)
-		StaticLeaveIfErr(KErrCorrupt, _L("nextPage is %x, expected %x for pagenum %d"), nextPage, iNextPage + iIndexTable[aPageNum], aPageNum);
+//	if (iNextPage + iIndexTable[aPageNum] != nextPage)
+//		StaticLeaveIfErr(KErrCorrupt, _L("nextPage is %x, expected %x for pagenum %d"), nextPage, iNextPage + iIndexTable[aPageNum], aPageNum);
 //		LEAVE_FAILURE(KErrCorrupt);
-
-//TOMSCI	IoUtils::CCommandBase::Static().Printf(_L("nextPage is 0x%08x, iNextPage+%d\r\n"), nextPage, nextPage - iNextPage);
 
 	// If a memmove() was provided, use that to copy the data to its final target
 	if (aMemMoveFn)
