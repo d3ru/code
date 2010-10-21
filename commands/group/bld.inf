@@ -452,3 +452,10 @@ PRJ_EXPORTS
 PRJ_MMPFILES
 ..\testexecute\testexecute.mmp
 #endif
+
+#ifdef FSHELL_CLOGGER_SUPPORT_DEBUG_ROUTER
+PRJ_EXPORTS
+..\showdebug\showdebug.cif           z:\resource\cif\fshell\showdebug.cif
+PRJ_MMPFILES
+..\showdebug\showdebug.mmp
+#endif

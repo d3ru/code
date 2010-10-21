@@ -20,7 +20,11 @@
 ;localised vendor names 
 %{"Accenture"}
 
+#ifdef FSHELL_OPEN_SIGNED
+HASH{"fshell (S60 Open Signed)"},(FSHELL_UID_SIS),FSHELL_VERSION,0,FSHELL_TIMESTAMP,TYPE=SA
+#else
 HASH{"fshell (S60)"},(FSHELL_UID_SIS),FSHELL_VERSION,0,FSHELL_TIMESTAMP,TYPE=SA
+#endif
 
 [0x101F7961], 0, 0, 0, {"Series60ProductID"}
 [0x102032BE], 0, 0, 0, {"Series60ProductID"}

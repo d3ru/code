@@ -629,4 +629,6 @@ EXPORTS
 	_ZNK7IoUtils16CCommandInfoFile9SmokeTestEv @ 628 NONAME
 	_ZNK7IoUtils16CCommandInfoFile11CifFileNameEv @ 629 NONAME
 	_ZNK7IoUtils16CCommandInfoFile30GetSmokeTestStartingLineNumberEv @ 630 NONAME
+	_ZN7IoUtils13RChildProcessC1Ev @ 631 NONAME
+	_ZN7IoUtils13RChildProcessC2Ev @ 632 NONAME
 

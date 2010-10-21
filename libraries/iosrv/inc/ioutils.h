@@ -853,6 +853,7 @@ private:
 class RChildProcess
 	{
 public:
+	IMPORT_C RChildProcess();
 	IMPORT_C void Close();
 	IMPORT_C void CreateL(const TDesC& aExecutableName, const TDesC& aCommandLine, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr);
 	IMPORT_C void CreateL(const TDesC& aExecutableName, const TDesC& aCommandLine, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, const CEnvironment& aEnv);

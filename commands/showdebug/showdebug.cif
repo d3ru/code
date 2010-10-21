@@ -1,0 +1,47 @@
+# showdebug.cif
+# 
+# Copyright (c) 2010 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name showdebug
+
+==short-description
+
+Redirects RDebug::Print to the console.
+
+==long-description
+
+Uses the clogger debugrouter LDD to intercept Kern::Printf and RDebug::Print calls and redirect them to the console. Similar to C<cloggerconfig --rdebug> but without all the features clogger layers on top, more focussed on just printing the rdebug data.
+
+There can only be one client of the clogger debugrouter, which means you cannot run multiple instances of the showdebug command at the same time.
+
+==argument string process optional
+
+If specified, showdebug will launch the given process and redirect RDebug until the process exits. If not specified it will do so indefinitely or until CTRL-C is pressed.
+
+==argument string arguments optional last
+
+Arguments to pass to process.
+
+==option bool v verbose multiple
+
+If specified, the timestamp and the originating thread of each trace are also printed. If specified twice (ie -vv) thread IDs are additionally expanded to full thread names.
+
+==option bool f filter
+
+Only display traces that came directly from threads belonging to the process you specified. Use with caution, you may miss traces that are I<about> your process but not directly emitted I<by> it. If the origin of a trace cannot be identified it will be shown even if C<--filter> is specified.
+
+==see-also
+
+L<cloggerconfig|cloggerconfig>
+
+==copyright
+
+Copyright (c) 2010 Accenture. All rights reserved.

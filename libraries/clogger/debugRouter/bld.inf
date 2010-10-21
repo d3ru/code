@@ -18,6 +18,7 @@
 
 prj_exports
 debugRouter-kext.h	\epoc32\include\fshell\debugRouter-kext.h
+debugrouter.h		\epoc32\include\fshell\debugRouter.h
 
 prj_mmpfiles
 debugRouter.mmp

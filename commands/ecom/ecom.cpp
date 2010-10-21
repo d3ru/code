@@ -123,9 +123,9 @@ void CCmdEcom::DoRunL()
 		{
 		TUid implKey; // We don't care about this
 		TAny* impl = NULL;
-		TRAPL(impl = REComSession::CreateImplementationL(uid, implKey), _L("Couldn't instanciate plugin uid 0x%x"), iUid);
+		TRAPL(impl = REComSession::CreateImplementationL(uid, implKey), _L("Couldn't instantiate plugin uid 0x%x"), iUid);
 		if (impl == NULL) LeaveIfErr(KErrGeneral, _L("Plugin returned NULL implementation pointer!"));
-		Printf(_L("Instanciated plugin 0x%x ok.\r\n"), iUid);
+		Printf(_L("Instantiated plugin 0x%x ok.\r\n"), iUid);
 
 #ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 		if (iVerbose)

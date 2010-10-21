@@ -377,4 +377,9 @@ FSHELL_COMMAND_INFO_FILE(fshell,testexecute.cif)
 FSHELL_EXECUTABLE_FILE(snake.exe)
 FSHELL_COMMAND_INFO_FILE(fshell,snake.cif)
 
+#ifdef FSHELL_CLOGGER_SUPPORT_DEBUG_ROUTER
+FSHELL_EXECUTABLE_FILE(showdebug.exe)
+FSHELL_COMMAND_INFO_FILE(fshell,showdebug.cif)
+#endif
+
 #endif // __FSHELL_COMMANDS_IBY__

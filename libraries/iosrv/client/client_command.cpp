@@ -331,7 +331,7 @@ EXPORT_C void CClientBase::DoRunL()
 	LeaveIfErr(iPcons.AttachWriter(iServerReadPipe, RIoPersistentConsole::EDetachOnHandleClose), _L("Cannot connect writer to persistent console %S"), &iPersistentConsoleName);
 	iServerReader = CServerReader::NewL(iServerReadHandle, *this);
 	
-	if (iServerProcess.Process().Handle() != KNullHandle && iServerProcess.Process().Handle() != RProcess().Handle())
+	if (iServerProcess.Process().Handle() != KNullHandle)
 		{
 		// We created a new server process, but it's not yet been resumed.
 		iServerProcess.Detach(); // Note, iServerWatch has already logged onto the process so there's no need to use RChildProcess::Run.

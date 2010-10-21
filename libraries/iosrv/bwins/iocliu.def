@@ -553,4 +553,5 @@ EXPORTS
 	?SmokeTest@CCommandInfoFile@IoUtils@@QBEABVTDesC16@@XZ @ 552 NONAME ; class TDesC16 const & IoUtils::CCommandInfoFile::SmokeTest(void) const
 	?CifFileName@CCommandInfoFile@IoUtils@@QBEABVTDesC16@@XZ @ 553 NONAME ; class TDesC16 const & IoUtils::CCommandInfoFile::CifFileName(void) const
 	?GetSmokeTestStartingLineNumber@CCommandInfoFile@IoUtils@@QBEHXZ @ 554 NONAME ; int IoUtils::CCommandInfoFile::GetSmokeTestStartingLineNumber(void) const
+	??0RChildProcess@IoUtils@@QAE@XZ @ 555 NONAME ; IoUtils::RChildProcess::RChildProcess(void)
 

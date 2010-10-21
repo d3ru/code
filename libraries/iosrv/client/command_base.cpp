@@ -3511,6 +3511,11 @@ void SetIoObjectName(RIoSession& aIoSession, TInt aObjHandle, TRefByValue<const 
 	aIoSession.SetObjectName(aObjHandle, name);
 	}
 
+EXPORT_C RChildProcess::RChildProcess()
+	: iProcess(0)
+	{
+	}
+
 EXPORT_C void RChildProcess::CreateL(const TDesC& aExecutableName, const TDesC& aCommandLine, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr)
 	{
 	DoCreateL(aExecutableName, aCommandLine, aIoSession, aStdin, aStdout, aStderr, NULL);
