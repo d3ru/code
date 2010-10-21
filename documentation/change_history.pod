@@ -40,6 +40,11 @@ Added support for beagleboard to sf\3tshell platform.
 
 =item *
 
+Updated chkdeps command so that it works with byte-pair compressed binaries (experimental).
+
+
+=item *
+
 Added L<showdebug|commands::showdebug> command to redirect RDebug::Print()s to the console.
 
 =back

@@ -202,6 +202,7 @@ void CDllChecker::LoadFileNoCompressL(const E32ImageHeaderComp* aHeader, RBuf8& 
 		}
 	}
 
+// Adapted from E32Image::LoadFileBytePairUnpakL()
 void CDllChecker::LoadFileBytePairL(const E32ImageHeaderComp* aHeader, RBuf8& aCode, RBuf8& aRestOfFile)
 	{
 	TInt pos = aHeader->TotalSize();
@@ -245,11 +246,10 @@ void CDllChecker::LoadFileL(const E32ImageHeaderComp* aHeader, RBuf8& aCode, RBu
 		{
 		LoadFileInflateL(aHeader, aCode, aRestOfFile);
 		}
-	/*TOMSCI TODO doesn't seem to work...
 	else if (aCompression == KUidCompressionBytePair)
 		{
 		LoadFileBytePairL(aHeader, aCode, aRestOfFile);
-		}*/
+		}
 	else
 		{
 		LeaveIfErr(KErrNotSupported, _L("Compression type 0x%x is not supported"), aCompression);
