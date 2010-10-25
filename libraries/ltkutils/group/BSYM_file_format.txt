@@ -1,0 +1,134 @@
+Copyright (c) 2010 Accenture. All rights reserved.
+This component and the accompanying materials are made available
+under the terms of the "Eclipse Public License v1.0"
+which accompanies this distribution, and is available
+at the URL "http://www.eclipse.org/legal/epl-v10.html".
+
+Initial Contributors:
+Accenture - Initial contribution
+
+
+
+BSYM file format
+================
+
+An indexed binary representation of a *.symbol file, which is amenable to being mmap'd.
+
+Filename extension: *.bsym
+All multibyte values in the file are in big-endian format. In this doc a 'word' refers to a unsigned 32-bit big-endian quantity. Unless otherwise stated it can be assumed that words are word-aligned. This document describes version EVersion1_0 (v1.0) of the file format, see 'version differences' below for differences in any more recent version.
+
+The use of 32-bit offsets throughout the format means that the maximum file size is 4GB, and you'd hit this before the limit on number of symbols or code segments (both of which are theoretically 2^32-1 as well). The maximum string size is 65535 characters (although highly theoretically the use of prefix and/or token strings could allow a symbol name to be larger than this).
+
+Basic format is:
+
+Header
+Codeseg Section
+Symbol Section
+Strings And Prefix Tables
+
+Header
+======
+
+Word 0: Magic identifier 'BSYM' (ie 0x4253594D).
+
+Word 1: Version. Top 16 bits major version, bottom 16 bits minor. Different major versions are not BC and any tool encountering a major version it can't handle should bail. Different minor versions are BC. Currently the only version is 1.0, that is 0x00010000.
+
+Word 2: CodeSegOffset. Offset from start of file to the codeseg section.
+
+Word 3: SymbolOffset. Offset from start of file to the symbol section.
+
+Example:
+0x4253594D // Magic id 'BSYM'
+0x00010000 // Version 1.0
+0x00000010 // Codeseg section starts at byte 16
+0x000122B4 // Symbol section starts at byte 0x1222B4
+
+Note there is no explicit tracking of where the string table is - it's not necessary since each each symbol/codeseg stores strings as offsets directly from the start of the file.
+
+Codeseg section
+===============
+
+(currently follows on immediately from the header, but that is an implementation detail and CodeSegOffset should always be used)
+
+Word 0: CodeSegCount. Number of codesegments. These follow on immediately from CodeSegCount. Each code segment is defined in the fixed length struct TCodeSeg (see below). The end of the codeseg section is at byte position CodeSegOffset + 4 + CodeSegCount*sizeof(TCodeSeg).
+
+Example:
+0x00000E88 // 3720 codesegments
+<TCodeSegs follow>
+
+TCodeSeg format
+===============
+
+Word 0: Address. Run address of the first symbol in the code segment, whatever was in the original symbol file. Can be zero in the case of a ROFS symbol file.
+Word 1: SymbolCount. Number of symbols in this code segment.
+Word 2: NameOffset. Offset from the start of the file to the string containing the full path of the code segment's binary. (See strings format below).
+Word 3: StartSymbolIndex. Index from the start of the symbols to the first symbol that belongs to this code segment. An index of '1' would indicate this codesegment starts at the second symbol in the symbol table.
+Word 4: PrefixTableOffset. Offset from the start of the file to the prefix table, or 0 if this codeseg doesn't have a prefix table. See later for details of what this table is for.
+
+
+Symbol section
+==============
+
+(currently follows on immediately from the codeseg section, but that is an implementation detail and SymbolOffset should always be used)
+
+Word 0: SymbolCount. Total number of symbols in the file. These follow on immediately from SymbolCount. Each symbol is defined in the fixed length struct TSymbol (see below). The end of the symbol section is at byte position SymbolOffset + 4 + SymbolCount*sizeof(TSymbol).
+
+TSymbol format
+==============
+
+Word 0: Address. Run address of the symbol, whatever was in the original symbol file.
+Word 1: Length. Bottom 16 bits: Length of the symbol, as given in the original symbol file. Zero-length symbols (ie, goto labels and the like) are not preserved in the bsym format. Code segments that have a single, zero-length symbol are changed such that the symbol appears to span the entire length of the code segment. If the code segment size cannot be determined, the code segment is not included. In other words, you don't get any zero-size symbols, or code segments with zero symbols. Top 16 bits: Offset into the parent codeseg's prefix table, or zero if there's no prefix. Prefix offsets are one-based, ie 1 means index 0 of the table, 2 means index 1 etc.
+Word 2: NameOffset. Offset from the start of the file to the string containing the symbol name. Currently the compilation unit and binary section are not stored. (See strings format below.)
+
+Prefix tables
+=============
+
+As a crude way of compressing symbol names, the TSymbol structure supports specifying a prefix to the symbol name, such that the full symbol name is "prefix::restOfSymbolName". The prefixes are calculated per codeseg and stored in a table at location TCodeSeg::PrefixTableOffset. Each entry in the prefix table is an offset into the string table (relative to the start of the file). For example, if many symbols all belong to the LtkUtils namespace, the SymbolNames would just be the function name and all the TSymbol::Length top 16 bits would point to the same prefix table entry that read "LtkUtils".
+
+The prefix table entries are not necessarily word-aligned, because they are interleaved with the string table. Therefore on platforms that can't do unaligned word access, a safe alternative such as memcpy must be used instead of simply dereferencing a pointer.
+
+Global Token List (added in v2.0)
+=================================
+
+a list of short strings that can be referred to in any other string using a single byte. If item 3 of the token list was "void" then a string "const void *" could replace the "void" with a single byte of value 128+3, and the string stored in the string table would be "const \x131 *" with leading length byte being 9. Since the strings have to be ASCII the byte range 128-255 is not used in version 1.0. The token list is a separate section after the symbol section. Its offset is given by word 4 of the header (this word is added in version 2.0).
+
+Word 0: TokenCount. Number of elements in this section. Subsequent words are offsets into the string table. Entries in the token list are guaranteed not to contain any token bytes themselves. Ie it is not necessary to perform recursive expansion of strings in the token list. Because the token list is indexed by a single byte with the top bit set, the maximum token list size is 128. All strings (including prefix strings but excluding tokens themselves) may undergo token substitution.
+
+The current token list is given in tokens.cpp.
+
+
+Renames section (added in v2.1)
+===============================
+
+This section contains additional information not required for existing use-cases. Therefore it is fully compatible with tools expecting v2.0 format files, (hence it's only a minor version change). It tracks binaries that have been renamed during rombuild, and thus only contains any data if the bsym was generated from a rombuild log using makbsym (or similar tool). Whereas .symbol (and .map) files only contain the name of the exes as they were  on the PC, to do symbol->address lookups you need the codeseg name as it appears on device. For eg a codeseg whose name is "\epoc32\release\armv5\urel\_variant_ekern.exe" this section would be able to tell you that the on-device name is actually "ekern.exe"
+
+Word 0: RenamesCount. Number of rename entries.
+Followed by zero or more:
+Word 1: CodesegIdx. The index into the codeseg section of the code segement which was renamed during rombuild
+Word 2: NameOffsert. Offset into the string table of the binary name (without path since all binaries should be in \sys\bin - eg "ekern.exe")
+
+The order of the codesegs in the renames section is guaranteed to be the same as in the codeseg section (although of course not every codeseg will appear in the renames section). In other words CodesegIdx is monotonic, allowing binary search to be used.
+
+String table
+============
+
+Wherever variable-length strings are required (eg, for symbol names) they are referred to by an offset into the string table. The strings in the table can be variable length, and are stored as a leading length byte, followed by the string data. The string is stored 8-bit, without a trailing null byte. Strings that are longer than 254 characters are handled by having the length byte 0xFF, followed by a 16-bit length, followed by the data. The string table is not aligned in any way. A zero-length string is theoretically supported by a length byte of zero without any data following it (so following it would either be End-Of-File or the length byte of the next string.).
+
+LEN Data               LEN Data 
+05 'H' 'e' 'l' 'l' 'o' 03  'a' 'l' 'l'
+
+A really long string:
+FF 01 00 Two_hundred_and_fifty_six_characters_follow
+
+Version differences
+===================
+
+EVersion2_0
+===========
+
+Summary: Header is now 5 words instead of 4, and the addition of the global token list section, described above.
+
+EVersion2_1
+===========
+
+Summary: Header is 6 words instead of 5, and the addition of the renames section, described above.
