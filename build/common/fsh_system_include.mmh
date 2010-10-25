@@ -10,10 +10,10 @@
 // Accenture - Initial contribution
 //
 #include <fshell/common.mmh>
-#if defined(FSHELL_PLATFORM_FOUNDATION) || defined(FSHELL_PLATFORM_SYMTB)
+#if defined(FSHELL_PLATFORM_FOUNDATION) || defined(FSHELL_PLATFORM_SYMTB) || FSHELL_PLATFORM_S60 == 5
 #define FSHELL_USING_PLATFORM_PATHS
 #include <platform_paths.hrh>
-#elif FSHELL_PLATFORM_S60 >= 5
+#elif FSHELL_PLATFORM_S60 > 5
 #define FSHELL_USING_PLATFORM_PATHS
 #include <domain/osextensions/platform_paths.hrh>
 #endif
@@ -24,7 +24,7 @@ APP_LAYER_SYSTEMINCLUDE
 systeminclude	\epoc32\include
 #endif
 
-#if !defined(FSHELL_USING_PLATFORM_PATHS) || (FSHELL_PLATFORM_S60 <= 5 && !defined(FSHELL_PLATFORM_SYMTB)) || defined(SYMBIAN_OLD_EXPORT_LOCATION)
+#if !defined(FSHELL_USING_PLATFORM_PATHS) || (FSHELL_PLATFORM_S60 < 5 && !defined(FSHELL_PLATFORM_SYMTB)) || defined(SYMBIAN_OLD_EXPORT_LOCATION)
 #define FSHELL_NETWORKING_SYSTEMINCLUDE \epoc32\include\networking
 #define FSHELL_HTTP_SYSTEMINCLUDE \epoc32\include\http
 #else

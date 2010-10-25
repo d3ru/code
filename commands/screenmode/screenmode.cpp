@@ -13,7 +13,7 @@
 #include <fshell/common.mmh>
 
 #if defined (FSHELL_PLATFORM_S60) && FSHELL_PLATFORM_S60 >= 5
-#include "AknCapServerClient.h"	//for screen orientation change
+#include <AknCapServerClient.h>	//for screen orientation change
 #endif
 
 #include <W32STD.H>

@@ -14,7 +14,7 @@
 
 #include <fsh_config.iby>
 
-#ifdef FSHELL_TRACE_SUPPORT
+#ifdef FSHELL_EXTRABTRACE_SUPPORT
 
 FSHELL_EXECUTABLE_FILE(extrabtrace.dll)
 FSHELL_KERNEL_EXTENSION(extrabtracek.ldd)

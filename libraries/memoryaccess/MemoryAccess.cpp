@@ -1775,7 +1775,7 @@ TInt DMemoryAccess::GetTimerInfo(DTimer* aTimer, TDes8* aTimerInfoBuf)
 		//Get the timer specific info
 		(*localInfoBuf)().iState = aTimer->iTimer.iState;
 		(*localInfoBuf)().iType = aTimer->iTimer.iType;
-#if FSHELL_PLATFORM_SYMTB >= 92 || FSHELL_PLATFORM_FOUNDATION >= 3
+#if FSHELL_PLATFORM_SYMTB >= 92 || FSHELL_PLATFORM_FOUNDATION >= 3 || (!defined(FSHELL_PLATFORM_FOUNDATION) && FSHELL_PLATFORM_S60 >= 5)
 		(*localInfoBuf)().iClientStatus = NULL; //TOMSCI TEMP
 #else
 		(*localInfoBuf)().iClientStatus = (TLinAddr)aTimer->iTimer.iStatus;
@@ -1841,7 +1841,7 @@ TInt DMemoryAccess::GetSessionInfo(DSession* aSession, TDes8* aSessionInfoBuf)
 		GetObjectInfo (aSession, (*localInfoBuf)());
 		//Get the session specific info
 		(*localInfoBuf)().iServer = (TUint8*)aSession->iServer;
-#if defined(FSHELL_PLATFORM_FOUNDATION) || defined(FSHELL_PLATFORM_SYMTB)
+#if defined(FSHELL_PLATFORM_FOUNDATION) || defined(FSHELL_PLATFORM_SYMTB) || FSHELL_PLATFORM_S60 >= 5
 		(*localInfoBuf)().iSessionPtr = (TAny*)aSession->iSessionCookie;
 #else
 		(*localInfoBuf)().iSessionPtr = (TAny*)aSession->iSessionPtr;

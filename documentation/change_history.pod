@@ -24,6 +24,10 @@ Open signing of fshell SIS files is now supported for production S60 handsets. B
 
 =item *
 
+Changed S60 3rd and 5th platforms to default to the Open Signed configuration, as that's what most people will be using.
+
+=item *
+
 Commands can now define a C<==smoke-test> section in their CIF files, which defines a snippet of fshell script that will be run as part of C<fshell smoketest> or by invoking L<ciftest|commands::ciftest> directly. See the ciftest documentation for more details.
 
 =item *

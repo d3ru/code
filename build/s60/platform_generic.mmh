@@ -12,10 +12,6 @@
 #ifndef FSHELL_PLATFORM_GENERIC_MMH
 #define FSHELL_PLATFORM_GENERIC_MMH
 
-#ifndef FSHELL_OPEN_SIGNED
-#define FSHELL_CAP_ALL
-#define FSHELL_PROTECTED_UIDS
-#endif
 
 // Note FSHELL_PLATFORM_S60 is defined in the 3rd or 5th ed platform.mmh
 
