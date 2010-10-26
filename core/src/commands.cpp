@@ -5993,7 +5993,7 @@ void CCmdError::DoRunL()
 
 	if (iErrorText)
 		{
-		LeaveIfErr(iErrorVal, *iErrorText);
+		LeaveIfErr(iErrorVal, _L("%S"), iErrorText);
 		}
 	else
 		{

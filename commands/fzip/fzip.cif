@@ -20,9 +20,9 @@ Compress and decompress files.
 
 Generates compressed archives of files or extracts files from a compressed archive. Both 'zip' and 'gzip' file formats are support ('zip' is used by default).
 
-==argument filename archive optional
+==argument filename zipfile optional
 
-The zip archive to create or extract.
+The zip archive to create or extract. If the zipfile argument is not specified when creating a zip, the first C<file> argument's name is used with a .zip or .gz extension appended.
 
 ==option bool v verbose
 
@@ -30,11 +30,11 @@ Enables additional reporting of information regarding the zip/unzip process.
 
 ==option bool u unzip
 
-Extract files from the specified archive.
+Extract files from the specified zipfile.
 
 ==option filename d directory
 
-The directory to extract files into. Must be used in conjunction with '--unzip'.
+The directory to extract files into. Must be used in conjunction with C<--unzip>. If not specified, the current working directory is used.
 
 ==option bool r recurse
 
@@ -42,7 +42,7 @@ Include sub-directories and any files contained therein when archiving.
 
 ==option filename f file multiple
 
-A file or directory to archive. Only applicable when creating a new archive. If a directory is specified then it and any files contained immediately within that directory are archived. Use --recurse to archive all sub-directories and files within the directory. 
+A file or directory to add to the zipfile. Only applicable when creating a new archive. If a directory is specified then it and any files contained immediately within that directory are archived. Use --recurse to archive all sub-directories and files within the directory. 
 
 ==option enum t compression-type
 
@@ -53,6 +53,10 @@ PK Zip format (the default if not specified).
 ==enum-value gzip
 
 GNU Zip format. Note, this format can only handle a single file.
+
+==option bool o overwrite
+
+By default fzip will exit with an error if a file it is creating already exists on disk. Use this flag to silently overwrite instead.
 
 ==copyright
 
