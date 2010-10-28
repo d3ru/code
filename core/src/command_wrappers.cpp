@@ -11,20 +11,14 @@
 //
 
 #include "command_wrappers.h"
-
-
-//
-// Constants.
-//
-
-const TInt KMaxHeapSize = 1024*1024; // 1 MB
-
+#include "worker_thread.h"
 
 //
 // CCommandWrapperBase.
 //
 
 CCommandWrapperBase::CCommandWrapperBase()
+	: CActive(CActive::EPriorityStandard)
 	{
 	}
 
@@ -96,14 +90,23 @@ void CCommandWrapperBase::CmndRelease()
 	delete this;
 	}
 
+void CCommandWrapperBase::RunL()
+	{
+	// Optionally for use by subclasses
+	}
+
+void CCommandWrapperBase::DoCancel()
+	{
+	// Optionally for use by subclasses
+	}
 
 //
 // CThreadCommand.
 //
 
-CThreadCommand* CThreadCommand::NewL(const TDesC& aName, TCommandConstructor aCommandConstructor, TUint aFlags)
+CThreadCommand* CThreadCommand::NewL(const TDesC& aName, TCommandConstructor aCommandConstructor, TUint aFlags, MTaskRunner* aTaskRunner)
 	{
-	CThreadCommand* self = new(ELeave) CThreadCommand(aCommandConstructor, aFlags);
+	CThreadCommand* self = new(ELeave) CThreadCommand(aCommandConstructor, aFlags, aTaskRunner);
 	CleanupStack::PushL(self);
 	self->ConstructL(aName);
 	CleanupStack::Pop(self);
@@ -112,14 +115,15 @@ CThreadCommand* CThreadCommand::NewL(const TDesC& aName, TCommandConstructor aCo
 
 CThreadCommand::~CThreadCommand()
 	{
-	delete iWatcher;
-	delete iArgs;
+	Cancel();
+	delete iCommandLine;
 	iThread.Close();
 	}
 
-CThreadCommand::CThreadCommand(TCommandConstructor aCommandConstructor, TUint aFlags)
-	: iFlags(aFlags), iCommandConstructor(aCommandConstructor)
+CThreadCommand::CThreadCommand(TCommandConstructor aCommandConstructor, TUint aFlags, MTaskRunner* aTaskRunner)
+	: iFlags(aFlags), iCommandConstructor(aCommandConstructor), iTaskRunner(aTaskRunner)
 	{
+	CActiveScheduler::Add(this);
 	iThread.SetHandle(0); // By default RThread refers to the current thread. This results in fshell's thread exiting if this object gets killed before it has managed to open a real thread handle.
 	if (iFlags & EUpdateEnvironment) iFlags |= ESharedHeap; // Update environment implies a shared heap, ever since we did away with the explict SwitchAllocator
 	}
@@ -127,66 +131,31 @@ CThreadCommand::CThreadCommand(TCommandConstructor aCommandConstructor, TUint aF
 void CThreadCommand::ConstructL(const TDesC& aName)
 	{
 	BaseConstructL(aName);
-	iWatcher = CThreadWatcher::NewL();
 	}
 
-void CommandThreadStartL(CThreadCommand::TArgs& aArgs)
+void CThreadCommand::DoCommandThreadStartL(TAny* aSelf)
 	{
-	if (aArgs.iFlags & CThreadCommand::ESharedHeap)
-		{
-		// If we're sharing the main fshell heap, we have to play by the rules and not crash
-		User::SetCritical(User::EProcessCritical);
-		}
-
-	CActiveScheduler* scheduler = new(ELeave) CActiveScheduler;
-	CleanupStack::PushL(scheduler);
-	CActiveScheduler::Install(scheduler);
-
-	HBufC* commandLine = aArgs.iCommandLine.AllocLC();
+	CThreadCommand* self = static_cast<CThreadCommand*>(aSelf);
 
 	IoUtils::CEnvironment* env;
-	if (aArgs.iFlags & CThreadCommand::EUpdateEnvironment)
+	if (self->iFlags & CThreadCommand::EUpdateEnvironment)
 		{
-		env = aArgs.iEnv.CreateSharedEnvironmentL();
+		env = self->iSuppliedEnv->CreateSharedEnvironmentL();
 		}
 	else
 		{
 		// A straight-forward copy
-		env = IoUtils::CEnvironment::NewL(aArgs.iEnv);
+		env = IoUtils::CEnvironment::NewL(*self->iSuppliedEnv);
 		}
 	CleanupStack::PushL(env);
 
-	CCommandBase* command = (*aArgs.iCommandConstructor)();
-	RThread parentThread;
-	User::LeaveIfError(parentThread.Open(aArgs.iParentThreadId));
-	parentThread.RequestComplete(aArgs.iParentStatus, KErrNone);
-	parentThread.Close();
-
-	command->RunCommandL(commandLine, env);
-	CleanupStack::PopAndDestroy(4, scheduler); // env, command, commandline, scheduler
+	CCommandBase* command = (*self->iCommandConstructor)();
+	//RDebug::Print(_L("5. DoCommandThreadStartL rendezvousing for %S %S"), &self->CmndName(), self->iCommandLine);
+	RThread::Rendezvous(KErrNone);
+	command->RunCommandL(self->iCommandLine, env);
+	CleanupStack::PopAndDestroy(2, env); // command, env
 	}
 
-TInt CommandThreadStart(TAny* aPtr)
-	{
-	CThreadCommand::TArgs args = *(CThreadCommand::TArgs*)aPtr;
-	TBool sharedHeap = (args.iFlags & CThreadCommand::ESharedHeap);
-	if (!sharedHeap)
-		{
-		__UHEAP_MARK;
-		}
-	TInt err = KErrNoMemory;
-	CTrapCleanup* cleanup = CTrapCleanup::New();
-	if (cleanup)
-		{
-		TRAP(err, CommandThreadStartL(args));
-		delete cleanup;
-		}
-	if (!sharedHeap)
-		{
-		__UHEAP_MARKEND;
-		}
-	return err;
-	}
 
 void SetHandleOwnersL(TThreadId aThreadId, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr)
 	{
@@ -199,64 +168,36 @@ TInt CThreadCommand::CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& a
 	{
 	ASSERT(iObserver == NULL);
 
-	TRequestStatus status(KRequestPending);
-	iArgs = new TArgs(iFlags, aEnv, iCommandConstructor, aCommandLine, status);
-	if (iArgs == NULL)
+	MThreadedTask* thread = NULL;
+	TRAPD(err, thread = iTaskRunner->NewTaskInSeparateThreadL(CmndName(), iFlags & ESharedHeap, &DoCommandThreadStartL, this));
+	if (err) return err;
+
+	TRAP(err, SetHandleOwnersL(thread->GetThreadId(), CmndStdin(), CmndStdout(), CmndStderr()));
+
+	if (!err)
 		{
-		return KErrNoMemory;
+		iCommandLine = aCommandLine.Alloc();
+		if (!iCommandLine) err = KErrNoMemory;
 		}
 
-	TInt i = 0;
-	TName threadName;
-	TInt err = KErrNone;
-	do
+	if (!err)
 		{
-		const TDesC& name = CmndName();
-		threadName.Format(_L("%S_%02d"), &name, i++);
-		if (iFlags & ESharedHeap)
-			{
-			err = iThread.Create(threadName, CommandThreadStart, KDefaultStackSize, NULL, iArgs);
-			}
-		else
-			{
-			err = iThread.Create(threadName, CommandThreadStart, KDefaultStackSize, KMinHeapSize, KMaxHeapSize, iArgs);
-			}
-		}
-		while (err == KErrAlreadyExists);
-
-	if (err)
-		{
-		return err;
+		err = iThread.Open(thread->GetThreadId());
 		}
 
-	err = iWatcher->Logon(*this, iThread, aObserver);
-	if (err)
+	if (!err)
 		{
-		iThread.Kill(0);
-		iThread.Close();
-		return err;
+		iSuppliedEnv = &aEnv;
+		iObserver = &aObserver;
+		thread->ExecuteTask(iStatus);
+		SetActive();
+		}
+	else
+		{
+		thread->AbortTask();
 		}
 
-	TThreadId threadId = iThread.Id();
-	TRAP(err, SetHandleOwnersL(threadId, CmndStdin(), CmndStdout(), CmndStderr()));
-	if (err)
-		{
-		iThread.Kill(0);
-		iThread.Close();
-		return err;
-		}
-
-	iThread.Resume();
-	User::WaitForRequest(status, iWatcher->iStatus);
-	if (status == KRequestPending)
-		{
-		iThread.Close();
-		return iWatcher->iStatus.Int();
-		}
-
-	iWatcher->SetActive();
-	iObserver = &aObserver;
-	return KErrNone;
+	return err;
 	}
 
 void CThreadCommand::CmndForeground()
@@ -300,71 +241,14 @@ TExitCategoryName CThreadCommand::CmndExitCategory() const
 	return iThread.ExitCategory();
 	}
 
-
-//
-// CThreadCommand::TArgs.
-//
-
-CThreadCommand::TArgs::TArgs(TUint aFlags, IoUtils::CEnvironment& aEnv, TCommandConstructor aCommandConstructor, const TDesC& aCommandLine, TRequestStatus& aParentStatus)
-	: iFlags(aFlags), iEnv(aEnv), iCommandConstructor(aCommandConstructor), iCommandLine(aCommandLine), iParentStatus(&aParentStatus), iParentThreadId(RThread().Id())
+void CThreadCommand::RunL()
 	{
+	iObserver->HandleCommandComplete(*this, iStatus.Int());
 	}
 
-
-//
-// CThreadCommand::CThreadWatcher.
-//
-
-CThreadCommand::CThreadWatcher* CThreadCommand::CThreadWatcher::NewL()
+void CThreadCommand::DoCancel()
 	{
-	return new(ELeave) CThreadWatcher();
-	}
-
-CThreadCommand::CThreadWatcher::~CThreadWatcher()
-	{
-	Cancel();
-	}
-
-CThreadCommand::CThreadWatcher::CThreadWatcher()
-	: CActive(CActive::EPriorityStandard)
-	{
-	CActiveScheduler::Add(this);
-	}
-
-TInt CThreadCommand::CThreadWatcher::Logon(CThreadCommand& aCommand, RThread& aThread, MCommandObserver& aObserver)
-	{
-	TInt ret = KErrNone;
-	aThread.Logon(iStatus);
-	if (iStatus != KRequestPending)
-		{
-		User::WaitForRequest(iStatus);
-		ret = iStatus.Int();
-		}
-	else
-		{
-		iCommand = &aCommand;
-		iThread = &aThread;
-		iObserver = &aObserver;
-		}
-	return ret;
-	}
-
-void CThreadCommand::CThreadWatcher::SetActive()
-	{
-	CActive::SetActive();
-	}
-
-void CThreadCommand::CThreadWatcher::RunL()
-	{
-	iObserver->HandleCommandComplete(*iCommand, iStatus.Int());
-	}
-
-void CThreadCommand::CThreadWatcher::DoCancel()
-	{
-	if (iThread)
-		{
-		iThread->LogonCancel(iStatus);
-		}
+	CmndKill(); // This is a bit drastic, but effective...
 	}
 
 

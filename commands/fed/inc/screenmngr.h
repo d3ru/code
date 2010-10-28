@@ -27,7 +27,7 @@ class CScreenManager : public CBase
 	{
 public:
 	//Returns the TWindow occupied by the command window
-	const TWindow& GetCommandWindow() {return iCmdWnd;}
+	const TWindow& GetCommandWindow();
 	//Sets new coordinates of the screen available to this screen manager
 	void ResizeScreenL(const TWindow& aWindow);
 	//Resizes all Views to make space (if possible) for the new size of the command window.

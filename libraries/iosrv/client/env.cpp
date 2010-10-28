@@ -141,33 +141,37 @@ EXPORT_C void CEnvironment::SetL(const TDesC& aKey, const TDesC& aValue)
 	WaitLC();
 
 	HBufC** valPtr = iVars.Find(aKey);
-	HBufC* currentValue = NULL;
-	if (valPtr) currentValue = *valPtr;
 
 	if (valPtr == NULL && iParentEnv)
 		{
 		// If we don't have it, and we have a parent env, we should pass the request through to it.
 		iParentEnv->SetL(aKey, aValue);
 		}
-	else
+	else if (valPtr)
 		{
-		if (currentValue)
+		// The key is present in the hash.
+		HBufC* currentValue = *valPtr;
+		if (currentValue && (currentValue->Des().MaxLength() >= aValue.Length()))
 			{
-			// If we already have a value in the hash, just update it if possible
-			TPtr ptr = currentValue->Des();
-			if (ptr.MaxLength() >= aValue.Length())
-				{
-				ptr.Copy(aValue);
-				CleanupStack::PopAndDestroy(); // Release lock
-				return;
-				}
+			// If the existing HBufC is big enough, simply copy.
+			// Note, currentValue will be NULL if this is the first time a 'local' variable is being set.
+			currentValue->Des().Copy(aValue);
+			}
+		else
+			{
+			// Otherwise allocate a new HBufC.
+			*valPtr = aValue.AllocL();
+			delete currentValue;
 			}
 		}
+	else
+		{
+		// New key.
+		HBufC* newVal = aValue.AllocLC();
+		iVars.InsertL(aKey, newVal);
+		CleanupStack::Pop(newVal);
+		}
 	
-	HBufC* newVal = aValue.AllocLC();
-	iVars.InsertL(aKey, newVal);
-	delete currentValue;
-	CleanupStack::Pop(newVal);
 	CleanupStack::PopAndDestroy(); // Release lock
 	}
 

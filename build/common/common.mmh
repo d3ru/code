@@ -571,6 +571,8 @@
 #define FSHELL_UID_VT100USBCONS               0x10286F8A
 #define FSHELL_UID_WIN32CONS                  0x10286F8B
 #define FSHELL_UID_SHOWDEBUG                  0x10286F8D
+#define FSHELL_UID_INPUT                      0x10286B7D
+#define FSHELL_UID_BASE64                     0x10286B7E
 
 #else // Not FSHELL_PROTECTED_UIDS
 
@@ -725,6 +727,8 @@
 #define FSHELL_UID_VT100USBCONS               0xE0286F8A
 #define FSHELL_UID_WIN32CONS                  0xE0286F8B
 #define FSHELL_UID_SHOWDEBUG                  0xE0286F8D
+#define FSHELL_UID_INPUT                      0xE0286B7D
+#define FSHELL_UID_BASE64                     0xE0286B7E
 
 #endif // FSHELL_PROTECTED_UIDS
 

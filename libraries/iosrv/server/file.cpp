@@ -93,7 +93,7 @@ void CIoFile::ConstructL(RFs& aFs, const TDesC& aName, RIoFile::TMode aMode)
 		{
 		case RIoFile::ERead:
 			{
-			User::LeaveIfError(iFile.Open(aFs, aName, EFileRead));
+			User::LeaveIfError(iFile.Open(aFs, aName, EFileRead | EFileShareReadersOnly));
 			break;
 			}
 		case RIoFile::EOverwrite:

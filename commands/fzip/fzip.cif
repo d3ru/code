@@ -62,3 +62,29 @@ By default fzip will exit with an error if a file it is creating already exists 
 
 Copyright (c) 2008-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+export TESTDATA "This is some test data for fzip"
+echo -n "$TESTDATA" > test.txt
+rm test.txt.zip $Silent &| echo -n ""
+
+# Test zip
+fzip --file test.txt
+exists test.txt.zip || $Error
+rm test.txt
+
+# Test unzip
+fzip --unzip test.txt.zip
+exists test.txt || $Error
+cat -b test.txt | export -s RESULT
+var RESULT == "$TESTDATA" || $Error
+
+# Test that we don't overwrite files unless --overwrite is specified
+fzip --file test.txt $Silent &| var ? == "-11" || $Error
+fzip --file test.txt --overwrite
+
+fzip --unzip test.txt.zip $Silent &| var ? == "-11" || $Error
+fzip --unzip test.txt.zip --overwrite
+
+rm test.txt
+rm test.txt.zip

@@ -46,7 +46,7 @@ public:
 	const RPointerArray<CJob>& Jobs() const;
 	CJob* Job(TInt aId);
 	TInt DisownJob(TInt aId);
-	static HBufC* ReadScriptL(const TDesC& aScriptName, const TDesC* aArguments, IoUtils::CEnvironment& aEnv, RFs& aFs, TIoHandleSet& aIoHandles, TBool& aHelpPrinted, RPointerArray<HBufC>* aAdditionalPrefixArguments=NULL);
+	static RIoReadHandle OpenScriptL(const TDesC& aScriptName, const TDesC* aArguments, IoUtils::CEnvironment& aEnv, RFs& aFs, TIoHandleSet& aIoHandles, TBool& aHelpPrinted, RPointerArray<HBufC>* aAdditionalPrefixArguments=NULL);
 private:
 	CShell();
 	void ConstructL();
@@ -79,7 +79,7 @@ private:
 	CLineCompleter* iLineCompleter;
 	CCommandFactory* iCommandFactory;
 	RPointerArray<CJob> iJobs;
-	HBufC* iScriptData;
+	RIoReadHandle iScriptHandle;
 	CParser* iParser;
 	TInt iForegroundJobId;
 	TInt iNextJobId;

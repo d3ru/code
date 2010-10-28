@@ -25,6 +25,7 @@
 #include "ymodem.h"
 #include "version.h"
 #include "ciftest.h"
+#include "worker_thread.h"
 
 //
 // Constants.
@@ -84,6 +85,7 @@ CCommandFactory::~CCommandFactory()
 	Cancel();
 	iCommands.ResetAndDestroy();
 	iLock.Close();
+	delete iThreadPool;
 	}
 
 TInt CompareCommandNames(const CCommandConstructorBase& aCommand1, const CCommandConstructorBase& aCommand2)
@@ -250,6 +252,7 @@ void CCommandFactory::ConstructL()
 	{
 	User::LeaveIfError(iLock.CreateLocal());
 	User::LeaveIfError(iFs.DriveList(iDriveList));
+	iThreadPool = CThreadPool::NewL();
 
 	AddThreadCommandL(CCmdExit::NewLC); // Note, this command should never execute as 'exit' has handled explicitly by CParser. It exists so that 'exit' appears in fshell's help list and also to support 'exit --help'.
 	AddThreadCommandL(CCmdHelp::NewLC, CThreadCommand::ESharedHeap);
@@ -429,14 +432,14 @@ void CCommandFactory::AddCommandL(CCommandConstructorBase* aCommandConstructor)
 
 void CCommandFactory::AddThreadCommandL(TCommandConstructor aConstructor, TUint aFlags)
 	{
-	CCommandConstructorBase* constructor = CThreadCommandConstructor::NewLC(aConstructor, aFlags);
+	CCommandConstructorBase* constructor = CThreadCommandConstructor::NewLC(aConstructor, aFlags, iThreadPool);
 	AddCommandL(constructor);
 	CleanupStack::Pop(constructor);
 	}
 
 void CCommandFactory::AddThreadCommandL(const TDesC& aCommandName, TCommandConstructor aConstructor, TUint aAttributes, TUint aFlags)
 	{
-	CCommandConstructorBase* constructor = CThreadCommandConstructor::NewLC(aCommandName, aConstructor, aFlags);
+	CCommandConstructorBase* constructor = CThreadCommandConstructor::NewLC(aCommandName, aConstructor, aFlags, iThreadPool);
 	constructor->SetAttributes(aAttributes);
 	AddCommandL(constructor);
 	CleanupStack::Pop(constructor);
@@ -444,7 +447,7 @@ void CCommandFactory::AddThreadCommandL(const TDesC& aCommandName, TCommandConst
 
 void CCommandFactory::AddAliasCommandL(const TDesC& aAliasName, TCommandConstructor aConstructor, const TDesC* aAdditionalArguments, const TDesC* aReplacementArguments, TUint aAttributes, TUint aFlags)
 	{
-	CCommandConstructorBase* aliasedCommand = CThreadCommandConstructor::NewLC(aConstructor, aFlags);
+	CCommandConstructorBase* aliasedCommand = CThreadCommandConstructor::NewLC(aConstructor, aFlags, iThreadPool);
 	CCommandConstructorBase* constructor = CAliasCommandConstructor::NewLC(aAliasName, aliasedCommand, aAdditionalArguments, aReplacementArguments);
 	CleanupStack::Pop(2, aliasedCommand); // Now owned by "constructor".
 	CleanupStack::PushL(constructor);

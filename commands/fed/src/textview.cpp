@@ -84,24 +84,26 @@ void CTextView::HideCursor()
 	}
 
 void CTextView::ResizeL(const TWindow& aWindow)
-{
+	{
 	iActive = ETrue;
 	TWindow oldWindow = iWindow;
 	StoreWindow(aWindow);
+	iLine.Zero();
+	iLine.ReAllocL(iConsole.ScreenSize().iWidth);
 	DoResizeL(oldWindow);
-}
+	}
 
 void CTextView::RedrawL(const TWindow& aWindow)
-{
+	{
 	iActive = ETrue;
 	StoreWindow(aWindow);
 	DoRedrawL();
-}
+	}
 
 void CTextView::DeactivateL()
-{
+	{
 	iActive = EFalse;
-}
+	}
 
 //MSharedCacheClient
 void CTextView::InvalidateBuffer(TRequestStatus& aStatus)

@@ -30,7 +30,7 @@ source          file_reader.cpp
 library         euser.lib
 library         efsrv.lib
 library         iocli.lib
-library         charconv.lib
+library         CHARCONV.lib
 library         ltkutils.lib
 
 macro           EXE_BUILD

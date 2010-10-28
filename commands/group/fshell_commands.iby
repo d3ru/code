@@ -110,6 +110,12 @@ FSHELL_COMMAND_INFO_FILE(fshell,sysinfo.cif)
 FSHELL_EXECUTABLE_FILE(iniedit.exe)
 FSHELL_COMMAND_INFO_FILE(fshell,iniedit.cif)
 
+FSHELL_EXECUTABLE_FILE(fshell_input.exe)
+FSHELL_COMMAND_INFO_FILE(fshell,input.cif)
+
+FSHELL_EXECUTABLE_FILE(fshell_base64.exe)
+FSHELL_COMMAND_INFO_FILE(fshell,base64.cif)
+
 #ifdef FSHELL_CORE_SUPPORT_PATCHDATA
 FSHELL_EXECUTABLE_FILE(patchdata.exe)
 FSHELL_COMMAND_INFO_FILE(fshell,patchdata.cif)

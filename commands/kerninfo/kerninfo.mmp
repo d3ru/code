@@ -26,7 +26,7 @@ source          kerninfo.cpp
 
 library         euser.lib
 library         iocli.lib
-library         qr3.lib
+library         QR3.lib
 library         ltkutils.lib
 
 #ifdef FSHELL_SPCRE_SUPPORT

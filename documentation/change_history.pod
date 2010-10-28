@@ -46,10 +46,33 @@ Added support for beagleboard to sf\3tshell platform.
 
 Updated chkdeps command so that it works with byte-pair compressed binaries (experimental).
 
-
 =item *
 
 Added L<showdebug|commands::showdebug> command to redirect RDebug::Print()s to the console.
+
+=item *
+
+Added L<input|commands::input> command to allow hardware key presses to be easily simulated via a console.
+
+=item *
+
+Added L<base64|commands::base64> command for encoding to and decoding from Base64.
+
+=item *
+
+Added C<CBtraceAppStart> to btrace_parser.dll. Also changed the interface of C<CBtraceAppResponse> to use window group name patterns rather than process ids (to make it consistent with other parts of the API).
+
+=item *
+
+Fshell now reuses threads for built-in commands that execute in quick succession. The thread pool takes into account the requirements of the command when assigning a thread (eg whether it needs to share a heap with its parent command) and creates a new one if necessary. Excess threads are cleaned up after a short idle period (currently 1 second).
+
+=item *
+
+Added support for L<source|commands::source> reading from C<stdin> (primarily to better support remote execution of scripts).
+
+=item *
+
+Fixed a bug in iocli.dll that could cause environment variable updates to be ignored.
 
 =back
 

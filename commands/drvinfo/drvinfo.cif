@@ -14,7 +14,7 @@
 
 ==short-description
 
-Display information about the currently installed drives.
+Display information about the currently available drives.
 
 ==argument string drive_letter optional
 

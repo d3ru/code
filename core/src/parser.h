@@ -42,6 +42,7 @@ public:
 		};
 public:
 	static CParser* NewL(TUint aMode, const TDesC& aDes, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver, TInt aStartingLineNumber = 1);
+	static CParser* NewL(TUint aMode, RIoReadHandle& aSourceHandle, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver);
 	~CParser();
 	void Start();
 	void Start(TBool& aIsForeground);
@@ -62,14 +63,17 @@ private:
 		EAndOr
 		};
 private:
-	CParser(TUint aMode, const TDesC& aDes, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver, TInt aStartingLineNumber=1);
-	void ConstructL();
+	CParser(TUint aMode, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver, TInt aStartingLineNumber=1);
+	void ConstructL(const TDesC* aDes, RIoReadHandle* aSourceHandle);
 	void CreateNextPipeLine(TBool* aIsForeground);
 	void CreateNextPipeLineL(TBool* aIsForeground);
 	void FindNextPipeLineL(TPtrC& aData, TCondition& aCondition, TBool& aReachedLineEnd);
 	HBufC* ExpandVariablesLC(const TDesC& aData);
-	TInt SkipLineRemainder();
+	void SkipLineRemainderL();
+	void DoSkipLineRemainderL();
 	void SkipToEnd();
+	TBool MoreSourceData() const;
+	void HandlePipeLineCompleteL(CPipeLine& aPipeLine, const TError& aError);
 	static TInt CompletionCallBack(TAny* aSelf);
 	static TInt NextCallBack(TAny* aSelf);
 	static TInt ExitCallBack(TAny* aSelf);
@@ -77,7 +81,6 @@ private:	// From MPipeLineObserver.
 	virtual void HandlePipeLineComplete(CPipeLine& aPipeLine, const TError& aError);
 private:
 	const TUint iMode;
-	const TPtrC iData;
 	TCondition iCondition;
 	RIoSession& iIoSession;
 	RIoReadHandle iStdin;

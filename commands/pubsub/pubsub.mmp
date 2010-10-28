@@ -25,7 +25,7 @@ source          pubsub.cpp
 
 library         euser.lib
 library         iocli.lib
-library         qr3.lib
+library         QR3.lib
 library         ltkutils.lib
 library         btrace_parser.lib
 FSHELL_TRACE_CONTROL_LIBRARY

@@ -49,15 +49,15 @@ CLineCompleter::~CLineCompleter()
 void CLineCompleter::LcCompleteLineL(TConsoleLine& aLine, const TChar& aEscapeChar)
 	{
 	iLexer->Set(aLine.ContentsToCursor(), aEscapeChar);
-	TToken token(iLexer->NextToken());
+	TToken token(iLexer->NextTokenL());
 	TToken firstToken = token;
 	TToken prevToken(TToken::EString, KNullDesC, aLine.ContentsToCursor().Length());
 	TInt lastTokenIdx = 0;
-	while (iLexer->More())
+	while (iLexer->MoreL())
 		{
 		// More than one token - skip to last.
 		prevToken = token;
-		token = iLexer->NextToken();
+		token = iLexer->NextTokenL();
 		lastTokenIdx++;
 		}
 

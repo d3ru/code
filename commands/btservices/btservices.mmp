@@ -24,7 +24,7 @@ systeminclude	FSHELL_NETWORKING_SYSTEMINCLUDE
 sourcepath		.
 source			btservices.cpp BtServicesEng.cpp
 
-library			euser.lib bafl.lib charconv.lib
+library			euser.lib bafl.lib CHARCONV.lib
 library			iocli.lib
 LIBRARY			esock.lib sdpagent.lib sdpdatabase.lib btextnotifiers.lib btmanclient.lib bluetooth.lib btdevice.lib
 

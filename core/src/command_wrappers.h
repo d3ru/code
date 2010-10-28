@@ -55,8 +55,7 @@ public:
 	virtual void HandleCommandComplete(MCommand& aCommand, TInt aError) = 0;
 	};
 
-
-class CCommandWrapperBase : public CBase, public MCommand
+class CCommandWrapperBase : public CActive, public MCommand
 	{
 protected:
 	CCommandWrapperBase();
@@ -74,6 +73,10 @@ protected: // From MCommand.
 	virtual void CmndDisown();
 private: // From MCommand.
 	virtual void CmndRelease();
+protected: // From CActive
+	void RunL();
+	void DoCancel();
+
 private:
 	HBufC* iName;	///< This is used by concrete classes as they see fit.
 	RIoReadHandle iStdin;
@@ -91,11 +94,14 @@ public:
 		ESharedHeap = 0x00000002, // Any command that accesses gShell must have this set
 		};
 public:
-	static CThreadCommand* NewL(const TDesC& aName, TCommandConstructor aCommandConstructor, TUint aFlags);
+	static CThreadCommand* NewL(const TDesC& aName, TCommandConstructor aCommandConstructor, TUint aFlags, MTaskRunner* aTaskRunner);
 	~CThreadCommand();
 private:
-	CThreadCommand(TCommandConstructor aCommandConstructor, TUint aFlags);
+	CThreadCommand(TCommandConstructor aCommandConstructor, TUint aFlags, MTaskRunner* aTaskRunner);
 	void ConstructL(const TDesC& aName);
+	void RunL();
+	void DoCancel();
+	static void DoCommandThreadStartL(TAny* aSelf);
 private: // From MCommand.
 	virtual TInt CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession);
 	virtual void CmndForeground();
@@ -105,43 +111,14 @@ private: // From MCommand.
 	virtual TInt CmndResume();
 	virtual TExitType CmndExitType() const;
 	virtual TExitCategoryName CmndExitCategory() const;
-public:
-	class TArgs
-		{
-	public:
-		TArgs(TUint aFlags, CEnvironment& aEnv, TCommandConstructor aCommandConstructor, const TDesC& aCommandLine, TRequestStatus& aParentStatus);
-	public:
-		TUint iFlags;
-		CEnvironment& iEnv;
-		TCommandConstructor iCommandConstructor;
-		const TPtrC iCommandLine;
-		TRequestStatus* iParentStatus;
-		TThreadId iParentThreadId;
-		};
-	class CThreadWatcher : public CActive
-		{
-	public:
-		static CThreadWatcher* NewL();
-		~CThreadWatcher();
-		TInt Logon(CThreadCommand& aCommand, RThread& aThread, MCommandObserver& aObserver);
-		void SetActive();
-	private:
-		CThreadWatcher();
-	private: // From CActive.
-		virtual void RunL();
-		virtual void DoCancel();
-	private:
-		CThreadCommand* iCommand;
-		RThread* iThread;
-		MCommandObserver* iObserver;
-		};
 private:
 	TUint iFlags;
 	TCommandConstructor iCommandConstructor;
 	MCommandObserver* iObserver;
-	TArgs* iArgs;
 	RThread iThread;
-	CThreadWatcher* iWatcher;
+	MTaskRunner* iTaskRunner;
+	CEnvironment* iSuppliedEnv;
+	HBufC* iCommandLine;
 	};
 
 

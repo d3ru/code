@@ -770,6 +770,43 @@ private:
 	};
 
 
+class MBtraceAppStartObserver
+	{
+public:
+	virtual void HandleAppStartL(const TBtraceTickCount& aTickCount) = 0;
+	};
+
+NONSHARABLE_CLASS(CBtraceAppStart) : public CRefCountedObject, public MBtraceObserver
+	{
+public:
+	IMPORT_C static CBtraceAppStart* NewL(CBtraceReader& aReader, CBtraceContext& aContext);
+	IMPORT_C ~CBtraceAppStart();
+	IMPORT_C void NotifyAppStartL(MBtraceAppStartObserver& aObserver, const TDesC& aWindowGroupNamePattern);
+	IMPORT_C void NotifyAppStartL(MBtraceAppStartObserver& aObserver, const TDesC& aWindowGroupNamePattern, TBtraceNotificationPersistence aPersistence);
+	IMPORT_C void CancelNotifyAppStart(MBtraceAppStartObserver& aObserver);
+private:
+	CBtraceAppStart(CBtraceReader& aReader, CBtraceContext& aContext);
+	void ConstructL();
+	void SeenAppStartL(const TBtraceTickCount& aTickCount, TInt aWindowGroupId);
+private: // From MBtraceObserver.
+	virtual void HandleBtraceFrameL(const TBtraceFrame& aFrame);
+private:
+	class TAppStartNotif
+		{
+	public:
+		TAppStartNotif(MBtraceAppStartObserver& aObserver, const TDesC& aWindowGroupNamePattern, TBtraceNotificationPersistence aPersistence);
+	public:
+		MBtraceAppStartObserver& iObserver;
+		TPtrC iWindowGroupNamePattern;
+		TBtraceNotificationPersistence iPersistence;
+		};
+private:
+	CBtraceReader& iReader;
+	CBtraceContext& iContext;
+	RArray<TAppStartNotif> iNotifs;
+	};
+
+
 class MBtraceAppResponseObserver
 	{
 public:
@@ -779,29 +816,30 @@ public:
 NONSHARABLE_CLASS(CBtraceAppResponse) : public CRefCountedObject, public MBtraceObserver
 	{
 public:
-	IMPORT_C static CBtraceAppResponse* NewL(CBtraceReader& aReader);
+	IMPORT_C static CBtraceAppResponse* NewL(CBtraceReader& aReader, CBtraceContext& aContext);
 	IMPORT_C ~CBtraceAppResponse();
-	IMPORT_C void NotifyAppResponseL(MBtraceAppResponseObserver& aObserver, const TProcessId& aProcessId);
-	IMPORT_C void NotifyAppResponseL(MBtraceAppResponseObserver& aObserver, const TProcessId& aProcessId, TBtraceNotificationPersistence aPersistence);
+	IMPORT_C void NotifyAppResponseL(MBtraceAppResponseObserver& aObserver, const TDesC& aWindowGroupNamePattern);
+	IMPORT_C void NotifyAppResponseL(MBtraceAppResponseObserver& aObserver, const TDesC& aWindowGroupNamePattern, TBtraceNotificationPersistence aPersistence);
 	IMPORT_C void CancelNotifyAppResponse(MBtraceAppResponseObserver& aObserver);
 private:
-	CBtraceAppResponse(CBtraceReader& aReader);
+	CBtraceAppResponse(CBtraceReader& aReader, CBtraceContext& aContext);
 	void ConstructL();
-	void SeenAppResponseL(const TBtraceTickCount& aTickCount, const TProcessId& aProcessId);
+	void SeenAppResponseL(const TBtraceTickCount& aTickCount, TInt aWindowGroupId);
 private: // From MBtraceObserver.
 	virtual void HandleBtraceFrameL(const TBtraceFrame& aFrame);
 private:
 	class TAppResponseNotif
 		{
 	public:
-		TAppResponseNotif(MBtraceAppResponseObserver& aObserver, const TProcessId& aProcessId, TBtraceNotificationPersistence aPersistence);
+		TAppResponseNotif(MBtraceAppResponseObserver& aObserver, const TDesC& aWindowGroupNamePattern, TBtraceNotificationPersistence aPersistence);
 	public:
 		MBtraceAppResponseObserver& iObserver;
-		TProcessId iProcessId;
+		TPtrC iWindowGroupNamePattern;
 		TBtraceNotificationPersistence iPersistence;
 		};
 private:
 	CBtraceReader& iReader;
+	CBtraceContext& iContext;
 	RArray<TAppResponseNotif> iNotifs;
 	};
 

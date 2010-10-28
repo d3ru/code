@@ -374,8 +374,16 @@ void CCmdZip::ExtractZipFileL(CZipFile& aZip, const CZipFileMember& aMember)
 	if (aMember.Name()->Right(1) == _L("\\")) return; // It's a directory entry, nothing more to be done
 
 	// prep. the stream
-	RZipFileMemberReaderStream* readStream;
-	aZip.GetInputStreamL(&aMember, readStream);
+	RZipFileMemberReaderStream* readStream = NULL;
+	err = aZip.GetInputStreamL(&aMember, readStream);
+	if (err == CZipFile::KCompressionMethodNotSupported)
+		{
+		LeaveIfErr(KErrNotSupported, _L("Zip compression method not supported"));
+		}
+	else
+		{
+		LeaveIfErr(err, _L("Unable to get input stream"));
+		}
 	CleanupStack::PushL(readStream);
 
 	if (iOverwrite)

@@ -119,6 +119,10 @@ Optional. If present, a section titled "See Also" is generated in the resulting 
 
     L<ps|ps>, L<objinfo|objinfo>
 
+=head3 ==smoke-test
+
+Commands may optionally specify a snippet of code to test the basic functionality of the command. See the L<ciftest|commands::ciftest> documentation for more details.
+
 =head2 The enum type
 
 The C<enum> type can be used for an option or argument that takes a limited number of named values, in much the same was as C/C++ enums are used. For an option or argument of type C<enum> you must specify the possible values that the enum can take using the C<==enum-value> keyword. These may optionally have a separate description per value. If any value has an individual description, they all must.

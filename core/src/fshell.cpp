@@ -117,8 +117,7 @@ void TError::Report() const
 			break;
 			}
 		case EFailedToCreatePipeLine:
-		case EFailedToSetChildErrorVar:
-		case EFailedToSetScriptLineVar:
+		case EPipelineCompletionError:
 		case EUnknown:
 		default:
 			{
@@ -200,8 +199,7 @@ const TDesC* TError::StringifyReason(TReason aReason) const
 		CASE_RETURN_LIT(EFailedToCreatePipeLine);
 		CASE_RETURN_LIT(EFailedToConstructCommand);
 		CASE_RETURN_LIT(EFailedToRunCommand);
-		CASE_RETURN_LIT(EFailedToSetChildErrorVar);
-		CASE_RETURN_LIT(EFailedToSetScriptLineVar);
+		CASE_RETURN_LIT(EPipelineCompletionError);
 		CASE_RETURN_LIT(ECommandError);
 		DEFAULT_RETURN_LIT("*** REASON UNKNOWN ***");
 		}
@@ -296,6 +294,7 @@ CShell* CShell::NewLC()
 
 CShell::~CShell()
 	{
+	iScriptHandle.Close();
 	iJobsLock.Close();
 	iJobs.ResetAndDestroy();
 	delete iScriptArgs;
@@ -303,7 +302,6 @@ CShell::~CShell()
 	delete iLineCompleter;
 	delete iConsole;
 	delete iCommandFactory;
-	delete iScriptData;
 	delete iOneLiner;
 	delete iParser;
 	}
@@ -515,7 +513,7 @@ void CShell::DoRunL()
 		{
 		TIoHandleSet ioHandles(IoSession(), Stdin(), Stdout(), Stderr());
 		TBool helpPrinted;
-		iScriptData = ReadScriptL(iScriptName, iScriptArgs, Env(), FsL(), ioHandles, helpPrinted);
+		iScriptHandle = OpenScriptL(iScriptName, iScriptArgs, Env(), FsL(), ioHandles, helpPrinted);
 		if (helpPrinted)
 			{
 			Complete();
@@ -527,7 +525,7 @@ void CShell::DoRunL()
 				{
 				mode |= CParser::EKeepGoing;
 				}
-			iParser = CParser::NewL(mode, *iScriptData, IoSession(), Stdin(), Stdout(), Stderr(), Env(), *iCommandFactory, this);
+			iParser = CParser::NewL(mode, iScriptHandle, IoSession(), Stdin(), Stdout(), Stderr(), Env(), *iCommandFactory, this);
 			RProcess::Rendezvous(KErrNone);
 			iParser->Start();
 			}
@@ -641,8 +639,12 @@ TInt CShell::DisownJob(TInt aId)
 	return KErrNotFound;
 	}
 
-HBufC* CShell::ReadScriptL(const TDesC& aScriptName, const TDesC* aArguments, IoUtils::CEnvironment& aEnv, RFs& aFs, TIoHandleSet& aIoHandles, TBool& aHelpPrinted, RPointerArray<HBufC>* aAdditionalPrefixArguments)
+RIoReadHandle CShell::OpenScriptL(const TDesC& aScriptName, const TDesC* aArguments, IoUtils::CEnvironment& aEnv, RFs& aFs, TIoHandleSet& aIoHandles, TBool& aHelpPrinted, RPointerArray<HBufC>* aAdditionalPrefixArguments)
 	{
+	RIoReadHandle readHandle;
+	readHandle.CreateL(aIoHandles.IoSession());
+	CleanupClosePushL(readHandle);
+
 	TFileName2 scriptName(aScriptName);
 
 	// Check the scripts dirs in case it wasn't given as an absolute path (although iocli will have made it absolute relative to the pwd)
@@ -670,12 +672,12 @@ HBufC* CShell::ReadScriptL(const TDesC& aScriptName, const TDesC* aArguments, Io
 			} 
 		}
 
-	RFile scriptFile;
+	RIoFile scriptFile;
 	TInt err;
 	TInt retries = 5;
 	do
 		{
-		err = scriptFile.Open(aFs, scriptName, EFileRead | EFileShareReadersOnly);
+		err = scriptFile.Create(aIoHandles.IoSession(), scriptName, RIoFile::ERead);
 		if ((err == KErrNone) || (err != KErrInUse))
 			{
 			break;
@@ -686,14 +688,9 @@ HBufC* CShell::ReadScriptL(const TDesC& aScriptName, const TDesC* aArguments, Io
 		while (retries >= 0);
 	StaticLeaveIfErr(err, _L("Couldn't open script file %S"), &scriptName);
 	CleanupClosePushL(scriptFile);
-	TInt scriptFileSize;
-	User::LeaveIfError(scriptFile.Size(scriptFileSize));
-	HBufC8* scriptData = HBufC8::NewLC(scriptFileSize);
-	TPtr8 scriptDataPtr(scriptData->Des());
-	User::LeaveIfError(scriptFile.Read(scriptDataPtr));
-	HBufC* decodedScriptData = LtkUtils::DecodeUtf8L(*scriptData);
-	CleanupStack::PopAndDestroy(2, &scriptFile);
-	CleanupStack::PushL(decodedScriptData);
+	scriptFile.AttachL(readHandle, RIoEndPoint::EForeground);
+	CleanupStack::PopAndDestroy(&scriptFile);
+
 	aEnv.SetLocalL(KScriptName);
 	aEnv.SetLocalL(KScriptPath);
 	aEnv.SetLocalL(KScriptLine);
@@ -701,6 +698,7 @@ HBufC* CShell::ReadScriptL(const TDesC& aScriptName, const TDesC* aArguments, Io
 	aEnv.SetL(KScriptName, scriptName.NameAndExt());
 	aEnv.SetL(KScriptPath, scriptName.DriveAndPath());
 	aEnv.SetL(_L("0"), scriptName);
+
 	CScriptCommand* scriptCommand = CScriptCommand::NewLC(scriptName, aIoHandles);
 	TRAP(err, scriptCommand->ParseCommandLineArgsL(aArguments ? *aArguments : KNullDesC(), aEnv, aAdditionalPrefixArguments));
 	if (err == KErrArgument || scriptCommand->ShouldDisplayHelp())
@@ -723,8 +721,8 @@ HBufC* CShell::ReadScriptL(const TDesC& aScriptName, const TDesC* aArguments, Io
 		}
 	User::LeaveIfError(err); // Propagate error
 	CleanupStack::PopAndDestroy(scriptCommand);
-	CleanupStack::Pop(decodedScriptData);
-	return decodedScriptData;
+	CleanupStack::Pop(&readHandle);
+	return readHandle;
 	}
 
 void CShell::SetToForeground()

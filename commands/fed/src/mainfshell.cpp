@@ -112,12 +112,9 @@ void CCmdFed::DoRunL()
 	iFed->StartL(argsBuf);
 	}
 
-void CCmdFed::StdinChange(TUint aChange)
+void CCmdFed::StdinChange(TUint /*aChange*/)
 	{
-	if (aChange & RIoReadHandle::EGainedForeground)
-		{
-		iFed->RedrawEverythingL();
-		}
+	iFed->RedrawEverythingL();
 	}
 
 void AssertionFail(const char* aAssertion, const char* aFile, TInt aLine)

@@ -40,9 +40,9 @@ Note, fshell defines an environment variable named C<SCRIPT_PATH> that contains 
 
 L<debug|debug>
 
-==argument filename script_file_name
+==argument filename script_file_name optional
 
-The name of the script file to be run.
+The name of the script file to be run. If not specified (or specified with zero length, i.e. ''), the script will be read from C<stdin>.
 
 ==argument string script_args optional last
 

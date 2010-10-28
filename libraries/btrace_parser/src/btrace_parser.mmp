@@ -29,6 +29,7 @@ source          btrace_keypress.cpp
 source          btrace_textonscreen.cpp
 source          btrace_generic.cpp
 source          btrace_appresponse.cpp
+source          btrace_appstart.cpp
 source          btrace_screenupdate.cpp
 source          btrace_pubsub.cpp
 source          btrace_domainevent.cpp

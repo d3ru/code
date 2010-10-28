@@ -1,0 +1,41 @@
+# input.cif
+# 
+# Copyright (c) 2010 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name input
+
+==short-description
+
+Simulate user input events.
+
+==long-description
+
+A command that converts console key presses into arbitrary user input events, typically Symbian OS key events. Note, similar functionality is available via Autometric. However, the Autometric command syntax is intended for scripting as so is verbose. By contrast this command accepts single character inputs making it better suited to interactive use. Also, Autometric can only be used if the btrace buffer is free. This command doesn't use btrace and so doesn't have this limitation.
+ 
+==option bool s show
+
+Show the key mappings available for this platform.
+ 
+==option uint k scan-code
+
+Input a specific keypress as a scan-code and then exit.
+
+==option uint m modifiers
+
+Must be used in conjunction with C<--scan-code>. Specifies a set of modifiers to be used with the scan-code (as defined in F<e32keys.h>).
+
+==argument uint key optional
+
+Simulate a single event and then exit. If not specified, continually reads keys from the console. 'q' causes the command to exit.
+
+==copyright
+
+Copyright (c) 2010 Accenture. All rights reserved.

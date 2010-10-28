@@ -14,7 +14,9 @@
 #define __LEXER_H__
 
 #include <e32base.h>
+#include <fshell/iocli.h>
 
+class CLex;
 class CReservedLookup;
 
 
@@ -72,20 +74,24 @@ public:
 	~CLexer();
 	void DefineTokenTypeL(TToken::TType aTokenType, const TDesC& aString);
 	void Set(const TDesC& aDes, const TChar& aEscapeChar);
-	TToken NextToken();
+	void Set(RIoReadHandle& aHandle, const TChar& aEscapeChar);
+	void Purge();
+	void SkipToEnd();
+	TToken NextTokenL();
 	TInt CurrentOffset() const;
-	TBool More();
+	TBool MoreL();
+	const TUint16* Ptr() const;
 private:
 	CLexer(TUint aBehaviour);
 	void ConstructL();
-	void SkipSingleQuotedChars();
-	void SkipDoubleQuotedChars();
-	void SkipComment();
-	void SkipWhiteSpace();
+	void SkipSingleQuotedCharsL();
+	void SkipDoubleQuotedCharsL();
+	void SkipCommentL();
+	void SkipWhiteSpaceL();
 private:
 	TUint iBehaviour;
 	TChar iEscapeChar;
-	TLex iLex;
+	CLex* iLex;
 	CReservedLookup* iReservedLookup;
 	};
 

@@ -601,7 +601,7 @@ void CPipeLine::HandleCommandComplete(MCommand& aCommand, TInt aError)
 				TOverflowTruncate overflow;
 				buf.AppendFormat(KFormat, &overflow, thisPipedCommand.iCommandName, aError);
 				iStderr.Write(buf);
-					if (aError >= 0)
+				if (aError >= 0)
 					{
 					// Terminate 0 shouldn't equate to a completionError of KErrNone
 					aError = KErrDied;

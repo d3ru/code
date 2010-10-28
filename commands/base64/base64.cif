@@ -1,0 +1,84 @@
+# base64.cif
+# 
+# Copyright (c) 2010 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name base64
+
+==short-description
+
+Encode to or decode from Base64.
+
+==long-description
+
+Turns binary data into an ASCII encoded form and vice versa.
+
+
+==argument enum operation
+
+==enum-value decode
+
+Read lines from C<STDIN> until F<KErrEof> or a blank line is read. Decode the read data and write the binary equivalent to the named file.
+
+==enum-value encode
+
+Read binary data from the named file, and write the encoded equivalent as lines to C<STDOUT>.
+
+
+==argument filename filename
+
+The name of the file to write when decoding. The name of the file to read when encoding.
+
+
+==option bool v verbose
+
+Enable verbose output.
+
+==option bool o overwrite
+
+When decoding, overwrite the output file if it already exists.
+
+
+==smoke-test
+
+exists base64_temp && rm -rf base64_temp
+mkdir base64_temp
+cd base64_temp
+
+echo -n 'A' > a.txt
+base64 encode a.txt | base64 decode a2.txt
+compare a.txt a2.txt || $Error
+
+echo -n 'AB' > ab.txt
+base64 encode ab.txt | base64 decode ab2.txt
+compare ab.txt ab2.txt || $Error
+
+echo -n 'ABC' > abc.txt
+base64 encode abc.txt | base64 decode abc2.txt
+compare abc.txt abc2.txt || $Error
+
+echo -n 'ABCD' > abcd.txt
+base64 encode abcd.txt | base64 decode abcd2.txt
+compare abcd.txt abcd2.txt || $Error
+
+echo -n 'ABCDE' > abcde.txt
+base64 encode abcde.txt | base64 decode abcde2.txt
+compare abcde.txt abcde2.txt || $Error
+
+# Assume fshell.cif is in same location as base64.cif (it's quite a bit bigger which is why we use it in preference)
+base64 encode $SCRIPT_PATH\fshell.cif | base64 decode fshell2.cif
+compare $SCRIPT_PATH\fshell.cif fshell2.cif || $Error
+
+cd ..
+rm -rf base64_temp
+
+==copyright
+
+Copyright (c) 2010 Accenture. All rights reserved.

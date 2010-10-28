@@ -109,10 +109,10 @@ EXPORTS
 	_ZN16TBtraceTickCountC2Ev @ 108 NONAME
 	_ZN17CRefCountedObject6DecRefEv @ 109 NONAME
 	_ZN17CRefCountedObject6IncRefEv @ 110 NONAME
-	_ZN18CBtraceAppResponse18NotifyAppResponseLER26MBtraceAppResponseObserverRK10TProcessId @ 111 NONAME
-	_ZN18CBtraceAppResponse18NotifyAppResponseLER26MBtraceAppResponseObserverRK10TProcessId30TBtraceNotificationPersistence @ 112 NONAME
+	_ZN18CBtraceAppResponse18NotifyAppResponseLER26MBtraceAppResponseObserverRK7TDesC16 @ 111 NONAME
+	_ZN18CBtraceAppResponse18NotifyAppResponseLER26MBtraceAppResponseObserverRK7TDesC1630TBtraceNotificationPersistence @ 112 NONAME
 	_ZN18CBtraceAppResponse23CancelNotifyAppResponseER26MBtraceAppResponseObserver @ 113 NONAME
-	_ZN18CBtraceAppResponse4NewLER13CBtraceReader @ 114 NONAME
+	_ZN18CBtraceAppResponse4NewLER13CBtraceReaderR14CBtraceContext @ 114 NONAME
 	_ZN18CBtraceAppResponseD0Ev @ 115 NONAME
 	_ZN18CBtraceAppResponseD1Ev @ 116 NONAME
 	_ZN18CBtraceAppResponseD2Ev @ 117 NONAME
@@ -189,4 +189,11 @@ EXPORTS
 	_ZTI22MBtraceContextObserver @ 188 NONAME
 	_ZTV22MBtraceContextObserver @ 189 NONAME
 	_ZN13CBtraceReader5StartERK16TBtraceTickCount27TTimeIntervalMicroSeconds32 @ 190 NONAME
+	_ZN15CBtraceAppStart15NotifyAppStartLER23MBtraceAppStartObserverRK7TDesC16 @ 191 NONAME
+	_ZN15CBtraceAppStart15NotifyAppStartLER23MBtraceAppStartObserverRK7TDesC1630TBtraceNotificationPersistence @ 192 NONAME
+	_ZN15CBtraceAppStart20CancelNotifyAppStartER23MBtraceAppStartObserver @ 193 NONAME
+	_ZN15CBtraceAppStart4NewLER13CBtraceReaderR14CBtraceContext @ 194 NONAME
+	_ZN15CBtraceAppStartD0Ev @ 195 NONAME
+	_ZN15CBtraceAppStartD1Ev @ 196 NONAME
+	_ZN15CBtraceAppStartD2Ev @ 197 NONAME
 

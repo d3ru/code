@@ -37,6 +37,8 @@ FSHELL_ROM_INCLUDE(fshell_commands.iby)
 ..\fed\group\fed.cif                     z:\resource\cif\fshell\fed.cif
 ..\snake\snake.cif                       z:\resource\cif\fshell\snake.cif
 ..\iniedit\iniedit.cif                   z:\resource\cif\fshell\iniedit.cif
+..\input\input.cif                       z:\resource\cif\fshell\input.cif
+..\base64\base64.cif                     z:\resource\cif\fshell\base64.cif
 
 PRJ_MMPFILES
 ..\cat\cat.mmp
@@ -60,6 +62,8 @@ PRJ_MMPFILES
 ..\fed\group\fed.mmp
 ..\snake\snake.mmp
 ..\iniedit\iniedit.mmp
+..\input\input.mmp
+..\base64\base64.mmp
 
 #ifdef FSHELL_CORE_SUPPORT_SWI
 PRJ_EXPORTS

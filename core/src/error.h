@@ -32,9 +32,8 @@ public:
 		EFailedToCreatePipeLine,
 		EFailedToConstructCommand,
 		EFailedToRunCommand,
-		EFailedToSetChildErrorVar,
+		EPipelineCompletionError,
 		ECommandError,
-		EFailedToSetScriptLineVar,
 		};
 public:
 	TError(RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv);

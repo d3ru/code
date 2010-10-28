@@ -439,8 +439,10 @@ void CCmdSnake::DrawScore()
 void CCmdSnake::PlaceBait()
 	{
 	TBool ok;
+	TInt attempts = 0;
 	do
 		{
+		attempts++;
 		ok = ETrue;
 		iBait.iX = Math::Rand(iRandomSeed) % iBoardSize.iWidth;
 		iBait.iY = Math::Rand(iRandomSeed) % iBoardSize.iHeight;
@@ -453,6 +455,7 @@ void CCmdSnake::PlaceBait()
 				if (iSnake[i] == iBait) ok = EFalse;
 				}
 			}
+		if (attempts >= iBoardSize.iWidth * iBoardSize.iHeight) return; // Snake has filled the entire board! Time to bail (the snake will run into itself right after we return here)
 		} while (!ok);
 	iCons.SetCursorPosAbs(iBait);
 	iCons.Write(iUnicode ? KUnicodeBait : KBait);

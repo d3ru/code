@@ -27,7 +27,7 @@ EXPORTS
 	??0TBtraceIdBase@@IAE@XZ @ 26 NONAME ; TBtraceIdBase::TBtraceIdBase(void)
 	??1CBtraceDomainEvent@@UAE@XZ @ 27 NONAME ; CBtraceDomainEvent::~CBtraceDomainEvent(void)
 	?NewL@CBtraceGeneric@@SAPAV1@AAVCBtraceReader@@@Z @ 28 NONAME ; class CBtraceGeneric * CBtraceGeneric::NewL(class CBtraceReader &)
-	?NewL@CBtraceAppResponse@@SAPAV1@AAVCBtraceReader@@@Z @ 29 NONAME ; class CBtraceAppResponse * CBtraceAppResponse::NewL(class CBtraceReader &)
+	?NewL@CBtraceAppResponse@@SAPAV1@AAVCBtraceReader@@AAVCBtraceContext@@@Z @ 29 NONAME ; class CBtraceAppResponse * CBtraceAppResponse::NewL(class CBtraceReader &, class CBtraceContext &)
 	?FlushL@CBtraceReader@@QAEXXZ @ 30 NONAME ; void CBtraceReader::FlushL(void)
 	?FindThreadsL@CBtraceContext@@QBEXABVTDesC16@@AAV?$RArray@VTBtraceThreadId@@@@@Z @ 31 NONAME ; void CBtraceContext::FindThreadsL(class TDesC16 const &, class RArray<class TBtraceThreadId> &) const
 	??1CBtraceTextOnScreen@@UAE@XZ @ 32 NONAME ; CBtraceTextOnScreen::~CBtraceTextOnScreen(void)
@@ -100,7 +100,7 @@ EXPORTS
 	?DecRef@CRefCountedObject@@QAEXXZ @ 99 NONAME ; void CRefCountedObject::DecRef(void)
 	??1CBtraceAppResponse@@UAE@XZ @ 100 NONAME ; CBtraceAppResponse::~CBtraceAppResponse(void)
 	?CurrentTickCount@CBtraceReader@@QBEABVTBtraceTickCount@@XZ @ 101 NONAME ; class TBtraceTickCount const & CBtraceReader::CurrentTickCount(void) const
-	?NotifyAppResponseL@CBtraceAppResponse@@QAEXAAVMBtraceAppResponseObserver@@ABVTProcessId@@W4TBtraceNotificationPersistence@@@Z @ 102 NONAME ; void CBtraceAppResponse::NotifyAppResponseL(class MBtraceAppResponseObserver &, class TProcessId const &, enum TBtraceNotificationPersistence)
+	?NotifyAppResponseL@CBtraceAppResponse@@QAEXAAVMBtraceAppResponseObserver@@ABVTDesC16@@W4TBtraceNotificationPersistence@@@Z @ 102 NONAME ; void CBtraceAppResponse::NotifyAppResponseL(class MBtraceAppResponseObserver &, class TDesC16 const &, enum TBtraceNotificationPersistence)
 	?NotifyContextSwitchL@CBtraceCpuUsage@@QAEXABVTBtraceThreadId@@AAVMBtraceCpuUsageObserver@@@Z @ 103 NONAME ; void CBtraceCpuUsage::NotifyContextSwitchL(class TBtraceThreadId const &, class MBtraceCpuUsageObserver &)
 	??PTBtraceTickCount@@QBEHABV0@@Z @ 104 NONAME ; int TBtraceTickCount::operator>=(class TBtraceTickCount const &) const
 	?CancelNotifyUnclassifiedData@CBtraceKeyPress@@QAEXAAVMBtraceKeyPressObserver@@@Z @ 105 NONAME ; void CBtraceKeyPress::CancelNotifyUnclassifiedData(class MBtraceKeyPressObserver &)
@@ -112,7 +112,7 @@ EXPORTS
 	?NewL@CBtraceTextOnScreen@@SAPAV1@AAVCBtraceReader@@@Z @ 111 NONAME ; class CBtraceTextOnScreen * CBtraceTextOnScreen::NewL(class CBtraceReader &)
 	??0TBtraceWindowGroupId@@QAE@ABV0@@Z @ 112 NONAME ; TBtraceWindowGroupId::TBtraceWindowGroupId(class TBtraceWindowGroupId const &)
 	?NotifyCpuUsageL@CBtraceCpuUsage@@QAEXKVTTimeIntervalMicroSeconds32@@AAVMBtraceCpuUsageObserver@@@Z @ 113 NONAME ; void CBtraceCpuUsage::NotifyCpuUsageL(unsigned long, class TTimeIntervalMicroSeconds32, class MBtraceCpuUsageObserver &)
-	?NotifyAppResponseL@CBtraceAppResponse@@QAEXAAVMBtraceAppResponseObserver@@ABVTProcessId@@@Z @ 114 NONAME ; void CBtraceAppResponse::NotifyAppResponseL(class MBtraceAppResponseObserver &, class TProcessId const &)
+	?NotifyAppResponseL@CBtraceAppResponse@@QAEXAAVMBtraceAppResponseObserver@@ABVTDesC16@@@Z @ 114 NONAME ; void CBtraceAppResponse::NotifyAppResponseL(class MBtraceAppResponseObserver &, class TDesC16 const &)
 	?ProcessName@CBtraceContext@@QBEABVTDesC16@@ABVTBtraceProcessId@@@Z @ 115 NONAME ; class TDesC16 const & CBtraceContext::ProcessName(class TBtraceProcessId const &) const
 	?EnableCategoryL@CBtraceReader@@QAEXI@Z @ 116 NONAME ; void CBtraceReader::EnableCategoryL(unsigned int)
 	?NotifyGenericEventL@CBtraceGeneric@@QAEXAAVMBtraceGenericObserver@@@Z @ 117 NONAME ; void CBtraceGeneric::NotifyGenericEventL(class MBtraceGenericObserver &)
@@ -152,4 +152,9 @@ EXPORTS
 	?SetMultipartReassemblyL@CBtraceReader@@QAEXH@Z @ 151 NONAME ; void CBtraceReader::SetMultipartReassemblyL(int)
 	?MicroSecondsToNanoTicks@TBtraceUtils@@SAKVTTimeIntervalMicroSeconds32@@@Z @ 152 NONAME ; unsigned long TBtraceUtils::MicroSecondsToNanoTicks(class TTimeIntervalMicroSeconds32)
 	?Start@CBtraceReader@@QAEXABVTBtraceTickCount@@VTTimeIntervalMicroSeconds32@@@Z @ 153 NONAME ; void CBtraceReader::Start(class TBtraceTickCount const &, class TTimeIntervalMicroSeconds32)
+	??1CBtraceAppStart@@UAE@XZ @ 154 NONAME ; CBtraceAppStart::~CBtraceAppStart(void)
+	?CancelNotifyAppStart@CBtraceAppStart@@QAEXAAVMBtraceAppStartObserver@@@Z @ 155 NONAME ; void CBtraceAppStart::CancelNotifyAppStart(class MBtraceAppStartObserver &)
+	?NewL@CBtraceAppStart@@SAPAV1@AAVCBtraceReader@@AAVCBtraceContext@@@Z @ 156 NONAME ; class CBtraceAppStart * CBtraceAppStart::NewL(class CBtraceReader &, class CBtraceContext &)
+	?NotifyAppStartL@CBtraceAppStart@@QAEXAAVMBtraceAppStartObserver@@ABVTDesC16@@@Z @ 157 NONAME ; void CBtraceAppStart::NotifyAppStartL(class MBtraceAppStartObserver &, class TDesC16 const &)
+	?NotifyAppStartL@CBtraceAppStart@@QAEXAAVMBtraceAppStartObserver@@ABVTDesC16@@W4TBtraceNotificationPersistence@@@Z @ 158 NONAME ; void CBtraceAppStart::NotifyAppStartL(class MBtraceAppStartObserver &, class TDesC16 const &, enum TBtraceNotificationPersistence)
 

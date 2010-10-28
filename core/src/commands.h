@@ -765,7 +765,8 @@ protected:
 	TFileName2 iFileName;
 	HBufC* iArgs;
 	TBool iKeepGoing;
-	HBufC* iScriptData;
+	TBool iCloseScriptHandle;
+	RIoReadHandle iScriptHandle;
 	CParser* iParser;
 	};
 
@@ -886,7 +887,7 @@ private:
 	TFileName2 iFileName;
 	HBufC* iArgs;
 	TBool iKeepGoing;
-	HBufC* iScriptData;
+	RIoReadHandle iScriptHandle;
 	CParser* iParser;
 	};
 

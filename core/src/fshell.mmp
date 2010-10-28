@@ -65,6 +65,7 @@ source          string_utils.cpp
 source          lexer.cpp
 source          file_reader.cpp
 source          script_command.cpp
+source          worker_thread.cpp
 
 sourcepath      ..\builtins
 source          hello.cpp

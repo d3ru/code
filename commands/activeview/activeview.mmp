@@ -25,5 +25,5 @@ source          activeview.cpp
 library         euser.lib
 library         iocli.lib
 library         viewcli.lib
-library         qr3.lib
+library         QR3.lib
 

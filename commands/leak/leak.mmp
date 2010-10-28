@@ -31,7 +31,7 @@ library         am-eikclient.lib
 #endif
 
 #ifdef FSHELL_QR3_SUPPORT_LOGGINGALLOCATOR
-library			loggingallocator.lib
+library			LoggingAllocator.lib
 #endif
 
 macro           EXE_BUILD

@@ -54,9 +54,18 @@ void MParserObserver::LineReturned(TInt)
 
 CParser* CParser::NewL(TUint aMode, const TDesC& aDes, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver, TInt aStartingLineNumber)
 	{
-	CParser* self = new(ELeave) CParser(aMode, aDes, aIoSession, aStdin, aStdout, aStderr, aEnv, aFactory, aObserver, aStartingLineNumber);
+	CParser* self = new(ELeave) CParser(aMode, aIoSession, aStdin, aStdout, aStderr, aEnv, aFactory, aObserver, aStartingLineNumber);
 	CleanupStack::PushL(self);
-	self->ConstructL();
+	self->ConstructL(&aDes, NULL);
+	CleanupStack::Pop();
+	return self;
+	}
+
+CParser* CParser::NewL(TUint aMode, RIoReadHandle& aSourceHandle, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver)
+	{
+	CParser* self = new(ELeave) CParser(aMode, aIoSession, aStdin, aStdout, aStderr, aEnv, aFactory, aObserver);
+	CleanupStack::PushL(self);
+	self->ConstructL(NULL, &aSourceHandle);
 	CleanupStack::Pop();
 	return self;
 	}
@@ -78,12 +87,12 @@ CParser::~CParser()
 		}
 	}
 
-CParser::CParser(TUint aMode, const TDesC& aDes, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver, TInt aStartingLineNumber)
-	: iMode(aMode), iData(aDes), iIoSession(aIoSession), iStdin(aStdin), iStdout(aStdout), iStderr(aStderr), iEnv(aEnv), iFactory(aFactory), iObserver(aObserver), iCompletionError(aStderr, aEnv), iNextLineNumber(aStartingLineNumber)
+CParser::CParser(TUint aMode, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver, TInt aStartingLineNumber)
+	: iMode(aMode), iIoSession(aIoSession), iStdin(aStdin), iStdout(aStdout), iStderr(aStderr), iEnv(aEnv), iFactory(aFactory), iObserver(aObserver), iCompletionError(aStderr, aEnv), iNextLineNumber(aStartingLineNumber)
 	{
 	}
 
-void CParser::ConstructL()
+void CParser::ConstructL(const TDesC* aDes, RIoReadHandle* aSourceHandle)
 	{
 	if (iObserver)
 		{
@@ -100,7 +109,14 @@ void CParser::ConstructL()
 	iLexer1->DefineTokenTypeL(TToken::ENewLine, KNewLine3);
 	iLexer1->DefineTokenTypeL(TToken::ENewLine, KNewLine4);
 	iLexer1->DefineTokenTypeL(TToken::ESemicolon, KSemicolon);
-	iLexer1->Set(iData, iEnv.EscapeChar());
+	if (aDes)
+		{
+		iLexer1->Set(*aDes, iEnv.EscapeChar());
+		}
+	else
+		{
+		iLexer1->Set(*aSourceHandle, iEnv.EscapeChar());
+		}
 
 	iLexer2 = CLexer::NewL(CLexer::EHandleSingleQuotes | CLexer::EHandleDoubleQuotes);
 	iLexer2->DefineTokenTypeL(TToken::EPipe, KPipe);
@@ -350,10 +366,10 @@ TBool HandleRedirectionL(TToken::TType aTokenType, const TDesC& aCwd, CLexer& aL
 		}
 	else
 		{
-		if (aLexer.More())
+		if (aLexer.MoreL())
 			{
 			redirection->iType = ((aTokenType == TToken::ERedirectStdoutToFileAppend) || (aTokenType == TToken::ERedirectStderrToFileAppend)) ? RPipeSection::TRedirection::EFileAppend : RPipeSection::TRedirection::EFile;
-			TToken fileName(aLexer.NextToken());
+			TToken fileName(aLexer.NextTokenL());
 			redirection->SetFileNameL(aCwd, fileName.String());
 			}
 		else
@@ -412,14 +428,14 @@ void CParser::CreateNextPipeLineL(TBool* aIsForeground)
 	CleanupClosePushL(pipeSection);
 	TInt offset = iLexer2->CurrentOffset();
 	TBool background(EFalse);
-	while (iLexer2->More())
+	while (iLexer2->MoreL())
 		{
-		TToken token(iLexer2->NextToken());
+		TToken token(iLexer2->NextTokenL());
 		switch (token.Type())
 			{
 			case TToken::EPipe:
 				{
-				pipeSection.iFullName.Set(iData.Ptr() + offset, iLexer2->CurrentOffset() - offset - token.String().Length());
+				pipeSection.iFullName.Set(iLexer2->Ptr() + offset, iLexer2->CurrentOffset() - offset - token.String().Length());
 				offset = iLexer2->CurrentOffset();
 				User::LeaveIfError(pipeSections.Append(pipeSection));
 				new(&pipeSection) RPipeSection;
@@ -485,7 +501,7 @@ void CParser::CreateNextPipeLineL(TBool* aIsForeground)
 			}
 		else
 			{
-			pipeSection.iFullName.Set(iData.Ptr() + offset, iLexer2->CurrentOffset() - offset);
+			pipeSection.iFullName.Set(iLexer2->Ptr() + offset, iLexer2->CurrentOffset() - offset);
 			User::LeaveIfError(pipeSections.Append(pipeSection));
 			CleanupStack::Pop(&pipeSection);
 			if ((iMode & EDebug) && iObserver)
@@ -504,11 +520,11 @@ void CParser::CreateNextPipeLineL(TBool* aIsForeground)
 				iForegroundPipeLine = CPipeLine::NewL(iIoSession, iStdin, iStdout, iStderr, iEnv, iFactory, pipeSections, background, this, iCompletionError);
 				}
 			CleanupStack::PopAndDestroy(&pipeSections);
-			if (aIsForeground && !iLexer1->More())
+			if (aIsForeground && !iLexer1->MoreL())
 				{
 				*aIsForeground = !background;
 				}
-			if (background && iLexer1->More())
+			if (background && iLexer1->MoreL())
 				{
 				iNextPipeLineCallBack->Call();
 				}
@@ -535,14 +551,16 @@ void CParser::FindNextPipeLineL(TPtrC& aData, TCondition& aCondition, TBool& aRe
 	{
 	aReachedLineEnd = EFalse;
 	aCondition = ENone;
+
+	iLexer1->Purge();
 	TInt startOffset = iLexer1->CurrentOffset();
 	TInt endOffset = -1;
 
 	TBool foundSomething(EFalse);
-	while (iLexer1->More())
+	while (iLexer1->MoreL())
 		{
 		TBool finished(EFalse);
-		TToken token(iLexer1->NextToken());
+		TToken token(iLexer1->NextTokenL());
 
 		switch (token.Type())
 			{
@@ -616,7 +634,7 @@ void CParser::FindNextPipeLineL(TPtrC& aData, TCondition& aCondition, TBool& aRe
 
 	if (foundSomething)
 		{
-		aData.Set(iData.Ptr() + startOffset, endOffset - startOffset);
+		aData.Set(iLexer1->Ptr() + startOffset, endOffset - startOffset);
 		}
 	else
 		{
@@ -636,7 +654,7 @@ HBufC* ExpandVariablesLC(const TDesC& aData, CLexer& aLexer, IoUtils::CEnvironme
 	aLexer.Set(*buf, escapeChar);
 	FOREVER
 		{
-		TToken token(aLexer.NextToken());
+		TToken token(aLexer.NextTokenL());
 		if (token.Type() == TToken::ENull)
 			{
 			break;
@@ -715,7 +733,7 @@ HBufC* CParser::ExpandVariablesLC(const TDesC& aData)
 	lexer1->Set(*buf, iEnv.EscapeChar());
 	FOREVER
 		{
-		TToken token(lexer1->NextToken());
+		TToken token(lexer1->NextTokenL());
 		if (token.Type() == TToken::ENull)
 			{
 			break;
@@ -756,35 +774,35 @@ HBufC* CParser::ExpandVariablesLC(const TDesC& aData)
 	return buf;
 	}
 
-TInt CParser::SkipLineRemainder()
+void CParser::SkipLineRemainderL()
 	{
-	while (iLexer1->More())
+	TRAPD(err, DoSkipLineRemainderL());
+	if (err)
 		{
-		TToken token(iLexer1->NextToken());
+		SkipToEnd();
+		User::Leave(err);
+		}
+	}
+
+void CParser::DoSkipLineRemainderL()
+	{
+	while (iLexer1->MoreL())
+		{
+		TToken token(iLexer1->NextTokenL());
 		if (token.Type() == TToken::ENewLine)
 			{
 			if (iMode & EExportLineNumbers)
 				{
-				// can we do something better with errors here?
-				TRAPD(err, iEnv.SetL(KScriptLine, iNextLineNumber++));
-				if (err!=KErrNone)
-					{
-					iCompletionError.Set(err, TError::EFailedToSetScriptLineVar);
-					return err;
-					}
+				iEnv.SetL(KScriptLine, iNextLineNumber++);
 				}
 			break;
 			}
 		}
-	return KErrNone;
 	}
 
 void CParser::SkipToEnd()
 	{
-	while (iLexer1->More())
-		{
-		iLexer1->NextToken();
-		}
+	iLexer1->SkipToEnd();
 	}
 
 TInt CParser::CompletionCallBack(TAny* aSelf)
@@ -809,13 +827,18 @@ TInt CParser::ExitCallBack(TAny*)
 
 void CParser::HandlePipeLineComplete(CPipeLine& aPipeLine, const TError& aError)
 	{
-	TRAPD(err, iEnv.SetL(KChildError, aError.Error()));
+	TRAPD(err, HandlePipeLineCompleteL(aPipeLine, aError));
 	if (err)
 		{
-		iCompletionError.Set(err, TError::EFailedToSetChildErrorVar);
+		iCompletionError.Set(err, TError::EPipelineCompletionError);
 		iCompletionCallBack->CallBack();
 		return;
 		}
+	}
+
+void CParser::HandlePipeLineCompleteL(CPipeLine& aPipeLine, const TError& aError)
+	{
+	iEnv.SetL(KChildError, aError.Error());
 
 	if ((iMode & EDebug) && iObserver)
 		{
@@ -844,8 +867,7 @@ void CParser::HandlePipeLineComplete(CPipeLine& aPipeLine, const TError& aError)
 					}
 				else if (aError.Error() != KErrNone)
 					{
-					TInt err = SkipLineRemainder();
-					if (err!=KErrNone) SkipToEnd();
+					SkipLineRemainderL();
 					}
 				break;
 				}
@@ -857,8 +879,7 @@ void CParser::HandlePipeLineComplete(CPipeLine& aPipeLine, const TError& aError)
 					}
 				else if (aError.Error() == KErrNone)
 					{
-					TInt err = SkipLineRemainder();
-					if (err!=KErrNone) SkipToEnd();
+					SkipLineRemainderL();
 					}
 				break;
 				}
@@ -879,7 +900,7 @@ void CParser::HandlePipeLineComplete(CPipeLine& aPipeLine, const TError& aError)
 		delete iForegroundPipeLine;
 		iForegroundPipeLine = NULL;
 
-		if (iLexer1->More())
+		if (iLexer1->MoreL())
 			{
 			iNextPipeLineCallBack->Call();
 			}
@@ -896,7 +917,7 @@ void CParser::HandlePipeLineComplete(CPipeLine& aPipeLine, const TError& aError)
 		delete &aPipeLine;
 		}
 
-	if (iObserver && !iLexer1->More() && (iForegroundPipeLine == NULL) && (iBackgroundPipeLines.Count() == 0))
+	if (iObserver && !iLexer1->MoreL() && (iForegroundPipeLine == NULL) && (iBackgroundPipeLines.Count() == 0))
 		{
 		iCompletionCallBack->CallBack();
 		}

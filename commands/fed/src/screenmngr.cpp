@@ -28,26 +28,25 @@ void CScreenManager::ResizeScreenL(const TWindow& aWindow)
 	if(aWindow == iScreenWnd)
 		return;
 
-	//We need to leave one char on each side for the border around the console window, so the width/height is actually less by 2
+	// We need to leave one char on each side for the border around the console window, so the width/height is actually less by 2
+	// (*if* we're running as a pure CConsoleBase app under tshell. Doesn't apply when built as an fshell app, as KConsoleWidthCorrection is zero in that case).
 	iMainWnd.iX = iCmdWnd.iX = aWindow.iX;
 	iMainWnd.iWidth = iCmdWnd.iWidth = aWindow.iWidth + KConsoleWidthCorrection;
 	iMainWnd.iY = aWindow.iY;
 
 	//Based on proportions of windows on the old screen calculate proportions on the new screen
-	TInt newcmdh = 1;
-	if(iScreenWnd.iHeight)
-		{
-		newcmdh = ((iCmdWnd.iHeight*KRM) * (aWindow.iHeight*KRM)) / iScreenWnd.iHeight*KRM*KRM;
-		if(newcmdh >= aWindow.iHeight)
-			newcmdh = aWindow.iHeight/2;
-		}
-	iCmdWnd.iHeight = newcmdh > 0 ? newcmdh : 1;
+	iCmdWnd.iWidth = aWindow.iWidth;
 	iMainWnd.iHeight = aWindow.iHeight - iCmdWnd.iHeight + KConsoleWidthCorrection;
 	iCmdWnd.iY = aWindow.iY + iMainWnd.iHeight;
 	iScreenWnd = aWindow;
 
 	if(iCurrentView)
 		iCurrentView->ResizeL(iMainWnd);
+	}
+
+const TWindow& CScreenManager::GetCommandWindow()
+	{
+	return iCmdWnd;
 	}
 
 const TWindow& CScreenManager::ResizeCommandWindowL(TInt aHeight)

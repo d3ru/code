@@ -1,4 +1,4 @@
-// btrace_appresponse.cpp
+// btrace_appstart.cpp
 // 
 // Copyright (c) 2008 - 2010 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
@@ -15,35 +15,35 @@
 
 
 //
-// CBtraceAppResponse
+// CBtraceAppStart
 //
 
-EXPORT_C CBtraceAppResponse* CBtraceAppResponse::NewL(CBtraceReader& aReader, CBtraceContext& aContext)
+EXPORT_C CBtraceAppStart* CBtraceAppStart::NewL(CBtraceReader& aReader, CBtraceContext& aContext)
 	{
-	CBtraceAppResponse* self = new (ELeave) CBtraceAppResponse(aReader, aContext);
+	CBtraceAppStart* self = new (ELeave) CBtraceAppStart(aReader, aContext);
 	CleanupStack::PushL(self);
 	self->ConstructL();
 	CleanupStack::Pop(self);
 	return self;
 	}
 
-CBtraceAppResponse::CBtraceAppResponse(CBtraceReader& aReader, CBtraceContext& aContext)
+CBtraceAppStart::CBtraceAppStart(CBtraceReader& aReader, CBtraceContext& aContext)
 	: iReader(aReader), iContext(aContext)
 	{
 	}
 
-EXPORT_C CBtraceAppResponse::~CBtraceAppResponse()
+EXPORT_C CBtraceAppStart::~CBtraceAppStart()
 	{
 	iReader.RemoveObserver(KAmTraceCategory, *this);
 	iNotifs.Close();
 	}
 
-void CBtraceAppResponse::ConstructL()
+void CBtraceAppStart::ConstructL()
 	{
 	iReader.AddObserverL(KAmTraceCategory, *this);
 	}
 
-void CBtraceAppResponse::HandleBtraceFrameL(const TBtraceFrame& aFrame)
+void CBtraceAppStart::HandleBtraceFrameL(const TBtraceFrame& aFrame)
 	{
 	if (aFrame.iCategory != KAmTraceCategory) return;
 
@@ -56,10 +56,10 @@ void CBtraceAppResponse::HandleBtraceFrameL(const TBtraceFrame& aFrame)
 
 			switch (event)
 				{
-				case EAmTraceEventEvCaptureAppResponse:
+				case EAmTraceEventEvCaptureAppStart:
 					{
 					const TInt32 wgId = *data++;
-					SeenAppResponseL(aFrame.iTickCount, wgId);
+					SeenAppStartL(aFrame.iTickCount, wgId);
 					}
 				break;
 				
@@ -76,7 +76,7 @@ void CBtraceAppResponse::HandleBtraceFrameL(const TBtraceFrame& aFrame)
 		};
 	}
 
-void CBtraceAppResponse::SeenAppResponseL(const TBtraceTickCount& aTickCount, TInt aWindowGroupId)
+void CBtraceAppStart::SeenAppStartL(const TBtraceTickCount& aTickCount, TInt aWindowGroupId)
 	{
 	const TBtraceWindowGroupId* btraceWgId = iContext.FindWindowGroup(aWindowGroupId);
 	if (btraceWgId)
@@ -84,32 +84,32 @@ void CBtraceAppResponse::SeenAppResponseL(const TBtraceTickCount& aTickCount, TI
 		TInt ii = iNotifs.Count();
 		while (--ii >= 0)
 			{
-			TAppResponseNotif& nt = iNotifs[ii];
+			TAppStartNotif& nt = iNotifs[ii];
 			if (iContext.WindowGroupName(*btraceWgId).MatchF(nt.iWindowGroupNamePattern) != KErrNotFound)
 				{
-				MBtraceAppResponseObserver& observer = nt.iObserver;
+				MBtraceAppStartObserver& observer = nt.iObserver;
 				if (nt.iPersistence == ENotificationOneShot)
 					{
 					iNotifs.Remove(ii);
 					}
-				observer.HandleAppResponseSeenL(aTickCount);
+				observer.HandleAppStartL(aTickCount);
 				}
-			}
+			}	
 		}
 	}
 
-EXPORT_C void CBtraceAppResponse::NotifyAppResponseL(MBtraceAppResponseObserver& aObserver, const TDesC& aWindowGroupNamePattern)
+EXPORT_C void CBtraceAppStart::NotifyAppStartL(MBtraceAppStartObserver& aObserver, const TDesC& aWindowGroupNamePattern)
 	{
-	NotifyAppResponseL(aObserver, aWindowGroupNamePattern, ENotificationOneShot);
+	NotifyAppStartL(aObserver, aWindowGroupNamePattern, ENotificationOneShot);
 	}
 
-EXPORT_C void CBtraceAppResponse::NotifyAppResponseL(MBtraceAppResponseObserver& aObserver, const TDesC& aWindowGroupNamePattern, TBtraceNotificationPersistence aPersistence)
+EXPORT_C void CBtraceAppStart::NotifyAppStartL(MBtraceAppStartObserver& aObserver, const TDesC& aWindowGroupNamePattern, TBtraceNotificationPersistence aPersistence)
 	{
-	TAppResponseNotif notify(aObserver, aWindowGroupNamePattern, aPersistence);
+	TAppStartNotif notify(aObserver, aWindowGroupNamePattern, aPersistence);
 	User::LeaveIfError(iNotifs.Append(notify));
 	}
 
-EXPORT_C void CBtraceAppResponse::CancelNotifyAppResponse(MBtraceAppResponseObserver& aObserver)
+EXPORT_C void CBtraceAppStart::CancelNotifyAppStart(MBtraceAppStartObserver& aObserver)
 	{
 	for (TInt i = (iNotifs.Count() - 1); i >= 0; --i)
 		{
@@ -122,10 +122,10 @@ EXPORT_C void CBtraceAppResponse::CancelNotifyAppResponse(MBtraceAppResponseObse
 
 
 //
-// CBtraceAppResponse::TAppResponseNotif
+// CBtraceAppStart::TAppStartNotif
 //
 
-CBtraceAppResponse::TAppResponseNotif::TAppResponseNotif(MBtraceAppResponseObserver& aObserver, const TDesC& aWindowGroupNamePattern, TBtraceNotificationPersistence aPersistence)
+CBtraceAppStart::TAppStartNotif::TAppStartNotif(MBtraceAppStartObserver& aObserver, const TDesC& aWindowGroupNamePattern, TBtraceNotificationPersistence aPersistence)
 	: iObserver(aObserver), iWindowGroupNamePattern(aWindowGroupNamePattern), iPersistence(aPersistence)
 	{
 	}

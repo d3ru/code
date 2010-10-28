@@ -232,7 +232,7 @@ TBool CFed::ExecuteCommandL(TCmdType aCmd)
 			OpenDocumentL();
 			break;
 		case ECmdRefresh:
-			iScreenMngr.RefreshScreenL();
+			RedrawEverythingL();
 			break;
 		default:
 			return EFalse;
@@ -372,5 +372,9 @@ void CFed::ShowHelpL(HBufC* aHelpText)
 
 void CFed::RedrawEverythingL()
 	{
-	ExecuteCommandL(ECmdRefresh);
+	// This is not very nice but the whole window management thing within fed needs gutting and simplifying
+	TSize size = iConsole.ScreenSize();
+	iScreenMngr.ResizeScreenL(TWindow(0, 0, size.iWidth, size.iHeight));
+	iCmdWindow->SetWindow(iScreenMngr.GetCommandWindow());
+	iScreenMngr.RefreshScreenL();
 	}

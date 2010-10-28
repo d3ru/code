@@ -3492,8 +3492,11 @@ CCommandBase* CCmdSource::NewLC()
 CCmdSource::~CCmdSource()
 	{
 	delete iArgs;
-	delete iScriptData;
 	delete iParser;
+	if (iCloseScriptHandle)
+		{
+		iScriptHandle.Close();
+		}
 	}
 
 CCmdSource::CCmdSource() : CCommandBase(EManualComplete)
@@ -3502,11 +3505,28 @@ CCmdSource::CCmdSource() : CCommandBase(EManualComplete)
 
 void CCmdSource::DoRunL()
 	{
-	TIoHandleSet ioHandles(IoSession(), Stdin(), Stdout(), Stderr());
-	TBool helpPrinted;
-	iScriptData = CShell::ReadScriptL(iFileName, iArgs, Env(), FsL(), ioHandles, helpPrinted);
+	TBool abort(EFalse);
 
-	if (helpPrinted)
+	if (iFileName.Length() > 0)
+		{
+		TIoHandleSet ioHandles(IoSession(), Stdin(), Stdout(), Stderr());
+		iScriptHandle = CShell::OpenScriptL(iFileName, iArgs, Env(), FsL(), ioHandles, abort);
+		iCloseScriptHandle = ETrue;
+		}
+	else
+		{
+		iScriptHandle = Stdin();
+		Env().SetLocalL(KScriptName);
+		Env().SetLocalL(KScriptPath);
+		Env().SetLocalL(KScriptLine);
+		Env().SetLocalL(_L("0"));
+		_LIT(KStdin, "STDIN");
+		Env().SetL(KScriptName, KStdin);
+		Env().SetL(KScriptPath, KNullDesC);
+		Env().SetL(_L("0"), KStdin);
+		}
+
+	if (abort)
 		{
 		Complete();
 		}
@@ -3517,7 +3537,7 @@ void CCmdSource::DoRunL()
 			{
 			mode |= CParser::EKeepGoing;
 			}
-		iParser = CParser::NewL(mode, *iScriptData, IoSession(), Stdin(), Stdout(), Stderr(), Env(), gShell->CommandFactory(), this);
+		iParser = CParser::NewL(mode, iScriptHandle, IoSession(), Stdin(), Stdout(), Stderr(), Env(), gShell->CommandFactory(), this);
 		iParser->Start();
 		}
 	}
@@ -4040,9 +4060,9 @@ CCommandBase* CCmdDebug::NewLC()
 
 CCmdDebug::~CCmdDebug()
 	{
-	delete iScriptData;
 	delete iParser;
 	delete iArgs;
+	iScriptHandle.Close();
 	}
 
 CCmdDebug::CCmdDebug() : CCommandBase(EManualComplete)
@@ -4053,7 +4073,7 @@ void CCmdDebug::DoRunL()
 	{
 	TIoHandleSet ioHandles(IoSession(), Stdin(), Stdout(), Stderr());
 	TBool helpPrinted;
-	iScriptData = CShell::ReadScriptL(iFileName, iArgs, Env(), FsL(), ioHandles, helpPrinted);
+	iScriptHandle = CShell::OpenScriptL(iFileName, iArgs, Env(), FsL(), ioHandles, helpPrinted);
 	if (helpPrinted)
 		{
 		Complete();
@@ -4065,7 +4085,7 @@ void CCmdDebug::DoRunL()
 			{
 			mode |= CParser::EKeepGoing;
 			}
-		iParser = CParser::NewL(mode, *iScriptData, IoSession(), Stdin(), Stdout(), Stderr(), Env(), gShell->CommandFactory(), this);
+		iParser = CParser::NewL(mode, iScriptHandle, IoSession(), Stdin(), Stdout(), Stderr(), Env(), gShell->CommandFactory(), this);
 		iParser->Start();
 		}
 	}
@@ -5993,7 +6013,7 @@ void CCmdError::DoRunL()
 
 	if (iErrorText)
 		{
-		LeaveIfErr(iErrorVal, _L("%S"), iErrorText);
+		LeaveIfErr(iErrorVal, *iErrorText);
 		}
 	else
 		{
@@ -6080,8 +6100,7 @@ void CCmdForEach::DoNextL(TBool aFirstTime)
 	{
 	if (!aFirstTime) Env().RemoveAll(); // Remove all only does locals
 
-	delete iScriptData;
-	iScriptData = NULL;
+	iScriptHandle.Close();
 	delete iParser;
 	iParser = NULL;
 
@@ -6105,7 +6124,7 @@ void CCmdForEach::DoNextL(TBool aFirstTime)
 
 		TIoHandleSet ioHandles(IoSession(), Stdin(), Stdout(), Stderr());
 		TBool helpPrinted;
-		iScriptData = CShell::ReadScriptL(iFileName, iArgs, Env(), FsL(), ioHandles, helpPrinted, &extraArgs);
+		iScriptHandle = CShell::OpenScriptL(iFileName, iArgs, Env(), FsL(), ioHandles, helpPrinted, &extraArgs);
 		CleanupStack::PopAndDestroy(&extraArgs);
 		if (helpPrinted)
 			{
@@ -6118,7 +6137,7 @@ void CCmdForEach::DoNextL(TBool aFirstTime)
 				{
 				mode |= CParser::EKeepGoing;
 				}
-			iParser = CParser::NewL(mode, *iScriptData, IoSession(), Stdin(), Stdout(), Stderr(), Env(), gShell->CommandFactory(), this);
+			iParser = CParser::NewL(mode, iScriptHandle, IoSession(), Stdin(), Stdout(), Stderr(), Env(), gShell->CommandFactory(), this);
 			iParser->Start();
 			}
 		}
@@ -6138,6 +6157,11 @@ void CCmdForEach::DoRunL()
 		LeaveIfErr(KErrArgument, _L("'%S' is not a directory"), &iDirName);
 		}
 	LeaveIfErr(iDir.Open(FsL(), iDirName, KEntryAttNormal | KEntryAttDir), _L("Couldn't open directory '%S'"), &iDirName);
+
+	if (iFileName.Length() == 0)
+		{
+		LeaveIfErr(KErrArgument, _L("Invalid script file name"));
+		}
 
 	DoNextL(ETrue);
 	}

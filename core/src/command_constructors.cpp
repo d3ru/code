@@ -66,32 +66,32 @@ CCommandConstructorBase::~CCommandConstructorBase()
 // CThreadCommandConstructor.
 //
 
-CThreadCommandConstructor* CThreadCommandConstructor::NewLC(TCommandConstructor aConstructor, TUint aFlags)
+CThreadCommandConstructor* CThreadCommandConstructor::NewLC(TCommandConstructor aConstructor, TUint aFlags, MTaskRunner* aTaskRunner)
 	{
 	CCommandBase* command = (*aConstructor)();
-	CThreadCommandConstructor* self = CThreadCommandConstructor::NewLC(command->Name(), aConstructor, aFlags);
+	CThreadCommandConstructor* self = CThreadCommandConstructor::NewLC(command->Name(), aConstructor, aFlags, aTaskRunner);
 	CleanupStack::Pop(self);
 	CleanupStack::PopAndDestroy(command);
 	CleanupStack::PushL(self);
 	return self;
 	}
 
-CThreadCommandConstructor* CThreadCommandConstructor::NewLC(const TDesC& aCommandName, TCommandConstructor aConstructor, TUint aFlags)
+CThreadCommandConstructor* CThreadCommandConstructor::NewLC(const TDesC& aCommandName, TCommandConstructor aConstructor, TUint aFlags, MTaskRunner* aTaskRunner)
 	{
-	CThreadCommandConstructor* self = new(ELeave) CThreadCommandConstructor(aFlags, aConstructor);
+	CThreadCommandConstructor* self = new(ELeave) CThreadCommandConstructor(aFlags, aConstructor, aTaskRunner);
 	CleanupStack::PushL(self);
 	self->BaseConstructL(aCommandName);
 	return self;
 	}
 
-CThreadCommandConstructor::CThreadCommandConstructor(TUint aFlags, TCommandConstructor aConstructor)
-	: CCommandConstructorBase(ETypeThread), iFlags(aFlags), iConstructor(aConstructor)
+CThreadCommandConstructor::CThreadCommandConstructor(TUint aFlags, TCommandConstructor aConstructor, MTaskRunner* aTaskRunner)
+	: CCommandConstructorBase(ETypeThread), iFlags(aFlags), iConstructor(aConstructor), iTaskRunner(aTaskRunner)
 	{
 	}
 
 MCommand* CThreadCommandConstructor::ConstructCommandL()
 	{
-	return CThreadCommand::NewL(CommandName(), iConstructor, iFlags);
+	return CThreadCommand::NewL(CommandName(), iConstructor, iFlags, iTaskRunner);
 	}
 
 void CThreadCommandConstructor::AppendDescriptionL(RLtkBuf16& aBuf) const

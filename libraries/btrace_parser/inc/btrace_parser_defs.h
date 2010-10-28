@@ -58,8 +58,9 @@ enum TAmTraceEventEvCapture
 	EAmTraceEventEvCaptureKeyPress				= 2,
 	EAmTraceEventEvCapturePointer				= 3,
 	EAmTraceEventEvCaptureUnclassified			= 4,
-	EAmTraceEventEvCaptureSystemAppResponse		= 5,
+	EAmTraceEventEvCaptureAppResponse		    = 5,
 	EAmTraceEventEvCaptureRawScan				= 6,
+	EAmTraceEventEvCaptureAppStart              = 7,
 	};
 
 

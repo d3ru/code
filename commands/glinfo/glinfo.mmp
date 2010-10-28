@@ -27,9 +27,9 @@ library         euser.lib
 library         iocli.lib
 
 #ifdef FSHELL_EGL_SUPPORT
-library         libegl.lib
+library         libEGL.lib
 #endif
 
 #ifdef FSHELL_OPENVG_SUPPORT
-library         libopenvg.lib
+library         libOpenVG.lib
 #endif

@@ -18,6 +18,8 @@
 #include <fshell/ioutils.h>
 
 class MCommand;
+class MTaskRunner;
+
 namespace LtkUtils { class RLtkBuf16; }
 using LtkUtils::RLtkBuf16;
 
@@ -61,16 +63,17 @@ typedef IoUtils::CCommandBase* (*TCommandConstructor)();
 class CThreadCommandConstructor : public CCommandConstructorBase
 	{
 public:
-	static CThreadCommandConstructor* NewLC(TCommandConstructor aConstructor, TUint aFlags);
-	static CThreadCommandConstructor* NewLC(const TDesC& aCommandName, TCommandConstructor aConstructor, TUint aFlags);
+	static CThreadCommandConstructor* NewLC(TCommandConstructor aConstructor, TUint aFlags, MTaskRunner* aTaskRunner);
+	static CThreadCommandConstructor* NewLC(const TDesC& aCommandName, TCommandConstructor aConstructor, TUint aFlags, MTaskRunner* aTaskRunner);
 private:
-	CThreadCommandConstructor(TUint aFlags, TCommandConstructor aConstructor);
+	CThreadCommandConstructor(TUint aFlags, TCommandConstructor aConstructor, MTaskRunner* aTaskRunner);
 private: // From CCommandConstructorBase.
 	virtual MCommand* ConstructCommandL();
 	virtual void AppendDescriptionL(RLtkBuf16& aBuf) const;
 private:
 	TUint iFlags;
 	TCommandConstructor iConstructor;
+	MTaskRunner* iTaskRunner;
 	};
 
 class CExeCommandConstructor : public CCommandConstructorBase
