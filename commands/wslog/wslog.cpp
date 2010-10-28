@@ -118,14 +118,14 @@ void CCmdWslog::DoRunL()
 			if (BaflUtils::FileExists(FsL(), KCWsIniFile))
 				{
 				Printf(_L("C drive wsini log lines:\r\n"));
-				CmdL(_L("fshell.exe"), _L("-e 'cat c:\\system\\data\\wsini.ini | grep LOG*'"));
+				CmdL(_L("fshell.exe"), _L("-e 'cat c:\\system\\data\\wsini.ini | match LOG*'"));
 				}
 			else
 				{
 				Printf(_L("(No C drive wsini)\r\n"));
 				}
 			Printf(_L("Z drive wsini log lines:\r\n"));
-			CmdL(_L("fshell.exe"), _L("-e 'cat z:\\system\\data\\wsini.ini | grep LOG*'"));
+			CmdL(_L("fshell.exe"), _L("-e 'cat z:\\system\\data\\wsini.ini | match LOG*'"));
 
 			Printf(_L("Possible logging DLLs (none means logging probably not enabled):\r\n"));
 			CmdL(_L("kerninfo.exe"), _L("codeseg -m DLOG*"));

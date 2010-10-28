@@ -17,7 +17,6 @@
 
 const TInt KCmdWndMinHeight = 3;
 const TInt KCmdWndMinWidth = 20;
-const TInt KRM = 1000; //const multiplication to avoid inexact calculations on small numbers
 
 void CScreenManager::ResizeScreenL(const TWindow& aWindow)
 	{

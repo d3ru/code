@@ -27,6 +27,8 @@ library         euser.lib
 library         iocli.lib
 library         QR3.lib
 library         ltkutils.lib
+
+#ifdef FSHELL_TRACE_SUPPORT
 library         btrace_parser.lib
 FSHELL_TRACE_CONTROL_LIBRARY
-
+#endif
