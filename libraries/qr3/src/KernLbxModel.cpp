@@ -186,7 +186,7 @@ void CKernListBoxModel::DoNewKernDataL(TInt aType, TObjectKernelInfo* aInfo, MKe
 		data = new(ELeave) CHalListBoxData(this);
 		break;
 	case EListWindowGroups:
-#ifdef FSHELL_WSERV_SUPPORT
+#if defined(FSHELL_WSERV_SUPPORT) && defined(FSHELL_APPARC_SUPPORT)
 		data = new(ELeave) CWindowGroupListBoxData(this);
 #else
 		data = NULL; // Compiler shutter upper

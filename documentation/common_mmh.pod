@@ -102,9 +102,17 @@ MMF/Devsound available.
 
 Graphical windowserver (either version) is present (as opposed to text windowserver).
 
+=item FSHELL_[NO_]GUI_SUPPORT
+
+Gui libraries are available (as opposed to textshell or minigui environment). Assumed unless FSHELL_NO_GUI_SUPPORT or FSHELL_NO_WSERV_SUPPORT is defined.
+
 =item FSHELL_[NO_]WSERV2_SUPPORT
 
 Windowserver v2 is being used. Very few things need to know what windowserver version is in use, but occasionally it is needed.
+
+=item FSHELL_[NO_]ICL_SUPPORT
+
+The image conversion libraries (ICL) are available.
 
 =item FSHELL_[NO_]RAMDEFRAG_SUPPORT
 

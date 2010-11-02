@@ -38,7 +38,7 @@ SOURCE			threadListboxdata.cpp
 SOURCE			featreglistboxdata.cpp
 SOURCE			hallistboxdata.cpp
 SOURCE			sandbox.cpp
-#ifdef FSHELL_WSERV_SUPPORT
+#if defined(FSHELL_WSERV_SUPPORT) && defined(FSHELL_APPARC_SUPPORT) // Technically could work without apparc support but looks a bit too much effort to split it out
 SOURCE			wglistboxdata.cpp
 #endif
 SOURCE			msgqlistboxdata.cpp mutexlistboxdata.cpp

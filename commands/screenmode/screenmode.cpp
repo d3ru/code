@@ -12,7 +12,8 @@
 
 #include <fshell/common.mmh>
 
-#if defined (FSHELL_PLATFORM_S60) && FSHELL_PLATFORM_S60 >= 5
+#if defined(FSHELL_GUI_SUPPORT) && defined (FSHELL_PLATFORM_S60) && FSHELL_PLATFORM_S60 >= 5
+#define AKNCAP_SUPPORT
 #include <AknCapServerClient.h>	//for screen orientation change
 #endif
 
@@ -209,7 +210,7 @@ WaitAgain:
 //
 void CCmdScreenMode::DoRotateL()
 	{
-#if defined (FSHELL_PLATFORM_S60) && FSHELL_PLATFORM_S60 >= 5
+#ifdef AKNCAP_SUPPORT
 	TInt err;
 	RAknUiServer akSrv;
 	err = akSrv.Connect();

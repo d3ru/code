@@ -13,7 +13,7 @@
 #ifndef __GUICONS_IBY__
 #define __GUICONS_IBY__
 
-#ifdef FSHELL_WSERV_SUPPORT
+#ifdef FSHELL_GUI_SUPPORT
 
 FSHELL_EXECUTABLE_FILE(guicons.dll)
 

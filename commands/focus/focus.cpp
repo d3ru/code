@@ -11,7 +11,10 @@
 //
 
 #include <w32std.h>
+#include <fshell/common.mmh>
+#ifdef FSHELL_APPARC_SUPPORT
 #include <apgwgnam.h>
+#endif
 #include <fshell/ioutils.h>
 
 const TInt KPriorityNeverAtFront = -999;
@@ -113,15 +116,19 @@ void CCmdFocus::DoRunL()
 void CCmdFocus::PrintDetailsL()
 	{
 	TInt focusedWgId = iWsSession.GetFocusWindowGroup();
-	CApaWindowGroupName* wgn = CApaWindowGroupName::NewLC(iWsSession, focusedWgId);
+#ifdef FSHELL_APPARC_SUPPORT
 	_LIT(KUnknown, "Un-named");
-	TPtrC caption(wgn->Caption());
-	if (caption.Length() == 0)
+	TPtrC caption(KUnknown);
+	CApaWindowGroupName* wgn = CApaWindowGroupName::NewLC(iWsSession, focusedWgId);
+	if (caption.Length())
 		{
-		caption.Set(KUnknown);
+		caption.Set(wgn->Caption());
 		}
 	Printf(_L("Focused window group: %S\r\n"), &caption);
 	CleanupStack::PopAndDestroy(wgn);
+#else
+	Printf(_L("Focused window group id: %d\r\n"), focusedWgId);
+#endif
 
 	if (iVerbose)
 		{

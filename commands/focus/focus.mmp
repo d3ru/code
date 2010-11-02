@@ -25,5 +25,6 @@ source          focus.cpp
 library         euser.lib
 library         iocli.lib
 library         ws32.lib
+#ifdef FSHELL_APPARC_SUPPORT
 library         apgrfx.lib
-
+#endif

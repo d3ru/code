@@ -84,7 +84,7 @@ FSHELL_DATA_FILE(ZRESOURCE\Apps\sbapp_loc.rsc, Resource\Apps\sbapp_loc.rsc)
 FSHELL_DATA_FILE(ZSYSTEM\console\scripts\autostart.script, system\console\scripts\autostart.script)
 #if defined(FSHELL_CORE_SUPPORT_SHEBANG)
 patchdata sbrec.dll@KAutoStartFshell 1
-#elif !defined(FSHELL_WSERV_SUPPORT)
+#elif !defined(FSHELL_GUI_SUPPORT)
 // Do it the eshell way
 FSHELL_DATA_FILE(DATAZ_\fshell_autoexec.bat, autoexec.bat)
 #else
