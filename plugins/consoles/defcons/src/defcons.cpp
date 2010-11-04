@@ -18,6 +18,7 @@
 #include <e32wins.h>
 #endif
 #include <fshell/descriptorutils.h>
+#include <fshell/consoleextensions.h>
 
 
 //
@@ -36,32 +37,16 @@ const TInt KNumConsoleImplementations = sizeof(KConsoleImplementations) / sizeof
 
 /**
 
-  The default console implementation, used by iosrv. This console implentation has
-  two reasons to exist:
+  The default console implementation, used by iosrv. This console implementation has
+  one reason to exist (there used to be more):
 
   1) To hunt for a suitable real console implementation to be used by default. On
      GUI configurations this will either be guicons.dll or econseik.dll. On text
 	 configurations this will be econs.dll.
 
-  2) To delay the creation of the real console implementation until it is known
-     to be needed. This is useful because CCommandBase creates a default console
-	 even if --console has been specified on the command line. The default console
-	 may be used by the specified console during its construction to interact with
-	 the user (e.g. vt100tcpcons uses it to tell the user which TCP port and IP
-	 address it is listening on). However, if it weren't to be used, the user
-	 would see the default console briefly appear and then disappear when the
-	 actual console is created. Delaying the creation of the console underlying
-	 the default console avoids this.
-
 */
 NONSHARABLE_CLASS(CDefaultConsole) : public CConsoleBase
 	{
-public:
-	enum TPanicReason
-		{
-		EDoubleRead = 0,
-		EUnableToCreateConsole = 1
-		};
 public:
 	CDefaultConsole();
 	virtual ~CDefaultConsole();
@@ -81,10 +66,8 @@ public:
 	virtual TUint KeyModifiers() const;
 	virtual TInt Extension_(TUint aExtensionId, TAny*& a0, TAny* a1);
 private:
-	void CreateIfRequired();
-	void CreateIfRequired() const;
+	TInt DoCreate();
 	TInt TryCreateConsole(const TDesC& aImplementation);
-	void Panic(TPanicReason aReason);
 private:
 	HBufC* iTitle;
 	TSize iSize;
@@ -109,114 +92,96 @@ TInt CDefaultConsole::Create(const TDesC& aTitle, TSize aSize)
 	if (iTitle)
 		{
 		iSize = aSize;
-		return KErrNone;
+		return DoCreate();
 		}
 	return KErrNoMemory;
 	}
 
 void CDefaultConsole::Read(TRequestStatus& aStatus)
 	{
-	CreateIfRequired();
 	iUnderlyingConsole->Read(aStatus);
 	}
 
 void CDefaultConsole::ReadCancel()
 	{
-	if (iUnderlyingConsole)
-		{
-		iUnderlyingConsole->ReadCancel();
-		}
+	iUnderlyingConsole->ReadCancel();
 	}
 
 void CDefaultConsole::Write(const TDesC& aDes)
 	{
-	CreateIfRequired();
 	iUnderlyingConsole->Write(aDes);
 	}
 
 TPoint CDefaultConsole::CursorPos() const
 	{
-	CreateIfRequired();
 	return iUnderlyingConsole->CursorPos();
 	}
 
 void CDefaultConsole::SetCursorPosAbs(const TPoint& aPoint)
 	{
-	CreateIfRequired();
 	iUnderlyingConsole->SetCursorPosAbs(aPoint);
 	}
 
 void CDefaultConsole::SetCursorPosRel(const TPoint& aPoint)
 	{
-	CreateIfRequired();
 	iUnderlyingConsole->SetCursorPosRel(aPoint);
 	}
 
 void CDefaultConsole::SetCursorHeight(TInt aPercentage)
 	{
-	CreateIfRequired();
 	iUnderlyingConsole->SetCursorHeight(aPercentage);
 	}
 
 void CDefaultConsole::SetTitle(const TDesC& aTitle)
 	{
-	CreateIfRequired();
 	iUnderlyingConsole->SetTitle(aTitle);
 	}
 
 void CDefaultConsole::ClearScreen()
 	{
-	CreateIfRequired();
 	iUnderlyingConsole->ClearScreen();
 	}
 
 void CDefaultConsole::ClearToEndOfLine()
 	{
-	CreateIfRequired();
 	iUnderlyingConsole->ClearToEndOfLine();
 	}
 
 TSize CDefaultConsole::ScreenSize() const
 	{
-	CreateIfRequired();
 	return iUnderlyingConsole->ScreenSize();
 	}
 
 TKeyCode CDefaultConsole::KeyCode() const
 	{
-	CreateIfRequired();
 	return iUnderlyingConsole->KeyCode();
 	}
 
 TUint CDefaultConsole::KeyModifiers() const
 	{
-	CreateIfRequired();
 	return iUnderlyingConsole->KeyModifiers();
 	}
 
 TInt CDefaultConsole::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
 	{
-	CreateIfRequired();
 	return ((CDefaultConsole*)iUnderlyingConsole)->Extension_(aExtensionId, a0, a1); // Evil cast to work around the fact that Extension_ is protected in CConsoleBase.
 	}
 
-void CDefaultConsole::CreateIfRequired()
+TInt CDefaultConsole::DoCreate()
 	{
-	if (iUnderlyingConsole == NULL)
-		{
-		TInt err = KErrGeneral;
+	TInt err = KErrGeneral;
 #ifdef __WINS__
-		if (EmulatorNoGui())
-			{
-			err = TryCreateConsole(_L("nullcons"));
-			}
-		else if (EmulatorTextShell())
-			{
-			err = TryCreateConsole(_L("econs"));
-			}
-		else
-			{
+	if (EmulatorNoGui())
+		{
+		err = TryCreateConsole(_L("nullcons"));
+		}
+	else if (EmulatorTextShell())
+		{
+		err = TryCreateConsole(_L("econs"));
+		}
+	else
 #endif
+		{
 		for (TInt i = 0; i < KNumConsoleImplementations; ++i)
 			{
 			err = TryCreateConsole(KConsoleImplementations[i]);
@@ -226,17 +191,8 @@ void CDefaultConsole::CreateIfRequired()
 				}
 			}
 
-#ifdef __WINS__
-			}
-#endif
-
-		__ASSERT_ALWAYS(err == KErrNone, Panic(EUnableToCreateConsole));
 		}
-	}
-
-void CDefaultConsole::CreateIfRequired() const
-	{
-	const_cast<CDefaultConsole*>(this)->CreateIfRequired();
+	return err;
 	}
 
 TInt CDefaultConsole::TryCreateConsole(const TDesC& aImplementation)
@@ -261,12 +217,6 @@ TInt CDefaultConsole::TryCreateConsole(const TDesC& aImplementation)
 			}
 		}
 	return err;
-	}
-
-void CDefaultConsole::Panic(TPanicReason aReason)
-	{
-	_LIT(KCategory, "defcons");
-	User::Panic(KCategory, aReason);
 	}
 
 extern "C" EXPORT_C TAny *NewConsole()

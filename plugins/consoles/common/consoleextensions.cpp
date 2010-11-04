@@ -73,6 +73,11 @@ EXPORT_C TInt MIosrvConsoleHelper::MIosrvConsoleHelper_Extension(TUint aExtensio
 		const TDesC* des = (const TDesC*)a1;
 		return WriteStdErr(*des);
 		}
+	else if (aExtensionId == ConsoleSize::KConsoleSizeReportedCorrectlyExtension)
+		{
+		// all the consoles that derive from this are expected to get the size right
+		return KErrNone;
+		}
 	else
 		{
 		return KErrExtensionNotSupported;

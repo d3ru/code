@@ -13,6 +13,7 @@
 #include <e32std.h>
 #include <e32cons.h>
 #include <e32keys.h>
+#include <fshell/consoleextensions.h>
 
 NONSHARABLE_CLASS(CNullConsole) : public CConsoleBase
 	{
@@ -33,6 +34,7 @@ public:
 	virtual TSize ScreenSize() const;
 	virtual TKeyCode KeyCode() const;
 	virtual TUint KeyModifiers() const;
+	virtual TInt Extension_(TUint aExtensionId, TAny*& a0, TAny* a1);
 	};
 
 CNullConsole::CNullConsole()
@@ -104,6 +106,17 @@ TKeyCode CNullConsole::KeyCode() const
 TUint CNullConsole::KeyModifiers() const
 	{
 	return 0;
+	}
+
+TInt CNullConsole::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
+	{
+	if (aExtensionId == ConsoleSize::KConsoleSizeReportedCorrectlyExtension)
+		{
+		// No point attempting size detection on nullcons
+		return KErrNone;
+		}
+
+	return CConsoleBase::Extension_(aExtensionId, a0, a1);
 	}
 
 extern "C" EXPORT_C TAny *NewConsole()

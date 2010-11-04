@@ -1051,9 +1051,14 @@ TBool CIoPersistentConsole::TIoReaderProxy::IorDataIsBuffered() const
 	}
 
 
-TBool CIoPersistentConsole::TIoReaderProxy::IorIsKeyCaptured(TUint aKeyCode, TUint aModifiers)
+TBool CIoPersistentConsole::TIoReaderProxy::IorIsKeyCaptured(TUint aKeyCode, TUint aModifiers) const
 	{
 	return iReader.IorIsKeyCaptured(aKeyCode, aModifiers);
+	}
+
+TBool CIoPersistentConsole::TIoReaderProxy::IorAllKeysCaptured() const
+	{
+	return iReader.IorAllKeysCaptured();
 	}
 
 void CIoPersistentConsole::TIoReaderProxy::IorReadComplete(TInt /*aError*/)

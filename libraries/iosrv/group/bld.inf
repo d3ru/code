@@ -23,7 +23,6 @@ PRJ_EXPORTS
 ..\data\iosrv.ini.remote \epoc32\winscw\c\system\console\iosrv.ini.remote
 
 ..\data\iosrv.ini.econs_fb Z:\system\console\iosrv.ini.econs_fb
-..\data\iosrv.ini.noautodetect Z:\system\console\iosrv.ini.noautodetect
 ..\data\iosrv.ini.bluetooth Z:\system\console\iosrv.ini.bluetooth
 
 PRJ_MMPFILES

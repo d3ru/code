@@ -162,6 +162,10 @@ TInt CTefConsole::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
 		WriteStdErr(*des);
 		return KErrNone;
 		}
+	else if (aExtensionId == ConsoleSize::KConsoleSizeReportedCorrectlyExtension)
+		{
+		return KErrNone;
+		}
 	else
 		{
 		return CConsoleBase::Extension_(aExtensionId, a0, a1);

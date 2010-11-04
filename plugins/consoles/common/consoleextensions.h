@@ -120,6 +120,27 @@ public:
 	static inline TInt Write(CBase* aConsole, const TDesC& aDes);
 	};
 
+class ConsoleSize
+	{
+public:
+	static const TInt KConsoleSizeReportedCorrectlyExtension = 0x10286F75;
+	static const TInt KConsoleSizeNotifyChangedExtension = 0x10286F78;
+public:
+	/**
+	Returns true if the console is known to correctly report its size (and thus that the console size detect routines
+	in iosrv do not need to be run). Only needed because econs.dll (the text windowserver one, which we can't change)
+	doesn't.
+	*/
+	static inline TBool ReportedCorrectly(CBase* aConsole);
+
+	/**
+	If not supported, aStatus is completed with KErrExtensionNotSupported
+	Only one notification can be outstanding on a given console at a given time.
+	*/
+	static inline void NotifySizeChanged(CBase* aConsole, TRequestStatus& aStatus);
+	static inline void CancelNotifySizeChanged(CBase* aConsole);
+	};
+
 // BC on this interface is not guaranteed - only for use by things inside /fshell/plugins/consoles
 class MIosrvConsoleHelper
 	{

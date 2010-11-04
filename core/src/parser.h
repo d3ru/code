@@ -25,6 +25,7 @@ class MParserObserver
 	{
 public:
 	virtual void HandleParserComplete(CParser& aParser, const TError& aError) = 0;
+	virtual void HandleParserExit(CParser& aParser);
 	virtual void AboutToExecuteLine(const TDesC& aOrignalLine, const TDesC& aExpandedLine);
 	virtual void LineReturned(TInt aError);
 	};

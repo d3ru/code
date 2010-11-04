@@ -26,13 +26,11 @@ public:
 	TInt Init();
 	const TDesC& ConsoleImplementation() const;
 	const TSize& ConsoleSizeAdjustment() const;
-	TBool ConsoleSizeDetect() const;
 private:
 	TInt DoInit(LtkUtils::CIniFile* iniFile);
 
 private:
 	TFileName iConsoleImplementation;
 	TSize iConsoleSizeAdjustment;
-	TBool iConsoleSizeDetect;
 	};
 

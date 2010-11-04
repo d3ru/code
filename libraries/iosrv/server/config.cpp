@@ -25,11 +25,10 @@ _LIT(KConfigDescriptionFile, "\\resource\\iosrv.idf");
 // Configuration attributes.
 _LIT(KAttConsole, "console");
 _LIT(KAttConsoleSizeAdjustment, "console_size_adjustment");
-_LIT(KAttConsoleSizeDetect, "console_size_detect");
 
 
 TIoConfig::TIoConfig()
-	: iConsoleImplementation(KDefaultConsole), iConsoleSizeAdjustment(KDefaultSizeAdjustment), iConsoleSizeDetect(ETrue)
+	: iConsoleImplementation(KDefaultConsole), iConsoleSizeAdjustment(KDefaultSizeAdjustment)
 	{
 	}
 
@@ -46,7 +45,6 @@ TInt TIoConfig::DoInit(LtkUtils::CIniFile* iniFile)
 	{
 	TInt ret = KErrNone;
 	iConsoleImplementation.Copy(iniFile->GetString(KAttConsole).Left(iConsoleImplementation.MaxLength()));
-	iConsoleSizeDetect = iniFile->GetBool(KAttConsoleSizeDetect);
 	const TDesC& sizeAdjust(iniFile->GetString(KAttConsoleSizeAdjustment));
 	if (sizeAdjust.Length())
 		{
@@ -56,7 +54,6 @@ TInt TIoConfig::DoInit(LtkUtils::CIniFile* iniFile)
 		lex.Get(); // Skip delimiter.
 		ret = lex.Val(iConsoleSizeAdjustment.iHeight);
 		if (ret) return ret;
-		iConsoleSizeDetect = EFalse;
 		}
 	return ret;
 	}
@@ -69,9 +66,4 @@ const TDesC& TIoConfig::ConsoleImplementation() const
 const TSize& TIoConfig::ConsoleSizeAdjustment() const
 	{
 	return iConsoleSizeAdjustment;
-	}
-
-TBool TIoConfig::ConsoleSizeDetect() const
-	{
-	return iConsoleSizeDetect;
 	}

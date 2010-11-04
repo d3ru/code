@@ -96,12 +96,12 @@ private:
 	void DoExtendedEscapeKey();
 	static TInt EscapeTimeoutS(TAny* aSelf);
 	TInt EscapeTimeout();
-	void ReadKeyPress();
-	void CompleteKeyPressRequest(TInt aError);
-	void CompleteKeyPressRequest(TKeyCode aKeyCode);
-	void CompleteKeyPressRequest(TKeyCode aKeyCode1, TKeyCode aKeyCode2);
+	void ProcessInputBuffer();
+	void CompleteReadRequest(TInt aError);
+	void CompleteReadRequest(TKeyCode aKeyCode);
+	void CompleteReadRequest(TKeyCode aKeyCode1, TKeyCode aKeyCode2);
 	void Reset();
-	void ReadInput();
+	void RequestInput();
 private: // From CActive.
 	virtual void RunL();
 	virtual void DoCancel();

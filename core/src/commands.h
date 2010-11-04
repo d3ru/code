@@ -820,6 +820,7 @@ public:
 private:
 	CCmdTime();
 	void NextIterationL();
+	void IterationComplete(TInt aError);
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();
@@ -827,6 +828,7 @@ private: // From CCommandBase.
 	virtual void OptionsL(RCommandOptionList& aOptions);
 private: // From MParserObserver.
 	virtual void HandleParserComplete(CParser& aParser, const TError& aError);
+	virtual void HandleParserExit(CParser& aParser);
 private:
 	HBufC* iCommandLine;
 	TUint32 iCountBefore;
@@ -847,7 +849,7 @@ public:
 private:
 	CCmdRepeat();
 	void CreateParserL();
-	void HandleParserCompleteL(const TError& aError);
+	void HandleParserCompleteL(TInt aError);
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();
@@ -855,6 +857,7 @@ private: // From CCommandBase.
 	virtual void OptionsL(RCommandOptionList& aOptions);
 private: // From MParserObserver.
 	virtual void HandleParserComplete(CParser& aParser, const TError& aError);
+	virtual void HandleParserExit(CParser& aParser);
 private:
 	HBufC* iCommandLine;
 	CParser* iParser;
@@ -1254,12 +1257,14 @@ public:
 private:
 	CCmdForEach();
 	void DoNextL(TBool aFirstTime=EFalse);
+	void IterationComplete(TInt aError);
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();
 	virtual void ArgumentsL(RCommandArgumentList& aArguments);
 private: // From MParserObserver.
 	virtual void HandleParserComplete(CParser& aParser, const TError& aError);
+	virtual void HandleParserExit(CParser& aParser);
 private:
 	TFileName2 iDirName;
 	RDir iDir;

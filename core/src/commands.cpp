@@ -3880,7 +3880,16 @@ void CCmdTime::HandleParserComplete(CParser&, const TError& aError)
 		{
 		aError.Report();
 		}
+	IterationComplete(aError.Error());
+	}
 
+void CCmdTime::HandleParserExit(CParser&)
+	{
+	IterationComplete(KErrNone);
+	}
+
+void CCmdTime::IterationComplete(TInt aError)
+	{
 	TUint32 countAfter = iFastCounter ? User::FastCounter() : User::NTickCount();
 	
 	TUint64 difference;
@@ -3938,9 +3947,9 @@ void CCmdTime::HandleParserComplete(CParser&, const TError& aError)
 			Printf(_L("%Lu\r\n"), difference);
 			}
 		}
-	if (aError.Error() < 0 || iIteration == iRepeatCount)
+	if (aError < 0 || iIteration == iRepeatCount)
 		{
-		Complete(aError.Error());
+		Complete(aError);
 		}
 	else
 		{
@@ -4009,21 +4018,29 @@ void CCmdRepeat::OptionsL(RCommandOptionList& aOptions)
 
 void CCmdRepeat::HandleParserComplete(CParser&, const TError& aError)
 	{
-	TRAPD(err, HandleParserCompleteL(aError));
+	if (aError.Error() < 0)
+		{
+		aError.Report();
+		}
+	TRAPD(err, HandleParserCompleteL(aError.Error()));
 	if (err)
 		{
 		Complete(err);
 		}
 	}
 
-void CCmdRepeat::HandleParserCompleteL(const TError& aError)
+void CCmdRepeat::HandleParserExit(CParser&)
 	{
-	if (aError.Error() < 0)
+	TRAPD(err, HandleParserCompleteL(KErrNone));
+	if (err)
 		{
-		aError.Report();
+		Complete(err);
 		}
+	}
 
-	if (((aError.Error() == KErrNone) || iKeepGoing) && ((++iCount < iNumRepeats) || iForever))
+void CCmdRepeat::HandleParserCompleteL(TInt aError)
+	{
+	if (((aError == KErrNone) || iKeepGoing) && ((++iCount < iNumRepeats) || iForever))
 		{
 		delete iParser;
 		iParser = NULL;
@@ -4032,7 +4049,7 @@ void CCmdRepeat::HandleParserCompleteL(const TError& aError)
 		}
 	else
 		{
-		Complete(aError.Error());
+		Complete(aError);
 		}
 	}
 
@@ -6183,8 +6200,17 @@ void CCmdForEach::HandleParserComplete(CParser&, const TError& aError)
 		PrintError(err, _L("Aborted \"%S\" at line %d"), &aError.ScriptFileName(), aError.ScriptLineNumber());
 		iLastError = err;
 		}
+	IterationComplete(err);
+	}
 
-	if ((err < 0) && !iKeepGoing)
+void CCmdForEach::HandleParserExit(CParser&)
+	{
+	IterationComplete(KErrNone);
+	}
+
+void CCmdForEach::IterationComplete(TInt aError)
+	{
+	if ((aError < 0) && !iKeepGoing)
 		{
 		Complete(iLastError);
 		}

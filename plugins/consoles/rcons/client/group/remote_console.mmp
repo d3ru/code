@@ -25,11 +25,11 @@ source			remote_console.cpp
 source			remote_console_config.cpp
 
 library			ltkutils.lib
-library			EUSER.LIB
-library			EFSRV.LIB
-library			ESOCK.LIB
-library			INSOCK.LIB
-library			COMMDB.LIB
+library			euser.lib
+library			efsrv.lib
+library			esock.lib
+library			insock.lib
+library			commdb.lib
 
 deffile			remote_console.def
 

@@ -44,6 +44,11 @@ _LIT(KSemicolon, ";");
 _LIT(KDollar, "$");
 
 
+void MParserObserver::HandleParserExit(CParser&)
+	{
+	CActiveScheduler::Stop();
+	}
+
 void MParserObserver::AboutToExecuteLine(const TDesC&, const TDesC&)
 	{
 	}
@@ -488,16 +493,8 @@ void CParser::CreateNextPipeLineL(TBool* aIsForeground)
 			// thread or in the thread belonging to a 'source' or 'debug' command) to be dropped. That's a good thing, because local commands
 			// can't synchronously interact with iosrv without risk of deadlock when two or more thread commands are run in a pipe-line. 
 			CleanupStack::PopAndDestroy(2, &pipeSections);
-			if (CActiveScheduler::Current()->StackDepth() > 0)
-				{
-				CActiveScheduler::Stop();
-				}
-			else
-				{
-				// The active scheduler hasn't been started yet. Probably because someone is doing something crazy like 'fshell -e exit'.
-				iExitCallBack = new(ELeave) CAsyncCallBack(TCallBack(ExitCallBack, this), CActive::EPriorityStandard);
-				iExitCallBack->Call();
-				}
+			iExitCallBack = new(ELeave) CAsyncCallBack(TCallBack(ExitCallBack, this), CActive::EPriorityStandard);
+			iExitCallBack->Call();
 			}
 		else
 			{
@@ -819,9 +816,10 @@ TInt CParser::NextCallBack(TAny* aSelf)
 	return KErrNone;
 	}
 
-TInt CParser::ExitCallBack(TAny*)
+TInt CParser::ExitCallBack(TAny* aSelf)
 	{
-	CActiveScheduler::Stop();
+	CParser* self = static_cast<CParser*>(aSelf);
+	self->iObserver->HandleParserExit(*self);
 	return KErrNone;
 	}
 

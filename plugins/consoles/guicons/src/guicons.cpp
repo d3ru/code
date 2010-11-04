@@ -1576,6 +1576,10 @@ EXPORT_C TInt CGuiConsole::Extension_(TUint aExtensionId, TAny*&, TAny* a1)
 		ConsoleAttributes::TAttributes* attributes = (ConsoleAttributes::TAttributes*)a1;
 		return iControl.SetAttributes(attributes->iAttributes, attributes->iForegroundColor, attributes->iBackgroundColor);
 		}
+	else if (aExtensionId == ConsoleSize::KConsoleSizeReportedCorrectlyExtension)
+		{
+		return KErrNone;
+		}
 	return KErrNotSupported;
 	}
 

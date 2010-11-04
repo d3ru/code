@@ -12,21 +12,12 @@
 
 #include "hello.h"
 
-
 CCommandBase* CCmdHello::NewLC()
 	{
 	CCmdHello* self = new(ELeave) CCmdHello();
 	CleanupStack::PushL(self);
 	self->BaseConstructL();
 	return self;
-	}
-
-CCmdHello::~CCmdHello()
-	{
-	}
-
-CCmdHello::CCmdHello()
-	{
 	}
 
 const TDesC& CCmdHello::Name() const

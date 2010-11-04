@@ -52,8 +52,9 @@ CIoConsole::~CIoConsole()
 	iRequestQueue.Close();
 	delete iImplementation;
 	delete iReader;
+	delete iConsoleSizeChangedNotifier;
 	iConsole.Close();
-	delete iCreationTitle ;
+	delete iCreationTitle;
 	iServerThread.Close();
 	}
 
@@ -99,10 +100,7 @@ template <class T> void CIoConsole::HandleReadWriterDetached(T& aReadWriter)
 
 void CIoConsole::IorepReadL(MIoReader&)
 	{
-	if (!iReader->IsActive())
-		{
-		iReader->QueueRead();
-		}
+	QueueReaderIfRequired();
 	}
 
 void CIoConsole::IorepReadKeyL(MIoReader& aReader)
@@ -197,10 +195,6 @@ void CIoConsole::ConstructL(const TDesC& aImplementation, const TDesC& aTitle, c
 		{
 		User::LeaveIfError(iConsole.SetLazyConstruct());
 		}
-	if (iConfig.ConsoleSizeDetect())
-		{
-		User::LeaveIfError(iConsole.SetConsoleSizeDetect());
-		}
 	if (aUnderlying)
 		{
 		User::LeaveIfError(aUnderlying->Open());
@@ -211,6 +205,7 @@ void CIoConsole::ConstructL(const TDesC& aImplementation, const TDesC& aTitle, c
 	NewRequest(new(ELeave)TConsoleCreateRequest(*this));
 		
 	iReader = CConsoleReader::NewL(*this);
+	iConsoleSizeChangedNotifier = new(ELeave) CConsoleSizeChangedNotifier(*this);
 	}
 	
 void CIoConsole::CreateComplete(TInt aError)
@@ -276,16 +271,7 @@ void CIoConsole::ReadComplete(TUint aKeyCode, TUint aModifiers)
 		{
 		if (reader->IorIsKeyCaptured(aKeyCode, aModifiers))
 			{
-			if (reader->IorReadPending())
-				{
-				TPtrC keyCodePtr((TUint16*)&aKeyCode, 1);
-				reader->IorReadBuf().Append(keyCodePtr);
-				reader->IorDataBuffered(1);
-				}
-			else
-				{
-				reader->IorReadKeyComplete(KErrNone, aKeyCode, aModifiers);
-				}
+			reader->IorReadKeyComplete(KErrNone, aKeyCode, aModifiers);
 			keyHandled = ETrue;
 			break;
 			}
@@ -306,6 +292,7 @@ void CIoConsole::QueueReaderIfRequired()
 	TBool pendingReader(EFalse);
 	TInt index = 0;
 	MIoReader* reader = AttachedReader(index++);
+	TBool foregroundReader(ETrue);
 	while (reader)
 		{
 		if (reader->IorReadPending() || reader->IorReadKeyPending())
@@ -313,7 +300,13 @@ void CIoConsole::QueueReaderIfRequired()
 			pendingReader = ETrue;
 			break;
 			}
+		if (foregroundReader && reader->IorAllKeysCaptured())
+			{
+			// If the foreground reader has captured all keys, we don't care about the background readers.
+			break;
+			}
 		reader = AttachedReader(index++);
+		foregroundReader = EFalse;
 		}
 
 	if (pendingReader && !iReader->IsActive())
@@ -841,11 +834,6 @@ void CIoConsole::CServerDeathWatcher::DoCancel()
 
 //______________________________________________________________________________
 //						RIoConsoleProxy
-TInt RIoConsoleProxy::SetConsoleSizeDetect()
-	{
-	return SendReceive(ESetConsoleSizeDetect);
-	}
-	
 TInt RIoConsoleProxy::SetLazyConstruct()
 	{
 	return SendReceive(ESetLazyConstruct);
@@ -869,6 +857,16 @@ TInt RIoConsoleProxy::OpenExisting()
 void RIoConsoleProxy::WriteStdErr(const TDesC& aDescriptor, TRequestStatus& aStatus)
 	{
 	SendReceive(EWriteStdErr, TIpcArgs(&aDescriptor), aStatus);
+	}
+
+void RIoConsoleProxy::NotifySizeChanged(TRequestStatus& aStatus)
+	{
+	SendReceive(ENotifySizeChange, TIpcArgs(), aStatus);
+	}
+
+void RIoConsoleProxy::CancelNotifySizeChanged()
+	{
+	SendReceive(ECancelNotifySizeChange, TIpcArgs());
 	}
 
 //______________________________________________________________________________
@@ -983,6 +981,7 @@ CIoConsoleProxySession::CIoConsoleProxySession(TConsoleCreateFunction aConsoleCr
 
 CIoConsoleProxySession::~CIoConsoleProxySession()
 	{
+	delete iSizeChangedMessageCompleter;
 	delete iUnderlyingConsole;
 	}
 
@@ -990,11 +989,6 @@ void CIoConsoleProxySession::ServiceL(const RMessage2& aMessage)
 	{
 	switch (aMessage.Function())
 		{
-	case RIoConsoleProxy::ESetConsoleSizeDetect:
-		if (iConsole) User::Leave(KErrNotReady); // too late!
-		SetFlag(EAutoDetectSize, ETrue);
-		aMessage.Complete(KErrNone);
-		return;
 	case RIoConsoleProxy::ESetLazyConstruct:
 		if (iConsole) User::Leave(KErrNotReady); // too late!
 		SetFlag(ELazy, ETrue);
@@ -1010,11 +1004,12 @@ void CIoConsoleProxySession::ServiceL(const RMessage2& aMessage)
 		OpenExistingL(aMessage);
 		return;	
 	case RConsoleProxy::EGetScreenSize:
-		if (GetFlag(EAutoDetectSize) && !GetFlag(ELazy))
+		if (GetFlag(EHaveDetectedSize))
 			{
 			DetectSizeL(aMessage);
 			return;
 			}
+		// Otherwise drop through to CConsoleProxySession's implementation
 		break;
 	case RIoConsoleProxy::EWriteStdErr:
 		{
@@ -1040,6 +1035,26 @@ void CIoConsoleProxySession::ServiceL(const RMessage2& aMessage)
 		aMessage.Complete(KErrNone);
 		return;
 		}
+	case RIoConsoleProxy::ENotifySizeChange:
+		{
+		if (iSizeChangedMessageCompleter == NULL)
+			{
+			iSizeChangedMessageCompleter = new(ELeave) CSizeChangeMessageCompleter;
+			if (iConsole) iSizeChangedMessageCompleter->SetConsole(iConsole->Console());
+			}
+		iSizeChangedMessageCompleter->NotifySizeChange(const_cast<RMessage2&>(aMessage));
+		return;
+		}
+	case RIoConsoleProxy::ECancelNotifySizeChange:
+		{
+		//RDebug::Printf("case RIoConsoleProxy::ECancelNotifySizeChange ");
+		if (iSizeChangedMessageCompleter)
+			{
+			iSizeChangedMessageCompleter->CancelNotify();
+			}
+		aMessage.Complete(KErrNone);
+		return;
+		}
 	default:
 		break;
 		}
@@ -1057,7 +1072,7 @@ MProxiedConsole* CIoConsoleProxySession::InstantiateConsoleL()
 	MProxiedConsole* cons;
 	if (GetFlag(ELazy))
 		{
-		CLazyConsole* lazy = new(ELeave)CLazyConsole(iConsoleCreate, GetFlag(EAutoDetectSize));
+		CLazyConsole* lazy = new(ELeave) CLazyConsole(iConsoleCreate);
 		CleanupStack::PushL(lazy);
 		cons = MProxiedConsole::DefaultL(lazy);
 		CleanupStack::Pop();
@@ -1086,10 +1101,18 @@ MProxiedConsole* CIoConsoleProxySession::InstantiateConsoleL()
 	
 void CIoConsoleProxySession::ConsoleCreatedL(MProxiedConsole* aConsole)
 	{
-	if (GetFlag(EAutoDetectSize) && !(GetFlag(ELazy)))
+	if (!GetFlag(ELazy))
 		{
-		iDetectedSize = DetectConsoleSize(aConsole->Console());
+		// If it's lazy, we can't check ReportedCorrectly until it's been instantiated
+		CConsoleBase* console = aConsole->Console();
+		if (!ConsoleSize::ReportedCorrectly(console))
+			{
+			iDetectedSize = DetectConsoleSize(console);
+			SetFlag(EHaveDetectedSize, ETrue);
+			}
 		}
+
+	if (iSizeChangedMessageCompleter) iSizeChangedMessageCompleter->SetConsole(aConsole->Console());
 	}
 
 void CIoConsoleProxySession::DetectSizeL(const RMessage2& aMessage)
@@ -1207,8 +1230,8 @@ TUint CWriteOnlyConsoleProxy::KeyModifiers() const
 
 //______________________________________________________________________________
 //						CLazyConsole
-CLazyConsole::CLazyConsole(TConsoleCreateFunction aConsoleCreate, TBool aAutoDetectSize)
-	: iConsoleCreate(aConsoleCreate), iSizeAutoDetect(aAutoDetectSize)
+CLazyConsole::CLazyConsole(TConsoleCreateFunction aConsoleCreate)
+	: iConsoleCreate(aConsoleCreate)
 	{
 	}
 
@@ -1240,10 +1263,17 @@ TInt CLazyConsole::CheckCreated() const
 		iCreateError = iConsole->Create(iTitle, iSize);
 		User::RenameProcess(procName.Left(procName.Locate('['))); // ...so restore it just in case
 		}
-	if ((iCreateError == KErrNone) && iSizeAutoDetect)
+	if ((iCreateError == KErrNone) && !ConsoleSize::ReportedCorrectly(iConsole))
 		{
 		iDetectedSize = DetectConsoleSize(iConsole);
+		iHaveDetectedSize = ETrue;
 		}
+	if (iCreateError == KErrNone && iStatusForNotifySizeRequest != NULL)
+		{
+		ConsoleSize::NotifySizeChanged(iConsole, *iStatusForNotifySizeRequest);
+		iStatusForNotifySizeRequest = NULL;
+		}
+
 	if (iCreateError != KErrNone)
 		{
 		delete iConsole;
@@ -1341,7 +1371,7 @@ TSize CLazyConsole::ScreenSize() const
 	{
 	if (CheckCreated() == KErrNone)
 		{
-		if (iSizeAutoDetect)
+		if (iHaveDetectedSize)
 			{
 			return iDetectedSize;
 			}
@@ -1382,6 +1412,23 @@ TInt CLazyConsole::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
 		*constructed = (iConsole != NULL);
 		return KErrNone;
 		}
+	else if (iConsole == NULL && aExtensionId == ConsoleMode::KSetConsoleModeExtension && (ConsoleMode::TMode)(TUint)a1 == ConsoleMode::EText)
+		{
+		// A console that isn't created yet will default to text mode anyway so we don't need to force instantiation. This works around an issue with iosrv calling ConsoleMode::Set even on the underlying console
+		return KErrNone;
+		}
+	else if (iConsole == NULL && aExtensionId == ConsoleSize::KConsoleSizeNotifyChangedExtension)
+		{
+		// Remember this notify for later
+		TRequestStatus* stat = (TRequestStatus*)a1;
+		//RDebug::Printf("Lazycons KConsoleSizeNotifyChangedExtension a1=%x iStatusForNotifySizeRequest=%x", a1, iStatusForNotifySizeRequest);
+		if (stat == NULL && iStatusForNotifySizeRequest != NULL)
+			{
+			User::RequestComplete(iStatusForNotifySizeRequest, KErrCancel);
+			}
+		iStatusForNotifySizeRequest = stat;
+		return KErrNone; // It's ok to say KErrNone now but complete the TRequestStatus with KErrExtensionNotSupported later
+		}
 	else 
 		{
 		TInt err = CheckCreated();
@@ -1390,5 +1437,102 @@ TInt CLazyConsole::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
 			return ((CLazyConsole*)iConsole)->Extension_(aExtensionId, a0, a1);
 			}
 		return err;
+		}
+	}
+
+//
+
+CIoConsole::CConsoleSizeChangedNotifier::CConsoleSizeChangedNotifier(CIoConsole& aConsole)
+	: CActive(CActive::EPriorityStandard), iConsole(aConsole)
+	{
+	CActiveScheduler::Add(this);
+	iConsole.iConsole.NotifySizeChanged(iStatus);
+	SetActive();
+	}
+
+CIoConsole::CConsoleSizeChangedNotifier::~CConsoleSizeChangedNotifier()
+	{
+	Cancel();
+	}
+
+void CIoConsole::CConsoleSizeChangedNotifier::RunL()
+	{
+	if (iStatus.Int() != KErrNone) // eg KErrExtensionNotSupported
+		{
+		return;
+		}
+
+	iConsole.iConsole.NotifySizeChanged(iStatus);
+	SetActive();
+
+	MIoReader* fg = iConsole.AttachedReader();
+	if (fg)
+		{
+		fg->IorReaderChange(RIoReadHandle::EConsoleSizeChanged);
+		}
+	}
+
+void CIoConsole::CConsoleSizeChangedNotifier::DoCancel()
+	{
+	//RDebug::Printf("Calling RIoConsoleProxt::CancelNotifySizeChanged");
+	iConsole.iConsole.CancelNotifySizeChanged();
+	}
+
+//
+
+CSizeChangeMessageCompleter::CSizeChangeMessageCompleter()
+	: CActive(CActive::EPriorityStandard)
+	{
+	CActiveScheduler::Add(this);
+	}
+
+CSizeChangeMessageCompleter::~CSizeChangeMessageCompleter()
+	{
+	Cancel();
+	}
+
+void CSizeChangeMessageCompleter::NotifySizeChange(RMessagePtr2& aMessage)
+	{
+	iMessage = aMessage;
+	if (iActualConsole)
+		{
+		ConsoleSize::NotifySizeChanged(iActualConsole, iStatus);
+		SetActive();
+		}
+	}
+
+void CSizeChangeMessageCompleter::RunL()
+	{
+	iMessage.Complete(iStatus.Int());
+	}
+
+void CSizeChangeMessageCompleter::DoCancel()
+	{
+	ASSERT(iActualConsole);
+	ConsoleSize::CancelNotifySizeChanged(iActualConsole);
+	}
+
+void CSizeChangeMessageCompleter::SetConsole(CConsoleBase* aConsole)
+	{
+	ASSERT(iActualConsole == NULL);
+	iActualConsole = aConsole;
+	if (!iMessage.IsNull())
+		{
+		ConsoleSize::NotifySizeChanged(iActualConsole, iStatus);
+		SetActive();
+		}
+	}
+
+void CSizeChangeMessageCompleter::CancelNotify()
+	{
+	//RDebug::Printf("CSizeChangeMessageCompleter::CancelNotify");
+	if (IsActive())
+		{
+		Cancel();
+		}
+	
+	if (!iMessage.IsNull())
+		{
+		iMessage.Complete(KErrCancel);
 		}
 	}

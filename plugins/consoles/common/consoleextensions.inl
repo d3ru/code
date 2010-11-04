@@ -59,5 +59,29 @@ TBool LazyConsole::IsConstructed(CBase* aConsole)
 TInt ConsoleStdErr::Write(CBase* aConsole, const TDesC& aDes)
 	{
 	TAny* ignore;
-	return ((CBaseExtensionDummy*)aConsole)->Extension_(KWriteStdErrConsoleExtension, ignore, const_cast<TAny*>((const TAny*)&aDes));
+	return ((CBaseExtensionDummy*)aConsole)->Extension_(KWriteStdErrConsoleExtension, ignore, (TAny*)&aDes);
 	}
+
+TBool ConsoleSize::ReportedCorrectly(CBase* aConsole)
+	{
+	TAny* ignore;
+	return ((CBaseExtensionDummy*)aConsole)->Extension_(KConsoleSizeReportedCorrectlyExtension, ignore, NULL) == KErrNone;
+	}
+
+void ConsoleSize::NotifySizeChanged(CBase* aConsole, TRequestStatus& aStatus)
+	{
+	TAny* ignore;
+	TBool supported = ((CBaseExtensionDummy*)aConsole)->Extension_(KConsoleSizeNotifyChangedExtension, ignore, (TAny*)&aStatus) == KErrNone;
+	if (!supported)
+		{
+		TRequestStatus* stat = &aStatus;
+		User::RequestComplete(stat, KErrExtensionNotSupported);
+		}
+	}
+
+void ConsoleSize::CancelNotifySizeChanged(CBase* aConsole)
+	{
+	TAny* ignore;
+	((CBaseExtensionDummy*)aConsole)->Extension_(KConsoleSizeNotifyChangedExtension, ignore, NULL);
+	}
+

@@ -202,7 +202,8 @@ private:
 		virtual TDes& IorReadBuf();
 		virtual void IorDataBuffered(TInt aLength);
 		virtual TBool IorDataIsBuffered() const;
-		virtual TBool IorIsKeyCaptured(TUint aKeyCode, TUint aModifiers);
+		virtual TBool IorIsKeyCaptured(TUint aKeyCode, TUint aModifiers) const;
+		virtual TBool IorAllKeysCaptured() const;
 		virtual void IorReadComplete(TInt aError);
 		virtual void IorReadKeyComplete(TInt aError, TUint aKeyCode, TUint aModifiers);
 		virtual TName IorName();

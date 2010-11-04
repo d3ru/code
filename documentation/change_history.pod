@@ -74,6 +74,19 @@ Added support for L<source|commands::source> reading from C<stdin> (primarily to
 
 Fixed a bug in iocli.dll that could cause environment variable updates to be ignored.
 
+=item *
+
+Fixed a bug in fshell that could cause 'foreach' commands to exit prematurely.
+
+=item *
+
+Added new console extension functions: ConsoleSize::ReportedCorrectly(), ConsoleSize::NotifySizeChanged().
+
+=item *
+
+Removed iosrv.ini's console_size_detect setting. It is now calculated on a per-console basis whether the console requires size detection, based on whether the console implements the C<ConsoleSize::ReportedCorrectly()> extension. All the fshell-supplied consoles have been updated to implement this extension as appropriate, meaning that size detection will no longer be run unnecessarily on (for eg) win32cons when you run fshell.bat. As part of this work, the laziness of defcons (CDefaultConsole) has been removed as it overlapped unnecessarily with CLazyConsole. Defcons's sole responsibility now is to pick an appropriate console; lazycons is responsible for making sure it isn't instantiated prematurely.
+
+
 =back
 
 =head2 Release 001

@@ -25,20 +25,23 @@ class RIoConsoleProxy : public RConsoleProxy
 public:
 	enum TOpCode
 		{
-		ESetConsoleSizeDetect = RConsoleProxy::EOpCodeCustomBase,
+		EUnusedOpCode = RConsoleProxy::EOpCodeCustomBase,
 		ESetLazyConstruct,
 		ESetConsoleMode,
 		ESetUnderlyingConsole,
 		EOpenExistingConsole,
 		EWriteStdErr,
+		ENotifySizeChange,
+		ECancelNotifySizeChange,
 		};
 public:
-	TInt SetConsoleSizeDetect();
 	TInt SetLazyConstruct();
 	void SetConsoleMode(RIoReadWriteHandle::TMode aMode, TRequestStatus& aStatus);
 	void SetUnderlyingConsole(const RIoConsoleProxy& aUnderlyingSession, TRequestStatus& aStatus);
 	TInt OpenExisting();
 	void WriteStdErr(const TDesC& aDescriptor, TRequestStatus& aStatus);
+	void NotifySizeChanged(TRequestStatus& aStatus);
+	void CancelNotifySizeChanged();
 	};
 	
 class CIoConsole : public CIoEndPoint
@@ -288,6 +291,20 @@ private:
 		CIoConsole& iConsole;
 		TConsoleRequest* iCurrentRequest;
 		};
+
+	class CConsoleSizeChangedNotifier : public CActive
+		{
+	public:
+		CConsoleSizeChangedNotifier(CIoConsole& aConsole);
+		~CConsoleSizeChangedNotifier();
+	private:
+		void RunL();
+		void DoCancel();
+
+	private:
+		CIoConsole& iConsole;
+		};
+	friend class CConsoleSizeChangedNotifier;
 		
 	class CServerDeathWatcher : public CActive
 		{
@@ -320,6 +337,7 @@ protected:
 	RServer2 iThreadServer;
 	RThread iServerThread;
 	CServerDeathWatcher* iThreadWatcher;
+	CConsoleSizeChangedNotifier* iConsoleSizeChangedNotifier;
 	};
 	
 class CIoConsoleProxyServer : public CConsoleProxyServer
@@ -339,6 +357,24 @@ private:
 
 CConsoleProxyServer* CIoConsoleProxyServerNewL(TAny* aParams);
 
+class CSizeChangeMessageCompleter : public CActive
+	{
+public:
+	CSizeChangeMessageCompleter();
+	~CSizeChangeMessageCompleter();
+	void SetConsole(CConsoleBase* aConsole);
+	void NotifySizeChange(RMessagePtr2& aMessage);
+	void CancelNotify();
+
+protected:
+	void RunL();
+	void DoCancel();
+
+private:
+	RMessagePtr2 iMessage;
+	CConsoleBase* iActualConsole;
+	};
+
 class CIoConsoleProxySession : public CConsoleProxySession
 	{
 public:
@@ -352,7 +388,7 @@ private:
 	enum TFlag
 		{
 		ELazy				= 0x01,
-		EAutoDetectSize		= 0x02,
+		EHaveDetectedSize   = 0x02,
 		ESupportsStdErr		= 0x04,
 		};
 private:
@@ -368,6 +404,7 @@ private:
 	CConsoleProxy* iUnderlyingConsole;
 	TUint iFlags;
 	TSize iDetectedSize;
+	CSizeChangeMessageCompleter* iSizeChangedMessageCompleter;
 	};
 	
 class CWriteOnlyConsoleProxy : public CConsoleProxy
@@ -386,7 +423,7 @@ private:
 class CLazyConsole : public CConsoleBase
 	{
 public:
-	CLazyConsole(TConsoleCreateFunction aConsoleCreate, TBool aAutoDetectSize);
+	CLazyConsole(TConsoleCreateFunction aConsoleCreate);
 	~CLazyConsole();
 public: // from CConsoleBase
 	virtual TInt Create(const TDesC &aTitle,TSize aSize);
@@ -408,12 +445,13 @@ private:
 	TInt CheckCreated() const;
 private:
 	TConsoleCreateFunction iConsoleCreate;
-	TBool iSizeAutoDetect;
 	RBuf iTitle;
 	TSize iSize;
+	mutable TBool iHaveDetectedSize;
 	mutable TSize iDetectedSize;
 	mutable TInt iCreateError;
 	mutable CConsoleBase* iConsole;
+	mutable TRequestStatus* iStatusForNotifySizeRequest; // Only needed if a notify request comes in before we've instantiated
 	};
 
 #endif //__CONSOLE_H__

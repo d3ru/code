@@ -18,8 +18,3 @@ console.default		defcons.dll
 console_size_adjustment 		string
 console_size_adjustment.name		Console size adjustment
 console_size_adjustment.description	Console size adjustment, in format 'x,y'
-
-console_size_detect			boolean
-console_size_detect.name		Autodetect console size
-console_size_detect.description		Automatically detect the size of consoles that are created by the IO server
-console_size_detect.default		true

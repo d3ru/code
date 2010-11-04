@@ -37,7 +37,8 @@ public:
 	virtual TDes& IorReadBuf() = 0;
 	virtual void IorDataBuffered(TInt aLength) = 0;
 	virtual TBool IorDataIsBuffered() const = 0;
-	virtual TBool IorIsKeyCaptured(TUint aKeyCode, TUint aModifiers) = 0;
+	virtual TBool IorIsKeyCaptured(TUint aKeyCode, TUint aModifiers) const = 0;
+	virtual TBool IorAllKeysCaptured() const = 0;
 	virtual void IorReadComplete(TInt aError) = 0;
 	virtual void IorReadKeyComplete(TInt aError, TUint aKeyCode, TUint aModifiers) = 0;
 	virtual TName IorName() = 0;
@@ -181,7 +182,8 @@ private: // From MIoReader.
 	virtual TDes& IorReadBuf();
 	virtual void IorDataBuffered(TInt aLength);
 	virtual TBool IorDataIsBuffered() const;
-	virtual TBool IorIsKeyCaptured(TUint aKeyCode, TUint aModifier);
+	virtual TBool IorIsKeyCaptured(TUint aKeyCode, TUint aModifier) const;
+	virtual TBool IorAllKeysCaptured() const;
 	virtual void IorReadComplete(TInt aError);
 	virtual void IorReadKeyComplete(TInt aError, TUint aKeyCode, TUint aModifiers);
 	virtual TName IorName();

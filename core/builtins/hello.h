@@ -18,9 +18,6 @@ class CCmdHello : public CCommandBase
 	{
 public:
 	static CCommandBase* NewLC();
-	~CCmdHello();
-private:
-	CCmdHello();
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();

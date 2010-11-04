@@ -650,16 +650,16 @@ EXPORT_C void CVtConsoleInputController::GetKeyPress(TKeyPress& aKeyPress, TRequ
 	if (iKeyCodePending)
 		{
 		iKeyCodePending = EFalse;
-		CompleteKeyPressRequest(iPendingKeyCode);
+		CompleteReadRequest(iPendingKeyCode);
 		}
 	else if (iInputError)
 		{
-		CompleteKeyPressRequest(iInputError);
+		CompleteReadRequest(iInputError);
 		iInputError = KErrNone;
 		}
 	else
 		{
-		ReadKeyPress();
+		ProcessInputBuffer();
 		}
 	}
 
@@ -668,7 +668,7 @@ EXPORT_C void CVtConsoleInputController::CancelGetKeyPress()
 	Cancel();
 	if (iClientRequestStatus)
 		{
-		CompleteKeyPressRequest(KErrCancel);
+		CompleteReadRequest(KErrCancel);
 		}
 	}
 
@@ -678,7 +678,7 @@ EXPORT_C void CVtConsoleInputController::SetMode(ConsoleMode::TMode aMode)
 	iMode = aMode;
 	}
 
-void CVtConsoleInputController::ReadKeyPress()
+void CVtConsoleInputController::ProcessInputBuffer()
 	{
 	iEscapeTimer->Cancel();
 
@@ -687,7 +687,7 @@ void CVtConsoleInputController::ReadKeyPress()
 		TUint8 c = iBuf[iBufPos++];
 		if (iMode == ConsoleMode::EBinary)
 			{
-			CompleteKeyPressRequest((TKeyCode)c);
+			CompleteReadRequest((TKeyCode)c);
 			}
 		else
 			{
@@ -704,7 +704,7 @@ void CVtConsoleInputController::ReadKeyPress()
 					}
 				else
 					{
-					CompleteKeyPressRequest((TKeyCode)c);
+					CompleteReadRequest((TKeyCode)c);
 					}
 				break;
 			case EWaitingForEscapeChar2:
@@ -718,7 +718,7 @@ void CVtConsoleInputController::ReadKeyPress()
 					}
 				else
 					{
-					CompleteKeyPressRequest(EKeyEscape, (TKeyCode)c);
+					CompleteReadRequest(EKeyEscape, (TKeyCode)c);
 					iState = ENormal;
 					}
 				break;
@@ -751,24 +751,24 @@ void CVtConsoleInputController::ReadKeyPress()
 					{
 					// Gone off the rails, bail
 					iState = ENormal;
-					CompleteKeyPressRequest((TKeyCode)c);
+					CompleteReadRequest((TKeyCode)c);
 					}
 				break;
 				}
 			}
 		}
 
-	ReadInput();
+	RequestInput();
 	}
 
-void CVtConsoleInputController::CompleteKeyPressRequest(TInt aError)
+void CVtConsoleInputController::CompleteReadRequest(TInt aError)
 	{
 	ASSERT(iClientKeyPress && iClientRequestStatus);
 	iClientKeyPress = NULL;
 	User::RequestComplete(iClientRequestStatus, aError);
 	}
 
-void CVtConsoleInputController::CompleteKeyPressRequest(TKeyCode aKeyCode)
+void CVtConsoleInputController::CompleteReadRequest(TKeyCode aKeyCode)
 	{
 	ASSERT(iClientKeyPress && iClientRequestStatus);
 	iClientKeyPress->iCode = (TKeyCode)aKeyCode;
@@ -777,13 +777,13 @@ void CVtConsoleInputController::CompleteKeyPressRequest(TKeyCode aKeyCode)
 	User::RequestComplete(iClientRequestStatus, KErrNone);
 	}
 
-void CVtConsoleInputController::CompleteKeyPressRequest(TKeyCode aKeyCode1, TKeyCode aKeyCode2)
+void CVtConsoleInputController::CompleteReadRequest(TKeyCode aKeyCode1, TKeyCode aKeyCode2)
 	{
 	ASSERT(!iKeyCodePending);
 	// Store the second key-code in a member variable to be used the next time GetKeyPress is called.
 	iKeyCodePending = ETrue;
 	iPendingKeyCode = aKeyCode2;
-	CompleteKeyPressRequest(aKeyCode1);
+	CompleteReadRequest(aKeyCode1);
 	}
 
 void CVtConsoleInputController::Reset()
@@ -794,7 +794,7 @@ void CVtConsoleInputController::Reset()
 	iKeyCodePending = EFalse;
 	}
 
-void CVtConsoleInputController::ReadInput()
+void CVtConsoleInputController::RequestInput()
 	{
 	if (iClientRequestStatus && !IsActive()) // Note, if the escape timer expired we could already be active.
 		{
@@ -812,17 +812,17 @@ void CVtConsoleInputController::RunL()
 #ifdef FSHELL_PLATFORM_OPP
 	if (err == KErrAbort)
 		{
-		ReadInput();
+		RequestInput();
 		return;
 		}
 #endif
 	if (err == KErrNone)
 		{
-		ReadKeyPress();
+		ProcessInputBuffer();
 		}
 	else if (iClientRequestStatus)
 		{
-		CompleteKeyPressRequest(err);
+		CompleteReadRequest(err);
 		}
 	else
 		{
@@ -843,7 +843,7 @@ void CVtConsoleInputController::DoEscapeKeyL(TUint8 aChar, const TEscapeMapping*
 		{
 		if (aChar == aMappings[j].iEscapeChar)
 			{
-			CompleteKeyPressRequest(aMappings[j].iKeyCode);
+			CompleteReadRequest(aMappings[j].iKeyCode);
 			return;
 			}
 		}
@@ -853,7 +853,7 @@ TInt CVtConsoleInputController::EscapeTimeout()
 	{
 	ASSERT(iState == EWaitingForEscapeChar2);
 	iState = ENormal;
-	CompleteKeyPressRequest(EKeyEscape);
+	CompleteReadRequest(EKeyEscape);
 	return KErrNone;
 	}
 
@@ -876,7 +876,7 @@ void CVtConsoleInputController::DoExtendedEscapeKey()
 		const TLongerEscapeMapping& mapping = KExtendedEscapeMappings[j];
 		if (escape1 == mapping.iEscapeChar1 && escape2 == mapping.iEscapeChar2)
 			{
-			CompleteKeyPressRequest(mapping.iKeyCode);
+			CompleteReadRequest(mapping.iKeyCode);
 			return;
 			}
 		}

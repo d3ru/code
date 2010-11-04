@@ -602,18 +602,31 @@ void CIoReadObject::SetModeL(const RMsg& aMessage)
 	TInt mode(aMessage.Int0());
 	if ((mode >= RIoWriteHandle::EText) && (mode <= RIoWriteHandle::EBinary))
 		{
+		TInt err = KErrNone;
 		if (ReadEndPoint() && ReadEndPoint()->IorepIsForegroundL(*this))
 			{
 			__ASSERT_RETURN(!MessagePending(iSetModeMessage), PanicClient(aMessage, EPanicSetModeAlreadyPending));
-			ReadEndPoint()->IorepSetConsoleModeL((RIoReadWriteHandle::TMode)mode, *this);
 			iSetModeMessage = aMessage;
+			TRAP(err, ReadEndPoint()->IorepSetConsoleModeL((RIoReadWriteHandle::TMode)mode, *this));
+			if (err && MessagePending(iSetModeMessage))
+				{
+				if (err == KErrNotSupported)
+					{
+					// Ignore KErrNotSupported from the console to allow iMode to be set anyway, thereby getting at least the iosrv level behavior.
+					err = KErrNone;
+					}
+				Complete(iSetModeMessage, err);
+				}
 			}
 		else
 			{
 			Complete(aMessage, KErrNone);
 			}
 
-		iMode = static_cast<RIoWriteHandle::TMode>(mode);
+		if (err == KErrNone)
+			{
+			iMode = static_cast<RIoWriteHandle::TMode>(mode);
+			}
 		}
 	else
 		{
@@ -654,7 +667,7 @@ TBool CIoReadObject::IorDataIsBuffered() const
 	return (iBuf->Length() > 0);
 	}
 
-TBool CIoReadObject::IorIsKeyCaptured(TUint aKeyCode, TUint aModifiers)
+TBool CIoReadObject::IorIsKeyCaptured(TUint aKeyCode, TUint aModifiers) const
 	{
 	if (iCaptureAllKeys)
 		{
@@ -670,6 +683,11 @@ TBool CIoReadObject::IorIsKeyCaptured(TUint aKeyCode, TUint aModifiers)
 			}
 		}
 	return EFalse;
+	}
+
+TBool CIoReadObject::IorAllKeysCaptured() const
+	{
+	return iCaptureAllKeys;
 	}
 
 void CIoReadObject::IorReadComplete(TInt aError)
