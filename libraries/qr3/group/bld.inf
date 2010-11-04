@@ -29,5 +29,8 @@ PRJ_EXPORTS
 
 PRJ_MMPFILES
 loggingallocator.mmp
-sandbox.mmp
 #endif // FSHELL_QR3_SUPPORT_LOGGINGALLOCATOR
+
+#ifdef FSHELL_QR3_SUPPORT_SANDBOX
+sandbox.mmp
+#endif

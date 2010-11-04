@@ -194,7 +194,7 @@
 #endif
 
 #if defined(FSHELL_TRACE_SUPPORT) && defined(FSHELL_CAP_ALL)
-#define FSHELL_EXTRABTRACE_SUPPORT
+#define FSHELL_EXTRABTRACE_SUPPORT // extrabtrace.h and extrabtrace.dll will always be available
 #endif
 
 // The FSHELL_TRACE_xyz macros must appear before any other systeminclude/#include/library statements in your MMP.
@@ -389,6 +389,10 @@
 
 #ifdef FSHELL_TRACE_SUPPORT
 #define FSHELL_QR3_SUPPORT_LOGGINGALLOCATOR
+#endif
+
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+#define FSHELL_QR3_SUPPORT_SANDBOX
 #endif
 
 

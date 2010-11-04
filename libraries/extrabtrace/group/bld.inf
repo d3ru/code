@@ -16,10 +16,15 @@
 PRJ_EXPORTS
 
 FSHELL_ROM_INCLUDE(extrabtrace.iby)
+..\inc\extrabtrace.h					\epoc32\include\fshell\extrabtrace.h
+
+PRJ_MMPFILES
+extrabtrace.mmp
 
 #ifdef FSHELL_EXTRABTRACE_SUPPORT
 
-..\inc\extrabtrace.h					\epoc32\include\fshell\extrabtrace.h
+PRJ_EXPORTS
+
 ..\inc\extrabtracek.h					\epoc32\include\fshell\extrabtracek.h
 
 PRJ_MMPFILES

@@ -14,11 +14,10 @@
 
 #include <fsh_config.iby>
 
-#ifdef FSHELL_EXTRABTRACE_SUPPORT
-
 FSHELL_EXECUTABLE_FILE(extrabtrace.dll)
-FSHELL_KERNEL_EXTENSION(extrabtracek.ldd)
 
+#ifdef FSHELL_EXTRABTRACE_SUPPORT
+FSHELL_KERNEL_EXTENSION(extrabtracek.ldd)
 #endif
 
 #endif // EXTRABTRACE_IBY

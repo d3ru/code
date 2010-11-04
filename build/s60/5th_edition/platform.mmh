@@ -17,6 +17,7 @@
 #endif
 
 #define FSHELL_CORE_SUPPORT_USB_ICON "ACM::1"
+#define FSHELL_NO_BTRACE_SUPPORT
 #define FSHELL_NO_PIPS_SUPPORT // [TomS:] Does 5th ed have pips?
 #define FSHELL_NO_DOBJECTIX_SUPPORT
 
