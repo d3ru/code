@@ -1507,11 +1507,13 @@ const LtkUtils::SLitC8 KTraceBitNames[] =
 	DESC8("ktestfast"),
 	DESC8("ktestlatency"),
 	DESC8("kdebugmonitordisable"),
-	DESC8("kcrashmonitordisable"),
+	DESC8("kcrashloggerdisable"),
+	DESC8("kcrazyscheddelay"),
+	DESC8("kforcekupagefaults"),
 	DESC8(""), DESC8(""), DESC8(""), DESC8(""), DESC8(""), DESC8(""), DESC8(""), DESC8(""),
 	DESC8(""), DESC8(""), DESC8(""), DESC8(""), DESC8(""), DESC8(""), DESC8(""), DESC8(""),
 	DESC8(""), DESC8(""), DESC8(""), DESC8(""), DESC8(""), DESC8(""), DESC8(""), DESC8(""),
-	DESC8(""), DESC8(""), DESC8(""),
+	DESC8(""),
 	// Word 3
 	DESC8("kuserheaptrace"),
 	};
@@ -1629,6 +1631,7 @@ TInt CCmdTrace::SetFlag(const TDesC& aFlagName, TBool aSet)
 		{
 		flagname.Copy(aFlagName);
 		flagname.LowerCase();
+		if (flagname == _L8("kcrashmonitordisable")) flagname = _L8("kcrashloggerdisable"); // For compatibility - this flag appears to have been renamed at some point
 		if (flagname.Compare(KTraceBitNames[i]) == 0)
 			{
 			TInt word = i / 32;
