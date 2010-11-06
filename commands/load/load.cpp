@@ -32,6 +32,7 @@ private:
 	RArray<TUint> iUids;
 	TUint iModuleVersion;
 	RLibrary iLibrary;
+	TBool iNoWait;
 	};
 
 
@@ -91,6 +92,8 @@ void CCmdLoad::DoRunL()
 	TUidType uids = iLibrary.Type();
 	Printf(_L("Loaded %S\r\n"), &file);
 	Printf(_L("Uids: 0x%x, 0x%x, 0x%x\r\n"), uids[0].iUid, uids[1].iUid, uids[2].iUid);
+
+	if (iNoWait) Complete(KErrNone);
 	}
 
 void CCmdLoad::OptionsL(RCommandOptionList& aOptions)
@@ -100,6 +103,9 @@ void CCmdLoad::OptionsL(RCommandOptionList& aOptions)
 
 	_LIT(KCmdOptVersion, "version");
 	aOptions.AppendUintL(iModuleVersion, KCmdOptVersion);
+
+	_LIT(KCmdOptNoWait, "nowait");
+	aOptions.AppendBoolL(iNoWait, KCmdOptNoWait);
 	}
 
 void CCmdLoad::ArgumentsL(RCommandArgumentList& aArguments)

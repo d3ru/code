@@ -16,7 +16,7 @@ target			chkdeps.exe
 targettype		exe
 uid				FSHELL_UID2_FSHELL_EXE FSHELL_UID_CHKDEPS
 
-capability		all
+capability		FSHELL_CAP_MMP_MAX
 
 userinclude		.
 #include <fshell/fsh_system_include.mmh>

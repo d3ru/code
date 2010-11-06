@@ -42,3 +42,6 @@ Patchdata can optionally modify the value of a given patchable constant, but the
 
 Copyright (c) 2008-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+patchdata $Quiet

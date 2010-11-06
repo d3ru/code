@@ -16,7 +16,6 @@
 
 _LIT(KCifExt, ".cif");
 _LIT(KCifPathVar, "CIF_PATH");
-_LIT(KCifPath, "\\resource\\cif\\fshell");
 _LIT(KEnumSeparator, ",");
 _LIT(KEnumQuote, "\"");
 _LIT(KNewLine, "\r\n");
@@ -227,7 +226,7 @@ EXPORT_C CCommandInfoFile* CCommandInfoFile::NewL(RFs& aFs, const CEnvironment& 
 	{
 	TFileName2 fileName;
 	TRAPD(err, fileName.Copy(aEnvironment.GetAsDesL(KCifPathVar)));
-	if (err) fileName.Copy(KCifPath);
+	if (err) fileName.Copy(KFshellCifPath);
 
 	// Search the drive the command is running from first (rather than what the session path happens to be, which was the previous behaviour)
 	if (!fileName.HasDriveLetter()) fileName.Insert(0, _L("?:"));

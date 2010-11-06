@@ -127,8 +127,12 @@ void CCmdWslog::DoRunL()
 			Printf(_L("Z drive wsini log lines:\r\n"));
 			CmdL(_L("fshell.exe"), _L("-e 'cat z:\\system\\data\\wsini.ini | match LOG*'"));
 
+#ifdef FSHELL_QR3_SUPPORT_KERNINFO
 			Printf(_L("Possible logging DLLs (none means logging probably not enabled):\r\n"));
 			CmdL(_L("kerninfo.exe"), _L("codeseg -m DLOG*"));
+#else
+			Printf(_L("(Not listing logging DLLs as kerninfo is not available)\r\n"));
+#endif
 			}
 			break;
 		case EDump:

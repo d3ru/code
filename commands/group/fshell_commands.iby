@@ -356,12 +356,15 @@ FSHELL_EXECUTABLE_FILE(fed.exe)
 FSHELL_COMMAND_INFO_FILE(fshell,fed.cif)
 
 #ifdef FSHELL_MEMORY_ACCESS_SUPPORT
-FSHELL_EXECUTABLE_FILE(kerninfo.exe)
-FSHELL_COMMAND_INFO_FILE(fshell,kerninfo.cif)
 FSHELL_EXECUTABLE_FILE(setpriority.exe)
 FSHELL_COMMAND_INFO_FILE(fshell,setpriority.cif)
 FSHELL_EXECUTABLE_FILE(setcritical.exe)
 FSHELL_COMMAND_INFO_FILE(fshell,setcritical.cif)
+#endif
+
+#ifdef FSHELL_QR3_SUPPORT_KERNINFO
+FSHELL_EXECUTABLE_FILE(kerninfo.exe)
+FSHELL_COMMAND_INFO_FILE(fshell,kerninfo.cif)
 #endif
 
 #ifdef FSHELL_CORE_SUPPORT_TOP

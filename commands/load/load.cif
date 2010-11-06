@@ -34,6 +34,10 @@ The UID of the DLL to be loaded. May be use up to three times to specify all thr
 
 The version of the DLL to be loaded. The top 16 bits of the version are the major version, the bottom 16 the minor. Unless otherwise specified DLLs are given the version 10.0, ie 0x000A0000. Note versions are not checked on the WINSCW platform because it uses the windows DLL loader.
 
+==option bool n nowait
+
+Don't wait before exiting.
+
 ==argument string dll_name
 
 The name of the DLL to load.
@@ -42,3 +46,6 @@ The name of the DLL to load.
 
 Copyright (c) 2008-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+load --nowait euser.dll $Quiet

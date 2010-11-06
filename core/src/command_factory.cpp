@@ -35,7 +35,6 @@
 const TUid KFshellExeUid = {FSHELL_UID2_FSHELL_EXE};
 const TUint KPipsExeUidValue = 0x20004c45;
 const TUid KPipsExeUid = { KPipsExeUidValue };
-_LIT(KExecutableDir, "\\sys\\bin\\");
 _LIT(KFshellPrefix, "fshell_"); // This	MUST be in lower case.
 
 
@@ -143,12 +142,13 @@ MCommand* CCommandFactory::DoCreateCommandL(const TDesC& aCommandName, const TDe
 	RProcess& process(aProcess);
 
 	TInt ret = FindCommandL(aCommandName);
-	if (ret >= 0)
+	if (ret >= 0 && (iCommands[ret]->Type() != CCommandConstructorBase::ETypeExe || static_cast<CExeCommandConstructor*>(iCommands[ret])->ExeName().Length()))
 		{
 		// (1) we explicitly know about it
 		return iCommands[ret]->ConstructCommandL();
 		}
 
+	/* The comment on (2) below is no longer correct because we now scan \resource\cif rather than \sys\bin so we don't automatically know about fshell_ prefixed exes
 	if (iFileSystemScanned)
 		{
 		// (2) We successfully scanned the file system (which means we had enough PlatSec capabilities to do so),
@@ -156,6 +156,7 @@ MCommand* CCommandFactory::DoCreateCommandL(const TDesC& aCommandName, const TDe
 		User::LeaveIfError(process.Create(aCommandName, aArguments));
 		return CProcessCommand::NewL(aCommandName, process);
 		}
+	*/
 
 	// We didn't manage to scan the file system, so this command could be any kind of external command.
 
@@ -241,9 +242,6 @@ TInt CCommandFactory::CountUniqueCommandsL()
 
 CCommandFactory::CCommandFactory(RFs& aFs)
 	: CActive(CActive::EPriorityStandard), iFs(aFs), iFactoryThreadId(RThread().Id()), iFactoryAllocator(&User::Allocator())
-#ifdef __WINS__
-	, iFailedToScanFileSystem(ETrue)
-#endif
 	{
 	CActiveScheduler::Add(this);
 	}
@@ -423,6 +421,10 @@ void CCommandFactory::AddCommandL(CCommandConstructorBase* aCommandConstructor)
 			iCommands.Remove(pos);
 			iCommands.Insert(aCommandConstructor, pos);
 			}
+		else
+			{
+			delete aCommandConstructor;
+			}
 		}
 	else
 		{
@@ -488,21 +490,23 @@ void CCommandFactory::FindExternalCommandsL()
 			}
 		}
 
-	_LIT(KExeExtension, ".exe");
+	/*_LIT(KExeExtension, ".exe");
 	TUidType exeUids(KNullUid, KFshellExeUid, KNullUid);
 	AppendExternalCommandsL(exeUids, KExeExtension);
 
 	TUidType pipsUids(KNullUid, KPipsExeUid, KNullUid);
 	AppendExternalCommandsL(pipsUids, KExeExtension);
+	*/
+	AppendExternalCifCommandsL();
 
 	iFileSystemScanned = ETrue;
 
 	CleanupStack::PopAndDestroy(); // WaitLC.
 	}
 
-void CCommandFactory::AppendExternalCommandsL(const TUidType& aUidType, const TDesC& aExtension)
+/*
+void CCommandFactory::AppendExternalCommandsL(const TUidType& aUidType, const TDesC& / *aExtension* /)
 	{
-	//const TInt numDrives = iDriveList.Length();
 	for (TInt drive = EDriveY; ; --drive)
 		{
 		if (drive == -1)
@@ -525,7 +529,7 @@ void CCommandFactory::AppendExternalCommandsL(const TUidType& aUidType, const TD
 			const TInt count = dir->Count();
 			for (TInt i = 0; i < count; ++i)
 				{
-				DoAppendExternalCommandsL((*dir)[i], aUidType, aExtension);
+				DoAppendExternalCommandL((*dir)[i], aUidType[1].iUid);
 				}
 			CleanupStack::PopAndDestroy(dir);
 			}
@@ -543,7 +547,69 @@ void CCommandFactory::AppendExternalCommandsL(const TUidType& aUidType, const TD
 					err = d.Read(entry);
 					if (err == KErrNone)
 						{
-						DoAppendExternalCommandsL(entry, aUidType, aExtension);
+						DoAppendExternalCommandL(entry, aUidType[1].iUid);
+						}
+					}
+				CleanupStack::PopAndDestroy(&d);
+				}
+			}
+		else if (err == KErrPermissionDenied)
+			{
+			// Abort in this case because all drives will doubtless fail with the same error if we don't have enough capabilities.
+			User::Leave(err);
+			}
+
+		if (drive == EDriveZ)
+			{
+			break;
+			}
+		}
+	}
+*/
+
+void CCommandFactory::AppendExternalCifCommandsL()
+	{
+	for (TInt drive = EDriveY; ; --drive)
+		{
+		if (drive == -1)
+			{
+			drive = EDriveZ;
+			}
+
+		TChar driveLetter;
+		User::LeaveIfError(RFs::DriveToChar(drive, driveLetter));
+		CDir* dir = NULL;
+		TFileName dirName;
+		dirName.Append(driveLetter);
+		dirName.Append(':');
+		dirName.Append(KFshellCifPath);
+		// Try getting the directory contents in one go
+		TInt err = iFs.GetDir(dirName, KEntryAttNormal, ESortByName, dir);
+		if (err == KErrNone)
+			{
+			CleanupStack::PushL(dir);
+			const TInt count = dir->Count();
+			for (TInt i = 0; i < count; ++i)
+				{
+				DoAppendExternalCommandL((*dir)[i], 0);
+				}
+			CleanupStack::PopAndDestroy(dir);
+			}
+		else if (err == KErrNoMemory)
+			{
+			// If not enough memory to read dir in one go, iterate the RDir (slower but uses less memory)
+			RDir d;
+			TInt err = d.Open(iFs, dirName, KEntryAttNormal);
+			if (err == KErrNone)
+				{
+				CleanupClosePushL(d);
+				TEntry entry;
+				while (err == KErrNone)
+					{
+					err = d.Read(entry);
+					if (err == KErrNone)
+						{
+						DoAppendExternalCommandL(entry, 0);
 						}
 					}
 				CleanupStack::PopAndDestroy(&d);
@@ -562,24 +628,14 @@ void CCommandFactory::AppendExternalCommandsL(const TUidType& aUidType, const TD
 		}
 	}
 
-void CCommandFactory::DoAppendExternalCommandsL(const TEntry& aEntry, const TUidType& aUidType, const TDesC& aExtension)
-	{
-	TInt pos = aEntry.iName.FindF(aExtension);
-	TPtrC name;
-	if (pos >= 0)
-		{
-		name.Set(aEntry.iName.Left(pos));
-		}
-	else
-		{
-		name.Set(aEntry.iName);
-		}
 
-	HBufC* nameBuf = name.AllocLC();
+void CCommandFactory::DoAppendExternalCommandL(const TEntry& aEntry, TInt aUid)
+	{
+	HBufC* nameBuf = TParsePtrC(aEntry.iName).Name().AllocLC(); // Removes any extension
 	nameBuf->Des().Fold();
 	CCommandConstructorBase* commandConstructor = NULL;
 
-	switch (aUidType[1].iUid)
+	switch (aUid)
 		{
 		case FSHELL_UID2_FSHELL_EXE:
 			{
@@ -596,6 +652,12 @@ void CCommandFactory::DoAppendExternalCommandsL(const TEntry& aEntry, const TUid
 			{
 			commandConstructor = CPipsCommandConstructor::NewLC(*nameBuf);
 			commandConstructor->SetAttributes(CCommandConstructorBase::EAttExternal | CCommandConstructorBase::EAttNotInHelp);
+			break;
+			}
+		case 0:
+			{
+			commandConstructor = CExeCommandConstructor::NewLC(*nameBuf, KNullDesC);
+			commandConstructor->SetAttributes(CCommandConstructorBase::EAttExternal);
 			break;
 			}
 		}

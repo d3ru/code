@@ -572,6 +572,7 @@ private:
 	RArray<TCommandArgument> iArguments;
 	};
 
+_LIT(KFshellCifPath, "\\resource\\cif\\fshell\\");
 
 class CCommandInfoFile : public CBase
 	{
