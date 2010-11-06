@@ -162,6 +162,7 @@ EXPORT_C void CBtraceReader::Reset()
 	iReplayFile.Close();
 	iRecordFile.Close();
 	delete iReplayData;
+	iReplayData = NULL;
 	ResetAndReprimeL();
 	}
 

@@ -138,8 +138,8 @@ public:
 class MBtraceLog
 	{
 public:
-	IMPORT_C virtual TBool LogEnabled() = 0;
-	IMPORT_C virtual void Log(const TDesC& aLog) = 0;
+	virtual TBool LogEnabled() = 0;
+	virtual void Log(const TDesC& aLog) = 0;
 	};
 
 class CBtraceReader;

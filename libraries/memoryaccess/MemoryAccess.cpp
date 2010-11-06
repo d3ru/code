@@ -107,7 +107,7 @@ private:
     TInt DoCreate(TInt aUnit,const TDesC* anInfo,const TVersion& aVer);
 	void HandleMsg(TMessageBase* aMsg);
     void DoCancel(TInt aReqNo);
-    TInt DoRequest(TInt aReqNo,TRequestStatus aStatus,TAny* a1,TAny* a2);
+    TInt DoRequest(TInt aReqNo, TRequestStatus& aStatus, TAny* a1, TAny* a2);
     TInt DoControl(TInt aFunction,TAny *a1,TAny *a2);
 //API
     TInt GetThreadMem(TAny* aParams, TAny* aBuf);
@@ -437,7 +437,7 @@ void DMemoryAccess::HandleMsg(TMessageBase* aMsg)
 
 // DMemoryAccess::DoRequest
 //  Handles async messages, called from HandleMsg
-TInt DMemoryAccess::DoRequest(TInt /*aReqNo*/, TRequestStatus /*aStatus*/, TAny* /*a1*/, TAny* /*a2*/)
+TInt DMemoryAccess::DoRequest(TInt /*aReqNo*/, TRequestStatus& /*aStatus*/, TAny* /*a1*/, TAny* /*a2*/)
     {
     return KErrNone;
     }

@@ -40,7 +40,10 @@ TDynDfcQueWrapper::TDynDfcQueWrapper()
 
 TDynDfcQueWrapper::~TDynDfcQueWrapper()
 	{
-	iQueue->Destroy();
+	if (iQueue)
+		{
+		iQueue->Destroy();
+		}
 	}
 
 #else

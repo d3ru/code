@@ -50,13 +50,16 @@ void CIoSession::CreateL(const CServer& aServer)
 CIoSession::~CIoSession()
 	{
 	delete iFindByNameMatch;
-	const TInt maxNumObjects = iHandles->Count();
-	for (TInt i = 0; i < maxNumObjects; ++i)
+	if (iHandles)
 		{
-		CIoObject* obj = static_cast<CIoObject*>((*iHandles)[i]);
-		if (obj != NULL)
+		const TInt maxNumObjects = iHandles->Count();
+		for (TInt i = 0; i < maxNumObjects; ++i)
 			{
-			obj->SessionClosed(*this);
+			CIoObject* obj = static_cast<CIoObject*>((*iHandles)[i]);
+			if (obj != NULL)
+				{
+				obj->SessionClosed(*this);
+				}
 			}
 		}
 	Server().DropSession();

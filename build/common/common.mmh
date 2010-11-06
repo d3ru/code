@@ -246,6 +246,10 @@
 #define FSHELL_CORE_SUPPORT_CHKDEPS
 #define FSHELL_CORE_SUPPORT_SIS_ECLIPSE
 #define FSHELL_CORE_SUPPORT_LOCALDRIVE
+#endif
+
+#if defined(FSHELL_MEMORY_ACCESS_SUPPORT) && !defined(SMP)
+// Topsampler not updated to work on SMP
 #define FSHELL_CORE_SUPPORT_TOP
 #endif
 

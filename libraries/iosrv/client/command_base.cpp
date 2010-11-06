@@ -3382,6 +3382,7 @@ void CCommandBase::PageL(MLineReader& aLineReader)
 					{
 					case 'q':
 					case 'Q':
+					case 3: // CTRL-C
 					case EKeyNull:
 						{
 						finished = ETrue;

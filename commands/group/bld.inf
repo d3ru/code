@@ -427,11 +427,16 @@ PRJ_EXPORTS
 ..\kerninfo\kerninfo.cif		z:\resource\cif\fshell\kerninfo.cif
 ..\setpriority\setpriority.cif		z:\resource\cif\fshell\setpriority.cif
 ..\setcritical\setcritical.cif		z:\resource\cif\fshell\setcritical.cif
-..\top\top.cif				z:\resource\cif\fshell\top.cif
 PRJ_MMPFILES
 ..\kerninfo\kerninfo.mmp
 ..\setpriority\setpriority.mmp
 ..\setcritical\setcritical.mmp
+#endif // FSHELL_MEMORY_ACCESS_SUPPORT
+
+#ifdef FSHELL_CORE_SUPPORT_TOP
+PRJ_EXPORTS
+..\top\top.cif				z:\resource\cif\fshell\top.cif
+PRJ_MMPFILES
 ..\top\top.mmp
 ..\top\top_sampler.mmp
 #endif

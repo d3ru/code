@@ -764,6 +764,7 @@ void CPing::BeginL()
 
 	
 	delete iPacketData;
+	iPacketData = NULL;
 	iPacketData= HBufC8::NewL(iPacketDataSize + ICMP_HDRLEN); 
 						//Allocates space for the ICMP packet
 	TPtr8 aux(iPacketData->Des());	//weird but necessary. Cannot use Des() directly in iPacket
@@ -774,6 +775,7 @@ void CPing::BeginL()
 
 
 	delete iReceivedDataBuffer;
+	iReceivedDataBuffer = NULL;
 	iReceivedDataBuffer= HBufC8::NewL(iPacketDataSize + ICMP_ECHO_HEADER_SIZE);	//Maximum size of a return packet
 	TPtr8 auxPtr(iReceivedDataBuffer->Des());	//must be used here because the buffer changes
 	iReceivedData.Set(auxPtr);			//we use an aux var because can't use Des() directly Why??

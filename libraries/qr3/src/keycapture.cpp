@@ -271,14 +271,20 @@ CKeyCapturer::~CKeyCapturer()
 	{
 	Cancel();
 
-	for (TInt i = 0; i < iCaptures->Count(); i++)
+	if (iCaptures)
 		{
-		SCapture& cap = iCaptures->operator[](i);
-		CancelCapture(cap);
+		for (TInt i = 0; i < iCaptures->Count(); i++)
+			{
+			SCapture& cap = iCaptures->operator[](i);
+			CancelCapture(cap);
+			}
+		delete iCaptures;
 		}
-	delete iCaptures;
-	iPushList->ResetAndDestroy();
-	delete iPushList;
+	if (iPushList)
+		{
+		iPushList->ResetAndDestroy();
+		delete iPushList;
+		}
 #ifdef FSHELL_WSERV_SUPPORT
 	iWg.Close();
 	iWs.Close();

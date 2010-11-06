@@ -647,6 +647,7 @@ void CPipeLine::RPipedCommand::Close()
 	if (iCommandName)
 		{
 		delete iCommandName;
+		iCommandName = NULL;
 		}
 	}
 
