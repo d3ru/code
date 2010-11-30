@@ -104,6 +104,8 @@ DDebuggerEventHandler::DDebuggerEventHandler(TDfcQue* aQue)
 
 TUint DDebuggerEventHandler::DoEvent(TKernelEvent aEvent, TAny* a1, TAny* a2)
 	{
+	if (Kern::CurrentThread().iOwningProcess->iId == 1) return ERunNext; // There's nothing we can safely do in the context of a kernel thread, because they might already be holding a mutex (which definitely happens in the case of EEventAddThread)
+
 	//if (aEvent != EEventUserTrace) Kern::Printf("fdbk: Event %d a1=%d a2=%d", aEvent, a1, a2);
 
 	if (aEvent == EEventKillThread)
@@ -213,6 +215,9 @@ TUint DDebuggerEventHandler::DoEvent(TKernelEvent aEvent, TAny* a1, TAny* a2)
 			}
 		return (TUint)DKernelEventHandler::EExcHandled;
 #else
+		// Do this regardless to get the benefit of the kernel's mutex order checking in winscw udeb
+		BreakpointLock();
+		BreakpointUnlock();
 		(void)a1;
 #endif
 		}
