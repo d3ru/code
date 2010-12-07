@@ -20,13 +20,21 @@ Display information about kernel objects.
 
 Given a kernel object address, prints details of the threads and processes that are currently holding handles to it (note, kernel objects addresses can be found using L<ps|ps> (e.g. C<ps -A> or C<ps -At>), L<chunkinfo|chunkinfo> or L<svrinfo|svrinfo>). Given a thread or process identifier, lists details of all the owned objects.
 
+To see all the threads and processes that have a handle open to the DObject 0x12345678:
+
+    objinfo 0x12345678
+
+For example, to see all the handles opened by process 23:
+
+    objinfo --process-id 23 --all
+
 ==see-also
 
 L<ps|ps>, L<chunkinfo|chunkinfo>, L<svrinfo|svrinfo>
 
 ==argument uint object_address optional
 
-The address of the kernel object to find the owners of. If not specified, a thread or process identifier must be specified using C<-t> or C<-p>.
+The address of the kernel object to find the owners of. If not specified, a thread or process identifier must be specified using C<--thread-id> or C<--process-id>.
 
 ==option bool r referencers
 
@@ -42,7 +50,7 @@ List all the objects that the specified thread references.
 
 ==option bool a all
 
-Include details of objects referenced by threads of a given process. Only useful in conjunction with the C<-p> option.
+Include details of objects referenced by threads of a given process, ie show the thread-local handles held by threads in that process as well as the process-global handles. Only useful in conjunction with the C<--process-id> option.
 
 ==copyright
 

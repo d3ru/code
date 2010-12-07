@@ -14,6 +14,16 @@ __END__
 
 =head1 FShell Change History
 
+=head2 Release 003 [NOT YET MADE]
+
+=over 5
+
+=item *
+
+Fixed objinfo command so that it works on modern (S^3 or later, S60 5th or later) baselines.
+
+=back
+
 =head2 Release 002
 
 =over 5

@@ -23,6 +23,8 @@
 
 #ifdef FSHELL_DOBJECTIX_SUPPORT
 #include "dobject.h" // To pick up my defn of DObjectIx/DObjectIxNinePointOneHack
+#else
+TBool ObjectIxContains(RObjectIx& aHandles, DObject* aObj);
 #endif
 
 #include <e32cmn.h>
@@ -2114,31 +2116,10 @@ TInt DMemoryAccess::GetHandleOwners(TAny* aObj, TAny* aOwnersBuf)
 	// Code adapted from ExecHandler::HandleInfo
 	DObject* pO=(DObject*)aObj;
 	TInt r = KErrNone;
-	/*
-	DThread& t = *iClient;
-	//TInt r=K::OpenObjectFromHandle(aHandle,pO);
-	//BEGIN this bit copied from K::OpenObjectFromHandle
-	TInt r=KErrBadHandle;
-	NKern::ThreadEnterCS();
-	NKern::LockSystem();
-	pO=t.ObjectFromHandle(aHandle);
-	if (pO)
-		r=pO->Open();
-	NKern::UnlockSystem();
-	if (r!=KErrNone)
-		{
-		pO=NULL;
-		NKern::ThreadLeaveCS();
-		}
-	//END
-	*/
 
 	if (r==KErrNone)
 		{
 		//DObjectIx::Wait(); //TOMSCI I can't call this frmo a device driver, why did the code I copied do it but none of the DMemoryAccess stuff that uses containers do it??
-		//DProcess* pCurrentProcess=TheCurrentThread->iOwningProcess;
-		//hinfo.iNumOpenInThread=TheCurrentThread->iHandles->Count(pO);
-		//hinfo.iNumOpenInProcess=pCurrentProcess->iHandles->Count(pO);
 
 		DObjectCon* const * cons=Kern::Containers();
 		DObjectCon& threads = *cons[EThread];
@@ -2164,9 +2145,6 @@ TInt DMemoryAccess::GetHandleOwners(TAny* aObj, TAny* aOwnersBuf)
 						{
 						buf.Append(idBuf);
 						}
-					//++hinfo.iNumThreads;
-					//if (pT->iOwningProcess==pCurrentProcess)
-					//	++hinfo.iNumOpenInProcess;
 					}
 				}
 			}
@@ -2184,7 +2162,6 @@ TInt DMemoryAccess::GetHandleOwners(TAny* aObj, TAny* aOwnersBuf)
 				TInt rr=((DObjectIxNinePointTwoHack*)handles)->At(pO);
 				if (rr!=KErrNotFound)
 					{
-					//++hinfo.iNumProcesses;
 					TPckgBuf<TUint> idBuf(pP->iId);
 					if (buf.Length() + idBuf.Length() >= buf.MaxLength())
 						{
@@ -2199,12 +2176,6 @@ TInt DMemoryAccess::GetHandleOwners(TAny* aObj, TAny* aOwnersBuf)
 				}
 			}
 		processes.Signal();
-		//DObjectIx::Signal();
-
-
-		//DObjectIx::Signal();
-		//pO->Close(NULL);
-		//NKern::ThreadLeaveCS();
 		}
 	
 	TInt clientLen = Kern::ThreadGetDesMaxLength(iClient, aOwnersBuf);
@@ -2213,30 +2184,92 @@ TInt DMemoryAccess::GetHandleOwners(TAny* aObj, TAny* aOwnersBuf)
 	if (writeErr) return writeErr;
 	return (clientLen < buf.Length()) ? KErrOverflow : r;
 #else
-	return KErrNotSupported;
+
+#ifdef __HANDLES_USE_RW_SPIN_LOCK__
+#error "Memoryaccess doesn't support rw spin locks in RObjectIx!"
 #endif
+
+	TBuf8<512> buf;
+	TInt r = KErrNone;
+	DObject* object = (DObject*)aObj;
+
+	DObjectCon& threads = *Kern::Containers()[EThread];
+	threads.Wait();
+	TInt c=threads.Count();
+	for (TInt i=0;i<c;i++)
+		{
+		DThread *pT=(DThread *)threads[i];
+		if (ObjectIxContains(pT->iHandles, object))
+			{
+			TPckgBuf<TUint> idBuf(pT->iId);
+			if (buf.Length() + idBuf.Length() > buf.MaxLength())
+				{
+				r = KErrOverflow;
+				break;
+				}
+			else
+				{
+				buf.Append(idBuf);
+				}
+			
+			}
+		}
+	threads.Signal();
+
+	DObjectCon& processes = *Kern::Containers()[EProcess];
+	processes.Wait();
+	c = processes.Count();
+	for (TInt i = 0; i < c; i++)
+		{
+		DProcess* proc = (DProcess*)processes[i];
+		if (ObjectIxContains(proc->iHandles, object))
+			{
+			TPckgBuf<TUint> idBuf(proc->iId);
+			if (buf.Length() + idBuf.Length() > buf.MaxLength())
+				{
+				r = KErrOverflow;
+				break;
+				}
+			else
+				{
+				buf.Append(idBuf);
+				}
+			}
+		}
+	processes.Signal();
+
+	TInt clientLen = Kern::ThreadGetDesMaxLength(iClient, aOwnersBuf);
+	if (clientLen < 0) return clientLen;
+	TInt writeErr = Kern::ThreadDesWrite(iClient, aOwnersBuf, buf, 0, KTruncateToMaxLength, NULL);
+	if (writeErr) return writeErr;
+	return (clientLen < buf.Length()) ? KErrOverflow : r;
+
+#endif // FSHELL_DOBJECTIX_SUPPORT
 	}
 
 TInt DMemoryAccess::GetThreadHandles(TInt aThreadId, TAny* aHandlesBuf)
 	{
-#ifdef FSHELL_DOBJECTIX_SUPPORT
-	TInt maxLength = Kern::ThreadGetDesMaxLength(iClient, aHandlesBuf);
-	TInt err = KErrNone;
-
+	NKern::ThreadEnterCS();
 	DObjectCon* const * cons = Kern::Containers();
 	DObjectCon& container = *cons[EThread];
 	container.Wait();
-	NKern::ThreadEnterCS();
 	DThread* thread = Kern::ThreadFromId(aThreadId);
-	//TOMSCI FIXME we don't increment thread's ref count
-	NKern::ThreadLeaveCS();
+	if (thread && thread->Open() != KErrNone)
+		{
+		thread = NULL;
+		}
 	container.Signal();
 	if (thread == NULL) 
 		{
+		NKern::ThreadLeaveCS();
 		return KErrNotFound;
 		}
 
+#ifdef FSHELL_DOBJECTIX_SUPPORT
 	// Note, this code is inherently dodgy because it doesn't claim DObjectIx::HandleMutex.
+	TInt maxLength = Kern::ThreadGetDesMaxLength(iClient, aHandlesBuf);
+	TInt err = KErrNone;
+
 	DObjectIxNinePointTwoHack* handles = (DObjectIxNinePointTwoHack*)thread->iHandles;
 	if (handles)
 		{
@@ -2266,32 +2299,58 @@ TInt DMemoryAccess::GetThreadHandles(TInt aThreadId, TAny* aHandlesBuf)
 				}
 			}
 		}
-
-	//TOMSCI What is this unlock doing here? TODO FIXME!!!
-	NKern::UnlockSystem();
-	return err;
 #else
-	return KErrNotSupported;
+	
+	TInt c = thread->iHandles.Count();
+	HBuf8* buf = HBuf::New(c * sizeof(DObject*));
+	TInt err = KErrNoMemory;
+	if (buf)
+		{
+		DObject** ptr = (DObject**)buf->Ptr();
+		NKern::LockSystem();
+		c = Min(thread->iHandles.Count(), c); // In case it's changed
+		buf->SetLength(c * sizeof(DObject*));
+		for (TInt i = 0; i < c; i++)
+			{
+			ptr[i] = thread->iHandles[i];
+			}
+		NKern::UnlockSystem();
+
+		err = Kern::ThreadDesWrite(iClient, aHandlesBuf, *buf, 0);
+		delete buf;
+		}
+	else
+		{
+		err = KErrNoMemory;
+		}
 #endif
+
+	thread->Close(NULL);
+	NKern::ThreadLeaveCS();
+	return err;
 	}
 
 TInt DMemoryAccess::GetProcessHandles(TInt aProcessId, TAny* aHandlesBuf)
 	{
-#ifdef FSHELL_DOBJECTIX_SUPPORT
-	TInt maxLength = Kern::ThreadGetDesMaxLength(iClient, aHandlesBuf);
-	TInt err = KErrNone;
-
+	NKern::ThreadEnterCS();
 	DObjectCon* const * cons = Kern::Containers();
 	DObjectCon& container = *cons[EProcess];
 	container.Wait();
-	NKern::ThreadEnterCS();
-	DProcess* process = Kern::ProcessFromId(aProcessId);
-	NKern::ThreadLeaveCS();
-	container.Signal();
-	if (process == NULL) 
+	DProcess* proc = Kern::ProcessFromId(aProcessId);
+	if (proc && proc->Open() != KErrNone)
 		{
+		proc = NULL;
+		}
+	container.Signal();
+	if (proc == NULL)
+		{
+		NKern::ThreadLeaveCS();
 		return KErrNotFound;
 		}
+
+#ifdef FSHELL_DOBJECTIX_SUPPORT
+	TInt maxLength = Kern::ThreadGetDesMaxLength(iClient, aHandlesBuf);
+	TInt err = KErrNone;
 
 	// Note, this code is inherently dodgy because it doesn't claim DObjectIx::HandleMutex.
 	DObjectIxNinePointTwoHack* handles = (DObjectIxNinePointTwoHack*)process->iHandles;
@@ -2324,10 +2383,35 @@ TInt DMemoryAccess::GetProcessHandles(TInt aProcessId, TAny* aHandlesBuf)
 			}
 		}
 
+#else // new RObjectIx code
+
+	TInt c = proc->iHandles.Count();
+	HBuf8* buf = HBuf::New(c * sizeof(DObject*));
+	TInt err = KErrNoMemory;
+	if (buf)
+		{
+		DObject** ptr = (DObject**)buf->Ptr();
+		NKern::LockSystem();
+		c = Min(proc->iHandles.Count(), c); // In case it's changed
+		buf->SetLength(c * sizeof(DObject*));
+		for (TInt i = 0; i < c; i++)
+			{
+			ptr[i] = proc->iHandles[i];
+			}
+		NKern::UnlockSystem();
+
+		err = Kern::ThreadDesWrite(iClient, aHandlesBuf, *buf, 0);
+		delete buf;
+		}
+	else
+		{
+		err = KErrNoMemory;
+		}
+#endif // FSHELL_DOBJECTIX_SUPPORT
+
+	proc->Close(NULL);
+	NKern::ThreadLeaveCS();
 	return err;
-#else
-	return KErrNotSupported;
-#endif
 	}
 
 TInt DMemoryAccess::SetCriticalFlags(TInt aThreadHandle, TUint aFlags)
@@ -3113,3 +3197,32 @@ void DMemoryAccess::BreakpointHit(TDes& aPkg)
 		iClientBreakpointNotifyPkg = NULL;
 		}
 	}
+
+#ifndef FSHELL_DOBJECTIX_SUPPORT
+
+DObject* RObjectIx::operator[](TInt aIndex)
+	{
+	// Must be holding system lock (technically, the 'read' lock)
+	DObject* obj = 0;
+	SSlot* slot = iSlots + aIndex;
+	obj = Occupant(slot);
+	return obj;
+	}
+
+TBool ObjectIxContains(RObjectIx& aHandles, DObject* aObj)
+	{
+	NKern::LockSystem();
+	TInt c = aHandles.Count();
+	for (TInt i = 0; i < c; i++)
+		{
+		if (aHandles[i] == aObj)
+			{
+			NKern::UnlockSystem();
+			return ETrue;
+			}
+		}
+	NKern::UnlockSystem();
+	return EFalse;
+	}
+
+#endif
