@@ -4454,6 +4454,7 @@ CCommandBase* CCmdObjInfo::NewLC()
 
 CCmdObjInfo::~CCmdObjInfo()
 	{
+	delete iMatch;
 	}
 
 CCmdObjInfo::CCmdObjInfo()
@@ -4508,9 +4509,7 @@ void CCmdObjInfo::PrintObjectDetailsL(TUint aObjectAddress)
 		err = iMemAccess.GetObjectInfo(objectType, (TUint8*)(aObjectAddress), objectInfoPckg);
 		if (err == KErrNone)
 			{
-			TFullName fullName;
-			fullName.Copy(objectInfo.iFullName);
-			Printf(_L("0x%08x %2d %S (type=%d) %S\r\n"), aObjectAddress, objectInfo.iAccessCount, StringifyObjectType(objectType), objectType, &fullName);
+			DoPrintObjectDetailsL(objectType, objectInfo);
 			}
 		else
 			{
@@ -4521,10 +4520,17 @@ void CCmdObjInfo::PrintObjectDetailsL(TUint aObjectAddress)
 		{
 		PrintWarning(_L("Couldn't find type of object 0x%08x : %S(%d)"), aObjectAddress, Stringify::Error(err), err);
 		}
+	}
+
+void CCmdObjInfo::DoPrintObjectDetailsL(TObjectType aType, const TObjectKernelInfo& aInfo)
+	{
+	TFullName fullName;
+	fullName.Copy(aInfo.iFullName);
+	Printf(_L("0x%08x %2d %S (type=%d) %S\r\n"), aInfo.iAddressOfKernelObject, aInfo.iAccessCount, StringifyObjectType(aType), aType, &fullName);
 
 	if (iReferencers)
 		{
-		PrintObjectReferencersL(aObjectAddress);
+		PrintObjectReferencersL((TUint)aInfo.iAddressOfKernelObject);
 		}
 	}
 
@@ -4618,7 +4624,11 @@ void CCmdObjInfo::PrintReferencedObjectDetailsL(TOwnerType aOwnerType, TUint aId
 		while (offset < numAddresses)
 			{
 			TUint32* ptr = p + offset++;
-			PrintObjectDetailsL(*ptr);
+			if (*ptr)
+				{
+				// The RObjectIx-based handle code in memoryaccess can seemingly cause null object pointers to be returned
+				PrintObjectDetailsL(*ptr);
+				}
 			}
 		}
 
@@ -4638,7 +4648,7 @@ void CCmdObjInfo::DoRunL()
 		if (iAll)
 			{
 			RProcess process;
-			LeaveIfErr(process.Open(iProcessId), _L("Couldn't open process with id \"%u\""), iProcessId);
+			LeaveIfErr(process.Open(iProcessId, EOwnerThread), _L("Couldn't open process with id \"%u\""), iProcessId);
 			TFullName processName(process.Name());
 			Printf(_L("Objects owned by process \"%S\":\r\n"), &processName);
 			PrintReferencedObjectDetailsL(EOwnerProcess, iProcessId);
@@ -4650,7 +4660,7 @@ void CCmdObjInfo::DoRunL()
 			TFullName threadName;
 			while (threadFinder.Next(threadName) == KErrNone)
 				{
-				TInt err = thread.Open(threadFinder);
+				TInt err = thread.Open(threadFinder, EOwnerThread);
 				if (err)
 					{
 					continue;
@@ -4669,6 +4679,37 @@ void CCmdObjInfo::DoRunL()
 		{
 		PrintReferencedObjectDetailsL(EOwnerThread, iThreadId);
 		}
+	else if (iMatch)
+		{
+		TFindProcess findProc(*iMatch);
+		TFullName name;
+		while (findProc.Next(name) == KErrNone)
+			{
+			TProcessKernelInfo objectInfo;
+			TPckg<TProcessKernelInfo> objectInfoPckg(objectInfo);
+			TInt err = iMemAccess.GetObjectInfo(EProcess, name, objectInfoPckg);
+			if (err) continue; // Ignore if, say, the process has already dissappeared
+			DoPrintObjectDetailsL(EProcess, objectInfo);
+
+			Printf(_L("Objects owned by process \"%S\":\r\n"), &name);
+			PrintReferencedObjectDetailsL(EOwnerProcess, objectInfo.iProcessId);
+			Write(_L("\r\n"));
+			}
+
+		TFindThread findThread(*iMatch);
+		while (findThread.Next(name) == KErrNone)
+			{
+			TThreadKernelInfo objectInfo;
+			TPckg<TThreadKernelInfo> objectInfoPckg(objectInfo);
+			TInt err = iMemAccess.GetObjectInfo(EThread, name, objectInfoPckg);
+			if (err) continue; // Ignore if, say, the process has already dissappeared
+			DoPrintObjectDetailsL(EThread, objectInfo);
+
+			Printf(_L("Objects owned by thread \"%S\":\r\n"), &name);
+			PrintReferencedObjectDetailsL(EOwnerThread, objectInfo.iThreadId);
+			Write(_L("\r\n"));
+			}
+		}
 	}
 
 void CCmdObjInfo::OptionsL(RCommandOptionList& aOptions)
@@ -4677,7 +4718,9 @@ void CCmdObjInfo::OptionsL(RCommandOptionList& aOptions)
 	_LIT(KCmdOptProcessId, "process-id");
 	_LIT(KCmdOptThreadId, "thread-id");
 	_LIT(KCmdOptAll, "all");
+	_LIT(KCmdOptMatch, "match");
 
+	aOptions.AppendStringL(iMatch, KCmdOptMatch);
 	aOptions.AppendBoolL(iReferencers, KCmdOptReferencers);
 	aOptions.AppendUintL(iProcessId, KCmdOptProcessId);
 	aOptions.AppendUintL(iThreadId, KCmdOptThreadId);

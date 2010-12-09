@@ -20,7 +20,7 @@ __END__
 
 =item *
 
-Fixed objinfo command so that it works on modern (S^3 or later, S60 5th or later) baselines.
+Fixed objinfo command so that it works on modern (S^3 or later, S60 5th or later) baselines. Added C<--match> option.
 
 =back
 

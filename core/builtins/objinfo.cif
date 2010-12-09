@@ -18,7 +18,7 @@ Display information about kernel objects.
 
 ==long-description
 
-Given a kernel object address, prints details of the threads and processes that are currently holding handles to it (note, kernel objects addresses can be found using L<ps|ps> (e.g. C<ps -A> or C<ps -At>), L<chunkinfo|chunkinfo> or L<svrinfo|svrinfo>). Given a thread or process identifier, lists details of all the owned objects.
+Given a kernel object address, prints details of the threads and processes that are currently holding handles to it (note, kernel objects addresses can be found using L<ps|ps> (e.g. C<ps -A> or C<ps -At>), L<chunkinfo|chunkinfo> or L<svrinfo|svrinfo>). Given a thread or process identifier, lists details of all the owned objects. The C<--match> option can be used to specify a process or thread by name instead of by ID.
 
 To see all the threads and processes that have a handle open to the DObject 0x12345678:
 
@@ -34,7 +34,11 @@ L<ps|ps>, L<chunkinfo|chunkinfo>, L<svrinfo|svrinfo>
 
 ==argument uint object_address optional
 
-The address of the kernel object to find the owners of. If not specified, a thread or process identifier must be specified using C<--thread-id> or C<--process-id>.
+The address of the kernel object to find the owners of. If not specified, one of C<--thread-id>, C<--process-id> or C<--match> must be given.
+
+==option string m match
+
+Show all the handles opened by the thread or process(es) that match the given string. Wildcards '*' and '?' may be used. Implies C<--all>.
 
 ==option bool r referencers
 
@@ -51,6 +55,15 @@ List all the objects that the specified thread references.
 ==option bool a all
 
 Include details of objects referenced by threads of a given process, ie show the thread-local handles held by threads in that process as well as the process-global handles. Only useful in conjunction with the C<--process-id> option.
+
+==smoke-test
+
+objinfo
+objinfo 1234 $Silent || $Error # This should spit out a warning but should not exit abnormally
+
+# The objinfo thread itself has 2 sessions open, apparently. I've no idea what they are...
+objinfo --match *objinfo_00 | match --count *ESession* | export -s RESULT
+var RESULT == "Count = 2" || $Error
 
 ==copyright
 

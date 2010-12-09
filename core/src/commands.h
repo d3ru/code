@@ -950,6 +950,7 @@ private:
 	void PrintObjectDetailsL(TUint aObjectAddress);
 	void PrintObjectReferencersL(TUint aObjectAddress);
 	void PrintReferencedObjectDetailsL(TOwnerType aOwnerType, TUint aId);
+	void DoPrintObjectDetailsL(TObjectType aType, const TObjectKernelInfo& aInfo);
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();
@@ -961,6 +962,7 @@ private:
 	TUint iProcessId;
 	TUint iThreadId;
 	TBool iAll;
+	HBufC* iMatch;
 	};
 
 #endif
