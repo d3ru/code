@@ -29,6 +29,7 @@ CCommandBase* CCmdVariant::NewLC()
 CCmdVariant::~CCmdVariant()
 	{
 	iVariant.ResetAndDestroy();
+	iMachineId.Close();
 	}
 
 CCmdVariant::CCmdVariant() : 

@@ -58,3 +58,6 @@ variant $Quiet
 variant wins || variant target || $Error
 # But they can't both be
 variant wins && variant target && $Error
+
+# There used to be a memory leak when using --uid
+variant --uid 1234 && $Error
