@@ -40,7 +40,7 @@ Display verbose output.
 
 ==option bool l list
 
-Has no effect, kept for compatability.
+Has no effect, kept for compatibility.
 
 ==argument string variantname optional multiple
 
