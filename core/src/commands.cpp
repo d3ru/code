@@ -160,6 +160,12 @@ CCommandBase* CCmdLs::NewLC()
 CCmdLs::~CCmdLs()
 	{
 	delete iFormatter;
+	iDirNames.Close();
+	for (TInt i = 0; i < iDirs.Count(); i++)
+		{
+		iDirs[i].Close();
+		}
+	iDirs.Close();
 	}
 
 CCmdLs::CCmdLs()
@@ -169,32 +175,6 @@ CCmdLs::CCmdLs()
 void CCmdLs::ConstructL()
 	{
 	BaseConstructL();
-	}
-
-void CCmdLs::PrintDirContentL(RDir& aDir)
-	{
-	TInt err = KErrNone;
-	TEntry entry;
-	while (err == KErrNone)
-		{
-		err = aDir.Read(entry);
-		if (err == KErrNone)
-			{
-			FormatEntryL(entry);
-			Write(iFormatter->Descriptor());
-			iFormatter->Zero();
-
-			if (iOptRecurse && entry.IsDir())
-				{
-				RecursiveScanDirL(entry.iName);
-				}
-			}
-		}
-	if (err == KErrEof)
-		{
-		err = KErrNone;
-		}
-	User::LeaveIfError(err);
 	}
 
 void CCmdLs::PrintDirContentL(const CDir& aDir)
@@ -315,22 +295,63 @@ void CCmdLs::ArgumentsL(RCommandArgumentList& aArguments)
 	aArguments.AppendFileNameL(iFileName, KCmdLsArg);
 	}
 
-void CCmdLs::RecursiveScanDirL(const TDesC& aName)
-	{
-	TInt currentDirectoryLen = iFileName.Length();
-	iFileName.AppendComponentL(aName, TFileName2::EDirectory);
-	DoScanDirL();
-	iFileName.SetLength(currentDirectoryLen); // Since this is called recursively, restore iTempName to what it was previously
-	}
-
 void CCmdLs::DoScanDirL()
 	{
-	RDir dir;
-	User::LeaveIfError(dir.Open(FsL(), iFileName, iOptAll ? KEntryAttMaskSupported : KEntryAttNormal | KEntryAttDir));
-	CleanupClosePushL(dir);
-	iFileName.SetLength(TParsePtrC(iFileName).DriveAndPath().Length()); // Remove any possible wildcard or name from the end of iFileName before recursing
-	PrintDirContentL(dir);
-	CleanupStack::PopAndDestroy(&dir);
+	// Note this function is *not* recursive - otherwise you tend to blow the stack when listing deep directory trees
+	RDir rootListing;
+	User::LeaveIfError(rootListing.Open(FsL(), iFileName, iOptAll ? KEntryAttMaskSupported : KEntryAttNormal | KEntryAttDir));
+	iDirs.AppendL(rootListing);
+	iFileName.SetLength(TParsePtrC(iFileName).DriveAndPath().Length()); // Remove any possible wildcard or file name from the end of iFileName before starting using it as the directory name
+	iDirNames.AppendL(iFileName.Length());
+
+	TEntry entry;
+
+	while (iDirs.Count())
+		{
+		TInt idx = iDirs.Count()-1;
+		RDir& dir = iDirs[idx];
+		iFileName.SetLength(iDirNames[idx]); // Get iFileName back to the correct length for this dir
+		TInt err = KErrNone;
+		while (err == KErrNone)
+			{
+			err = dir.Read(entry);
+			if (err == KErrNone)
+				{
+				FormatEntryL(entry);
+
+				Write(iFormatter->Descriptor());
+				iFormatter->Zero();
+
+				if (iOptRecurse && entry.IsDir())
+					{
+					iFileName.AppendComponentL(entry.iName, TFileName2::EDirectory);
+
+					RDir subdir;
+					CleanupClosePushL(subdir);
+					LeaveIfErr(subdir.Open(FsL(), iFileName, iOptAll ? KEntryAttMaskSupported : KEntryAttNormal | KEntryAttDir), _L("Couldn't open %S"), &iFileName);
+					iDirs.AppendL(subdir);
+					CleanupStack::Pop(&subdir);
+					iDirNames.AppendL(iFileName.Length());
+					break; // break out into the topmost while loop, which will go round and scan subdir. When it finishes we'll go back to dir and pick up its RDir where we left off
+					}
+				// Otherwise look at the next entry in this dir
+				}
+			else
+				{
+				// We're finished with this dir
+				dir.Close();
+				iDirs.Remove(idx);
+				iDirNames.Remove(idx);
+				if (err != KErrEof)
+					{
+					PrintWarning(_L("Error %d returned while scanning %S"), &iFileName);
+					}
+				// The value of err will mean we exit the innermost loop here
+				}
+			}
+		// When we reach here we just need to go back to the top and look at the dir that is now lastmost in iDir (if any)
+		}
+	// And now, we should be finished!
 	}
 
 //

@@ -1,6 +1,6 @@
 # ls.cif
 # 
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -68,11 +68,11 @@ Do not display localised time and date formats; instead use microseconds from 0A
 
 ==option bool 1 one
 
-Outputs one entry per line rather than trying to columnise the output. Is implied if C<stdout> is redirected or if C<--long> is specified.
+Outputs one entry per line rather than trying to columnise the output. Is implied if C<stdout> is redirected or if C<--long> or <--recurse> are specified.
 
 ==option bool r recurse
 
-Recursively list any directories that are encountered. Currently only supported for C<--long> listings.
+Recursively list any directories that are encountered. Implies C<--one>.
 
 ==see-also
 
@@ -80,5 +80,12 @@ L<cd|cd>
 
 ==copyright
 
-Copyright (c) 2006-2010 Accenture. All rights reserved.
+Copyright (c) 2006-2011 Accenture. All rights reserved.
 
+==smoke-test
+
+# Previously this would be enough to make ls's stack overflow
+mkdir -a lsrecursetest\1\2\3\4\5\6\7\8\9
+ls -r lsrecursetest $Quiet
+ls -lr lsrecursetest $Quiet
+rm -r lsrecursetest

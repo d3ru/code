@@ -58,6 +58,10 @@ The columns no longer jump around in the top command.
 
 Some improvements to syntax of rcomm command. Also added more test modes for testing reads and writes.
 
+=item *
+
+Fixed stack overflow crash in ls command when using --recurse with a directory tree deeper than nine or so levels (see ls's smoketest).
+
 =back
 
 =head2 Release 002

@@ -72,8 +72,6 @@ private:
 	CCmdLs();
 	void ConstructL();
 	void PrintDirContentL(const CDir& aDir);
-	void PrintDirContentL(RDir& aDir);
-	void RecursiveScanDirL(const TDesC& aName);
 	void DoScanDirL();
 	void FormatEntryL(const TEntry& aEntry);
 private: // From CCommandBase.
@@ -82,10 +80,13 @@ private: // From CCommandBase.
 	virtual void OptionsL(RCommandOptionList& aOptions);
 	virtual void ArgumentsL(RCommandArgumentList& aArguments);
 private:
-	TFileName2 iFileName;
+	TFileName2 iFileName; // As well as the file argument, also used for name of currently-being-scanned directory
 	TPtrC iBaseDir;
 	TBuf<256> iTempBuf;
 	CTextFormatter* iFormatter;
+	RArray<RDir> iDirs; // last item in list is the dir we're currently recursing into (only has > 1 item in it if --recurse is being used)
+	RArray<TInt> iDirNames; // iFileName.Left(iDirNames[i]) will give you the name of directory iDir[i]
+
 	TBool iOptAll;
 	TBool iOptLong;
 	TBool iOptHuman;
