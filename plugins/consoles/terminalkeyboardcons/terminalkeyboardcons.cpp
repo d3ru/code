@@ -138,21 +138,7 @@ void CTerminalKeyboardCons::ConstructL(const TDesC& aTitle, const TSize& aSize)
 
 	
 TInt CTerminalKeyboardCons::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
-	{
-	/*if (aExtensionId == ConsoleMode::KSetConsoleModeExtension)
-		{
-		ConsoleMode::TMode mode = (ConsoleMode::TMode)(TInt)a1;
-		iInputController->SetMode(mode);
-		iOutputController->SetMode(mode);
-		return KErrNone;
-		}
-	else*/
-	/*else if (aExtensionId == ConsoleAttributes::KSetConsoleAttributesExtension)
-		{
-		ConsoleAttributes::TAttributes* attributes = (ConsoleAttributes::TAttributes*)a1;
-		return iOutputController->SetAttributes(attributes->iAttributes, attributes->iForegroundColor, attributes->iBackgroundColor);
-		}*/
-	
+	{	
 	TInt ret = MIosrvConsoleHelper_Extension(aExtensionId, a0, a1);
 	if (ret == KErrExtensionNotSupported) ret = CConsoleBase::Extension_(aExtensionId, a0, a1);
 	return ret;

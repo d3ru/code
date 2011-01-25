@@ -1,6 +1,6 @@
 // snake.cpp
 // 
-// Copyright (c) 2009 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2009 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -309,11 +309,13 @@ void CCmdSnake::InitSnakeL(TInt aLen, TPoint aPos)
 	
 void CCmdSnake::DrawSnakeL()
 	{
+	if (iUnicode) iCons.SetAttributes(0, ConsoleAttributes::EGreen); // Don't care if this fails
 	for (TInt i=0; i<iSnake.Count(); ++i)
 		{
 		User::LeaveIfError(iCons.SetCursorPosAbs(iSnake[i]));
 		User::LeaveIfError(iCons.Write(iUnicode ? KUnicodeSnakeSeg : KSnakeSeg));
 		}
+	if (iUnicode) iCons.SetAttributes(ConsoleAttributes::ENone, ConsoleAttributes::EReset);
 	}
 
 void CCmdSnake::Up()
@@ -412,7 +414,9 @@ void CCmdSnake::OnTimer()
 		iCons.Write(_L(" "));
 		}
 	iCons.SetCursorPosAbs(newHead);
+	if (iUnicode) iCons.SetAttributes(0, ConsoleAttributes::EGreen); // Don't care if this fails
 	iCons.Write(iUnicode ? KUnicodeSnakeSeg : KSnakeSeg);
+	if (iUnicode) iCons.SetAttributes(ConsoleAttributes::ENone, ConsoleAttributes::EReset);
 	iSnakeHead = (iSnakeHead+1) % iSnake.Count();
 	iSnake[iSnakeHead] = newHead;
 	
@@ -458,7 +462,9 @@ void CCmdSnake::PlaceBait()
 		if (attempts >= iBoardSize.iWidth * iBoardSize.iHeight) return; // Snake has filled the entire board! Time to bail (the snake will run into itself right after we return here)
 		} while (!ok);
 	iCons.SetCursorPosAbs(iBait);
+	if (iUnicode) iCons.SetAttributes(0, ConsoleAttributes::ERed); // Don't care if this fails
 	iCons.Write(iUnicode ? KUnicodeBait : KBait);
+	if (iUnicode) iCons.SetAttributes(ConsoleAttributes::ENone, ConsoleAttributes::EReset);
 	}
 
 void CCmdSnake::Grow()

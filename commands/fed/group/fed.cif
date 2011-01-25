@@ -1,6 +1,6 @@
 # fed.cif
 # 
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -19,6 +19,10 @@ File or files to open. If not specified, opens an untitled document.
 ==option int w tab-width TAB_WIDTH
 
 Specify the tab width to use (defaults to 4 characters).
+
+==option bool u unicode UNICODE
+
+Use unicode characters for drawing the UI. Not guaranteed to display correctly on all consoles.
 
 ==short-description
 
@@ -64,5 +68,5 @@ To begin a cut/copy operation, press ^X or ^C. Then move the cursor to the other
 
 ==copyright
 
-Copyright (c) 2006-2010 Accenture. All rights reserved.
+Copyright (c) 2006-2011 Accenture. All rights reserved.
 

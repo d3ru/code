@@ -1,6 +1,6 @@
 // pipe_line.cpp
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -586,7 +586,7 @@ void CPipeLine::HandleCommandComplete(MCommand& aCommand, TInt aError)
 				TBuf<256> buf;
 				TOverflowTruncate overflow;
 				TExitCategoryName category(aCommand.CmndExitCategory());
-				buf.AppendFormat(KFormat, &overflow, thisPipedCommand.iCommandName, &category, aError);
+				buf.AppendFormat(KFormat, &overflow, thisPipedCommand.iCommandName, &category, aCommand.CmndExitReason());
 				iStderr.Write(buf);
 				if (aError >= 0)
 					{
@@ -599,7 +599,7 @@ void CPipeLine::HandleCommandComplete(MCommand& aCommand, TInt aError)
 				_LIT(KFormat, "Command '%S' terminated with reason %d\r\n");
 				TBuf<256> buf;
 				TOverflowTruncate overflow;
-				buf.AppendFormat(KFormat, &overflow, thisPipedCommand.iCommandName, aError);
+				buf.AppendFormat(KFormat, &overflow, thisPipedCommand.iCommandName, aCommand.CmndExitReason());
 				iStderr.Write(buf);
 				if (aError >= 0)
 					{

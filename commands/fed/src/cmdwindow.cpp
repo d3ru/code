@@ -1,6 +1,6 @@
 // cmdwindow.cpp
 // 
-// Copyright (c) 2009 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2009 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -14,6 +14,7 @@
 #include <BADESCA.H>
 
 const TInt KInfoPrintTime = 2500000; // 2.5 seconds
+extern TBool Unicode();
 
 CCommandWindow* CCommandWindow::NewL(RFs& aFs, CColorConsoleBase& aConsole)
 	{
@@ -81,6 +82,9 @@ public:
 	void Overflow(TDes16 &) {}
 	};
 
+_LIT(KDash, "-");
+_LIT(KUnicodeDash, "\u2500"); // horizontal box line
+
 void CCommandWindow::WriteStatus(const TDesC& aNameToTruncate, TRefByValue<const TDesC> aFmt, ...)
 	{
 	TDes& buf = iLastStatus;
@@ -96,7 +100,8 @@ void CCommandWindow::WriteStatus(const TDesC& aNameToTruncate, TRefByValue<const
 	TInt widthForName = availWidth - buf.Length();
 	buf.Insert(0, aNameToTruncate.Right(widthForName));
 	if (buf.Length() < iWindow.iWidth) buf.Append(' ');
-	buf.AppendFill('-', iWindow.iWidth - buf.Length() - 1); // Don't fill to edge of screen, that causes a wrap
+	const TDesC& dash = Unicode() ? KUnicodeDash() : KDash();
+	buf.AppendFill(dash[0], iWindow.iWidth - buf.Length() - 1); // Don't fill to edge of screen, that causes a wrap
 
 	DoWriteLine(buf);
 	}
@@ -127,6 +132,7 @@ void CCommandWindow::DoWriteLine(const TDesC& aLine, TInt aHighlightStart, TInt 
 
 void CCommandWindow::InfoPrint(TRefByValue<const TDesC> aFmt, ...)
 	{
+	const TDesC& dash = Unicode() ? KUnicodeDash() : KDash();
 	iInfoPrintDismisser->Cancel(); // If there's already a print onscreen, we bin it straight away (same as how User::InfoPrint works)
 	TBuf<256> buf;
 	VA_LIST args;
@@ -137,17 +143,19 @@ void CCommandWindow::InfoPrint(TRefByValue<const TDesC> aFmt, ...)
 
 	buf.SetLength(Min(buf.Length(), iWindow.iWidth-5)); // 4 for -[ and ]-, and one more to avoid hitting the final column
 	TInt highlightLen = buf.Length() + 2; // Highlight the [] as well
-	buf.Insert(0, _L("-["));
-	buf.Append(_L("]-"));
+	buf.Insert(0, _L("["));
+	buf.Insert(0, dash);
+	buf.Append(_L("]"));
+	buf.Append(dash);
 	TInt fillWidth = iWindow.iWidth - buf.Length() - 1;
 	TInt left = fillWidth / 2;
 	TInt highlightStart = left+1;
 	TInt right = fillWidth - left;
 	while(left--)
 		{
-		buf.Insert(0, _L("-"));
+		buf.Insert(0, dash);
 		}
-	buf.AppendFill('-', right);
+	buf.AppendFill(dash[0], right);
 	DoWriteLine(buf, highlightStart, highlightLen);
 	iInfoPrintDismisser->Start(KInfoPrintTime, KInfoPrintTime, TCallBack(&DismissInfoPrint, this));
 	}
@@ -166,7 +174,8 @@ TKeyCode CCommandWindow::Query(const TDesC& aPrompt, const TDesC& aValidKeys)
 	TPoint cursor = iConsole.CursorPos();
 	iQuery = aPrompt;
 	iQuery.Append(_L("[ ]"));
-	iQuery.AppendFill('-', iQuery.MaxLength() - iQuery.Length());
+	const TDesC& dash = Unicode() ? KUnicodeDash() : KDash();
+	iQuery.AppendFill(dash[0], iQuery.MaxLength() - iQuery.Length());
 	iQuery.SetLength(iWindow.iWidth - 1);
 	DoWriteLine(iQuery);
 	iConsole.SetPos(iWindow.iX + aPrompt.Length()+1, iWindow.iY);

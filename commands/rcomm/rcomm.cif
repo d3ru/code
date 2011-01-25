@@ -1,6 +1,6 @@
 # rcomm.cif
 # 
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -24,29 +24,33 @@ A command for reading data from or writing data to a serial comms port. With no 
 
 L<rsocket|rsocket>, L<rconn|rconn>, L<iap|iap>
 
-==argument string csy_name optional
+==option string c csy-name
 
-The name of the C32 plug-in module to load, e.g. C<ECUART.CSY>. If not specified, information about all the currently loaded CSY modules is displayed.
+The name of the C32 plug-in module to load, e.g. C<ECUART.CSY>. Need not be specified if the required module is already loaded.
 
 ==argument string port_name optional
 
-The name of the port, e.g. C<COMM::0>. If not specified, information about the CSY is displayed.
+The name of the port, e.g. C<COMM::0>. If not specified, information about the CSY is displayed (or about all CSYs if the --csy-name option isn't used).
 
-==argument string mode optional
+==argument enum mode optional
 
 The mode of operation.
 
-=over 5
+==enum-value read
 
-=item * C<read>
+Read from the port and print the results to STDOUT.
 
-Read the port and write the results to STDOUT.
-
-=item * C<write>
+==enum-value write
 
 Read STDIN and write the results to the port.
 
-=back
+==enum-value consume
+
+Like read, but throws away the data silently rather than printing it.
+
+==enum-value command
+
+Listen for single-byte commands on the comport and write the results. Currently the only commands are a byte 0x00 <= n <= 0x19 (decimal 25) which means write 2^n buffers of data (of size given by --buffer) to the port.
 
 ==option uint a access
 
@@ -66,13 +70,15 @@ The size of buffer to use for either reading or writing. If not specified, defau
 
 Ordinarily reads from the comm port will be expanded from 8 bit data to 16 bit data (i.e. it is assumed the data be read is ASCII). Likewise, writes will be collapsed from 16 bit to 8 bit. This option disables the expansion and collapse functionality.
 
+Raw mode is always assumed if the mode is "consume".
+
 ==option bool v verbose
 
 Print verbose output.
 
 ==copyright
 
-Copyright (c) 2007-2010 Accenture. All rights reserved.
+Copyright (c) 2007-2011 Accenture. All rights reserved.
 
 ==smoke-test
 

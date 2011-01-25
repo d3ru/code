@@ -1,6 +1,6 @@
 // MemoryAccess.cpp
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -241,7 +241,7 @@ TInt DMemoryAccessFactory::Install()
 	if (err == KErrNone)
 		{
 		DDebuggerEventHandler* dontCare;
-		err = GetEventHandler(dontCare); // We call this to make sure the event handler is always running, so we can track creator info asap
+		GetEventHandler(dontCare); // We call this to make sure the event handler is always running, so we can track creator info asap - but it's not fatal if it fails
 		}
 	return err;
     }
@@ -2353,7 +2353,7 @@ TInt DMemoryAccess::GetProcessHandles(TInt aProcessId, TAny* aHandlesBuf)
 	TInt err = KErrNone;
 
 	// Note, this code is inherently dodgy because it doesn't claim DObjectIx::HandleMutex.
-	DObjectIxNinePointTwoHack* handles = (DObjectIxNinePointTwoHack*)process->iHandles;
+	DObjectIxNinePointTwoHack* handles = (DObjectIxNinePointTwoHack*)proc->iHandles;
 	if (handles)
 		{
 		TInt offset = 0;

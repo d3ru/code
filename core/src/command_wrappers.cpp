@@ -1,6 +1,6 @@
 // command_wrappers.cpp
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -241,6 +241,11 @@ TExitCategoryName CThreadCommand::CmndExitCategory() const
 	return iThread.ExitCategory();
 	}
 
+TInt CThreadCommand::CmndExitReason() const
+	{
+	return iThread.ExitReason();
+	}
+
 void CThreadCommand::RunL()
 	{
 	iObserver->HandleCommandComplete(*this, iStatus.Int());
@@ -413,6 +418,11 @@ TExitType CProcessCommand::CmndExitType() const
 TExitCategoryName CProcessCommand::CmndExitCategory() const
 	{
 	return iProcess.ExitCategory();
+	}
+
+TInt CProcessCommand::CmndExitReason() const
+	{
+	return iProcess.ExitReason();
 	}
 
 TBool CProcessCommand::CmndIsDisownable() const
@@ -665,6 +675,11 @@ TExitType CAliasCommand::CmndExitType() const
 TExitCategoryName CAliasCommand::CmndExitCategory() const
 	{
 	return iAliasedCommand.CmndExitCategory();
+	}
+
+TInt CAliasCommand::CmndExitReason() const
+	{
+	return iAliasedCommand.CmndExitReason();
 	}
 
 void CAliasCommand::HandleCommandComplete(MCommand&, TInt aError)

@@ -1,6 +1,6 @@
 // command_factory.cpp
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -335,6 +335,7 @@ void CCommandFactory::ConstructL()
 	AddThreadCommandL(CCmdReboot::NewLC);
 #endif
 	AddThreadCommandL(CCmdCifTest::NewLC);
+	AddThreadCommandL(CCmdWhoAmI::NewLC);
 
 	// Add some DOS-style namings of common commands.
 	AddThreadCommandL(_L("del"), CCmdRm::NewLC, CCommandConstructorBase::EAttAlias);

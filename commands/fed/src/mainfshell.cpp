@@ -1,6 +1,6 @@
 // mainfshell.cpp
 // 
-// Copyright (c) 2009 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2009 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -24,6 +24,7 @@ public:
 	~CCmdFed();
 	CConsoleBase* Console() { return iConsole; }
 	TInt TabWidth() const { return iTabWidth; }
+	TBool Unicode() const { return iUnicode; }
 	void ShowHelpL();
 private:
 	CCmdFed();
@@ -39,6 +40,7 @@ private:
 	CColorConsoleBase* iConsole;
 	CFed* iFed;
 	TInt iTabWidth;
+	TBool iUnicode;
 	};
 
 CCmdFed* gCmd = NULL; // Only used for the assertion handler and tab fns
@@ -77,6 +79,7 @@ void CCmdFed::ArgumentsL(RCommandArgumentList& aArguments)
 void CCmdFed::OptionsL(RCommandOptionList& aOptions)
 	{
 	aOptions.AppendIntL(iTabWidth, _L("tab-width"));
+	aOptions.AppendBoolL(iUnicode, _L("unicode"));
 	}
 
 EXE_BOILER_PLATE(CCmdFed)
@@ -134,6 +137,11 @@ TInt KConsoleHeightCorrection = 0;
 TInt TabWidth()
 	{
 	return gCmd->TabWidth();
+	}
+
+TBool Unicode()
+	{
+	return gCmd->Unicode();
 	}
 
 void ShowHelpL()

@@ -1,6 +1,6 @@
 // commands.cpp
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -6268,4 +6268,32 @@ void CCmdForEach::IterationComplete(TInt aError)
 			Complete(err);
 			}
 		}
+	}
+
+//
+// CCmdWhoAmI
+//
+
+CCommandBase* CCmdWhoAmI::NewLC()
+	{
+	CCmdWhoAmI* self = new(ELeave) CCmdWhoAmI();
+	CleanupStack::PushL(self);
+	self->BaseConstructL();
+	return self;
+	}
+
+CCmdWhoAmI::~CCmdWhoAmI()
+	{}
+
+const TDesC& CCmdWhoAmI::Name() const
+	{
+	_LIT(KName, "whoami");
+	return KName;
+	}
+
+void CCmdWhoAmI::DoRunL()
+	{
+	RProcess me;
+	TFullName name = me.FullName();
+	Printf(_L("This shell is process ID %Ld %S\r\n"), me.Id().Id(), &name);
 	}

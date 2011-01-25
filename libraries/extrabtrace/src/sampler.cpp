@@ -1,6 +1,6 @@
 // sampler.cpp
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -9,9 +9,10 @@
 // Initial Contributors:
 // Accenture - Initial contribution
 //
+#include <fshell/common.mmh>
+#include FSHELL_D32BTRACE_HEADER
 #include "sampler.h"
 #include <fshell/btrace_parser_defs.h>
-#include <fshell/common.mmh>
 
 // Please note this code is NOT SMP-safe. The whole mechanism of using an interrupt doesn't work under SMP so there's no point adding TSpinLocks or similar
 #ifdef __SMP__

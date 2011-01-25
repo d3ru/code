@@ -1,6 +1,6 @@
 // main.cpp
 // 
-// Copyright (c) 2009 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2009 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -107,6 +107,11 @@ extern TInt KConsoleHeightCorrection = -2;
 TInt TabWidth()
 	{
 	return 4;
+	}
+
+TBool Unicode()
+	{
+	return EFalse;
 	}
 
 _LIT(KHelpText, "\

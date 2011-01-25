@@ -92,6 +92,9 @@ TInt LtkUtils::RProxyAllocatorHelper::ReadData(TLinAddr aLocation, TAny* aResult
 	TPtr8 ptr((TUint8*)aResult, aSize, aSize);
 	return iMemoryAccess->GetThreadMem(params, ptr);
 #else
+	(void)aLocation;
+	(void)aResult;
+	(void)aSize;
 	return KErrNotSupported;
 #endif
 	}
@@ -102,6 +105,9 @@ TInt LtkUtils::RProxyAllocatorHelper::WriteData(TLinAddr aLocation, const TAny* 
 	const TPtrC8 ptr((const TUint8*)aData, aSize);
 	return iMemoryAccess->WriteMem(iThreadId, ptr, (TAny*)aLocation);
 #else
+	(void)aLocation;
+	(void)aResult;
+	(void)aSize;
 	return KErrNotSupported;
 #endif
 	}

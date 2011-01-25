@@ -85,7 +85,7 @@ CCommandBase* CCmdUndertaker::NewLC()
 CCmdUndertaker::~CCmdUndertaker()
 	{
 	Cancel();
-	if (iWorkerThread.Id() != RThread().Id()) iWorkerThread.Kill(KErrAbort);
+	if (iWorkerThread.Handle() != KNullHandle) iWorkerThread.Kill(KErrAbort);
 	iHandles.Close();
 	CloseProcessOwnedHandles();
 	}
@@ -93,6 +93,7 @@ CCmdUndertaker::~CCmdUndertaker()
 CCmdUndertaker::CCmdUndertaker()
 	: CMemoryAccessCommandBase(EManualComplete)
 	{
+	iWorkerThread.SetHandle(KNullHandle);
 	}
 
 void CCmdUndertaker::ConstructL()

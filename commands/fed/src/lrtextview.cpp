@@ -1,6 +1,6 @@
 // lrtextview.cpp
 // 
-// Copyright (c) 2009 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2009 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -18,6 +18,7 @@
 
 const TInt KLastCtrlChar = 0x1f;	//Last control char in ASCII
 const TInt KCtrlHTab = 0x09;		//Horizontal Tab
+extern TBool Unicode();
 
 CLRTextView* CLRTextView::NewL(MConsoleProvider& aConsoleProvider, CFedBufferBase& aBuffer)
 	{
@@ -514,7 +515,8 @@ void CLRTextView::WriteLineContinue()
 	CColorConsoleBase* cons = iConsoleProvider.ColorConsole();
 	if (cons) cons->SetTextAttribute(ETextAttributeHighlight);
 	_LIT(KContinuation, "\\");
-	iConsole.Write(KContinuation);
+	_LIT(KUnicodeContinuation, "\u2026"); // ellipsis
+	iConsole.Write(Unicode() ? KUnicodeContinuation() : KContinuation());
 	if (cons) cons->SetTextAttribute(ETextAttributeNormal);
 
 	TInt thisLine = iDrawPoint.iY-iWindow.iY;

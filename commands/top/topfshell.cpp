@@ -1,6 +1,6 @@
 // topfshell.cpp
 // 
-// Copyright (c) 2008 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2008 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -128,7 +128,7 @@ void CCmdTop::DoRunL()
 	User::LeaveIfError(Stdout().GetScreenSize(size));
 	iNumConsoleLines = size.iHeight;
 	iBuffer = CTextBuffer::NewL(512);
-	iFormatter = CTextFormatter::NewL(size.iWidth);
+	iFormatter = CTextFormatter::NewL(Min(size.iWidth, 80)); // Don't format to larger than 80 chars
 	Stdout().ClearScreen();
 	UpdateL(); // Just so we display something on screen before the first update
 	}
@@ -221,12 +221,14 @@ void CCmdTop::UpdateL()
 	
 	iBuffer->Zero();
 	iFormatter->Zero();
-	iBuffer->AppendL(_L("Tid\tThread name\tCPU usage\r\n"));
+	_LIT(KHeader, "Tid  \tThread name                                                      \tCPU     \r\n"); // Force thread name to use all the available width (of the fixed 80 chars), so the columns don't jump around
+	iBuffer->AppendL(KHeader);
 
 	for (TInt i = 0; i < iThreads.Count() && i < iNumConsoleLines-2; i++) // minus one for title, one for last line of screen which I can't seem to figure out how to make use of
 		{
 		SThreadData& thread = *iThreads[i];
 		TReal percent = 100 * thread.iNumSamples / (TReal)numSamples;
+		if (percent < 0.01) break; // No point showing anything that will appear as 0.00%
 		iBuffer->AppendFormatL(_L("%d\t%S\t%00.2f%%\r\n"), thread.iId, &thread.iName, percent);
 		}
 	Stdout().SetCursorHeight(0);

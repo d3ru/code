@@ -1,6 +1,6 @@
 # ioinfo.cif
 # 
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -46,7 +46,7 @@ Just file end-points. Note, file end-points are used by L<fshell|fshell> when it
 
 ==enum-value null
 
-Just null end-points. Note, null end-points are used by L<fshell|fshell> when the input or output of a command is redirected from or to F</dev/nul> or C<NUL>.
+Just null end-points. Note, null end-points are used by L<fshell|fshell> when the input or output of a command is redirected from or to F</dev/null> or C<NUL>.
 
 ==enum-value pipe
 
@@ -62,5 +62,5 @@ Match string to filter object names. Defaults to C<*>.
 
 ==copyright
 
-Copyright (c) 2006-2010 Accenture. All rights reserved.
+Copyright (c) 2006-2011 Accenture. All rights reserved.
 

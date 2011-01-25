@@ -1,6 +1,6 @@
 // bld.inf
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -84,6 +84,7 @@ FSHELL_ROM_INCLUDE(fshell_core.iby)
 ..\builtins\version.cif           z:\resource\cif\fshell\version.cif
 ..\builtins\undertaker.cif        z:\resource\cif\fshell\undertaker.cif
 ..\builtins\ciftest.cif           z:\resource\cif\fshell\ciftest.cif
+..\builtins\whoami.cif            z:\resource\cif\fshell\whoami.cif
 
 #ifdef FSHELL_CORE_SUPPORT_CHUNKINFO
 ..\builtins\chunkinfo.cif         z:\resource\cif\fshell\chunkinfo.cif

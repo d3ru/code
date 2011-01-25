@@ -1,6 +1,6 @@
 # change_history.pod
 #
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -20,7 +20,43 @@ __END__
 
 =item *
 
+Fshell moved to http://sourceforge.net/projects/fshell (although if you're reading this, you probably already knew that).
+
+=item *
+
 Fixed objinfo command so that it works on modern (S^3 or later, S60 5th or later) baselines. Added C<--match> option.
+
+=item *
+
+Fixed reporting of exit reasons in fshell pipelines. (Previously the "***PANIC***" prints would incorrectly report an exit reason of -13 for any thread command that exited with a non-negative error code, so for example "KERN-EXEC 0" would appear to be "KERN-EXEC -13".)
+
+=item *
+
+Added L<whoami|commands::whoami> command for identifying the current fshell process.
+
+=item *
+
+Fixed crash in undertaker command if its worker thread couldn't be instanciated.
+
+=item *
+
+Fixed meory leak (which eventually could cause a crash) in iosrv.
+
+=item *
+
+Added colour support to snake and --unicode option to fed.
+
+=item *
+
+Added USB fshell icon and FSHELL_PIPS_SUPPORT to default S^3 build.
+
+=item *
+
+The columns no longer jump around in the top command.
+
+=item *
+
+Some improvements to syntax of rcomm command. Also added more test modes for testing reads and writes.
 
 =back
 

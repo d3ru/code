@@ -29,7 +29,6 @@ PRJ_EXPORTS
 
 PRJ_MMPFILES
 
-extrabtrace.mmp
 extrabtracek.mmp
 
 #endif

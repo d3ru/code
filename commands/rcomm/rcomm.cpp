@@ -1,6 +1,6 @@
 // rcomm.cpp
 // 
-// Copyright (c) 2007 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2007 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -24,6 +24,7 @@ private:
 	CCmdRcomm();
 	void ReadL();
 	void WriteL();
+	void ListenForCommandsL();
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();
@@ -32,7 +33,13 @@ private: // From CCommandBase.
 private:
 	HBufC* iCsyName;
 	HBufC* iPortName;
-	HBufC* iMode;
+	enum
+		{
+		EReadAndPrintStdout,
+		EWriteFromStdin,
+		EReadAndConsume,
+		ECommand,
+		} iMode;
 	TCommAccess iCommAccess;
 	TUint iBufSize;
 	TBool iRaw;
@@ -54,7 +61,6 @@ CCmdRcomm::~CCmdRcomm()
 	{
 	delete iCsyName;
 	delete iPortName;
-	delete iMode;
 	iComm.Close();
 	iCommServ.Close();
 	}
@@ -83,65 +89,62 @@ void CCmdRcomm::DoRunL()
 			User::Leave(err);
 			}
 		}
-	else
+	
+	if (iPortName == NULL)
 		{
-		TInt numPorts;
-		User::LeaveIfError(iCommServ.NumPorts(numPorts));
-		for (TInt i = 0; i < numPorts; ++i)
+		if (iCsyName == NULL)
 			{
-			TName moduleName;
-			TSerialInfo serialInfo;
-			TInt err = iCommServ.GetPortInfo(i, moduleName, serialInfo);
-			if (err == KErrNone)
+			TInt numPorts;
+			User::LeaveIfError(iCommServ.NumPorts(numPorts));
+			for (TInt i = 0; i < numPorts; ++i)
 				{
-				Printf(_L("%S:\r\n\tPort name: \'%S\'\r\n\tLow unit: %d\r\n\tHigh unit: %d\r\n\tDescription: %S\r\n\r\n"), &moduleName, &serialInfo.iName, serialInfo.iLowUnit, serialInfo.iHighUnit, &serialInfo.iDescription);
+				TName moduleName;
+				TSerialInfo serialInfo;
+				TInt err = iCommServ.GetPortInfo(i, moduleName, serialInfo);
+				if (err == KErrNone)
+					{
+					Printf(_L("%S:\r\n\tPort name: \'%S\'\r\n\tLow unit: %d\r\n\tHigh unit: %d\r\n\tDescription: %S\r\n\r\n"), &moduleName, &serialInfo.iName, serialInfo.iLowUnit, serialInfo.iHighUnit, &serialInfo.iDescription);
+					}
+				else
+					{
+					PrintWarning(_L("Couldn't get info for port %d, err=%d"), i, err);
+					}
 				}
-			else
-				{
-				PrintWarning(_L("Couldn't get info for port %d, err=%d"), i, err);
-				}
-			}
-		return;
-		}
-
-	if (iPortName)
-		{
-		TInt err = iComm.Open(iCommServ, *iPortName, iCommAccess);
-		LeaveIfErr(err, _L("Unable to open port \'%S\'"), iPortName);
-		}
-	else
-		{
-		TSerialInfo serialInfo;
-		_LIT(KCsy, ".csy");
-		TPtrC csyName(*iCsyName);
-		if (csyName.Right(KCsy().Length()).CompareF(KCsy) == 0)
-			{
-			// Remove the trailing '.csy' because otherwise C32 won't find the module.
-			csyName.Set(csyName.Left(csyName.Length() - KCsy().Length()));
-			}
-		TInt err = iCommServ.GetPortInfo(csyName, serialInfo);
-		LeaveIfErr(err, _L("Couldn't get port info for CSY '%S'"), &csyName);
-		Printf(_L("Port name: \'%S\'\r\nLow unit: %d\r\nHigh unit: %d\r\nDescription: %S\r\n"), &serialInfo.iName, serialInfo.iLowUnit, serialInfo.iHighUnit, &serialInfo.iDescription);
-		return;
-		}
-
-
-	_LIT(KModeRead, "read");
-	_LIT(KModeWrite, "write");
-	if (iMode)
-		{
-		if (*iMode == KModeRead)
-			{
-			ReadL();
-			}
-		else if (*iMode == KModeWrite)
-			{
-			WriteL();
 			}
 		else
 			{
-			PrintError(KErrArgument, _L("Invalid mode: \'%S\'"), iMode);
+			TSerialInfo serialInfo;
+			_LIT(KCsy, ".csy");
+			TPtrC csyName(*iCsyName);
+			if (csyName.Right(KCsy().Length()).CompareF(KCsy) == 0)
+				{
+				// Remove the trailing '.csy' because otherwise C32 won't find the module.
+				csyName.Set(csyName.Left(csyName.Length() - KCsy().Length()));
+				}
+			TInt err = iCommServ.GetPortInfo(csyName, serialInfo);
+			LeaveIfErr(err, _L("Couldn't get port info for CSY '%S'"), &csyName);
+			Printf(_L("Port name: \'%S\'\r\nLow unit: %d\r\nHigh unit: %d\r\nDescription: %S\r\n"), &serialInfo.iName, serialInfo.iLowUnit, serialInfo.iHighUnit, &serialInfo.iDescription);
 			}
+		return;
+		}
+
+	TInt err = iComm.Open(iCommServ, *iPortName, iCommAccess);
+	LeaveIfErr(err, _L("Unable to open port \'%S\'"), iPortName);
+
+	switch (iMode)
+		{
+	case EReadAndConsume:
+		iRaw = ETrue;
+		// Drop through
+	case EReadAndPrintStdout:
+		ReadL();
+		break;
+	case EWriteFromStdin:
+		WriteL();
+		break;
+	case ECommand:
+		ListenForCommandsL();
+		break;
 		}
 	}
 
@@ -160,8 +163,11 @@ void CCmdRcomm::ReadL()
 			err = status.Int();
 			if (err == KErrNone)
 				{
-				TPtrC writePtr((TUint16*)readBuf->Ptr(), readBuf->Length() / 2);
-				Write(writePtr);
+				if (iMode == EReadAndPrintStdout)
+					{
+					TPtrC writePtr((TUint16*)readBuf->Ptr(), readBuf->Length() / 2);
+					Write(writePtr);
+					}
 				}
 			else if (iVerbose)
 				{
@@ -246,14 +252,11 @@ void CCmdRcomm::WriteL()
 
 void CCmdRcomm::ArgumentsL(RCommandArgumentList& aArguments)
 	{
-	_LIT(KArg1, "csy_name");
-	aArguments.AppendStringL(iCsyName, KArg1);
+	_LIT(KPortName, "port_name");
+	aArguments.AppendStringL(iPortName, KPortName);
 
-	_LIT(KArg2, "port_name");
-	aArguments.AppendStringL(iPortName, KArg2);
-
-	_LIT(KArg3, "mode");
-	aArguments.AppendStringL(iMode, KArg3);
+	_LIT(KMode, "mode");
+	aArguments.AppendEnumL((TInt&)iMode, KMode);
 	}
 
 void CCmdRcomm::OptionsL(RCommandOptionList& aOptions)
@@ -269,8 +272,43 @@ void CCmdRcomm::OptionsL(RCommandOptionList& aOptions)
 
 	_LIT(KOption4, "verbose");
 	aOptions.AppendBoolL(iVerbose, KOption4);
+
+	_LIT(KCsy, "csy-name");
+	aOptions.AppendStringL(iCsyName, KCsy);
 	}
 
 
 EXE_BOILER_PLATE(CCmdRcomm)
 
+void CCmdRcomm::ListenForCommandsL()
+	{
+	HBufC8* buf = HBufC8::NewMaxLC(iBufSize);
+	memset((void*)buf->Ptr(), 'z', iBufSize);
+
+	for (;;)
+		{
+		TRequestStatus status;
+		TBuf8<1> cmdBuf;
+		iComm.ReadOneOrMore(status, cmdBuf);
+		User::WaitForRequest(status);
+		LeaveIfErr(status.Int(), _L("Failed to read command from serial port"));
+
+		TUint8 cmd = cmdBuf[0];
+		if (cmd <= 25)
+			{
+			TInt n = 1 << cmd;
+			while (n--)
+				{
+				iComm.Write(status, *buf);
+				User::WaitForRequest(status);
+				LeaveIfErr(status.Int(), _L("Couldn't write to serial port"));
+				}
+			}
+		else
+			{
+			break;
+			}
+		}
+
+	CleanupStack::PopAndDestroy(buf);
+	}

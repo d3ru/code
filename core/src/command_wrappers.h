@@ -1,6 +1,6 @@
 // command_wrappers.h
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -40,6 +40,7 @@ public:
 	virtual void CmndRelease() = 0;
 	virtual TExitType CmndExitType() const = 0;
 	virtual TExitCategoryName CmndExitCategory() const = 0;
+	virtual TInt CmndExitReason() const = 0;
 	virtual const TDesC& CmndName() const = 0;
 	virtual TInt CmndReattachStdin(RIoEndPoint& aStdinEndPoint) = 0;
 	virtual TInt CmndReattachStdout(RIoEndPoint& aStdoutEndPoint) = 0;
@@ -111,6 +112,7 @@ private: // From MCommand.
 	virtual TInt CmndResume();
 	virtual TExitType CmndExitType() const;
 	virtual TExitCategoryName CmndExitCategory() const;
+	virtual TInt CmndExitReason() const;
 private:
 	TUint iFlags;
 	TCommandConstructor iCommandConstructor;
@@ -143,6 +145,7 @@ protected: // From MCommand.
 	virtual TInt CmndResume();
 	virtual TExitType CmndExitType() const;
 	virtual TExitCategoryName CmndExitCategory() const;
+	virtual TInt CmndExitReason() const;
 	virtual TBool CmndIsDisownable() const;
 	virtual void CmndDisown();
 public:
@@ -206,6 +209,7 @@ private: // From MCommand.
 	TInt CmndResume();
 	TExitType CmndExitType() const;
 	TExitCategoryName CmndExitCategory() const;
+	TInt CmndExitReason() const;
 private: // From MCommandObserver.
 	virtual void HandleCommandComplete(MCommand& aCommand, TInt aError);
 private:

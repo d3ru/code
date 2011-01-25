@@ -1,6 +1,6 @@
 // commands.h
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -1271,6 +1271,17 @@ private:
 	TFileName2 iDirName;
 	RDir iDir;
 	TInt iLastError;
+	};
+
+class CCmdWhoAmI : public CCommandBase
+	{
+public:
+	static CCommandBase* NewLC();
+	~CCmdWhoAmI();
+private: // From CCommandBase.
+	virtual const TDesC& Name() const;
+	virtual void DoRunL();
+private:
 	};
 	
 #endif // __COMMANDS_H__
