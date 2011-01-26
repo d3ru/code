@@ -53,7 +53,7 @@ public:
 	~CCommandWindow();
 
 	//Sets the window which the command window can use
-	void SetWindow(const TWindow& aWindow) {iWindow = aWindow;}
+	void SetWindow(const TWindow& aWindow);
 
 	CConsoleBase& Console();
 	CColorConsoleBase* ColorConsole();

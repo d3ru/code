@@ -281,10 +281,12 @@ void CLRTextView::MoveCursor(TInt aX, TInt aY)
 	else if (line + aY >= iWindow.iHeight)
 		{
 		// Scroll down
+		//RDebug::Printf("%d is >= windowheight %d, scrolling down", line + aY, iWindow.iHeight);
 		SeekData(iLineData->DocumentPosition(0), aY);
 		}
 	else
 		{
+		//RDebug::Printf("Moving cursor from line %d to %d", line, line + aY);
 		// Just update cursor
 		if (iLineData->IsScreenPositionValid(line + aY, 0))
 			{
@@ -296,6 +298,7 @@ void CLRTextView::MoveCursor(TInt aX, TInt aY)
 
 void CLRTextView::DoResizeL(const TWindow& /*aOldWindow*/)
 	{
+	//RDebug::Printf("Text view resized to (%d,%d %dx%d)", iWindow.iX, iWindow.iY, iWindow.iWidth, iWindow.iHeight);
 	DoRedrawL();
 	}
 

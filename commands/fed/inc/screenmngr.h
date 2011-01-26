@@ -26,6 +26,8 @@ class MViewController;
 class CScreenManager : public CBase
 	{
 public:
+	CScreenManager();
+
 	//Returns the TWindow occupied by the command window
 	const TWindow& GetCommandWindow();
 	//Sets new coordinates of the screen available to this screen manager

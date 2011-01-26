@@ -76,6 +76,12 @@ CColorConsoleBase* CCommandWindow::ColorConsole()
 	return iColorConsole;
 	}
 
+void CCommandWindow::SetWindow(const TWindow& aWindow)
+	{
+	//RDebug::Printf("Command window (%d,%d %dx%d)", aWindow.iX, aWindow.iY, aWindow.iWidth, aWindow.iHeight);
+	iWindow = aWindow;
+	}
+
 class TOverflow16 : public TDes16Overflow
 	{
 public:
@@ -109,6 +115,7 @@ void CCommandWindow::WriteStatus(const TDesC& aNameToTruncate, TRefByValue<const
 void CCommandWindow::DoWriteLine(const TDesC& aLine, TInt aHighlightStart, TInt aHighlightLength)
 	{
 	TPoint cursor = iConsole.CursorPos();
+	//RDebug::Print(_L("Status line len=%d at %d,%d: %S"), aLine.Length(), iWindow.iX, iWindow.iY, &aLine);
 	iConsole.SetCursorHeight(0);
 	iConsole.SetPos(iWindow.iX, iWindow.iY);
 	if (aHighlightLength && ColorConsole())

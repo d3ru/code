@@ -62,6 +62,10 @@ Some improvements to syntax of rcomm command. Also added more test modes for tes
 
 Fixed stack overflow crash in ls command when using --recurse with a directory tree deeper than nine or so levels (see ls's smoketest).
 
+=item *
+
+Fixed size calculation bug in fed which made it almost impossible to use on certain consoles and unreliable to redraw on others.
+
 =back
 
 =head2 Release 002

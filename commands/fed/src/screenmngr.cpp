@@ -11,12 +11,19 @@
 //
 
 #include <e32base.h>
+//#include <e32debug.h>
 
 #include "screenmngr.h"
 #include "viewbase.h"
 
 const TInt KCmdWndMinHeight = 3;
 const TInt KCmdWndMinWidth = 20;
+
+CScreenManager::CScreenManager()
+	{
+	// If nothing else, this must be set to a sensible default
+	iCmdWnd.iHeight = 1;
+	}
 
 void CScreenManager::ResizeScreenL(const TWindow& aWindow)
 	{
@@ -26,6 +33,8 @@ void CScreenManager::ResizeScreenL(const TWindow& aWindow)
 
 	if(aWindow == iScreenWnd)
 		return;
+
+	//RDebug::Printf("ResizeScreenL from (%d,%d %dx%d) to (%d,%d %dx%d)", iScreenWnd.iX, iScreenWnd.iY, iScreenWnd.iWidth, iScreenWnd.iHeight, aWindow.iX, aWindow.iY, aWindow.iWidth, aWindow.iHeight);
 
 	// We need to leave one char on each side for the border around the console window, so the width/height is actually less by 2
 	// (*if* we're running as a pure CConsoleBase app under tshell. Doesn't apply when built as an fshell app, as KConsoleWidthCorrection is zero in that case).
