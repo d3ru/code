@@ -1,6 +1,6 @@
 # echo.cif
 # 
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -14,9 +14,11 @@
 
 ==short-description
 
-Print a text string to C<stdout>. If no text is specified as an argument, reads from C<stdin> and writes the result to C<stdout>.
+Print a text string to C<stdout>.
 
 ==long-description
+
+If no text is specified as an argument, reads from C<stdin> and writes the result to C<stdout>.
 
 Note, this command used to interpret escape sequences such as C<^r> and C<^t> itself. This functionality has now been moved into C<CCommandBase> so all fshell commands can benefit from it. A consequence of this change is that it is no longer necessary to double escape such sequences.
 

@@ -223,9 +223,8 @@ void CCmdCat::HandleFileData(const TDesC8& aData, TReadType aType, TBool& aConti
 
 void CCmdCat::HandleFileReadError(TInt aError)
 	{
-	PrintWarning(_L("Problem reading %S: %d"), &iFiles[0], aError);
-	RemoveCurrentFileName();
-	ReadNextFile();
+	// We bail out if any file failed - much safer than printing a warning and still completing with KErrNone (which is what we used to do)
+	Complete(aError, _L("Couldn't read %S"), &iFiles[0]);
 	}
 
 

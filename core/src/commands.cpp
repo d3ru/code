@@ -1896,6 +1896,8 @@ const TDesC& CCmdDump::Name() const
 
 void CCmdDump::DoRunL()
 	{
+	if (iLegacyBinaryOption) iBinaryMode = ETrue;
+
 	if (iFileNames.Count())
 		{
 		for (TInt i = 0; i < iFileNames.Count(); i++)
@@ -1907,7 +1909,7 @@ void CCmdDump::DoRunL()
 			User::LeaveIfError(file.Open(FsL(), fn, EFileRead));
 			TBuf8<KBlockSize> buf;
 			TInt err = KErrNone;
-			if (iFileNames.Count() > 1) Printf(_L("%S:\r\n"), &fn); // For compatability don't print the file name if there's only one file
+			if (iFileNames.Count() > 1) Printf(_L("%S:\r\n"), &fn); // For compatibility don't print the file name if there's only one file
 			FOREVER
 				{
 				err = file.Read(buf);
@@ -1930,7 +1932,7 @@ void CCmdDump::DoRunL()
 		RIoConsoleReadHandle& stdin = Stdin();
 		if (iBinaryMode)
 			{
-			stdin.SetModeL(RIoReadWriteHandle::EBinary);
+			LeaveIfErr(stdin.SetMode(RIoReadWriteHandle::EBinary), _L("Couldn't set binary mode on stdin"));
 			}
 		stdin.SetReadModeL(RIoReadHandle::EOneOrMore);
 		TBuf<KBlockSize> buf;
@@ -1950,6 +1952,8 @@ void CCmdDump::OptionsL(RCommandOptionList& aOptions)
 	{
 	_LIT(KCmdDumpOptBinaryMode, "binary");
 	aOptions.AppendBoolL(iBinaryMode, KCmdDumpOptBinaryMode);
+	_LIT(KCmdDumpOptOldBinaryMode, "old-binary-option");
+	aOptions.AppendBoolL(iLegacyBinaryOption, KCmdDumpOptOldBinaryMode);
 	}
 
 void CCmdDump::ArgumentsL(RCommandArgumentList& aArguments)

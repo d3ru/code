@@ -1,6 +1,6 @@
 // sysinfo.cpp
 // 
-// Copyright (c) 2008 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2008 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -10,13 +10,9 @@
 // Accenture - Initial contribution
 //
 
-//
-// CCmdSysInfo.
-//
 #include "u32std.h"
 #include <ETELMM.H>
 #include "sysinfo.h"
-#include <fshell/common.mmh>
 #include <fshell/ltkhal.h>
 #include <fshell/ltkutils.h>
 #ifdef FSHELL_CORE_SUPPORT_SYSINFO_WLAN
@@ -24,6 +20,9 @@
 #endif
 #include <e32rom.h>
 
+#ifdef FSHELL_QT_SUPPORT
+#include <QtCore/QSysInfo>
+#endif
 	
 CCommandBase* CCmdSysInfo::NewLC()
 	{
@@ -178,6 +177,9 @@ void CCmdSysInfo::DoRunL()
 		PrintRomVersion();
 		TRAP_IGNORE(PrintWlanL());
 		TRAP_IGNORE(PrintPhoneIdL());
+#ifdef FSHELL_QT_SUPPORT
+		PrintQtInfo();
+#endif
 		}
 	}
 	
@@ -193,7 +195,11 @@ void CCmdSysInfo::OptionsL(RCommandOptionList& aOptions)
 	aOptions.AppendBoolL(iMachineUIDOnly, KOptUid);
 	}
 
+#ifdef FSHELL_QT_SUPPORT
+QT_EXE_BOILER_PLATE(CCmdSysInfo)
+#else
 EXE_BOILER_PLATE(CCmdSysInfo)
+#endif
 
 void CCmdSysInfo::PrintKernelHalStuff()
 	{
@@ -352,3 +358,53 @@ void CCmdSysInfo::PrintRomVersion()
 		lib.Close();
 		}
 	}
+
+#ifdef FSHELL_QT_SUPPORT
+
+#define CASE_LIT2(x, y) case x: { _LIT(KName, y); return &KName; }
+
+const TDesC* Version(QSysInfo::S60Version aVersion)
+	{
+	switch (aVersion)
+		{
+		CASE_LIT2(QSysInfo::SV_S60_3_1, "S60 3rd Edition Feature Pack 1")
+		CASE_LIT2(QSysInfo::SV_S60_3_2, "S60 3rd Edition Feature Pack 2")
+		CASE_LIT2(QSysInfo::SV_S60_5_0, "S60 5th Edition")
+		CASE_LIT2(QSysInfo::SV_S60_5_1, "S60 5th Edition Feature Pack 1")
+		CASE_LIT2(QSysInfo::SV_S60_5_2, "S60 5th Edition Feature Pack 2")
+		CASE_LIT2(QSysInfo::SV_S60_Unknown, "?")
+	default:
+		_LIT(KUnknown, "?");
+		return &KUnknown;
+		}
+	}
+
+const TDesC* Version(QSysInfo::SymbianVersion aVersion)
+	{
+	switch (aVersion)
+		{
+		CASE_LIT2(QSysInfo::SV_9_2, "Symbian OS v9.2")
+		CASE_LIT2(QSysInfo::SV_9_3, "Symbian OS v9.3")
+		CASE_LIT2(QSysInfo::SV_9_4, "Symbian OS v9.4 / Symbian^1")
+		CASE_LIT2(QSysInfo::SV_SF_2, "Symbian^2")
+		CASE_LIT2(QSysInfo::SV_SF_3, "Symbian^3")
+		CASE_LIT2(QSysInfo::SV_SF_4, "Symbian^4")
+		CASE_LIT2(QSysInfo::SV_Unknown, "?")
+	default:
+		_LIT(KUnknown, "?");
+		return &KUnknown;
+		}
+	}
+
+void CCmdSysInfo::PrintQtInfo()
+	{
+	Printf(_L8("Qt version: %s\r\n"), qVersion());
+	Printf(_L8("Qt version at compile time: " QT_VERSION_STR "\r\n"));
+
+	QSysInfo::SymbianVersion symVer = QSysInfo::symbianVersion();
+	QSysInfo::S60Version s60Ver = QSysInfo::s60Version();
+	Printf(_L("Qt Symbian version: %S (0x%x)\r\n"), Version(symVer), (TInt)symVer);
+	Printf(_L("Qt S60 version: %S (0x%x)\r\n"), Version(s60Ver), (TInt)s60Ver);
+	}
+
+#endif

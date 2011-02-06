@@ -1,0 +1,39 @@
+# ost.cif
+#
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+#
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name ost
+
+==short-description
+
+Tool for using and debugging with OST connections.
+
+==argument enum operation optional
+
+==enum-value send
+
+Sends a short packet of data on the specified channel.
+
+==enum-value receive
+
+Waits in a loop for data on the specified channel.
+
+==enum-value sendreceive
+
+Does a send, followed by a receive.
+
+==option uint c channel
+
+The channel ID to use. If not specified defaults to EOstProtTCFTrk (0x92).
+
+==copyright
+
+Copyright (c) 2011 Accenture. All rights reserved.

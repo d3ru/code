@@ -43,14 +43,16 @@
 #include <guicons.iby>
 #include <defcons.iby>
 #include <consoleproxy.iby>
-FSHELL_EXECUTABLE_FILE(consoleextensions.dll) // TODO move this to the new fshell_consoles.iby
+
+// TODO sort these out, or move everything in here...
+FSHELL_EXECUTABLE_FILE(consoleextensions.dll)
 
 #ifdef FSHELL_TRACECORE_SUPPORT
-FSHELL_EXECUTABLE_FILE(terminalkeyboardcons.dll) // TODO move this to the new fshell_consoles.iby
+FSHELL_EXECUTABLE_FILE(terminalkeyboardcons.dll)
 #endif
 
 #ifdef FSHELL_TESTEXECUTE_SUPPORT
-FSHELL_EXECUTABLE_FILE(tefcons.dll) // TODO move this to the new fshell_consoles.iby
+FSHELL_EXECUTABLE_FILE(tefcons.dll)
 #endif
 
 #endif // FSHELL_IBY

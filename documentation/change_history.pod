@@ -40,7 +40,7 @@ Fixed crash in undertaker command if its worker thread couldn't be instanciated.
 
 =item *
 
-Fixed meory leak (which eventually could cause a crash) in iosrv.
+Fixed memory leak (which eventually could cause a crash) in iosrv.
 
 =item *
 
@@ -52,7 +52,7 @@ Added USB fshell icon and FSHELL_PIPS_SUPPORT to default S^3 build.
 
 =item *
 
-The columns no longer jump around in the top command.
+The columns no longer jump around in the top command. Cleaned up swi's output.
 
 =item *
 
@@ -65,6 +65,22 @@ Fixed stack overflow crash in ls command when using --recurse with a directory t
 =item *
 
 Fixed size calculation bug in fed which made it almost impossible to use on certain consoles and unreliable to redraw on others.
+
+=item *
+
+Changed cat command to open files with EFileShareReadersOnly permissions, meaning it is now possible to cat a file at the same time as, for example, having the file open in fed. Also changed cat to bail out with an error if a file couldn't be opened, instead of printing a warning but still returning KErrNone.
+
+=item *
+
+Added L<ost|commands::ost> command for debugging USB OST connections. Added guard macro C<FSHELL_OST_SUPPORT>.
+
+=item *
+
+Fixed long-standing bug in L<hello's|commands::hello> C<--color> option that caused the text colour to get stuck on cyan after the command exited.
+
+=item *
+
+Added L<C<FSHELL_QT_SUPPORT>|internal::common_mmh/fshell_qt_support> build config and enabled it on S^3 platform. Sysinfo command now returns Qt version info if Qt is available.
 
 =back
 
@@ -176,7 +192,7 @@ Added C<ENotifyKeypresses> and C<ECaptureCtrlC> flags to CCommandBase, so comman
 
 =item *
 
-fshell's current working directory is now normalised (via new TFileName2::Normalize function) so that the case matches what's on the filesystem).
+fshell's current working directory is now normalised (via new TFileName2::Normalize function) so that the case matches what's on the filesystem.
 
 =item *
 

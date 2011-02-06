@@ -1,6 +1,6 @@
 // grabscreen.cpp
 // 
-// Copyright (c) 2008 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2008 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -97,9 +97,12 @@ void CCmdGrabscreen::DoRunL()
 	{
 	if ((iFormat == ERaw) && (!iArguments.IsPresent(0)))
 		{
-		PrintError(KErrArgument, _L("STDOUT writing is not supported for raw format; please specify a filename"));
-		DisplayHelp();
-		User::Leave(KErrArgument);
+		LeaveIfErr(KErrArgument, _L("STDOUT writing is not supported for raw format; please specify a filename"));
+		}
+
+	if (!iArguments.IsPresent(0))
+		{
+		LeaveIfErr(Stdout().SetMode(RIoReadWriteHandle::EBinary), _L("Couldn't set stdout to binary mode"));
 		}
 	
 	LeaveIfErr(iWsSession.Connect(), _L("Couldn't connect to windowserver"));
@@ -108,14 +111,7 @@ void CCmdGrabscreen::DoRunL()
 	const TInt numScreens = iWsSession.NumberOfScreens();
 	if (iScreen >= numScreens)
 		{
-		if (numScreens == 1)
-			{
-			LeaveIfErr(KErrArgument, _L("Invalid screen number - there is only 1 screen"));
-			}
-		else
-			{
-			LeaveIfErr(KErrArgument, _L("Invalid screen number - there are only %d screens"));
-			}
+		LeaveIfErr(KErrArgument, _L("Invalid screen number not less than the screen count %d"), numScreens);
 		}
 #endif
 	LeaveIfErr(iDev->Construct(iScreen), _L("Couldn't construct CWsScreenDevice for screen %d"), iScreen);
@@ -229,8 +225,6 @@ void CCmdGrabscreen::RunL()
 	if (!iArguments.IsPresent(0))
 		{
 		User::LeaveIfNull(iImageData);
-		
-		Stdout().SetModeL(RIoReadWriteHandle::EBinary);
 		
 		// we need to expand the 8 bit data when writing to stdout
 		static const TInt KBufferSize = 0x100;

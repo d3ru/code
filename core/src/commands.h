@@ -421,6 +421,7 @@ private: // From CCommandBase.
 private:
 	RArray<TFileName2> iFileNames;
 	TBool iBinaryMode;
+	TBool iLegacyBinaryOption;
 	};
 
 

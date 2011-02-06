@@ -29,6 +29,7 @@ const TDesC& CCmdHello::Name() const
 void CCmdHello::DoRunL()
 	{
 	_LIT(KHelloWorld, "Hello World!");
+	_LIT(KCrLf, "\r\n");
 
 	if (iColor)
 		{
@@ -45,12 +46,14 @@ void CCmdHello::DoRunL()
 				}
 			}
 		buf->SetAttributesL(ConsoleAttributes::ENone); // Restore the colours to normal
+		buf->AppendL(KCrLf);
 		buf->Write(Stdout());
 		CleanupStack::PopAndDestroy(buf);
 		}
 	else
 		{
 		Write(KHelloWorld);
+		Write(KCrLf);
 		}
 	}
 

@@ -594,6 +594,7 @@
 #define FSHELL_UID_SHOWDEBUG                  0x10286F8D
 #define FSHELL_UID_INPUT                      0x10286B7D
 #define FSHELL_UID_BASE64                     0x10286B7E
+#define FSHELL_UID_OST                        0x10286F92
 
 #else // Not FSHELL_PROTECTED_UIDS
 
@@ -750,6 +751,7 @@
 #define FSHELL_UID_SHOWDEBUG                  0xE0286F8D
 #define FSHELL_UID_INPUT                      0xE0286B7D
 #define FSHELL_UID_BASE64                     0xE0286B7E
+#define FSHELL_UID_OST                        0xE0286F92
 
 #endif // FSHELL_PROTECTED_UIDS
 

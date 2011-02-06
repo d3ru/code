@@ -1,6 +1,6 @@
 # common_mmh.pod
 #
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -238,6 +238,16 @@ The TraceCore APIs are available.
 
 The HTTP libraries and all associated headers are available.
 
+=item FSHELL_OST_SUPPORT
+
+The OST router is available, in the form of the RDbgTrcComm API in dbgtrccomm.h
+
+=item FSHELL_QT_SUPPORT
+
+The trolls are here!
+
+As a convenience for building fshells commands that use Qt, a custom MMP include is available to set up the appropriate MMP configuration options and  includes and to link against QtCore.lib. To use it add C<#include E<lt>fshell/fsh_qt_include.mmhE<gt>> to your MMP file. Any Qt libraries other than QtCore must have C<library> statements as normal.
+
 =back
 
 A couple of further macros follow - these are specifically for platforms that provide an custom implementation of the relevant command rather than using fshell's built-in version.
@@ -285,5 +295,5 @@ An example platform.mmh is included below. This is for an imaginary platform bas
 
 =head1 Copyright
 
-Copyright (c) 2008-2010 Accenture. All rights reserved.
+Copyright (c) 2008-2011 Accenture. All rights reserved.
 

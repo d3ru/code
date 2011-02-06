@@ -1,6 +1,6 @@
 // bld.inf
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -38,6 +38,7 @@ FSHELL_ROM_INCLUDE(fsh_manifest_defs.iby)
 
 .\common.mmh              fshell/common.mmh
 .\fsh_system_include.mmh  fshell/fsh_system_include.mmh
+.\fsh_qt_include.mmh      fshell/fsh_qt_include.mmh
 
 // We have to export common.mmh (and platform.mmh) to rom\include as well so IBYs can access them
 FSHELL_ROM_INCLUDE2(common.mmh, fshell\common.mmh)

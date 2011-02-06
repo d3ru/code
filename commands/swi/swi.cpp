@@ -1,6 +1,6 @@
 // swi.cpp
 // 
-// Copyright (c) 2008 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2008 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -15,8 +15,6 @@
 #include <fshell/ltkutils.h>
 
 typedef TBuf<1> TUserInput;
-_LIT(KSwiYes,	"y");
-_LIT(KSwiNo,	"n");
 _LIT(KSwiJarExtension,	"*.jar");
 _LIT(KSwiJadExtension,	"*.jad");
 #ifndef SYMBIAN_JAVA_NOT_INCLUDED
@@ -148,49 +146,35 @@ TBool CCmdSwi::IsMidlet()
 	return EFalse;
 	}
 
-//
-// CCmdSwi::GetAnswer
-// only for use when not in quiet mode
-// Reads input from stdin, determines whether it's a 'yes' or 'no', returning ETrue, EFalse respectively
-//
-TBool CCmdSwi::GetAnswer()
+TUint CCmdSwi::Query(const TDesC& aPrompt, const TDesC& aValidKeys)
 	{
-	ASSERT(!iQuiet);
-	TUserInput in;
-	for (;;)
+	Printf(_L("%S [ ]"), &aPrompt);
+	Stdout().SetCursorPosRel(TPoint(-2, 0)); // Move cursor back between [ ]
+
+	TUint keycode = EKeyNull;
+	if (iQuiet)
 		{
-		if (Stdin().Read(in) != KErrNone)
-			{
-			return EFalse;
-			}
-		Stdout().Write(in);
-		if (in.MatchF(KSwiYes) == 0)
-			{
-			return ETrue;
-			}
-		if (in.MatchF(KSwiNo) == 0)
-			{
-			return EFalse;
-			}
-		// else it's an unrecognised response
+		// Just pretend the user selected whatever the first choice was
+		keycode = aValidKeys[0];
 		}
+	else
+		{
+		while (aValidKeys.Locate(keycode) == KErrNotFound)
+			{
+			keycode = Stdin().ReadKey();
+			}
+		}
+	// Print the key that the user entered, between the square brackets
+	Printf(_L("%c]\r\n"), TChar(keycode).IsPrint() ? keycode : ' ');
+	return keycode;
 	}
 
-//
-// MCmdSwiParent hooks
-//
-RIoConsoleReadHandle& CCmdSwi::Input()
+TBool CCmdSwi::Query(const TDesC& aPrompt)
 	{
-	return Stdin();
-	}
-
-RIoConsoleWriteHandle& CCmdSwi::Output(TInt aError)
-	{
-	if (aError == KErrNone)
-		{
-		return Stdout();
-		}
-	return Stderr();
+	Write(aPrompt);
+	_LIT(KYesNo, " (yes/no)");
+	_LIT(KYN, "yn");
+	return Query(KYesNo, KYN) == 'y';
 	}
 
 //
@@ -282,7 +266,21 @@ const TDesC* CCmdSwi::StringifyError(TInt aError) const
 //
 // Sis installer AO
 //
-CSwiSisInstallerAO* CSwiSisInstallerAO::NewL(MCmdSwiParent& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet)
+
+RIoConsoleReadHandle& CSwiSisInstallerAO::Stdin()
+	{
+	return iParent.Stdin();
+	}
+RIoConsoleWriteHandle& CSwiSisInstallerAO::Stdout()
+	{
+	return iParent.Stdout();
+	}
+RIoConsoleWriteHandle& CSwiSisInstallerAO::Stderr()
+	{
+	return iParent.Stderr();
+	}
+
+CSwiSisInstallerAO* CSwiSisInstallerAO::NewL(CCmdSwi& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet)
 	{
 	CSwiSisInstallerAO* self = new (ELeave) CSwiSisInstallerAO(aParent, aFs, aVerbose, aQuiet);
 	CleanupStack::PushL(self);
@@ -291,7 +289,7 @@ CSwiSisInstallerAO* CSwiSisInstallerAO::NewL(MCmdSwiParent& aParent, RFs& aFs, T
 	return self;
 	}
 
-CSwiSisInstallerAO::CSwiSisInstallerAO(MCmdSwiParent& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet)
+CSwiSisInstallerAO::CSwiSisInstallerAO(CCmdSwi& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet)
 	: CActive(CActive::EPriorityStandard), iParent(aParent), iVerbose(aVerbose), iQuiet(aQuiet), iCurrentDrive('c')
 	{
 	TFileName sessionPath;
@@ -336,20 +334,13 @@ void CSwiSisInstallerAO::PrintDetails(Swi::CSisRegistryPackage& aPackage)
 	{
 	if (iVerbose)
 		{
-		TName myBuf;
-		myBuf.Format(_L("\r\nName:\t%S\r\n"), &aPackage.Name());
-		Stdout().Write(myBuf);
-		myBuf.Format(_L("Vendor:\t%S\r\n"), &aPackage.Vendor());
-		Stdout().Write(myBuf);
-		myBuf.Format(_L("Uid:\t0x%x\r\n"), aPackage.Uid());
-		Stdout().Write(myBuf);
+		iParent.Printf(_L("\r\nName:\t%S\r\n"), &aPackage.Name());
+		iParent.Printf(_L("Vendor:\t%S\r\n"), &aPackage.Vendor());
+		iParent.Printf(_L("Uid:\t0x%x\r\n"), aPackage.Uid());
 		}
 	else
 		{
-		TBuf<256> buf; buf.Format(_L("0x%08x: "), aPackage.Uid());
-		Stdout().Write(buf);
-		Stdout().Write(aPackage.Name());
-		Stdout().Write(_L("\r\n"));
+		iParent.Printf(_L("0x%08x: %S\r\n"), aPackage.Uid(), &aPackage.Name());
 		}
 	}
 
@@ -462,14 +453,8 @@ Swi::CSisRegistryPackage* CSwiSisInstallerAO::GetSisRegistryPackageL(const TUid&
 //
 TBool CSwiSisInstallerAO::DisplayTextL(const Swi::CAppInfo& /*aAppInfo*/, Swi::TFileTextOption /*aOption*/, const TDesC& aText)
 	{
-	TBool response = ETrue; // default, the user will continue with the installation/uninstallation
-	if (!iQuiet)
-		{
-		Stdout().Write(aText);
-		Stdout().Write(_L("Continue [y/n]?\r\n"));
-		response = iParent.GetAnswer();
-		}
-	return response;
+	Stdout().Write(aText);
+	return iParent.Query(_L("Continue?"));
 	}
 
 void CSwiSisInstallerAO::DisplayErrorL(const Swi::CAppInfo& /*aAppInfo*/, Swi::TErrorDialog aType, const TDesC& /*aParam*/)
@@ -559,23 +544,12 @@ void CSwiSisInstallerAO::DisplayErrorL(const Swi::CAppInfo& /*aAppInfo*/, Swi::T
 	
 TBool CSwiSisInstallerAO::DisplayDependencyBreakL(const Swi::CAppInfo& /*aAppInfo*/, const RPointerArray<TDesC>& /*aComponents*/)
 	{
-	TBool response = ETrue; // default response is to continue with uninstallation
-	if (iVerbose)
-		{
-		Stdout().Write(_L("\r\nComponent being uninstalled has dependencies which may no longer work. Continue uninstalling [y/n]?\r\n"));
-		response = iParent.GetAnswer();
-		}
-	return response;
+	return iParent.Query(_L("Component being uninstalled has dependencies which may no longer work. Continue uninstalling?"));
 	}
 
 TBool CSwiSisInstallerAO::DisplayApplicationsInUseL(const Swi::CAppInfo& /*aAppInfo*/, const RPointerArray<TDesC>& /*aAppNames*/)
 	{
-	TBool response = EFalse; // EFalse indicates we don't continue with uninstallation
-	if (!iQuiet)
-		{
-		Stdout().Write(_L("\r\nApplication is currently open. Continue uninstalling? [y/n]\r\n"));
-		response = iParent.GetAnswer();
-		}
+	TBool response = iParent.Query(_L("Application is currently open. Continue uninstalling?"));
 	if (!response)
 		{
 		Stderr().Write(_L("Uninstall aborted. Application will not be closed.\r\n"));
@@ -585,48 +559,30 @@ TBool CSwiSisInstallerAO::DisplayApplicationsInUseL(const Swi::CAppInfo& /*aAppI
 
 TBool CSwiSisInstallerAO::DisplayQuestionL(const Swi::CAppInfo& /* aAppInfo */, Swi::TQuestionDialog aQuestion, const TDesC& aDes)
 	{
-	TBool response = ETrue; // default behaviour assumes the user presses 'Yes' to any question
-	if (!iQuiet)
+	if (aQuestion == Swi::EQuestionIncompatible)
 		{
-		if (aQuestion == Swi::EQuestionIncompatible)
-			{
-			Stdout().Write(_L("\r\nApplication is not compatible with this device. Install anyway [y/n]?"));
-			}
-		else if (aQuestion == Swi::EQuestionOverwriteFile)
-			{
-			Stdout().Write(_L("\r\nSome system files will be overwritten by this installation. Install anyway [y/n]?"));
-			}
-		else
-			{
-			TBuf<128> buf; buf.Format(_L("Unrecognised question from engine %d\r\n"), aQuestion);
-			Stderr().Write(buf);
-			User::Leave(KErrNotSupported);
-			}
-
-		if (aDes.Length() > 0)
-			{
-			Stdout().Write(aDes);
-			}
-		Stdout().Write(_L("\r\n"));
-		response = iParent.GetAnswer();
+		return iParent.Query(_L("Application is not compatible with this device. Install anyway?"));
 		}
-	return response;
+	else if (aQuestion == Swi::EQuestionOverwriteFile)
+		{
+		return iParent.Query(_L("Some system files will be overwritten by this installation. Install anyway?"));
+		}
+	else
+		{
+		PrintWarning(_L("Unrecognised question %d from SWI engine"), aQuestion);
+		return iParent.Query(aDes);
+		}
 	}
 	
 TBool CSwiSisInstallerAO::DisplayInstallL(const Swi::CAppInfo& aAppInfo, const CApaMaskedBitmap* /*aLogo*/, const RPointerArray<Swi::CCertificateInfo>& /*aCertificates*/)
 	{
 	if (iVerbose)
 		{
-		TBuf<256> myBuf;
-		myBuf.Format(_L("NAME:\t\t%S\r\n"), &aAppInfo.AppName());
-		Stdout().Write(myBuf);
-		myBuf.Format(_L("VENDOR:\t\t%S\r\n"), &aAppInfo.AppVendor());
-		Stdout().Write(myBuf);
-		myBuf.Format(_L("VERSION:\t%d.%d.%d\r\n"), aAppInfo.AppVersion().iMajor, aAppInfo.AppVersion().iMinor, aAppInfo.AppVersion().iBuild);
-		Stdout().Write(myBuf);
+		iParent.Printf(_L("Name:    %S\r\n"), &aAppInfo.AppName());
+		iParent.Printf(_L("Vendor:  %S\r\n"), &aAppInfo.AppVendor());
+		iParent.Printf(_L("Version: %d.%d.%d\r\n"), aAppInfo.AppVersion().iMajor, aAppInfo.AppVersion().iMinor, aAppInfo.AppVersion().iBuild);
 		}
-	TBool response = ETrue; // default behaviour is to continue the install
-	return response;
+	return ETrue;
 	}
 	
 TBool CSwiSisInstallerAO::DisplayGrantCapabilitiesL(const Swi::CAppInfo& /*aAppInfo*/, const TCapabilitySet& /*aCapabilitySet*/)
@@ -652,49 +608,42 @@ TInt CSwiSisInstallerAO::DisplayLanguageL(const Swi::CAppInfo& /*aAppInfo*/, con
 	
 TInt CSwiSisInstallerAO::DisplayDriveL(const Swi::CAppInfo& /*aAppInfo*/, TInt64 aSize, const RArray<TChar>& aDriveLetters, const RArray<TInt64>& aDriveSpaces)
 	{
-	TInt response = 0; // default to the first known drive
+	TBuf<26> drives;
+	CTextBuffer* buf = CTextBuffer::NewLC(256);
+	buf->AppendL(_L("\r\nInstallation requires "));
+	buf->AppendHumanReadableSizeL(aSize, EUnaligned);
+	buf->AppendL(_L("\r\n"));
 	for (TInt i = 0; i < aDriveLetters.Count(); i++)
 		{
-		TChar letter = aDriveLetters[i];
-		letter.LowerCase();
-		if (letter == iCurrentDrive)
+		TChar ch = aDriveLetters[i];
+		ch.LowerCase();
+		if (ch == iCurrentDrive)
 			{
-			response = i; // Default to using the CWD drive, if it is in the list of available drives
-			break;
+			// Put it at front so it's default
+			TBuf<1> c;
+			c.Append(ch);
+			drives.Insert(0, c);
 			}
-		}
-
-	if (!iQuiet)
-		{
-		TBuf<128> info;
-		info.Format(_L("Application requires %d bytes free space. Please select installation drive:\r\n"), aSize);
-		Stdout().Write(info);
-		for (TInt ii = 0 ; ii < aDriveLetters.Count() ; ii++)
+		else
 			{
-			info.Format(_L("%d. \'"), ii);		// pseudo-drive number
-			info.Append(aDriveLetters[ii]);		// drive letter
-			info.Append(_L("\' "));
-			info.AppendNum(aDriveSpaces[ii]); // free space
-			info.Append(_L(" bytes free\r\n"));
-			Stdout().Write(info);
+			drives.Append(ch);
 			}
-		TUserInput in;
-		User::LeaveIfError(Stdin().Read(in));
-		TLex lex(in);
-		User::LeaveIfError(lex.Val(response));
+		buf->AppendFormatL(_L("%c: "), TUint(ch));
+		//TODO add drive name
+		buf->AppendHumanReadableSizeL(aDriveSpaces[i]);
+		buf->AppendFormatL(_L(" free\r\n"));
 		}
-	return response;
+	buf->Write(Stdout());
+	CleanupStack::PopAndDestroy(buf);
+	drives.Append(EKeyEscape);
+	TChar drive(iParent.Query(_L("Please select installation drive letter from the above list: (or press escape to cancel)"), drives));
+	drive.UpperCase(); // aDriveLetters is upper case, sigh
+	return aDriveLetters.Find(drive); // This will do the right thing even if EKeyEscape was returned - that isn't in the drive array so Find will return -1, which is the correct value to abort the installation
 	}
 	
 TBool CSwiSisInstallerAO::DisplayUpgradeL(const Swi::CAppInfo& /*aAppInfo*/, const Swi::CAppInfo& /*aExistingAppInfo*/)
 	{
-	TBool response = ETrue; // default behaviour is to continue the install
-	if (!iQuiet)
-		{
-		Stdout().Write(_L("Do you wish to replace the existing installed application [y/n]?\r\n"));
-		response = iParent.GetAnswer();
-		}
-	return response;
+	return iParent.Query(_L("Do you wish to replace the existing installation?"));
 	}
 	
 TBool CSwiSisInstallerAO::DisplayOptionsL(const Swi::CAppInfo& /*aAppInfo*/, const RPointerArray<TDesC>& /*aOptions*/, RArray<TBool>& /*aSelections*/)
@@ -766,13 +715,7 @@ void CSwiSisInstallerAO::HandleCancellableInstallEventL(const Swi::CAppInfo& /*a
 
 TBool CSwiSisInstallerAO::DisplaySecurityWarningL(const Swi::CAppInfo& /*aAppInfo*/, Swi::TSignatureValidationResult /*aSigValidationResult*/, RPointerArray<CPKIXValidationResultBase>& /*aPkixResults*/, RPointerArray<Swi::CCertificateInfo>& /*aCertificates*/, TBool /*aInstallAnyway*/)
 	{
-	TBool response = ETrue; // default behaviour is to continue the install
-	if (!iQuiet)
-		{
-		Stdout().Write(_L("\r\nApplication signature cannot be validated. Continue installing [y/n]?\r\n"));
-		response = iParent.GetAnswer();
-		}
-	return response;
+	return iParent.Query(_L("Application signature cannot be validated. Continue installing?"));
 	}
 	
 TBool CSwiSisInstallerAO::DisplayOcspResultL(const Swi::CAppInfo& /*aAppInfo*/, Swi::TRevocationDialogMessage /*aMessage*/, RPointerArray<TOCSPOutcome>& /*aOutcomes*/, RPointerArray<Swi::CCertificateInfo>& /*aCertificates*/, TBool /*aWarningOnly*/)
@@ -828,7 +771,21 @@ TBool CSwiSisInstallerAO::DisplayUninstallL(const Swi::CAppInfo& aAppInfo)
 //
 // java ui installer
 //
-CSwiMidletInstallerAO* CSwiMidletInstallerAO::NewL(MCmdSwiParent& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet)
+
+RIoConsoleReadHandle& CSwiMidletInstallerAO::Stdin()
+	{
+	return iParent.Stdin();
+	}
+RIoConsoleWriteHandle& CSwiMidletInstallerAO::Stdout()
+	{
+	return iParent.Stdout();
+	}
+RIoConsoleWriteHandle& CSwiMidletInstallerAO::Stderr()
+	{
+	return iParent.Stderr();
+	}
+
+CSwiMidletInstallerAO* CSwiMidletInstallerAO::NewL(CCmdSwi& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet)
 	{
 	CSwiMidletInstallerAO* self = new (ELeave) CSwiMidletInstallerAO(aParent, aFs, aVerbose, aQuiet);
 	CleanupStack::PushL(self);
@@ -837,7 +794,7 @@ CSwiMidletInstallerAO* CSwiMidletInstallerAO::NewL(MCmdSwiParent& aParent, RFs& 
 	return self;
 	}
 
-CSwiMidletInstallerAO::CSwiMidletInstallerAO(MCmdSwiParent& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet)
+CSwiMidletInstallerAO::CSwiMidletInstallerAO(CCmdSwi& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet)
 	: CActive(CActive::EPriorityStandard), iParent(aParent), iFs(aFs), iVerbose(aVerbose), iQuiet(aQuiet)
 	{
 	CActiveScheduler::Add(this);
@@ -1104,35 +1061,17 @@ TBool CSwiMidletInstallerAO::SelectDriveL(const CMIDletSuiteAttributes& /*aMIDle
 
 TBool CSwiMidletInstallerAO::ReplaceExistingMIDletL(const CMIDletSuiteAttributes& /*aMIDlet*/, const TAppVersion& /*aOldVersion*/)
 	{
-	TBool response = ETrue; // default behaviour is to continue the install
-	if (!iQuiet)
-		{
-		Stdout().Write(_L("Do you wish to replace the existing midlet [y/n]?\r\n"));
-		response = iParent.GetAnswer();
-		}
-	return response;
+	return iParent.Query(_L("Do you wish to replace the existing midlet?"));
 	}
 	
 TBool CSwiMidletInstallerAO::UpgradeRMSL(const CMIDletSuiteAttributes& /*aMIDlet*/, const TAppVersion& /*aOldVersion*/)
 	{
-	TBool response = ETrue; // default behaviour is to continue the install
-	if (!iQuiet)
-		{
-		Stdout().Write(_L("Do you wish to upgrade the existing midlet [y/n]?\r\n"));
-		response = iParent.GetAnswer();
-		}
-	return response;
+	return iParent.Query(_L("Do you wish to upgrade the existing midlet?"));
 	}
 
 TBool CSwiMidletInstallerAO::MIDletUntrustedL(const CMIDletSuiteAttributes& /*aMIDlet*/)
 	{
-	TBool response = ETrue; // default behaviour is to continue the install
-	if (!iQuiet)
-		{
-		Stdout().Write(_L("\r\nMidlet is untrusted. Continue installing [y/n]?\r\n"));
-		response = iParent.GetAnswer();
-		}
-	return response;
+	return iParent.Query(_L("Midlet is untrusted. Continue installing?"));
 	}
 
 void CSwiMidletInstallerAO::CertificateHasNoRootL(const CMIDletSuiteAttributes& /*aMIDlet*/, const CPKIXCertChain& /*aCertChain*/, const CPKIXValidationResult& /*aValidationResult*/)

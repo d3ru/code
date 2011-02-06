@@ -1,6 +1,6 @@
 // swi.h
 // 
-// Copyright (c) 2008 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2008 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -33,18 +33,7 @@
 
 using namespace IoUtils;
 using namespace Swi;
-
-//
-// MCmdSwiParent
-//
-class MCmdSwiParent
-	{
-public:
-	virtual RIoConsoleReadHandle& Input() = 0;
-	virtual RIoConsoleWriteHandle& Output(TInt aError = KErrNone) = 0;
-	virtual void Finished(const TInt aError) = 0;
-	virtual TBool GetAnswer() = 0;
-	};
+class CCmdSwi;
 
 #ifndef SYMBIAN_JAVA_NOT_INCLUDED
 	//
@@ -54,7 +43,7 @@ public:
 	class CSwiMidletInstallerAO : public CActive, public MJavaInstallerUI, public MJarDownloaderUI, public MJavaRemoverUI
 		{
 	public:
-		static CSwiMidletInstallerAO* NewL(MCmdSwiParent& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet);
+		static CSwiMidletInstallerAO* NewL(CCmdSwi& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet);
 		~CSwiMidletInstallerAO();
 		
 		void InstallL(TFileName& aInstallFile);
@@ -90,19 +79,19 @@ public:
 		virtual TBool MIDletInUseL();
 		virtual TBool FileInUseL(const TDesC& aFileName);
 	private:
-		CSwiMidletInstallerAO(MCmdSwiParent& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet);
+		CSwiMidletInstallerAO(CCmdSwi& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet);
 		void ConstructL();
 		void DisplayPackageL(MJavaRegistryMIDletEntry& aPackage);
 		
-		inline RIoConsoleReadHandle& Stdin(){return iParent.Input();}
-		inline RIoConsoleWriteHandle& Stdout(){return iParent.Output();}
-		inline RIoConsoleWriteHandle& Stderr(){return iParent.Output(KErrGeneral);}
+		RIoConsoleReadHandle& Stdin();
+		RIoConsoleWriteHandle& Stdout();
+		RIoConsoleWriteHandle& Stderr();
 	
 		// from CActive
 		void DoCancel();
 		void RunL();
 	private:
-		MCmdSwiParent& iParent;
+		CCmdSwi& iParent;
 		RFs& iFs;
 		TBool iVerbose;
 		TBool iQuiet;
@@ -121,7 +110,7 @@ public:
 class CSwiSisInstallerAO : public CActive, public Swi::MUiHandler
 	{
 public:
-	static CSwiSisInstallerAO* NewL(MCmdSwiParent& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet);
+	static CSwiSisInstallerAO* NewL(CCmdSwi& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet);
 	~CSwiSisInstallerAO();
 	
 	// user commands
@@ -149,22 +138,22 @@ public:
 	virtual TBool DisplayMissingDependencyL(const Swi::CAppInfo& aAppInfo, const TDesC& aDependencyName, TVersion aWantedVersionFrom, TVersion aWantedVersionTo, TVersion aInstalledVersion);
 	virtual TBool DisplayUninstallL(const Swi::CAppInfo& aAppInfo);
 private:
-	CSwiSisInstallerAO(MCmdSwiParent& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet);
+	CSwiSisInstallerAO(CCmdSwi& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet);
 	void ConstructL();
 	
 	void PrintDetails(Swi::CSisRegistryPackage& aPackage);
 	void DisplayPackageL(const TUid& aPackageUid);
 	Swi::CSisRegistryPackage* GetSisRegistryPackageL(const TUid& aPackageUid);
 
-	inline RIoConsoleReadHandle& Stdin(){return iParent.Input();}
-	inline RIoConsoleWriteHandle& Stdout(){return iParent.Output();}
-	inline RIoConsoleWriteHandle& Stderr(){return iParent.Output(KErrGeneral);}
+	RIoConsoleReadHandle& Stdin();
+	RIoConsoleWriteHandle& Stdout();
+	RIoConsoleWriteHandle& Stderr();
 		
 	// from CActive
 	void DoCancel();
 	void RunL();
 private:
-	MCmdSwiParent& iParent;
+	CCmdSwi& iParent;
 	TBool iVerbose;
 	TBool iQuiet;
 	CAsyncLauncher* iLauncher;
@@ -178,7 +167,7 @@ private:
 // CCmdSwi
 // Fshell-console based class handling swi related functionality
 //
-class CCmdSwi : public CCommandBase, public MCmdSwiParent, public MCommandExtensionsV1
+class CCmdSwi : public CCommandBase, public MCommandExtensionsV1
 	{
 public:
 	static CCommandBase* NewLC();
@@ -189,18 +178,17 @@ private:
 	// utilities
 	TBool IsMidlet();
 	
-	// fshell hooks
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();
 	virtual void ArgumentsL(RCommandArgumentList& aArguments);
 	virtual void OptionsL(RCommandOptionList& aOptions);
 	const TDesC* StringifyError(TInt aError) const;
 		
-	// MCmdSwiParent hooks 	
-	virtual RIoConsoleReadHandle& Input();
-	virtual RIoConsoleWriteHandle& Output(TInt aError);
-	virtual void Finished(TInt aError);
-	virtual TBool GetAnswer();
+public: // For AOs to use
+	void Finished(TInt aError);
+	TBool Query(const TDesC& aPrompt);
+	TUint Query(const TDesC& aPrompt, const TDesC& aValidKeys);
+
 private:
 #ifndef SYMBIAN_JAVA_NOT_INCLUDED
 	CSwiMidletInstallerAO* iMidletHandler;

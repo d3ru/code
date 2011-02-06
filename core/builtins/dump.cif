@@ -20,9 +20,13 @@ Write a hex and ASCII representation of the contents of a file to C<stdout>.
 
 The name of the file to dump. If not specified, C<stdin> is dumped.
 
-==option bool B binary
+==option bool b binary
 
-Read from C<stdin> in binary mode. This prevents the console from intercepting escape sequences.
+Read from C<stdin> in binary mode. This prevents the console from intercepting escape sequences. Only has an effect if no filenames are specified.
+
+==option bool B old-binary-option
+
+Same as C<-b>. Kept for compatibility.
 
 ==copyright
 

@@ -48,7 +48,7 @@ void CFileReader::Read(const TDesC& aFileName, TInt aOffset, MFileReaderObserver
 	else
 		{
 		iFile.Close();
-		TInt err = iFile.Open(iFs, aFileName, EFileRead);
+		TInt err = iFile.Open(iFs, aFileName, EFileShareReadersOnly | EFileRead);
 		if (err)
 			{
 			iObserver->HandleFileReadError(err);

@@ -1,0 +1,39 @@
+// fsh_qt_include.mmh
+// 
+// Copyright (c) 2011 Accenture. All rights reserved.
+// This component and the accompanying materials are made available
+// under the terms of the "Eclipse Public License v1.0"
+// which accompanies this distribution, and is available
+// at the URL "http://www.eclipse.org/legal/epl-v10.html".
+// 
+// Initial Contributors:
+// Accenture - Initial contribution
+//
+
+#include <fshell/fsh_system_include.mmh>
+
+#ifdef FSHELL_QT_SUPPORT
+
+// I'm not looking forward to supporting this...
+
+MACRO		UNICODE
+MACRO		QT_KEYPAD_NAVIGATION
+MACRO		QT_SOFTKEYS_ENABLED
+MACRO		QT_USE_MATH_H_FLOATS
+//MACRO		QT_GUI_LIB
+MACRO		QT_CORE_LIB
+
+systeminclude	/epoc32/include/stdapis /epoc32/include/stdapis/stlport /epoc32/include/mw/QtCore
+
+LIBRARY		libstdcpp.lib
+LIBRARY		QtCore.lib
+
+OPTION CW -wchar_t on
+OPTION ARMCC --visibility_inlines_hidden
+#if defined(ARMCC_4_0)
+OPTION ARMCC --import_all_vtbl
+#endif
+OPTION GCCE -fvisibility-inlines-hidden
+OPTION_REPLACE ARMCC --export_all_vtbl -D__QT_NOEFFECTMACRO_DONOTUSE
+
+#endif // FSHELL_QT_SUPPORT

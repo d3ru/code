@@ -1224,6 +1224,32 @@ GLDEF_C TInt E32Main()\
 	return err;\
 	}\
 
+// Only difference to the above is that it doesn't do the heap checks, as that goes right out of the window when using Qt APIs
+// At some point it might also set up a QCoreApplication
+#define QT_EXE_BOILER_PLATE(__CLASS_NAME) \
+void MainL()\
+	{\
+	CActiveScheduler* scheduler = new(ELeave) CActiveScheduler;\
+	CleanupStack::PushL(scheduler);\
+	CActiveScheduler::Install(scheduler);\
+	IoUtils::CCommandBase* command = __CLASS_NAME::NewLC();\
+	command->RunCommandL();\
+	CleanupStack::PopAndDestroy(2, scheduler);\
+	}\
+\
+GLDEF_C TInt E32Main()\
+	{\
+	TInt err = KErrNoMemory;\
+	CTrapCleanup* cleanup = CTrapCleanup::New();\
+	if (cleanup)\
+		{\
+		TRAP(err, MainL());\
+		delete cleanup;\
+		}\
+	return err;\
+	}\
+
+
 // Note, this used to be a member function of CCommandBase (called "LeaveIfError"). It was changed to a macro to work around
 // a problem with GCCE (version "arm-none-symbianelf-gcc.exe (GCC) 3.4.3 (release) (CodeSourcery ARM Q1C 2005)") whereby 
 // USER-EXEC 3 panics would occur if a leave from a function with variadic parameters took place.

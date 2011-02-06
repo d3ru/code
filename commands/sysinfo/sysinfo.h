@@ -1,6 +1,6 @@
 // sysinfo.h
 // 
-// Copyright (c) 2008 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2008 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -15,6 +15,7 @@
 #include <hal.h>
 #include <hal_data.h>
 
+#include <fshell/common.mmh>
 #include <fshell/ioutils.h>
 using namespace IoUtils;
 
@@ -32,6 +33,9 @@ private:
 	void PrintKernelHalStuff();
 	void PagingFormat(TUint aFlags);
 	void PrintRomVersion();
+#ifdef FSHELL_QT_SUPPORT
+	void PrintQtInfo();
+#endif
 	static void IdentCapToString(TUint32& aCap, TDes &aDes);
 	
 private: // From CCommandBase.
