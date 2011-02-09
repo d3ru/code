@@ -102,7 +102,7 @@ void CCmdFfstrace::DoRunL()
 	if (iCommand == EMonitor)
 		{
 		iBtraceReader = CBtraceReader::NewL(CBtraceReader::EFlushOnBtraceThreshold, 1024*1024, 512*1024);
-		iBtraceReader->AddObserverL(BTrace::EFfsTrace, *this);
+		iBtraceReader->AddObserverL(ExtraBTrace::EFfsTrace, *this);
 		iBtraceReader->SetMultipartReassemblyL(10);
 		TBtraceTickCount now;
 		now.SetToNow();
@@ -116,10 +116,10 @@ void CCmdFfstrace::DoRunL()
 
 void CCmdFfstrace::HandleBtraceFrameL(const TBtraceFrame& aFrame)
 	{
-	if (aFrame.iCategory == BTrace::EFfsTrace)
+	if (aFrame.iCategory == ExtraBTrace::EFfsTrace)
 		{
-		TInt fn = aFrame.iSubCategory & ~BTrace::EFfsPost;
-		TBool post = aFrame.iSubCategory & BTrace::EFfsPost;
+		TInt fn = aFrame.iSubCategory & ~ExtraBTrace::EFfsPost;
+		TBool post = aFrame.iSubCategory & ExtraBTrace::EFfsPost;
 		TUint threadId = *(TUint*)aFrame.iData.Ptr();
 		TPtrC name((TUint16*)(aFrame.iData.Ptr()+4), (aFrame.iData.Size()-4)/2);
 		TPtrC newName;
@@ -127,7 +127,7 @@ void CCmdFfstrace::HandleBtraceFrameL(const TBtraceFrame& aFrame)
 		if (post) Printf(_L("-"));
 		else Printf(_L("+"));
 
-		TBool twoNames = (fn == BTrace::EFfsRename || fn == BTrace::EFfsFileRename);
+		TBool twoNames = (fn == ExtraBTrace::EFfsRename || fn == ExtraBTrace::EFfsFileRename);
 		if (twoNames)
 			{
 			TInt separator = name.Locate(0);
@@ -140,29 +140,29 @@ void CCmdFfstrace::HandleBtraceFrameL(const TBtraceFrame& aFrame)
 
 		switch (fn)
 			{
-			case BTrace::EFfsDelete:
+			case ExtraBTrace::EFfsDelete:
 				Printf(_L("Delete %S"), &name);
 				break;
-			case BTrace::EFfsFileOpen:
+			case ExtraBTrace::EFfsFileOpen:
 				Printf(_L("Open %S"), &name);
 				break;
-			case BTrace::EFfsFileCreate:
+			case ExtraBTrace::EFfsFileCreate:
 				Printf(_L("Create %S"), &name);
 				break;
-			case BTrace::EFfsFileSubClose:
+			case ExtraBTrace::EFfsFileSubClose:
 				Printf(_L("Close %S"), &name);
 				break;
-			case BTrace::EFfsFileReplace:
+			case ExtraBTrace::EFfsFileReplace:
 				Printf(_L("Replace %S"), &name);
 				break;
-			case BTrace::EFfsFileTemp:
+			case ExtraBTrace::EFfsFileTemp:
 				Printf(_L("Open temp %S"), &name);
 				break;
-			case BTrace::EFfsRename:
-			case BTrace::EFfsFileRename:
+			case ExtraBTrace::EFfsRename:
+			case ExtraBTrace::EFfsFileRename:
 				Printf(_L("Rename from %S to %S"), &name, &newName);
 				break;
-			case BTrace::EFfsEntry:
+			case ExtraBTrace::EFfsEntry:
 				Printf(_L("RFs::Entry %S"), &name);
 				break;
 			default:

@@ -52,7 +52,7 @@ Added USB fshell icon and FSHELL_PIPS_SUPPORT to default S^3 build.
 
 =item *
 
-The columns no longer jump around in the top command. Cleaned up swi's output.
+The columns no longer jump around in the top command. Cleaned up swi's output and added version and file info to the --verbose list.
 
 =item *
 
@@ -81,6 +81,14 @@ Fixed long-standing bug in L<hello's|commands::hello> C<--color> option that cau
 =item *
 
 Added L<C<FSHELL_QT_SUPPORT>|internal::common_mmh/fshell_qt_support> build config and enabled it on S^3 platform. Sysinfo command now returns Qt version info if Qt is available.
+
+=item *
+
+Changed match command so end-anchored match strings (ie ones not ending with a "*") behave as expected.
+
+=item *
+
+Fixed long-standing bug in VT100 console size detect that caused it to give up and make fshell think the console window was tiny if there was junk data in the serial port buffer.
 
 =back
 

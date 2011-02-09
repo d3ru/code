@@ -110,7 +110,7 @@ class CCmdSwi;
 class CSwiSisInstallerAO : public CActive, public Swi::MUiHandler
 	{
 public:
-	static CSwiSisInstallerAO* NewL(CCmdSwi& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet);
+	static CSwiSisInstallerAO* NewL(CCmdSwi& aParent, RFs& aFs, TInt aVerbose, TBool aQuiet);
 	~CSwiSisInstallerAO();
 	
 	// user commands
@@ -142,6 +142,7 @@ private:
 	void ConstructL();
 	
 	void PrintDetails(Swi::CSisRegistryPackage& aPackage);
+	void PrintDetailsL(Swi::RSisRegistryEntry& aEntry);
 	void DisplayPackageL(const TUid& aPackageUid);
 	Swi::CSisRegistryPackage* GetSisRegistryPackageL(const TUid& aPackageUid);
 
@@ -154,7 +155,7 @@ private:
 	void RunL();
 private:
 	CCmdSwi& iParent;
-	TBool iVerbose;
+	TInt iVerbose;
 	TBool iQuiet;
 	CAsyncLauncher* iLauncher;
 	Swi::RSisRegistrySession iRegistrySession;
@@ -203,7 +204,7 @@ private:
 		} iCommand;
 	TUid iUid;
 	HBufC* iMatch;
-	TBool iVerbose;
+	RArray<TBool> iVerbose;
 	TBool iQuiet;
 	};
 

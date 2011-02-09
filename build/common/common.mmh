@@ -387,6 +387,10 @@
 #define FSHELL_CORE_SUPPORT_FSCK
 #endif
 
+#if defined(FSHELL_TRACE_SUPPORT) && defined(FSHELL_CAP_ALL)
+#define FSHELL_FSTRACER_SUPPORT
+#endif
+
 //
 // qr3.
 //

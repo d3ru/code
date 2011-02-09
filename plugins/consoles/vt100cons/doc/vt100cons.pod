@@ -78,7 +78,7 @@ Specifies the serial port name to be opened. Must be specified. If no other conf
 
 If present, set the baud rate of the serial port. Allowed values are: 115200, 57600, 19200, 9600. If specified, the port is configured with the following settings: rate as specified; data bits 8; stop bits 1; parity none; handshake 0, terminator count 0. For virtual serial ports (eg USB ACMs or Bluetooth serial ports) it is generally not necessary to configure hardware attributes so the rate parameter should not be specified.
 
-=item * C<debug>
+=item * C<debug=1>
 
 If present, the console will print out some debugging diagnostics to the underlying console during construction.
 

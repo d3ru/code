@@ -186,21 +186,21 @@ TInt CFfsTracerFsPlugin::DoRequestL(TFsPluginRequest& aRequest)
 	// Map from FS opcodes to the compacted btrace ones
 	switch (fn)
 		{
-		case EFsDelete: subcat = BTrace::EFfsDelete; break;
-		case EFsRename: subcat = BTrace::EFfsRename; break;
-		case EFsReplace: subcat = BTrace::EFfsReplace; break;
-		case EFsEntry: subcat = BTrace::EFfsEntry; break;
-		case EFsFileSubClose: subcat = BTrace::EFfsFileSubClose; break;
-		case EFsFileOpen: subcat = BTrace::EFfsFileOpen; break;
-		case EFsFileCreate: subcat = BTrace::EFfsFileCreate; break;
-		case EFsFileReplace: subcat = BTrace::EFfsFileReplace; break;
-		case EFsFileTemp: subcat = BTrace::EFfsFileTemp; break;
-		case EFsFileRename: subcat = BTrace::EFfsFileRename; break;
+		case EFsDelete: subcat = ExtraBTrace::EFfsDelete; break;
+		case EFsRename: subcat = ExtraBTrace::EFfsRename; break;
+		case EFsReplace: subcat = ExtraBTrace::EFfsReplace; break;
+		case EFsEntry: subcat = ExtraBTrace::EFfsEntry; break;
+		case EFsFileSubClose: subcat = ExtraBTrace::EFfsFileSubClose; break;
+		case EFsFileOpen: subcat = ExtraBTrace::EFfsFileOpen; break;
+		case EFsFileCreate: subcat = ExtraBTrace::EFfsFileCreate; break;
+		case EFsFileReplace: subcat = ExtraBTrace::EFfsFileReplace; break;
+		case EFsFileTemp: subcat = ExtraBTrace::EFfsFileTemp; break;
+		case EFsFileRename: subcat = ExtraBTrace::EFfsFileRename; break;
 		default:
 			// An operation we're not interested in
 			return KErrNone;
 		}
-	if (aRequest.IsPostOperation()) subcat |= BTrace::EFfsPost;
+	if (aRequest.IsPostOperation()) subcat |= ExtraBTrace::EFfsPost;
 
 	TBuf<513> name; // Twice as big as a max filename because for renames we need it to fit two TFileNames
 	GetName(&aRequest, name);
@@ -224,7 +224,7 @@ TInt CFfsTracerFsPlugin::DoRequestL(TFsPluginRequest& aRequest)
 		clientThread.Close();
 		}
 
-	BTraceBig(BTrace::EFfsTrace, subcat, threadId, name.Ptr(), name.Size());
+	BTraceBig(ExtraBTrace::EFfsTrace, subcat, threadId, name.Ptr(), name.Size());
 	
 	return KErrNone;
 	}

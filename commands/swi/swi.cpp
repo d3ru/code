@@ -86,9 +86,9 @@ void CCmdSwi::DoRunL()
 		iMatch = KDefaultMatch().AllocL();
 		}
 
-	iSisHandler = CSwiSisInstallerAO::NewL(*this, FsL(), iVerbose, iQuiet);
+	iSisHandler = CSwiSisInstallerAO::NewL(*this, FsL(), iVerbose.Count(), iQuiet);
 #ifndef SYMBIAN_JAVA_NOT_INCLUDED
-	iMidletHandler = CSwiMidletInstallerAO::NewL(*this, FsL(), iVerbose, iQuiet);
+	iMidletHandler = CSwiMidletInstallerAO::NewL(*this, FsL(), iVerbose.Count(), iQuiet);
 #endif
 
 	switch (iCommand)
@@ -289,7 +289,7 @@ CSwiSisInstallerAO* CSwiSisInstallerAO::NewL(CCmdSwi& aParent, RFs& aFs, TBool a
 	return self;
 	}
 
-CSwiSisInstallerAO::CSwiSisInstallerAO(CCmdSwi& aParent, RFs& aFs, TBool aVerbose, TBool aQuiet)
+CSwiSisInstallerAO::CSwiSisInstallerAO(CCmdSwi& aParent, RFs& aFs, TInt aVerbose, TBool aQuiet)
 	: CActive(CActive::EPriorityStandard), iParent(aParent), iVerbose(aVerbose), iQuiet(aQuiet), iCurrentDrive('c')
 	{
 	TFileName sessionPath;
@@ -334,14 +334,60 @@ void CSwiSisInstallerAO::PrintDetails(Swi::CSisRegistryPackage& aPackage)
 	{
 	if (iVerbose)
 		{
-		iParent.Printf(_L("\r\nName:\t%S\r\n"), &aPackage.Name());
-		iParent.Printf(_L("Vendor:\t%S\r\n"), &aPackage.Vendor());
-		iParent.Printf(_L("Uid:\t0x%x\r\n"), aPackage.Uid());
+		Swi::RSisRegistryEntry entry;
+		TInt err;
+		TRAP(err, err = entry.OpenL(iRegistrySession, aPackage)); // Gotta love fns that leave AND return an err
+		if (!err)
+			{
+			TRAP(err, PrintDetailsL(entry));
+			entry.Close();
+			}
+		if (err) PrintWarning(_L("Error %d reading details for package %S"), &aPackage.Name());
 		}
 	else
 		{
 		iParent.Printf(_L("0x%08x: %S\r\n"), aPackage.Uid(), &aPackage.Name());
 		}
+	}
+
+void CSwiSisInstallerAO::PrintDetailsL(Swi::RSisRegistryEntry& aEntry)
+	{
+	CTextBuffer* buffer = CTextBuffer::NewLC(1024);
+	// These APIs are so inconsistant...
+	HBufC* name = aEntry.PackageNameL();
+	CleanupStack::PushL(name);
+	HBufC* vendor = aEntry.UniqueVendorNameL();
+	CleanupStack::PushL(vendor);
+	TVersion version = aEntry.VersionL();
+	buffer->AppendFormatL(_L("Name:\t%S\r\nVersion:\t%d.%d.%d\r\n"), name, (TInt)version.iMajor, (TInt)version.iMinor, (TInt)version.iBuild);
+	buffer->AppendFormatL(_L("Vendor:\t%S\r\nUid:\t0x%x\r\nSize:\t"), vendor, aEntry.UidL().iUid);
+	buffer->AppendHumanReadableSizeL(aEntry.SizeL(), EUnaligned);
+	buffer->AppendFormatL(_L("\r\nInstalled on:\t"));
+	TUint installed = aEntry.InstalledDrivesL();
+	for (TInt i = 0; i < 32; i++)
+		{
+		if (installed & (1<<i)) buffer->AppendFormatL(_L("%c, "), 'a' + i);
+		}
+	if (installed) buffer->Delete(buffer->Length()-2, 2); // Remove trailing ", "
+
+	CTextFormatter* formatter = CTextFormatter::NewLC(Stdout());
+	formatter->TabulateL(0, 1, buffer->Descriptor());
+	formatter->Write();
+	CleanupStack::PopAndDestroy(4, buffer); // formatter, vendor, name, buffer
+	
+	if (iVerbose > 1)
+		{
+		Printf(_L("Files:\r\n"));
+		RPointerArray<HBufC> files;
+		LtkUtils::CleanupResetAndDestroyPushL(files);
+		aEntry.FilesL(files);
+		for (TInt i = 0; i < files.Count(); i++)
+			{
+			Printf(_L("    %S\r\n"), files[i]);
+			}
+		CleanupStack::PopAndDestroy(&files);
+		}
+	Printf(_L("\r\n"));
 	}
 
 void CSwiSisInstallerAO::InstallL(TFileName& aInstallFile)

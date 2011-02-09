@@ -223,19 +223,19 @@ void CCmdTop::UpdateL()
 	iFormatter->Zero();
 	_LIT(KHeader, "Tid  \tThread name                                                      \tCPU     \r\n"); // Force thread name to use all the available width (of the fixed 80 chars), so the columns don't jump around
 	iBuffer->AppendL(KHeader);
-
-	for (TInt i = 0; i < iThreads.Count() && i < iNumConsoleLines-2; i++) // minus one for title, one for last line of screen which I can't seem to figure out how to make use of
+	TInt i;
+	for (i = 0; i < iThreads.Count() && i < iNumConsoleLines-2; i++) // minus one for title, one for last line of screen which I can't seem to figure out how to make use of
 		{
 		SThreadData& thread = *iThreads[i];
 		TReal percent = 100 * thread.iNumSamples / (TReal)numSamples;
 		if (percent < 0.01) break; // No point showing anything that will appear as 0.00%
 		iBuffer->AppendFormatL(_L("%d\t%S\t%00.2f%%\r\n"), thread.iId, &thread.iName, percent);
 		}
+	TInt numLines = i + 1; // plus 1 for the title line
 	Stdout().SetCursorHeight(0);
 	iFormatter->TabulateL(0, 1, iBuffer->Descriptor(), ETruncateLongestColumn);
 	User::LeaveIfError(Stdout().SetCursorPosAbs(TPoint(0, 0)));
 	Stdout().Write(iFormatter->Descriptor());
-	TInt numLines = 1 + iThreads.Count(); // plus 1 for the title line
 	TInt numOldLines = iNumLinesInLastUpdate - numLines;
 	while (numOldLines > 0)
 		{

@@ -172,10 +172,38 @@ void CVtcConsoleBase::DetectScreenSizeL(TSize& aSize)
 TInt CVtcConsoleBase::DoDetectScreenSize(TSize& aSize)
 	{
 	Message(EDebug, _L("Beginning VT100 console size detect"));
+
+	// Wait for some quiet to flush out any old data in the buffers
+	RTimer timer;
+	TInt err = timer.CreateLocal();
+	if (err) return err;
+	for (;;)
+		{
+		TRequestStatus stat, timerStat;
+		TBuf8<32> junkBuf;
+		Input(junkBuf, stat);
+		timer.After(timerStat, 500000);
+		User::WaitForRequest(stat, timerStat);
+		if (timerStat != KRequestPending)
+			{
+			// Timed out, let's proceed
+			CancelInput(stat);
+			User::WaitForRequest(stat);
+			break;
+			}
+		else
+			{
+			// We got some data, cancel timer and wait again
+			timer.Cancel();
+			User::WaitForRequest(timerStat);
+			}
+		}
+	timer.Close();
+
 	_LIT8(KSpace, " ");
 	_LIT8(KNewLine, "\r\n");
 	_LIT8(KResetCursorPosAbs, "\x1b[1;1H");
-	TInt err = Output(KResetCursorPosAbs);
+	err = Output(KResetCursorPosAbs);
 	if (err) return err;
 
 #ifdef FSHELL_VT100_WORK_AROUND_TERATERM_CURSOR_BUG
@@ -184,24 +212,8 @@ TInt CVtcConsoleBase::DoDetectScreenSize(TSize& aSize)
 	// right again, TeraTerm corrects its reckoning of the cursor position. The following
 	// code works around this bug by keeping track of the previous cursor position and noticing
 	// if it doesn't increment. This is treated as though the cursor had wrapped.
-
 	TInt previousCursorPosX = -1;
-	for (TInt x = 0; ; ++x)
-		{
-		err = Output(KSpace);
-		if (err) return err;
-		TPoint pos;
-		TInt err = ReadCursorPos(pos);
-		if (err) return err;
-		TInt cursorPosX = pos.iX;
-		if ((cursorPosX == 0) || (cursorPosX == previousCursorPosX))
-			{
-			aSize.iWidth = x + 1;
-			break;
-			}
-		previousCursorPosX = cursorPosX;
-		}
-#else
+#endif
 	for (TInt x = 0; ; ++x)
 		{
 		err = Output(KSpace);
@@ -214,8 +226,16 @@ TInt CVtcConsoleBase::DoDetectScreenSize(TSize& aSize)
 			aSize.iWidth = x + 1;
 			break;
 			}
-		}
+#ifdef FSHELL_VT100_WORK_AROUND_TERATERM_CURSOR_BUG
+		else if (pos.iX == previousCursorPosX)
+			{
+			Message(EDebug, _L("Same cursor pos twice in a row - teraterm bug detected"));
+			aSize.iWidth = x + 1;
+			break;
+			}
+		previousCursorPosX = pos.iX;
 #endif
+		}
 	err = Output(KResetCursorPosAbs);
 	if (err) return err;
 	TInt prevYPos = 0;

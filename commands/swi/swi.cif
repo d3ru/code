@@ -40,9 +40,9 @@ The SIS file to install. Only valid when the operation is "install".
 
 Package UID to uninstall or display information about.
 
-==option bool v verbose
+==option bool v verbose multiple
 
-Display verbose output.
+Display verbose output. Specify twice (eg C<-vv>) to get full file listings from the 'list' operation.
 
 ==option bool q quiet
 

@@ -23,9 +23,10 @@
 HASH{"fshell (SF)"},(FSHELL_UID_SIS),FSHELL_VERSION,0,FSHELL_TIMESTAMP,TYPE=SA
 #endif
 
-#endif // FSHELL_PLATFORM_IBY
 
 // Workaround for QEMU bug
 #if defined(FSHELL_ROMBUILD) && defined(FSHELL_BTRACE_SUPPORT) && defined(__BASE_SYBORG_IBY__)
 #define BTRACE_INCLUDED
 #endif
+
+#endif // FSHELL_PLATFORM_IBY

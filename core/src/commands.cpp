@@ -1181,6 +1181,10 @@ void CCmdMatch::DoRunL()
 	while (Stdin().Read(line) == KErrNone)
 		{
 		TBool matches;
+		// Remove the actual line separator from the line
+		if (line.Right(1) == _L("\n")) line.SetLength(line.Length() - 1);
+		if (line.Right(1) == _L("\r")) line.SetLength(line.Length() - 1);
+
 		if (iIgnoreCase)
 			{
 			matches = (line.MatchF(*iToMatch) != KErrNotFound);
@@ -1202,6 +1206,8 @@ void CCmdMatch::DoRunL()
 			else
 				{
 				Write(line);
+				_LIT(KCrLf, "\r\n");
+				Write(KCrLf);
 				}
 			}
 		}

@@ -248,6 +248,8 @@ The trolls are here!
 
 As a convenience for building fshells commands that use Qt, a custom MMP include is available to set up the appropriate MMP configuration options and  includes and to link against QtCore.lib. To use it add C<#include E<lt>fshell/fsh_qt_include.mmhE<gt>> to your MMP file. Any Qt libraries other than QtCore must have C<library> statements as normal.
 
+For building Qt stuff with RVCT, RVCT 2.2 build 686 or later is required.
+
 =back
 
 A couple of further macros follow - these are specifically for platforms that provide an custom implementation of the relevant command rather than using fshell's built-in version.
