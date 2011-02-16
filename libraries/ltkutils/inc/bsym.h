@@ -87,8 +87,6 @@ namespace LtkUtils
 
 	protected:
 		CMapFile();
-		void ConstructL(RFs& aFs, const TDesC& aFileName);
-		TBool GetNextLine(TPtrC8& aPtr);
 
 	protected:
 		RFile iFile;

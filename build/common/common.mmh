@@ -155,6 +155,18 @@
 #define FSHELL_CAP_MMP_NORMAL FSHELL_CAP_MMP_MAX
 // Don't define FSHELL_PROTECTED_UIDS
 
+#elif defined(FSHELL_SELF_SIGNED)
+
+// According to http://wiki.forum.nokia.com/index.php/Capabilities_(Symbian_Signed)
+#define FSHELL_CAP_LOCALSERVICES
+#define FSHELL_CAP_LOCATION
+#define FSHELL_CAP_NETWORKSERVICES
+#define FSHELL_CAP_READUSERDATA
+#define FSHELL_CAP_USERENVIRONMENT
+#define FSHELL_CAP_WRITEUSERDATA
+#define FSHELL_CAP_MMP_MAX LocalServices Location NetworkServices ReadUserData UserEnvironment WriteUserData
+#define FSHELL_CAP_MMP_NORMAL FSHELL_CAP_MMP_MAX
+
 #endif // FSHELL_CAP_ALL
 
 // Yuk the __GNUC__ checks are needed to support SBS which changed the CPP version that parses bld.infs and mmps...

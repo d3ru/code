@@ -105,7 +105,7 @@ TUint CBytePairReader::GetPageL(TUint aPageNum, TUint8* aTarget, TInt aLength, T
 	else
 		size = BytePairDecompress(aTarget, aLength, iNextPage, iIndexTable[aPageNum], nextPage);
 		
-	User::LeaveIfError(size);
+	StaticLeaveIfErr(size, _L("Failed to decompress page %d aLength=%d"), aPageNum, aLength);
 	if (size != aLength)
 		LEAVE_FAILURE(KErrCorrupt);
 //	if (iNextPage + iIndexTable[aPageNum] != nextPage)
@@ -129,7 +129,8 @@ TUint CBytePairReader::DecompressPagesL(TUint8* aTarget, TInt aLength, TMemoryMo
 	
 	for (TUint curPage = 0; curPage < iHeader.iNumberOfPages; ++curPage)
 		{
-		TUint size = GetPageL(curPage, aTarget, aLength, aMemMoveFn);
+		TUint size = 0;
+		STRAPL(size = GetPageL(curPage, aTarget, aLength, aMemMoveFn), _L("CBytePairReader::DecompressPagesL failed to get page %d"), curPage);
 		
 		decompressedSize += size;
 		aTarget += size;
@@ -240,7 +241,8 @@ TUint CBytePairFileReader::DecompressPagesL(TUint8* aTarget, TInt aLength, TMemo
 
 		for (; pages; ++curPage, --pages)
 			{
-			TUint size = GetPageL(curPage, aTarget, aLength, aMemMoveFn);
+			TUint size = 0;
+			STRAPL(size = GetPageL(curPage, aTarget, aLength, aMemMoveFn), _L("CBytePairFileReader::DecompressPagesL failed to get page %d aLength=%d"), curPage, aLength);
 		
 			decompressedSize += size;
 			aTarget += size;

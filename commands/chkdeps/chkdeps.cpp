@@ -67,7 +67,7 @@ void CDllChecker::DoRunL()
 		PrintError(result, _L("Couldn't read %S"), &iFilename);
 		User::Leave(result);
 		}
-	ListArray();	//	Print out the results of DllCheck
+	ListArrayL();	//	Print out the results of DllCheck
 	//Stdin().ReadKey();
 	}
 
@@ -128,6 +128,7 @@ void CDllChecker::ConstructL()
 	}
 
 CDllChecker::CDllChecker()
+	: CCommandBase(EReportAllErrors)
 	{
 	}
 
@@ -213,18 +214,20 @@ void CDllChecker::LoadFileBytePairL(const E32ImageHeaderComp* aHeader, RBuf8& aC
 	if (aHeader->iCodeSize)
 		{
 		aCode.CreateL(aHeader->iCodeSize);
-		TUint32 bytes = reader->DecompressPagesL((TUint8*)aCode.Ptr(), aHeader->iCodeSize, &Mem::Move);
+		//Printf(_L("Decompressing code %d\r\n"), aHeader->iCodeSize);
+		TUint32 bytes = reader->DecompressPagesL((TUint8*)aCode.Ptr(), aHeader->iCodeSize, NULL);
 		if((TInt)bytes != aHeader->iCodeSize)
 			User::Leave(KErrCorrupt);
 		aCode.SetLength(bytes);
 		}
 
-	TInt restOfFileSize = ((E32ImageHeaderV*)aHeader)->iUncompressedSize - aHeader->iCodeOffset - aHeader->iCodeSize;
+	TInt restOfFileSize = ((E32ImageHeaderV*)aHeader)->iUncompressedSize - aHeader->iCodeSize;
 
 	if (restOfFileSize)
 		{
 		aRestOfFile.CreateL(restOfFileSize);
-		TUint32 count = reader->DecompressPagesL((TUint8*)aRestOfFile.Ptr(), restOfFileSize, &Mem::Move);
+		//Printf(_L("Decompressing restOfFileSize %d\r\n"), restOfFileSize);
+		TUint32 count = reader->DecompressPagesL((TUint8*)aRestOfFile.Ptr(), restOfFileSize, NULL);
 		if(count != restOfFileSize)
 			User::Leave(KErrCorrupt);
 		aRestOfFile.SetLength(count);
@@ -349,7 +352,7 @@ void CDllChecker::GetDllTableL(const TDesC& aFileName, const E32ImageHeader* aIm
 					case(KErrCorrupt):
 						{
 						__PRINT2(_L("\t\"%S\" has unexpected format\r\n"),&fileName,r);
-						dllInfo->iResult=EAlreadyOpen;
+						dllInfo->iResult=ECouldNotOpenFile;
 						break;
 						}
 					default:
@@ -384,6 +387,11 @@ void CDllChecker::GetDllTableL(const TDesC& aFileName, const E32ImageHeader* aIm
 				if (ordinal > dllInfo->iNumExports && dllInfo->iResult != ENotFound)
 					{
 					Printf(_L("\tOrdinal %d is missing from \"%S\" (used by \"%S\")\r\n"), ordinal, &dllInfo->iDllName, &aFileName);
+					dllInfo->iResult = EOrdinalMissing;
+					}
+				else if (dllInfo->iAbsentOrdinals.FindInOrder(ordinal) != KErrNotFound && dllInfo->iResult != ENotFound)
+					{
+					Printf(_L("\tOrdinal %d is absent in \"%S\" (used by \"%S\")\r\n"), ordinal, &dllInfo->iDllName, &aFileName);
 					dllInfo->iResult = EOrdinalMissing;
 					}
 				}
@@ -434,6 +442,56 @@ void CDllChecker::GetImportDataL(const TDesC& aFileName, CDllInfo& aInfo)
 		aInfo.iDllCaps = *(TCapabilitySet*)caps;
 		}
 	aInfo.iNumExports = imageHeader->iExportDirCount;
+
+	// Check the absent ordinals - need to do another file read because the export description extends past sizeof(E32ImageHeaderV)
+	
+	TInt oldFilePos = 0;
+	iFile.Seek(ESeekCurrent, oldFilePos);
+	RBuf8 exportDesc; CleanupClosePushL(exportDesc);
+	exportDesc.CreateL(imageHeader->iExportDescSize);
+	User::LeaveIfError(iFile.Read(_FOFF(E32ImageHeaderV, iExportDesc), exportDesc, imageHeader->iExportDescSize));
+	TUint bitmapSize = (imageHeader->iExportDirCount+7) >> 3;
+	if (imageHeader->iExportDescType == KImageHdr_ExpD_FullBitmap)
+		{
+		for (TInt i = 0; i < bitmapSize; i++)
+			{
+			TUint8 bitmap = exportDesc[i];
+			for (TInt bit = 0; bit < 8; bit++)
+				{
+				if ((bitmap & (1<<bit)) == 0) aInfo.iAbsentOrdinals.Append(i*8 + bit);
+				}
+			}
+		}
+	else if (imageHeader->iExportDescType == KImageHdr_ExpD_SparseBitmap8)
+		{
+		TUint metaBitmapSize = (bitmapSize+7) >> 3;
+		//Printf(_L("metaBitmapSize = %d\r\n"), metaBitmapSize);
+		const TUint8* secondSection = exportDesc.Ptr() + metaBitmapSize;
+		for (TInt i = 0; i < metaBitmapSize; i++)
+			{
+			// Each byte in the metabitmap covers 64 ordinals, ie each bit represents 8 ordinals
+			TUint8 metabitmap = exportDesc[i];
+			for (TInt metabit = 0; metabit < 8; metabit++)
+				{
+				if ((metabitmap & (1u<<metabit)))
+					{
+					// Refer to 2nd section
+					TUint8 bitmap = *(secondSection++);
+					//Printf(_L("Bmp=0x%02x\r\n"), (TUint)bitmap);
+					for (TInt bit = 0; bit < 8; bit++)
+						{
+						if ((bitmap & (1u<<bit)) == 0)
+							{
+							//Printf(_L("%S @ %d ABSENT\r\n"), &aFileName, (i*64 + metabit*8 + bit) + 1);
+							aInfo.iAbsentOrdinals.Append(i*64 + metabit*8 + bit + 1);
+							}
+						}
+					}
+				}
+			}
+		}
+	CleanupStack::PopAndDestroy(&exportDesc);
+	iFile.Seek(ESeekStart, oldFilePos); // Put file pos back to after the end of the header, as this is what LoadFileL expects
 
 	if (imageHeader->iImportOffset==0) // File contains no import data (ROM files never have import data)
 		{	
@@ -689,72 +747,76 @@ TInt CDllChecker::FindDll(TDes& aDllName,TFileName& aFileName, const TDesC& aPat
 	return(KErrNotFound);
 	}
 
-void CDllChecker::ListArray()
+void CDllChecker::ListArrayL()
 	{
 	const TInt elements=iDllArray.Count();
 	
 	Printf(_L("Number of dependencies checked = %d\r\n"),elements);
+	CTextBuffer* buf = CTextBuffer::NewLC(256);
 
 	for (TInt i=0;i<elements; i++)
 		{
 		CDllInfo& info = *(iDllArray[i]);
 		TResultCheck res = info.iResult;
 		TBool print = iVerbose || (res != EFileFoundAndUidSupported && res != ENoImportData && res != EAlreadyOpen);
-		if (print) Printf(_L("% 2d: %-15S  Uid3: [%08x] "),(i+1),&info.iDllName,(info.iUid));
+		if (print) buf->AppendFormatL(_L("%d:\t%S\tUid3:%08x\t"),(i+1),&info.iDllName,(info.iUid));
 		if (!print) continue;
 		switch(res)
 			{
 		case(ENoImportData):
-			Printf(_L("--- No import data\r\n"));
+			buf->AppendL(_L("- No import data\r\n"));
 			break;
 
 		case(EUidNotSupported):
-			Printf(_L("--- Uid3 is not supported\r\n"));
+			buf->AppendL(_L("- Uid3 is not supported\r\n"));
 			break;
 
 		case(ENotFound):
-			Printf(_L("--- File was not found\r\n"));
+			buf->AppendL(_L("- File was not found\r\n"));
 			break;
 
 		case(ECouldNotOpenFile):
-			Printf(_L("--- File could not be opened\r\n"));
+			buf->AppendL(_L("- File could not be opened\r\n"));
 			break;
 
 		case(EUidDifference):
-			Printf(_L("--- File already noted with different Uid\r\n"));
+			buf->AppendL(_L("- File already noted with different Uid\r\n"));
 			break;
 
 		case(EAlreadyOpen):
-			Printf(_L("--- File already open\r\n"));
+			buf->AppendL(_L("- File already open\r\n"));
 			break;
 		
 		case(EFileFoundAndUidSupported):
-			Printf(_L("--- File was found, Uid3 is supported\r\n"));
+			buf->AppendL(_L("- File was found, Uid3 is supported\r\n"));
 			break;
 
 		case ERequiredCapabilitiesMissing:
 			{
-			Printf(_L("--- Dll is missing capabilities:"));
+			buf->AppendL(_L("- Dll is missing capabilities:\r\n"));
 			for (TInt i = 0; i < ECapability_Limit; i++)
 				{
 				TCapability c = (TCapability)i;
 				if (iRequiredCaps->HasCapability(c) && !info.iDllCaps.HasCapability(c))
 					{
-					Printf(_L8(" %s"), CapabilityNames[i]);
+					buf->AppendFormatL(_L8("\t\t\t%s\r\n"), CapabilityNames[i]);
 					}
 				}
-			Printf(_L("\r\n"));
 			break;
 			}
 		case EOrdinalMissing:
-			Printf(_L("--- Required ordinal(s) missing\r\n"));
+			buf->AppendL(_L("- Required ordinal(s) missing\r\n"));
 			break;
 		case EVersionMismatch:
-			Printf(_L("--- Version mismatch\r\n"));
+			buf->AppendL(_L("- Version mismatch\r\n"));
 			break;
 		default:	//	Will never reach here
-			Printf(_L("--- Undefined\r\n"));
+			buf->AppendL(_L("- Undefined\r\n"));
 			break;
 			}
 		}
+	CTextFormatter* formatter = CTextFormatter::NewLC(Stdout());
+	formatter->TabulateL(0, 1, buf->Descriptor());
+	Write(formatter->Descriptor());
+	CleanupStack::PopAndDestroy(2, buf);
 	}

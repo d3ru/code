@@ -31,3 +31,4 @@ library			euser.lib efsrv.lib
 library			iocli.lib
 
 epocstacksize 0x14000 // Algorithm is recursive and uses stack heavily, so need lots of it for binaries with complex linkage
+epocheapsize 0x1000 0xA00000 // 10MB max heap - large binaries like QtGui.dll need it

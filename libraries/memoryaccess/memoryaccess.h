@@ -942,6 +942,7 @@ inline TInt RMemoryAccess::SuspendThread(RThread& aThread)
 
 inline void RMemoryAccess::NotifyBreakpoint(TPckg<TBreakpointNotification>& aPkg, TRequestStatus& aStatus)
 	{
+	aStatus = KRequestPending;
 	TRequestStatus* stat = &aStatus;
 	TInt err = DoControl(EControlNotifyBreakpoint, &aPkg, stat);
 	if (err) User::RequestComplete(stat, err);

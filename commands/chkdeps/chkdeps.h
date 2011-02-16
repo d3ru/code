@@ -35,11 +35,14 @@ private:
 	class CDllInfo : public CBase
 		{
 	public:
+		~CDllInfo() { iAbsentOrdinals.Close(); }
+	public:
 		TBuf<KMaxFileName> iDllName;
 		TUid iUid;
 		TResultCheck iResult;
 		TCapabilitySet iDllCaps;
 		TInt iNumExports;
+		RArray<TInt> iAbsentOrdinals;
 		TInt16 iMajorVersion;
 		TInt16 iMinorVersion;
 		};
@@ -69,7 +72,7 @@ public:
 	~CDllChecker();
 	void ConstructL();	
 	void GetImportDataL(const TDesC& aFileName, CDllInfo& aInfo);	
-	void ListArray();
+	void ListArrayL();
 	static TInt CompareDllInfo(const CDllInfo& aDllInfo1, const CDllInfo& aDllInfo2);
 private:
 	TBool iVerbose, iDebug;

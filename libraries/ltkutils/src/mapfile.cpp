@@ -1,6 +1,6 @@
 // mapfile.cpp
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -9,6 +9,7 @@
 // Initial Contributors:
 // Accenture - Initial contribution
 //
+#include <fshell/common.mmh>
 #include <fshell/bsym.h>
 #include <fshell/ltkutils.h>
 #include "bsymtree.h"
@@ -35,6 +36,7 @@ public:
 	void ConstructL(RFs& aFs, const TDesC& aFileName);
 	void DoLookup(TUint32 aOffsetInCodeSeg, TDes& aResult);
 	RNode* DoCreateCompletionTreeL();
+	TBool GetNextLine(TPtrC8& aPtr);
 
 private:
 	RArray<SSymbol> iSymbols;
@@ -94,32 +96,10 @@ void CMapFileImpl::ConstructL(RFs& aFs, const TDesC& aFileName)
 
 	if (rvct)
 		{
-		TInt local = ETrue;
 		while (GetNextLine(line))
 			{
 			linenum++;
 			if (line.Length() == 0) continue;
-			_LIT8(KRVCTOffsetLine, "    Image$$ER_RO$$Base                       ");
-			if (!foundOffset)
-				{
-				if (HasPrefix(line, KRVCTOffsetLine))
-					{
-					TLex8 lex(line.Mid(KRVCTOffsetLine().Length()));
-					iTextOffset = HexLexL(lex);
-					foundOffset = ETrue;
-
-					// No go through any symbols we found before this, and correct their offsets
-					for (TInt i = 0; i < iSymbols.Count(); i++)
-						{
-						iSymbols[i].iAddress -= iTextOffset;
-						}
-					continue;
-					}
-				}
-
-			_LIT8(KGlobalSection, "    Global Symbols");
-			if (HasPrefix(line, KGlobalSection)) local = EFalse; // We've reached the global section, don't have to ignore so much stuff
-
 			SSymbol symbol;
 
 			// This is rather awkward, because there's no proper delimiting between symbol name and the next stuff
@@ -133,33 +113,44 @@ void CMapFileImpl::ConstructL(RFs& aFs, const TDesC& aFileName)
 				
 			TLex8 lex(line);
 			lex.Inc(spp);
-			symbol.iAddress = HexLexL(lex) - iTextOffset;
-			lex.SkipSpace();
-			if (local)
+			TInt err = HexLex(lex, symbol.iAddress);
+			if (err)
 				{
-				// In local symbols section we have to worry about non-code stuff
-				_LIT8(KArm,   "ARM Code  ");
-				_LIT8(KThumb, "Thumb Code");
-				TPtrC8 type = lex.Remainder().Left(KThumb().Length());
-				if (type != KArm && type != KThumb)
-					{
-					CleanupStack::PopAndDestroy(symbol.iName);
-					continue;
-					}
+				// Header line perhaps
+				CleanupStack::PopAndDestroy(symbol.iName);
+				continue;
 				}
+			symbol.iAddress -= iTextOffset;
+			lex.SkipSpace();
+			TBuf8<8> symbolType = line.Mid(lex.Offset(), 8);
+			symbolType.Trim();
+
 
 			lex.Inc(10); // Far enough to get over "ARM Code" or "Thumb Code"
 			lex.SkipSpace();
-			User::LeaveIfError(lex.Val(symbol.iLength));
-			if (symbol.iLength == 0)
+			symbol.iLength = 0;
+			lex.Val(symbol.iLength);
+			if (!foundOffset && symbol.iLength != 0)
 				{
+				// The text offset is the address of the first non-zero length symbol (at least, that's the most reliable way of figuring it out)
+				foundOffset = ETrue;
+				iTextOffset = symbol.iAddress;
+				symbol.iAddress = 0; // Manually relocate this symbol - by definition of it being the text offset, it's zero
+				}
+			_LIT8(KSection, "section");
+			_LIT8(KUndef, "Undefined Reference");
+			if (symbolType == KSection || line.Right(KUndef().Length()) == KUndef || symbol.iLength == 0)
+				{
+				// Sections aren't symbols as such - they can contain multiple symbols thus we don't want them confusing matters
+				// And thunks lie about their size
 				CleanupStack::PopAndDestroy(symbol.iName);
-				continue; // todo thunks lie about their size...
+				continue;
 				}
 
 			User::LeaveIfError(iSymbols.Append(symbol));
 			CleanupStack::Pop(symbol.iName);
 			}
+		iSymbols.SortUnsigned(); // For all I moaned about GCC not sorting them, neither does RVCT (well it does, but it separates local and global symbols)
 		}
 	else
 		{
@@ -204,7 +195,7 @@ void CMapFileImpl::ConstructL(RFs& aFs, const TDesC& aFileName)
 	iReadBuf.Close();
 	}
 
-TBool CMapFile::GetNextLine(TPtrC8& aPtr)
+TBool CMapFileImpl::GetNextLine(TPtrC8& aPtr)
 	{
 	_LIT8(KNewline, "\r\n");
 	iReadBuf.Delete(0, aPtr.Length());

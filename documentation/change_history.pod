@@ -80,11 +80,19 @@ Fixed long-standing bug in L<hello's|commands::hello> C<--color> option that cau
 
 =item *
 
-Added L<C<FSHELL_QT_SUPPORT>|internal::common_mmh/fshell_qt_support> build config and enabled it on S^3 platform. Sysinfo command now returns Qt version info if Qt is available.
+Added L<C<FSHELL_QT_SUPPORT>|internal::common_mmh/item_FSHELL_QT_SUPPORT> build config and enabled it on S^3 and tb92 platforms. Sysinfo command now returns Qt version info if Qt is available.
 
 =item *
 
 Changed match command so end-anchored match strings (ie ones not ending with a "*") behave as expected.
+
+=item *
+
+Added support for detecting linkage against ABSENT ordinals to chkdeps command, improved its error handling and fixed decoding of bytepair-compressed binaries.
+
+=item *
+
+Fixed hang (actually stray signal panic) in fdb. Fixed map file parsing.
 
 =item *
 

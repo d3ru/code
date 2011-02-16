@@ -32,6 +32,7 @@ prj_testmmpfiles
 ..\tsrc\tsettings.mmp
 ..\tsrc\tutf8.mmp
 ..\tsrc\tallochelper.mmp
+..\tsrc\tmapfile.mmp
 
 prj_testexports
 
