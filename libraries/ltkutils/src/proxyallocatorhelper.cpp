@@ -106,7 +106,7 @@ TInt LtkUtils::RProxyAllocatorHelper::WriteData(TLinAddr aLocation, const TAny* 
 	return iMemoryAccess->WriteMem(iThreadId, ptr, (TAny*)aLocation);
 #else
 	(void)aLocation;
-	(void)aResult;
+	(void)aData;
 	(void)aSize;
 	return KErrNotSupported;
 #endif
