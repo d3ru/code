@@ -10,9 +10,12 @@
 // Accenture - Initial contribution
 //
 
+#define __INCLUDE_CAPABILITY_NAMES__
+#include <e32capability.h>
 #include "swi.h"
 #include <fshell/common.mmh>
 #include <fshell/ltkutils.h>
+#include <fshell/descriptorutils.h>
 
 typedef TBuf<1> TUserInput;
 _LIT(KSwiJarExtension,	"*.jar");
@@ -461,7 +464,7 @@ void CSwiSisInstallerAO::DisplayPackageL(const TUid& aPackageUid)
 
 //
 // CSwiSisInstallerAO::GetSisRegistryPackageL
-// locate the sis registry package corresponding to the specified package ui
+// locate the sis registry package corresponding to the specified package uid
 //
 Swi::CSisRegistryPackage* CSwiSisInstallerAO::GetSisRegistryPackageL(const TUid& aPackageUid)
 	{
@@ -499,7 +502,20 @@ Swi::CSisRegistryPackage* CSwiSisInstallerAO::GetSisRegistryPackageL(const TUid&
 //
 TBool CSwiSisInstallerAO::DisplayTextL(const Swi::CAppInfo& /*aAppInfo*/, Swi::TFileTextOption /*aOption*/, const TDesC& aText)
 	{
-	Stdout().Write(aText);
+	// Workaround for badly-formatted text...
+	LtkUtils::RLtkBuf buf(aText.AllocL());
+	CleanupClosePushL(buf);
+	TBuf<1> uni; uni.Append(TChar(0x2029)); // unicode paragraph separator, or something. A useful single-character placeholder to use while sorting out the multi-character line endings
+	_LIT(KCrLf, "\r\n");
+	buf.ReplaceAllL(KCrLf, uni);
+	buf.ReplaceAllL(_L("\r"), uni);
+	buf.ReplaceAllL(_L("\n"), uni);
+	buf.ReplaceAllL(uni, KCrLf);
+	Stdout().Write(KCrLf);
+	Stdout().Write(buf);
+	Stdout().Write(KCrLf);
+	CleanupStack::PopAndDestroy(&buf);
+
 	return iParent.Query(_L("Continue?"));
 	}
 
@@ -631,15 +647,21 @@ TBool CSwiSisInstallerAO::DisplayInstallL(const Swi::CAppInfo& aAppInfo, const C
 	return ETrue;
 	}
 	
-TBool CSwiSisInstallerAO::DisplayGrantCapabilitiesL(const Swi::CAppInfo& /*aAppInfo*/, const TCapabilitySet& /*aCapabilitySet*/)
+TBool CSwiSisInstallerAO::DisplayGrantCapabilitiesL(const Swi::CAppInfo& /*aAppInfo*/, const TCapabilitySet& aCapabilitySet)
 	{
-	TBool response = ETrue; // default behaviour is to continue the install
-	if (iVerbose)
+	Stdout().Write(_L("\r\nThe following capabilities are required by this install: "));
+	TBool first = ETrue;
+	for (TInt i = 0; i < ECapability_Limit; i++)
 		{
-		// todo verbose mode
-		Stdout().Write(_L("\r\nTODO - CCmdSwi::DisplayGrantCapabilitiesL\r\n"));
+		if (aCapabilitySet.HasCapability((TCapability)i))
+			{
+			if (!first) Stdout().Write(_L(", "));
+			first = EFalse;
+			iParent.Printf(_L8(CapabilityNames[i]));
+			}
 		}
-	return response;
+	Stdout().Write(_L("\r\n"));
+	return iParent.Query(_L("Grant the above capabilities?"));
 	}
 	
 TInt CSwiSisInstallerAO::DisplayLanguageL(const Swi::CAppInfo& /*aAppInfo*/, const RArray<TLanguage>& /*aLanguages*/)
@@ -687,9 +709,11 @@ TInt CSwiSisInstallerAO::DisplayDriveL(const Swi::CAppInfo& /*aAppInfo*/, TInt64
 	return aDriveLetters.Find(drive); // This will do the right thing even if EKeyEscape was returned - that isn't in the drive array so Find will return -1, which is the correct value to abort the installation
 	}
 	
-TBool CSwiSisInstallerAO::DisplayUpgradeL(const Swi::CAppInfo& /*aAppInfo*/, const Swi::CAppInfo& /*aExistingAppInfo*/)
+TBool CSwiSisInstallerAO::DisplayUpgradeL(const Swi::CAppInfo& aAppInfo, const Swi::CAppInfo& aExistingAppInfo)
 	{
-	return iParent.Query(_L("Do you wish to replace the existing installation?"));
+	TBuf<128> buf;
+	buf.Format(_L("Version %d.%d.%d already installed. Replace with %d.%d.%d?"), aExistingAppInfo.AppVersion().iMajor, aExistingAppInfo.AppVersion().iMinor, aExistingAppInfo.AppVersion().iBuild, aAppInfo.AppVersion().iMajor, aAppInfo.AppVersion().iMinor, aAppInfo.AppVersion().iBuild);
+	return iParent.Query(buf);
 	}
 	
 TBool CSwiSisInstallerAO::DisplayOptionsL(const Swi::CAppInfo& /*aAppInfo*/, const RPointerArray<TDesC>& /*aOptions*/, RArray<TBool>& /*aSelections*/)
@@ -777,23 +801,17 @@ TBool CSwiSisInstallerAO::DisplayOcspResultL(const Swi::CAppInfo& /*aAppInfo*/, 
 	
 void CSwiSisInstallerAO::DisplayCannotOverwriteFileL(const Swi::CAppInfo& /*aAppInfo*/, const Swi::CAppInfo& /*aInstalledAppInfo*/, const TDesC& aFileName)
 	{
-	if (iVerbose)
-		{
-		Stdout().Write(_L("\r\nCannot overwrite a file required for installation. Aborting -"));
-		Stdout().Write(aFileName);
-		Stdout().Write(_L(" - \r\n"));
-		}
+	Stdout().Write(_L("\r\nCannot overwrite a file required for installation. Aborting.\r\n    "));
+	Stdout().Write(aFileName);
+	Stdout().Write(_L("\r\n"));
 	}
 	
 TBool CSwiSisInstallerAO::DisplayMissingDependencyL(const Swi::CAppInfo& /*aAppInfo*/, const TDesC& aDependencyName, TVersion /*aWantedVersionFrom*/, TVersion /*aWantedVersionTo*/, TVersion /*aInstalledVersion*/)
 	{
 	TBool response = ETrue; // default behaviour is to continue the install
-	if (!iQuiet)
-		{
-		Stdout().Write(_L("Warning: Depedency is missing or has incorrect version - "));
-		Stdout().Write(aDependencyName);
-		Stdout().Write(_L(" - \r\n"));
-		}
+	Stdout().Write(_L("Warning: Dependency is missing or has incorrect version:\r\n    "));
+	Stdout().Write(aDependencyName);
+	Stdout().Write(_L("\r\n"));
 	return response;	
 	}
 	

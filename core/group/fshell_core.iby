@@ -72,6 +72,9 @@ FSHELL_DATA_FILE(ZSYSTEM\console\scripts\comm.script, system\console\scripts\com
 
 FSHELL_EXECUTABLE_FILE(iosrv.exe)
 FSHELL_EXECUTABLE_FILE(iocli.dll)
+#ifdef FSHELL_QT_SUPPORT
+FSHELL_EXECUTABLE_FILE(iocli_qt.dll)
+#endif
 FSHELL_DATA_FILE(ZRESOURCE\iosrv.idf, resource\iosrv.idf)
 #ifdef FSHELL_CORE_SUPPORT_SHEBANG
 FSHELL_EXECUTABLE_FILE(sbapp.exe)

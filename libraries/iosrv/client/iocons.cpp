@@ -1,6 +1,6 @@
 // iocons.cpp
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -42,10 +42,11 @@ CIoConsole::CIoConsole()
 	{
 	}
 
-CIoConsole::CIoConsole(RIoConsoleReadHandle& aReadHandle, RIoConsoleWriteHandle& aWriteHandle)
+CIoConsole::CIoConsole(RIoConsoleReadHandle& aReadHandle, RIoConsoleWriteHandle& aWriteHandle, RIoConsoleWriteHandle& aStdErrHandle)
 	{
 	iReadHandle = aReadHandle;
 	iWriteHandle = aWriteHandle;
+	iStdErrHandle = aStdErrHandle;
 	}
 
 CIoConsole::~CIoConsole()
@@ -55,6 +56,7 @@ CIoConsole::~CIoConsole()
 		// If the handle isn't set it means we don't own iReadHandle/iWriteHandle (or they haven't been constructed and we needn't close them anyway)
 		iReadHandle.Close();
 		iWriteHandle.Close();
+		iStdErrHandle.Close();
 		iConsole.Close();
 		iIoSession.Close();
 		}
@@ -63,7 +65,7 @@ CIoConsole::~CIoConsole()
 TInt CIoConsole::Create(const TDesC& aTitle, TSize aSize)
 	{
 	// This should only be called via iocons, ie when the zero arguments constructor was used.
-	// When the 2-arg constructor is used, the console is fully constructed and Create should not be called
+	// When the 3-arg constructor is used, the console is fully constructed and Create should not be called
 	TInt err = iIoSession.Connect();
 	if (err == KErrNone)
 		{
@@ -76,13 +78,12 @@ TInt CIoConsole::Create(const TDesC& aTitle, TSize aSize)
 			if (FindClientThreadId(clientThreadId) == KErrNone)
 				{
 				err = iReadHandle.Open(iIoSession, clientThreadId);
-				if (err == KErrNone)
+				if (!err) err = iWriteHandle.Open(iIoSession, clientThreadId);
+				if (!err) err = iStdErrHandle.Open(iIoSession, clientThreadId);
+				if (err != KErrNone)
 					{
-					err = iWriteHandle.Open(iIoSession, clientThreadId);
-					if (err != KErrNone)
-						{
-						iReadHandle.Close();
-						}
+					iReadHandle.Close();
+					iWriteHandle.Close();
 					}
 				}
 
@@ -95,6 +96,7 @@ TInt CIoConsole::Create(const TDesC& aTitle, TSize aSize)
 				err = memAccess.Open();
 				if (!err) err = iReadHandle.Create(iIoSession);
 				if (!err) iWriteHandle.Create(iIoSession);
+				if (!err) iStdErrHandle.Create(iIoSession);
 				if (!err)
 					{
 					TUint creator = RThread().Id();
@@ -106,6 +108,7 @@ TInt CIoConsole::Create(const TDesC& aTitle, TSize aSize)
 							{
 							// Found one - open the writer too...
 							err = iWriteHandle.DuplicateHandleFromThread(TThreadId(creator));
+							if (!err) iStdErrHandle.DuplicateHandleFromThread(TThreadId(creator));
 							break; // Stop looking if we found one
 							}
 						}
@@ -115,6 +118,7 @@ TInt CIoConsole::Create(const TDesC& aTitle, TSize aSize)
 					{
 					iReadHandle.Close();
 					iWriteHandle.Close();
+					iStdErrHandle.Close();
 					}
 				}
 #endif
@@ -128,12 +132,14 @@ TInt CIoConsole::Create(const TDesC& aTitle, TSize aSize)
 		else
 			{
 			err = iWriteHandle.Open(iIoSession);
+			if (!err) iStdErrHandle.Open(iIoSession);
 			}
 		}
 	if (err)
 		{
 		iReadHandle.Close();
 		iWriteHandle.Close();
+		iStdErrHandle.Close();
 		iConsole.Close();
 		iIoSession.Close();
 		}
@@ -148,14 +154,20 @@ TInt CIoConsole::CreateNewConsole(const TDesC& aTitle, TSize aSize)
 	if (err) return err;
 	err = iWriteHandle.Create(iIoSession);
 	if (err) return err;
+	err = iStdErrHandle.Create(iIoSession);
+	if (err) return err;
 	err = iConsole.Attach(iReadHandle, RIoEndPoint::EForeground);
 	if (err) return err;
 	err = iConsole.Attach(iWriteHandle);
+	if (err) return err;
+	err = iConsole.Attach(iStdErrHandle);
 	if (err) return err;
 
 	err = iReadHandle.SetOwner(RThread().Id());
 	if (err) return err;
 	err = iWriteHandle.SetOwner(RThread().Id());
+	if (err) return err;
+	err = iStdErrHandle.SetOwner(RThread().Id());
 	
 	return err;
 	}
@@ -279,7 +291,21 @@ TUint CIoConsole::KeyModifiers() const
 
 TInt CIoConsole::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
 	{
-	return CConsoleBase::Extension_(aExtensionId, a0, a1);
+	if (aExtensionId == ConsoleStdErr::KWriteStdErrConsoleExtension)
+		{
+		const TDesC* buf = (const TDesC*)a1;
+		return iStdErrHandle.Write(*buf);
+		}
+	else if (aExtensionId == ConsoleAttributes::KSetConsoleAttributesExtension)
+		{
+		// I guess while I'm here it's worth implementing this
+		const ConsoleAttributes::TAttributes* attrib = (const ConsoleAttributes::TAttributes*)a1;
+		return iWriteHandle.SetAttributes(attrib->iAttributes, attrib->iForegroundColor, attrib->iBackgroundColor);
+		}
+	else
+		{
+		return CConsoleBase::Extension_(aExtensionId, a0, a1);
+		}
 	}
 
 EXPORT_C CConsoleBase* IoUtils::NewConsole()

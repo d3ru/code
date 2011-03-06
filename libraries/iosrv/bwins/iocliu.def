@@ -554,4 +554,8 @@ EXPORTS
 	?CifFileName@CCommandInfoFile@IoUtils@@QBEABVTDesC16@@XZ @ 553 NONAME ; class TDesC16 const & IoUtils::CCommandInfoFile::CifFileName(void) const
 	?GetSmokeTestStartingLineNumber@CCommandInfoFile@IoUtils@@QBEHXZ @ 554 NONAME ; int IoUtils::CCommandInfoFile::GetSmokeTestStartingLineNumber(void) const
 	??0RChildProcess@IoUtils@@QAE@XZ @ 555 NONAME ; IoUtils::RChildProcess::RChildProcess(void)
+	?Read@RIoReadHandle@@QAEXAAVTDes8@@AAVTRequestStatus@@@Z @ 556 NONAME ; void RIoReadHandle::Read(class TDes8 &, class TRequestStatus &)
+	?Write@RIoWriteHandle@@QAEHABVTDesC8@@@Z @ 557 NONAME ; int RIoWriteHandle::Write(class TDesC8 const &)
+	?Write@RIoWriteHandle@@QAEXABVTDesC8@@AAVTRequestStatus@@@Z @ 558 NONAME ; void RIoWriteHandle::Write(class TDesC8 const &, class TRequestStatus &)
+	?Read@RIoReadHandle@@QAEHAAVTDes8@@@Z @ 559 NONAME ; int RIoReadHandle::Read(class TDes8 &)
 

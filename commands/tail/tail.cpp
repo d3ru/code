@@ -422,7 +422,7 @@ void CCmdTail::HandleTrailingLines(TInt aNumLinesFound, TInt aEndFilePos)
 
 void CCmdTail::HandleTrailingLineError(TInt aError)
 	{
-	PrintError(aError, _L("Problem finding trailing %d lines in %S: %d"), iNumLines, &iFileName, aError);
+	PrintError(aError, _L("Problem finding trailing %d lines in %S"), iNumLines, &iFileName);
 	Complete(aError);
 	}
 

@@ -35,6 +35,7 @@ public:
 	virtual TBool IorReadPending() const = 0;
 	virtual TBool IorReadKeyPending() const = 0;
 	virtual TDes& IorReadBuf() = 0;
+	virtual TDes8* IorReadBuf8() = 0;
 	virtual void IorDataBuffered(TInt aLength) = 0;
 	virtual TBool IorDataIsBuffered() const = 0;
 	virtual TBool IorIsKeyCaptured(TUint aKeyCode, TUint aModifiers) const = 0;
@@ -50,8 +51,10 @@ public:
 class MIoWriter : public MIoReadWriter
 	{
 public:
+	virtual TBool IowNarrowWrite() const = 0;
 	virtual TInt IowWriteLength() const = 0;
 	virtual TInt IowWrite(TDes& aBuf) = 0;
+	virtual TInt IowWrite(TDes8& aBuf) = 0;
 	virtual void IowComplete(TInt aError) = 0;
 	virtual TName IowName() = 0;
 	virtual void IowCursorPos(TInt aError, TPoint aPos) = 0;
@@ -180,6 +183,7 @@ private: // From MIoReader.
 	virtual TBool IorReadPending() const;
 	virtual TBool IorReadKeyPending() const;
 	virtual TDes& IorReadBuf();
+	virtual TDes8* IorReadBuf8();
 	virtual void IorDataBuffered(TInt aLength);
 	virtual TBool IorDataIsBuffered() const;
 	virtual TBool IorIsKeyCaptured(TUint aKeyCode, TUint aModifier) const;
@@ -192,12 +196,15 @@ private: // From MIoReader.
 private:
 	CIoReadObject(TInt aId);
 	void ProcessRead();
-	void AllocateBufferL(TInt aLength);
+	void AllocateBufferL(TInt aBytes);
 	void TryToCompleteRead();
 	void CompleteRead(TInt aError, TInt aLength);
 	void CompleteReadKey(TInt aError, RIoConsoleReadHandle::TConsoleKey& aConsoleKey);
 	MIoReadEndPoint* ReadEndPoint() const;
 	void CancelSetMode(const CIoSession& aSession);
+	TInt BufferSatisfiesReadRequest() const;
+	void AskEndPointForData();
+	static TInt AskEndPointForDataCallback(TAny* aSelf);
 private:
 	class TCapturedKey
 		{
@@ -210,11 +217,15 @@ private:
 		};
 private:
 	RIoReadHandle::TReadMode iReadMode;
-	TInt iMaxReadLength;
+	TInt iMaxReadLength; // In *chars* not bytes
 	RMsg iReadMessage;
 	RMsg iReadKeyMessage;
-	HBufC* iBuf;
-	TPtr iPtr;
+
+	HBufC8* iReadBuffer;
+	TPtr16 iReadBuffer16; // This points into iReadBuffer if it's a normal 16-bit read. Ptr()!=NULL is how we check if it's 16-bit. It's not strictly necessary (could have just been a bool) but having it as a TPtr16 makes some code slightly cleaner and it's useful for debugging purposes
+	TPtr8 iIorepPtr8;
+	TPtr16 iIorepPtr16;
+
 	HBufC* iLineSeparator; // NULL means use default "\n"
 	RArray<TCapturedKey> iCapturedKeys;
 	RArray<RIoConsoleReadHandle::TConsoleKey> iKeyBuffer;
@@ -222,6 +233,8 @@ private:
 	TInt iCompleteErr; // non-zero if we have completed reading
 	RMsg iChangeNotifyMessage;
 	RMsg iSetModeMessage;
+	TBool iCallingIorepReadL; // Guard against recursion
+	CAsyncCallBack iAsyncAskEndPointForData;
 	};
 
 
@@ -250,8 +263,10 @@ public: // From CIoObject.
 public: // From MIoReadWriter.
 	virtual RIoReadWriteHandle::TMode IorwMode() const;
 private: // From MIoWriter.
+	virtual TBool IowNarrowWrite() const;
 	virtual TInt IowWriteLength() const;
 	virtual TInt IowWrite(TDes& aBuf);
+	virtual TInt IowWrite(TDes8& aBuf);
 	virtual void IowComplete(TInt aError);
 	virtual TName IowName();
 	virtual RIoWriteHandle::TMode IowWriteMode() const;

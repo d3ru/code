@@ -1,6 +1,6 @@
 // iocons.h
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -24,7 +24,7 @@ class CIoConsole
 	{
 public:
 	CIoConsole(); // Only for use by iocons.dll
-	CIoConsole(RIoConsoleReadHandle& aReadHandle, RIoConsoleWriteHandle& aWriteHandle); // for use by CCommandBase
+	CIoConsole(RIoConsoleReadHandle& aReadHandle, RIoConsoleWriteHandle& aWriteHandle, RIoConsoleWriteHandle& aStdErrHandle); // for use by CCommandBase
 
 public: // From CConsoleBase.
 	virtual ~CIoConsole();
@@ -54,6 +54,7 @@ private:
 	RIoSession iIoSession;
 	RIoConsoleReadHandle iReadHandle;
 	RIoConsoleWriteHandle iWriteHandle;
+	RIoConsoleWriteHandle iStdErrHandle;
 	RIoConsole iConsole;
 	TInt iHeapCellCount;
 	TAny* iServerAddress;

@@ -1,6 +1,6 @@
 // command_base.cpp
 // 
-// Copyright (c) 2005 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2005 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -28,6 +28,7 @@ _LIT(KHelpDescription, "Display help.");
 _LIT(KOptConsole, "console");
 _LIT(KOptConsoleTitle, "console-title");
 _LIT(KOptConsoleSize, "console-size");
+_LIT(KOptConsoleFlags, "console-flags");
 _LIT(KOptPersistentConsole, "persistent-console");
 _LIT(KDllExt, ".dll");
 _LIT(KNewLine, "\r\n");
@@ -38,6 +39,22 @@ const TUint KValueTypeFlagMask     		= 0x0000ffff;
 const TUint KPublicFlagsMask			= 0x0000ffff;
 const TUint KPrivateFlagsMask			= 0xffff0000;
 
+enum TConsoleCreateFlags
+	{
+	/**
+	 * This option is used by muxcons to allow it to specify a custom title (used for configuration) but also get the default thread-name title
+	 * of (eg) "fshell(4)". It assumes the console understands comma-separated key-value pairs (of the form VT100 and muxcons use).
+	 * The string ",title=<friendlythreadname>" is appended to the console-title. Therefore it should only be used with consoles (like muxcons)
+	 * that understand the title= keyword.
+	 */
+	EConsoleFlagAppendDefaultTitle = 1,
+
+	/**
+	 * Specify this flag to lazily instanciate the console even if the --console option was given. (The default is to only do so if the console
+	 * wasn't specified.)
+	 */
+	EConsoleFlagLazyCreate = 2,
+	};
 
 //
 // Misc.
@@ -1361,7 +1378,23 @@ void CCommandBase::CreateHandlesL()
 void CCommandBase::UpdateHandlesL()
 	{
 	TFullName name;
-	LtkUtils::GetFriendlyThreadName(RThread(), name);
+	if (iConsoleTitle == NULL || (iConsoleCreateFlags & EConsoleFlagAppendDefaultTitle))
+		{
+		LtkUtils::GetFriendlyThreadName(RThread(), name);
+		}
+	if (iConsoleTitle && iConsoleCreateFlags & EConsoleFlagAppendDefaultTitle)
+		{
+		_LIT(KTitle, ",title=");
+		HBufC* newTitle = iConsoleTitle->ReAlloc(iConsoleTitle->Length() + KTitle().Length() + name.Length());
+		if (newTitle)
+			{
+			iConsoleTitle = newTitle;
+			TPtr ptr = iConsoleTitle->Des();
+			ptr.Append(KTitle);
+			ptr.Append(name);
+			}
+		}
+
 	RIoConsole console;
 	CleanupClosePushL(console);
 
@@ -1383,7 +1416,9 @@ void CCommandBase::UpdateHandlesL()
 		RIoConsole underlyingConsole;
 		underlyingConsole.OpenL(iIoSession, iStdout);
 		CleanupClosePushL(underlyingConsole);
-		console.CreateL(iIoSession, *iConsoleImplementation, underlyingConsole, (iConsoleTitle == NULL) ? name : *iConsoleTitle, size);
+		RIoConsole::TOptions createOption = RIoConsole::ENormal;
+		if (iConsoleCreateFlags & EConsoleFlagLazyCreate) createOption = RIoConsole::ELazyCreate;
+		console.CreateL(iIoSession, *iConsoleImplementation, underlyingConsole, (iConsoleTitle == NULL) ? name : *iConsoleTitle, size, createOption);
 		CleanupStack::PopAndDestroy(&underlyingConsole);
 		RIoConsoleReadHandle stdin;
 		CleanupClosePushL(stdin);
@@ -2550,6 +2585,7 @@ void CCommandBase::DoParseCommandLineL(const TDesC& aCommandLine)
 	iOptions.AppendStringL(iConsoleImplementation, TChar(0), KOptConsole, KNullDesC);
 	iOptions.AppendStringL(iConsoleTitle, TChar(0), KOptConsoleTitle, KNullDesC);
 	iOptions.AppendUintL(iConsoleSize, TChar(0), KOptConsoleSize, KNullDesC);
+	iOptions.AppendUintL(iConsoleCreateFlags, TChar(0), KOptConsoleFlags, KNullDesC);
 	iOptions.AppendStringL(iPersistentConsoleName, TChar(0), KOptPersistentConsole, KNullDesC);
 
 	// Parse the command line.
@@ -3161,14 +3197,14 @@ EXPORT_C TInt CCommandBase::RunError(TInt aError)
 
 EXPORT_C CConsoleBase* CCommandBase::GetConsoleBaseL()
 	{
-	CIoConsole* console = new(ELeave) CIoConsole(Stdin(), Stdout());
+	CIoConsole* console = new(ELeave) CIoConsole(Stdin(), Stdout(), Stderr());
 	return console;
 	}
 
 EXPORT_C CColorConsoleBase* CCommandBase::GetColorConsoleBaseL()
 	{
 	// CIoConsole now derives from CColorConsoleBase so implementation is the same as GetConsoleBaseL
-	CIoConsole* console = new(ELeave) CIoConsole(Stdin(), Stdout());
+	CIoConsole* console = new(ELeave) CIoConsole(Stdin(), Stdout(), Stderr());
 	return console;
 	}
 

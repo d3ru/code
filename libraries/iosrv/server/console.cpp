@@ -98,14 +98,29 @@ template <class T> void CIoConsole::HandleReadWriterDetached(T& aReadWriter)
 		}
 	}
 
-void CIoConsole::IorepReadL(MIoReader&)
+void CIoConsole::IorepReadL(MIoReader& aReader)
 	{
-	QueueReaderIfRequired();
+	TDes8* binaryReadBuf = aReader.IorReadBuf8();
+	if (binaryReadBuf)
+		{
+		// aReader better well be the foreground reader
+		ASSERT(&aReader == AttachedReader());
+		if (&aReader != AttachedReader()) User::Leave(KErrNotReady);
+
+		if (!iReader->IsActive())
+			{
+			iReader->QueueRead(binaryReadBuf);
+			}
+		}
+	else
+		{
+		QueueReaderIfRequired();
+		}
 	}
 
-void CIoConsole::IorepReadKeyL(MIoReader& aReader)
+void CIoConsole::IorepReadKeyL(MIoReader& /*aReader*/)
 	{
-	IorepReadL(aReader);
+	QueueReaderIfRequired();
 	}
 
 void CIoConsole::IorepSetConsoleModeL(RIoReadWriteHandle::TMode aMode, MIoReader& aReader)
@@ -285,6 +300,16 @@ void CIoConsole::ReadComplete(TUint aKeyCode, TUint aModifiers)
 	QueueReaderIfRequired();
 	}
 
+void CIoConsole::ReadComplete(TDes8& aBinaryRead)
+	{
+	TPtrC8 result(aBinaryRead); // Because calling IorReadBuf8 again nukes the length of aBinaryRead (not supposed to call it again without having called IorDataBuffered first to finalise your use of it)
+	MIoReader* foregroundReader = AttachedReader();
+	// TODO we should take steps to ensure the read was cancelled if the reader changed while in binary mode...
+	ASSERT(foregroundReader->IorReadBuf8() != NULL);
+	foregroundReader->IorDataBuffered(result.Length());
+	// No point calling QueueReaderIfRequired, we don't worry about multiple readers during binary read
+	}
+
 void CIoConsole::QueueReaderIfRequired()
 	{
 	TBool pendingReader(EFalse);
@@ -327,9 +352,17 @@ CIoConsole::CConsoleReader::~CConsoleReader()
 	Cancel();
 	}
 
-void CIoConsole::CConsoleReader::QueueRead()
+void CIoConsole::CConsoleReader::QueueRead(TDes8* aBinaryReadBuffer)
 	{
-	iConsole.iConsole.Read(iKeyCodePckg, iKeyModifiersPckg, iStatus);
+	iBinaryReadBuffer = aBinaryReadBuffer;
+	if (aBinaryReadBuffer)
+		{
+		iConsole.iConsole.Read(*iBinaryReadBuffer, iStatus);
+		}
+	else
+		{
+		iConsole.iConsole.Read(iKeyCodePckg, iKeyModifiersPckg, iStatus);
+		}
 	SetActive();
 	}
 
@@ -348,13 +381,28 @@ void CIoConsole::CConsoleReader::RunL()
 		iConsole.ConsoleDied();
 		err = KErrGeneral;
 		}
-	if (err)
+	if (err == KErrExtensionNotSupported && iBinaryReadBuffer)
+		{
+		// Console doesn't support it, revert to boring mode
+		// This only works because in boring mode we only ever call IorReadKeyComplete() and not IorDataBuffered(), because the latter wouldn't be able to distinguish (currently) that we'd reverted to 16-bit mode
+		iBinaryReadBuffer = NULL;
+		iConsole.iConsole.Read(iKeyCodePckg, iKeyModifiersPckg, iStatus);
+		SetActive();
+		}
+	else if (err)
 		{
 		iConsole.ReadComplete(err);
 		}
 	else
 		{
-		iConsole.ReadComplete(iKeyCode, iKeyModifiers);
+		if (iBinaryReadBuffer)
+			{
+			iConsole.ReadComplete(*iBinaryReadBuffer);
+			}
+		else
+			{
+			iConsole.ReadComplete(iKeyCode, iKeyModifiers);
+			}
 		}
 	}
 
@@ -424,13 +472,17 @@ void CIoConsole::TConsoleCreateRequest::CompleteD(TInt aError)
 //______________________________________________________________________________
 //						TConsoleWriteRequest
 CIoConsole::TConsoleWriteRequest::TConsoleWriteRequest(MIoWriter& aWriter)
-	: TConsoleWriterRequest(aWriter), iBuf(NULL)
+	: TConsoleWriterRequest(aWriter), iBuf(NULL), iBuf8(NULL)
 	{
 	}
 
 void CIoConsole::TConsoleWriteRequest::Request(RIoConsoleProxy aProxy, TRequestStatus& aStatus)
 	{
-	if (iWriter.IowIsStdErr())
+	if (iBuf8)
+		{
+		aProxy.Write(*iBuf8, aStatus);
+		}
+	else if (iWriter.IowIsStdErr())
 		{
 		aProxy.WriteStdErr(*iBuf, aStatus);
 		}
@@ -443,22 +495,27 @@ void CIoConsole::TConsoleWriteRequest::Request(RIoConsoleProxy aProxy, TRequestS
 void CIoConsole::TConsoleWriteRequest::PrepareL()
 	{
 	const TInt length = iWriter.IowWriteLength();
-	if (iBuf == NULL)
+	
+
+	ASSERT(iBuf == NULL);
+	if (iWriter.IowNarrowWrite())
+		{
+		iBuf8 = HBufC8::NewL(length);
+		TPtr8 ptr = iBuf8->Des();
+		iWriter.IowWrite(ptr);
+		}
+	else
 		{
 		iBuf = HBufC::NewL(length);
-		}
-	else if (iBuf->Des().MaxLength() < length)
-		{
-		iBuf = iBuf->ReAllocL(length);
+		TPtr ptr = iBuf->Des();
+		iWriter.IowWrite(ptr);
 		}
 
-	TPtr bufPtr(iBuf->Des());
-	bufPtr.Zero();
-	iWriter.IowWrite(bufPtr);
 
 	if (iWriter.IorwMode() == RIoReadWriteHandle::EText)
 		{
 		// Fix line endings (change LF to CRLF).
+		// TODO should probably replace this with RLtkBuf::ReplaceAllL()
 		RArray<TInt> indicies(5);
 		CleanupClosePushL(indicies);
 		_LIT(KCarriageReturn, "\r");
@@ -473,6 +530,7 @@ void CIoConsole::TConsoleWriteRequest::PrepareL()
 				}
 			}
 		const TInt count = indicies.Count();
+		TPtr bufPtr = iBuf->Des();
 		if (count > 0)
 			{
 			if (bufPtr.MaxLength() < (length + count))
@@ -487,12 +545,12 @@ void CIoConsole::TConsoleWriteRequest::PrepareL()
 			}
 		CleanupStack::PopAndDestroy(&indicies);
 		}
-	
 	}
 
 void CIoConsole::TConsoleWriteRequest::CompleteD(TInt aError)
 	{
 	delete iBuf;
+	delete iBuf8;
 	iWriter.IowComplete(aError);
 	delete this;
 	}
@@ -867,6 +925,16 @@ void RIoConsoleProxy::CancelNotifySizeChanged()
 	SendReceive(ECancelNotifySizeChange, TIpcArgs());
 	}
 
+void RIoConsoleProxy::Read(TDes8& aBuf, TRequestStatus& aStatus)
+	{
+	SendReceive(EBinaryRead, TIpcArgs(&aBuf), aStatus);
+	}
+
+void RIoConsoleProxy::Write(const TDesC8& aBuf, TRequestStatus& aStatus)
+	{
+	SendReceive(EBinaryWrite, TIpcArgs(&aBuf), aStatus);;
+	}
+
 //______________________________________________________________________________
 //						CIoConsoleProxyServer
 CConsoleProxyServer* CIoConsoleProxyServerNewL(TAny* aParams)
@@ -972,14 +1040,15 @@ TSize DetectConsoleSize(CConsoleBase* aConsole)
 //______________________________________________________________________________
 //						CIoConsoleProxySession
 CIoConsoleProxySession::CIoConsoleProxySession(TConsoleCreateFunction aConsoleCreate)
-	: CConsoleProxySession(aConsoleCreate), iFlags(ESupportsStdErr)
+	: CConsoleProxySession(aConsoleCreate), iFlags(ESupportsStdErr | ESupportsBinaryWrite)
 	{
-	// Assume ESupportsStdErr until proven otherwise
+	// Assume ESupportsStdErr and ESupportsBinaryWrite until proven otherwise
 	}
 
 CIoConsoleProxySession::~CIoConsoleProxySession()
 	{
 	delete iSizeChangedMessageCompleter;
+	delete iBinaryReadMessageCompleter;
 	delete iUnderlyingConsole;
 	}
 
@@ -1015,10 +1084,11 @@ void CIoConsoleProxySession::ServiceL(const RMessage2& aMessage)
 		CleanupClosePushL(buf);
 		buf.CreateL(aMessage.GetDesLengthL(0));
 		aMessage.ReadL(0, buf);
+		TInt err = KErrNone;
 		if (iFlags & ESupportsStdErr)
 			{
-			TInt err = ConsoleStdErr::Write(iConsole->Console(), buf);
-			if (err != KErrNone)
+			err = ConsoleStdErr::Write(iConsole->Console(), buf);
+			if (err == KErrExtensionNotSupported)
 				{
 				// Clearly it doesn't support it, clear the flag so we fall back to normal write and don't bother trying again
 				iFlags &= ~ESupportsStdErr;
@@ -1028,9 +1098,35 @@ void CIoConsoleProxySession::ServiceL(const RMessage2& aMessage)
 		if (!(iFlags & ESupportsStdErr))
 			{
 			iConsole->Console()->Write(buf);
+			err = KErrNone;
 			}
 		CleanupStack::PopAndDestroy(&buf);
-		aMessage.Complete(KErrNone);
+		aMessage.Complete(err);
+		return;
+		}
+	case RIoConsoleProxy::EBinaryWrite:
+		{
+		TDesC8* buf = (TDesC8*)aMessage.Ptr0(); // Hack to reduce the amount of buffer copying - don't copy the descriptor, just access it directly, since we know the client is in the same process as us
+		TInt err = KErrNone;
+		if (iFlags & ESupportsBinaryWrite)
+			{
+			err = BinaryMode::Write(iConsole->Console(), *buf);
+			if (err == KErrExtensionNotSupported)
+				{
+				iFlags &= ~ESupportsBinaryWrite;
+				}
+			}
+
+		if (!(iFlags & ESupportsBinaryWrite))
+			{
+			// We have to widen the descriptor. Can't see any nicer way of doing this
+			HBufC* wide = HBufC::NewLC(buf->Length());
+			wide->Des().Copy(*buf);
+			iConsole->Console()->Write(*wide);
+			err = KErrNone;
+			CleanupStack::PopAndDestroy(wide);
+			}
+		aMessage.Complete(err);
 		return;
 		}
 	case RIoConsoleProxy::ENotifySizeChange:
@@ -1053,6 +1149,26 @@ void CIoConsoleProxySession::ServiceL(const RMessage2& aMessage)
 		aMessage.Complete(KErrNone);
 		return;
 		}
+	case RIoConsoleProxy::EBinaryRead:
+		{
+		if (iBinaryReadMessageCompleter == NULL)
+			{
+			ASSERT(iConsole);
+			iBinaryReadMessageCompleter = new (ELeave) CBinaryReadMessageCompleter(iConsole->Console());
+			}
+		TDes8* des = (TDes8*)aMessage.Ptr0(); // Hack to reduce the amount of buffer copying - don't copy the descriptor, just access it directly, since we know the client is in the same process as us
+		//RDebug::Printf("RIoConsoleProxy::EBinaryRead into buffer maxlen=%d", des->MaxLength());
+		iBinaryReadMessageCompleter->Read(*des, const_cast<RMessage2&>(aMessage));
+		return;
+		}
+	case RConsoleProxy::EReadCancel:
+		// We have to handle this ourselves if we're doing a binary read
+		if (iBinaryReadMessageCompleter && iBinaryReadMessageCompleter->IsActive())
+			{
+			iBinaryReadMessageCompleter->CancelRead();
+			return;
+			}
+		break; // Otherwise let CConsoleProxySession handle it
 	default:
 		break;
 		}
@@ -1237,6 +1353,7 @@ CLazyConsole::~CLazyConsole()
 	{
 	iTitle.Close();
 	delete iConsole;
+	delete iUnderlyingConsole;
 	}
 
 TInt CLazyConsole::Create(const TDesC &aTitle,TSize aSize)
@@ -1270,6 +1387,15 @@ TInt CLazyConsole::CheckCreated() const
 		{
 		ConsoleSize::NotifySizeChanged(iConsole, *iStatusForNotifySizeRequest);
 		iStatusForNotifySizeRequest = NULL;
+		}
+	if (iCreateError == KErrNone && iUnderlyingConsole != NULL)
+		{
+		TInt err = UnderlyingConsole::Set(iConsole, iUnderlyingConsole);
+		if (err)
+			{
+			delete iUnderlyingConsole;
+			}
+		iUnderlyingConsole = NULL;
 		}
 
 	if (iCreateError != KErrNone)
@@ -1427,6 +1553,11 @@ TInt CLazyConsole::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
 		iStatusForNotifySizeRequest = stat;
 		return KErrNone; // It's ok to say KErrNone now but complete the TRequestStatus with KErrExtensionNotSupported later
 		}
+	else if (iConsole == NULL && aExtensionId == UnderlyingConsole::KSetUnderlyingConsoleExtension)
+		{
+		iUnderlyingConsole = (CConsoleBase*)a1;
+		return KErrNone;
+		}
 	else 
 		{
 		TInt err = CheckCreated();
@@ -1533,4 +1664,58 @@ void CSizeChangeMessageCompleter::CancelNotify()
 		{
 		iMessage.Complete(KErrCancel);
 		}
+	}
+
+//
+
+CBinaryReadMessageCompleter::CBinaryReadMessageCompleter(CConsoleBase* aConsole)
+	: CActive(CActive::EPriorityStandard), iActualConsole(aConsole)
+	{
+	CActiveScheduler::Add(this);
+	}
+
+CBinaryReadMessageCompleter::~CBinaryReadMessageCompleter()
+	{
+	CancelRead();
+	}
+
+void CBinaryReadMessageCompleter::Read(TDes8& aBuf, RMessage2& aMessage)
+	{
+	//RDebug::Printf("CIoConsole reading max %d bytes", aBuf.MaxLength());
+	TBool supported = BinaryMode::Read(iActualConsole, aBuf, iStatus);
+	if (!supported)
+		{
+		//TODO don't know why I bothered with the TBool return...
+		aMessage.Complete(KErrExtensionNotSupported);
+		}
+	else
+		{
+		iMessage = aMessage;
+		SetActive();
+		}
+	}
+
+void CBinaryReadMessageCompleter::CancelRead()
+	{
+	if (IsActive())
+		{
+		Cancel();
+		}
+	
+	if (!iMessage.IsNull())
+		{
+		iMessage.Complete(KErrCancel);
+		}
+	}
+
+void CBinaryReadMessageCompleter::DoCancel()
+	{
+	// We use the same cancel function as the other reads... hope that doesn't cause trouble...
+	iActualConsole->ReadCancel();
+	}
+
+void CBinaryReadMessageCompleter::RunL()
+	{
+	//RDebug::Printf("RIoConsoleProxy::EBinaryRead completed with %d", iStatus.Int());
+	iMessage.Complete(iStatus.Int());
 	}

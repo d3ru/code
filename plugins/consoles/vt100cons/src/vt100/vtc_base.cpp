@@ -70,6 +70,15 @@ EXPORT_C TInt CVtcConsoleBase::Extension_(TUint aExtensionId, TAny*& a0, TAny* a
 		ConsoleAttributes::TAttributes* attributes = (ConsoleAttributes::TAttributes*)a1;
 		return iOutputController->SetAttributes(attributes->iAttributes, attributes->iForegroundColor, attributes->iBackgroundColor);
 		}
+	else if (aExtensionId == BinaryMode::KBinaryModeReadExtension)
+		{
+		iInputController->Read(*(TDes8*)a0, *(TRequestStatus*)a1);
+		return KErrNone;
+		}
+	else if (aExtensionId == BinaryMode::KBinaryModeWriteExtension)
+		{
+		return Output(*(const TDesC8*)a1);
+		}
 	else
 		{
 		TInt ret = MIosrvConsoleHelper_Extension(aExtensionId, a0, a1);

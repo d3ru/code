@@ -87,6 +87,7 @@ public:
 	IMPORT_C void GetKeyPress(TKeyPress& aKeyPress, TRequestStatus& aStatus);
 	IMPORT_C void CancelGetKeyPress();
 	IMPORT_C void SetMode(ConsoleMode::TMode aMode);
+	void Read(TDes8& aBuf, TRequestStatus& aStatus);
 public:
 	virtual ~CVtConsoleInputController();
 private:
@@ -102,6 +103,7 @@ private:
 	void CompleteReadRequest(TKeyCode aKeyCode1, TKeyCode aKeyCode2);
 	void Reset();
 	void RequestInput();
+	TBool BinaryReadInProgress() const;
 private: // From CActive.
 	virtual void RunL();
 	virtual void DoCancel();

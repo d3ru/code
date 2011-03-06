@@ -313,11 +313,15 @@ Only has an effect when used in conjunction with C<--console>. Allows the charac
 
 Creates a new L<persistent console|persistent_consoles> to be used as the console for the command. Cannot be used in conjunction with C<--console>.
 
+=item * --console-flags <flags>
+
+This option is internal to fshell and should not be used directly.
+
 =back
 
 =head2 Advanced command-line syntax
 
-Short options may be run together in one block, the only restriction being that only the last option in the block may take an argument. For example the following are equivalent:
+Short options may be run together in one block, the only restriction being that an option that takes and argument can only appear as the last option in the block. For example the following are equivalent:
 
     kill --all --thread --match *undertaker
     kill -a -T -m *undertaker
@@ -398,6 +402,10 @@ Execute the specified one line script.
 ==option bool k keep-going
 
 When running in script mode, keep processing the script even if a previous command has returned an error. Without this option set, an error would cause the processing to abort (and fshell to exit with the error code) unless either C<&&>, C<||> or C<&|> was used to handle the error. For the convenience of scripts that may wish to pass on the flag to sub-instances of fshell, if this flag is specified the environment variable C<KEEP_GOING> is defined.
+
+==option filename c cd
+
+Set fshell's default current working directory to the given path. Overrides the path inherited from the environment variable C<PWD>.
 
 ==copyright
 

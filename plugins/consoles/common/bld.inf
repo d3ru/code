@@ -53,3 +53,9 @@ PRJ_MMPFILES
 #ifdef FSHELL_TRACECORE_SUPPORT
 ..\terminalkeyboardcons\terminalkeyboardcons.mmp
 #endif
+
+PRJ_EXPORTS
+..\muxcons\muxserver.cif           z:\resource\cif\fshell\muxserver.cif
+PRJ_MMPFILES
+..\muxcons\muxcons.mmp
+..\muxcons\muxserver.mmp

@@ -129,7 +129,7 @@ private:
 	TInt ReleaseCodeSegMutex();
 	TInt GetNextCodeSegInfo(TDes8* aCodeSegInfoBuf);
 	TInt ObjectDie(TObjectKillParamsBuf& aObjectKillParamsBuf);
-	TInt FindPtrInCodeSegments(TAny* aDllNamePtr, TAny* aPtr);
+	TInt FindPtrInCodeSegments(TAny* aDllNamePtr, TAny* aPtr, DProcess* aProcess);
 	TInt GetHandleOwners(TAny* aObj, TAny* aOwnersBuf);
 	TInt GetThreadHandles(TInt aThreadId, TAny* aHandlesBuf);
 	TInt GetProcessHandles(TInt aProcessId, TAny* aHandlesBuf);
@@ -464,7 +464,26 @@ TInt DMemoryAccess::DoControl(TInt aFunction, TAny* a1, TAny* a2)
     case RMemoryAccess::EControlGetCurrentAllocatorAddress:
         return GetAllocatorAddress((TUint)a1, *(TUint8**)a2, ETrue);
     case RMemoryAccess::EControlFindPtrInCodeSegments:
-		return FindPtrInCodeSegments(a1, a2);
+		return FindPtrInCodeSegments(a1, a2, iClient->iOwningProcess);
+	case RMemoryAccess::EControlFindPtrInCodeSegments2:
+		{
+		TAny* args[2];
+		TInt err = Kern::ThreadRawRead(iClient, a2, &args, 2*sizeof(TAny*));
+		if (err) return err;
+		NKern::LockSystem();
+		DProcess* proc = (DProcess*)Kern::ObjectFromHandle(iClient, (TInt)args[1], EProcess);
+		if (!proc) err = KErrNotFound;
+		else err = proc->Open();
+
+		if (!err) NKern::ThreadEnterCS();
+		NKern::UnlockSystem();
+		if (err) return err;
+
+		err = FindPtrInCodeSegments(a1, args[0], proc);
+		proc->Close(NULL);
+		NKern::ThreadLeaveCS();
+		return err;
+		}
     case RMemoryAccess::EControlGetHandleOwners:
 		return GetHandleOwners(a1, a2);
     case RMemoryAccess::EControlGetThreadHandles:
@@ -2048,45 +2067,10 @@ TInt DMemoryAccess::GetCondVarInfo(DCondVar* aCondVar, TDes8* aCondVarInfoBuf)
 	return err;    		
 	}
 
-TInt DMemoryAccess::FindPtrInCodeSegments(TAny* aDllNamePtr, TAny* aPtr)
+TInt DMemoryAccess::FindPtrInCodeSegments(TAny* aDllNamePtr, TAny* aPtr, DProcess* aProcess)
 	{
-	/*
-	// Iterate the code segments
-	TInt err = AcquireCodeSegMutex();
-	if (err) return err;
-	DCodeSeg* currentCodeSeg = NULL;
-
-	//BEGIN copied from GetNextCodeSegInfo
-	SDblQue* p = Kern::CodeSegList();
-	SDblQueLink* anchor=&p->iA;
-
-	currentCodeSeg = _LOFF(anchor->iNext, DCodeSeg, iLink);
-
-	while (currentCodeSeg)
-		{
-		if (currentCodeSeg->iLink.iNext != anchor)
-			{
-			currentCodeSeg = _LOFF(currentCodeSeg->iLink.iNext, DCodeSeg, iLink);
-			if ((TUint)aPtr >= currentCodeSeg->iRunAddress && (TUint)aPtr < currentCodeSeg->iRunAddress + currentCodeSeg->iSize)
-				{
-				// Found it
-				break;
-				}
-			}
-		else
-			{
-			// Not found any code seg matching
-			currentCodeSeg = NULL;
-			err = KErrNotFound;
-			}
-		}
-	//END copied from GetNextCodeSegInfo
-	ReleaseCodeSegMutex();
-	// End iterate
-	*/
-
 	Kern::MutexWait(*Kern::CodeSegLock());
-	DCodeSeg* currentCodeSeg = Kern::CodeSegFromAddress((TLinAddr)aPtr, iClient->iOwningProcess);
+	DCodeSeg* currentCodeSeg = Kern::CodeSegFromAddress((TLinAddr)aPtr, aProcess);
 	TInt err = KErrNone;
 	TInt offset = 0;
 	TBuf8<256> dllName;

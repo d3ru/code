@@ -23,8 +23,10 @@ public:
 private: //from MIoReadWriter:
 	virtual RIoReadWriteHandle::TMode IorwMode() const;
 private: //from MIoWriter:
+	virtual TBool IowNarrowWrite() const;
 	virtual TInt IowWriteLength() const;
 	virtual TInt IowWrite(TDes& aBuf);
+	virtual TInt IowWrite(TDes8& aBuf);
 	virtual void IowComplete(TInt aError);
 	virtual TName IowName();
 	virtual void IowCursorPos(TInt aError, TPoint aPos);
@@ -137,8 +139,10 @@ private:
 		virtual RIoReadWriteHandle::TMode IorwMode() const;
 		
 		// from MIoWriter
+		virtual TBool IowNarrowWrite() const;
 		virtual TInt IowWriteLength() const;
 		virtual TInt IowWrite(TDes& aBuf);
+		virtual TInt IowWrite(TDes8& aBuf);
 		virtual void IowComplete(TInt aError);
 		virtual TName IowName();
 		virtual void IowCursorPos(TInt aError, TPoint aPos);
@@ -200,6 +204,7 @@ private:
 		virtual TBool IorReadPending() const;
 		virtual TBool IorReadKeyPending() const;
 		virtual TDes& IorReadBuf();
+		virtual TDes8* IorReadBuf8();
 		virtual void IorDataBuffered(TInt aLength);
 		virtual TBool IorDataIsBuffered() const;
 		virtual TBool IorIsKeyCaptured(TUint aKeyCode, TUint aModifiers) const;

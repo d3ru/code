@@ -63,8 +63,15 @@ void CCmdCat::WriteChunkToConsoleL(const TDesC8& aData, TReadType aType)
 	{
 	if (iEncoding == EBinary)
 		{
-		iBuf16.Copy(aData);
-		Write(iBuf16);
+		if (iBinary)
+			{
+			Stdout().Write(aData);
+			}
+		else
+			{
+			iBuf16.Copy(aData);
+			Write(iBuf16);
+			}
 		if (aType == MFileReaderObserver::ELast)
 			{
 			RemoveCurrentFileName();

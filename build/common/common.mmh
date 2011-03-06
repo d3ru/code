@@ -608,9 +608,12 @@
 #define FSHELL_UID_VT100USBCONS               0x10286F8A
 #define FSHELL_UID_WIN32CONS                  0x10286F8B
 #define FSHELL_UID_SHOWDEBUG                  0x10286F8D
+#define FSHELL_UID_MUXSERVER                  0x10286F74
+#define FSHELL_UID_MUXCONS                    0x10286F90
 #define FSHELL_UID_INPUT                      0x10286B7D
 #define FSHELL_UID_BASE64                     0x10286B7E
 #define FSHELL_UID_OST                        0x10286F92
+#define FSHELL_UID_IOCLI_QT                   0x10286F93
 
 #else // Not FSHELL_PROTECTED_UIDS
 
@@ -765,13 +768,16 @@
 #define FSHELL_UID_VT100USBCONS               0xE0286F8A
 #define FSHELL_UID_WIN32CONS                  0xE0286F8B
 #define FSHELL_UID_SHOWDEBUG                  0xE0286F8D
+#define FSHELL_UID_MUXSERVER                  0xE0286F74
+#define FSHELL_UID_MUXCONS                    0xE0286F90
 #define FSHELL_UID_INPUT                      0xE0286B7D
 #define FSHELL_UID_BASE64                     0xE0286B7E
 #define FSHELL_UID_OST                        0xE0286F92
+#define FSHELL_UID_IOCLI_QT                   0xE0286F93
 
 #endif // FSHELL_PROTECTED_UIDS
 
-#define FSHELL_UID2_FSHELL_DLL                0x102864C8
+//obsolete #define FSHELL_UID2_FSHELL_DLL     0x102864C8
 #define FSHELL_UID2_FSHELL_EXE                0x102835BE
 
 #endif // FSHELL_COMMON_MMH

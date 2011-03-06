@@ -631,4 +631,8 @@ EXPORTS
 	_ZNK7IoUtils16CCommandInfoFile30GetSmokeTestStartingLineNumberEv @ 630 NONAME
 	_ZN7IoUtils13RChildProcessC1Ev @ 631 NONAME
 	_ZN7IoUtils13RChildProcessC2Ev @ 632 NONAME
+	_ZN13RIoReadHandle4ReadER5TDes8R14TRequestStatus @ 633 NONAME
+	_ZN14RIoWriteHandle5WriteERK6TDesC8 @ 634 NONAME
+	_ZN14RIoWriteHandle5WriteERK6TDesC8R14TRequestStatus @ 635 NONAME
+	_ZN13RIoReadHandle4ReadER5TDes8 @ 636 NONAME
 

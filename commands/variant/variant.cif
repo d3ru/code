@@ -20,7 +20,7 @@ Determines the hardware variant and whether or not that matches the variant spec
 
 If the device matches the given command line options, KErrNone is returned. If not, KErrNotSupported is returned. Note that the command will not print any error message in the case of the variant not being supported, so that it doesn't make script output untidy. If an error message is required, use the C<--verbose> option.
 
-In addition there are some other special variant names supported, that are derived at compile time from the platform.mmh macros and similar: run the tool with no arguments to see the full list.
+In addition there are some other special variant names supported, which are derived at compile time from the platform.mmh macros and similar; run the tool with no arguments to see the full list.
 
 Example usage:
 

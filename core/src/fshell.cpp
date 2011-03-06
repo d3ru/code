@@ -373,7 +373,7 @@ const RPointerArray<CJob>& CShell::Jobs() const
 	}
 
 CShell::CShell()
-	: CCommandBase(EManualComplete | ENotifyStdinChanges | ESharableIoSession), iForegroundJobId(KNoForegroundJob), iWriterAdaptor(Stdout())
+	: CCommandBase(EManualComplete | ENotifyStdinChanges | ESharableIoSession), iForegroundJobId(KNoForegroundJob), iWriterAdaptor(Stdout()), iCd(TFileName2::EDirectory)
 	{
 	gShell = this;
 	}
@@ -502,6 +502,11 @@ void CShell::DoRunL()
 	User::LeaveIfError(iFs.ShareAuto()); // Necessary because this handle is used by CCommandFactory and that can be used from the context of other threads (e.g. the "debug" command).
 	iCommandFactory = CCommandFactory::NewL(iFs);
 
+	if (iCd.Length())
+		{
+		Env().SetPwdL(iCd);
+		}
+
 	if (iOneLiner)
 		{
 		// One line script mode.
@@ -559,6 +564,8 @@ void CShell::OptionsL(RCommandOptionList& aOptions)
 	aOptions.AppendStringL(iOneLiner, KOptExec);
 	_LIT(KOptKeepGoing, "keep-going");
 	aOptions.AppendBoolL(iKeepGoing, KOptKeepGoing);
+	_LIT(KOptCd, "cd");
+	aOptions.AppendFileNameL(iCd, KOptCd);
 	}
 
 void CShell::ArgumentsL(RCommandArgumentList& aArguments)

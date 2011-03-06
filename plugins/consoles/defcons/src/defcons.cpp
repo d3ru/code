@@ -27,6 +27,7 @@
 
 const LtkUtils::SLitC KConsoleImplementations[] =
 	{
+	DESC("muxcons"),
 	DESC("guicons"),
 	DESC("econseik"),
 	DESC("econs"),
@@ -173,11 +174,13 @@ TInt CDefaultConsole::DoCreate()
 #ifdef __WINS__
 	if (EmulatorNoGui())
 		{
-		err = TryCreateConsole(_L("nullcons"));
+		err = TryCreateConsole(_L("muxcons"));
+		if (err) err = TryCreateConsole(_L("nullcons"));
 		}
 	else if (EmulatorTextShell())
 		{
-		err = TryCreateConsole(_L("econs"));
+		err = TryCreateConsole(_L("muxcons"));
+		if (err) err = TryCreateConsole(_L("econs"));
 		}
 	else
 #endif

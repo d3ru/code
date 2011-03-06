@@ -110,6 +110,8 @@ public:
 	IMPORT_C TInt Read(TDes& aDes);
 	IMPORT_C void ReadL(TDes& aDes);
 	IMPORT_C void Read(TDes& aDes, TRequestStatus& aStatus);
+	IMPORT_C void Read(TDes8& aDes, TRequestStatus& aStatus); // Only callable when in binary mode
+	IMPORT_C TInt Read(TDes8& aDes); // Only callable when in binary mode
 	IMPORT_C TInt SetLineSeparator(const TDesC& aSeparator);
 	IMPORT_C void SetLineSeparatorL(const TDesC& aSeparator);
 	IMPORT_C void ReadCancel();
@@ -162,6 +164,8 @@ public:
 	IMPORT_C TInt Write(const TDesC& aDes);
 	IMPORT_C void WriteL(const TDesC& aDes);
 	IMPORT_C void Write(const TDesC& aDes, TRequestStatus& aStatus);
+	IMPORT_C TInt Write(const TDesC8& aDes); // Only callable when in binary mode
+	IMPORT_C void Write(const TDesC8& aDes, TRequestStatus& aStatus); // Only callable when in binary mode
 	IMPORT_C void WriteCancel();
 	};
 

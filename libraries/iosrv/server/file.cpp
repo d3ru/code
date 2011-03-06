@@ -13,6 +13,8 @@
 #include "file.h"
 #include "log.h"
 #include <fshell/ltkutils.h>
+using LtkUtils::RLtkBuf8;
+using LtkUtils::RLtkBuf;
 
 CIoFile* CIoFile::NewLC(RFs& aFs, const TDesC& aName, RIoFile::TMode aMode)
 	{
@@ -39,20 +41,39 @@ void CIoFile::IorepReadL(MIoReader& aReader)
 	User::LeaveIfError(iFile.Size(fileSize));
 	if (iPos < fileSize)
 		{
-		TDes& readBuf = aReader.IorReadBuf();
-		iTempReadBuf.Zero();
-		HBufC8* narrowBuf = HBufC8::NewLC(readBuf.MaxLength());
-		TPtr8 narrowBufPtr(narrowBuf->Des());
-		User::LeaveIfError(iFile.Read(narrowBufPtr, readBuf.MaxLength()));
-		iPos += narrowBuf->Length();
-		iTempReadBuf.AppendUtf8L(narrowBufPtr);
-		if (iPos >= fileSize)
+		TDes8* readBuf8 = aReader.IorReadBuf8();
+
+		if (readBuf8)
 			{
-			iTempReadBuf.FinalizeUtf8();
+			User::LeaveIfError(iFile.Read(*readBuf8));
+			iPos += readBuf8->Length();
+			aReader.IorDataBuffered(readBuf8->Length());
 			}
-		readBuf.Copy(iTempReadBuf);
-		aReader.IorDataBuffered(readBuf.Length());
-		CleanupStack::PopAndDestroy(narrowBuf);
+		else
+			{
+			TDes& readBuf = aReader.IorReadBuf();
+			iTempReadBuf.Zero();
+			HBufC8* narrowBuf = HBufC8::NewLC(readBuf.MaxLength());
+			TPtr8 narrowBufPtr(narrowBuf->Des());
+			User::LeaveIfError(iFile.Read(narrowBufPtr, readBuf.MaxLength()));
+			iPos += narrowBuf->Length();
+			if (aReader.IorwMode() == RIoReadWriteHandle::EText)
+				{
+				iTempReadBuf.AppendUtf8L(narrowBufPtr);
+				if (iPos >= fileSize)
+					{
+					iTempReadBuf.FinalizeUtf8();
+					}
+				readBuf.Copy(iTempReadBuf);
+				}
+			else
+				{
+				readBuf.Copy(narrowBufPtr);
+				}
+
+			aReader.IorDataBuffered(readBuf.Length());
+			CleanupStack::PopAndDestroy(narrowBuf);
+			}
 		if (iPos >= fileSize)
 			{
 			aReader.IorReadComplete(KErrNone);
@@ -66,16 +87,35 @@ void CIoFile::IorepReadL(MIoReader& aReader)
 
 void CIoFile::IowepWriteL(MIoWriter& aWriter)
 	{
-	HBufC* buf = HBufC::NewLC(aWriter.IowWriteLength());
-	TPtr bufPtr(buf->Des());
-	aWriter.IowWrite(bufPtr);
-
-	// Convert to UTF-8
-	HBufC8* narrowBuf = LtkUtils::Utf8L(*buf);
-	TInt err = iFile.Write(*narrowBuf);
-	delete narrowBuf;
+	TInt err = KErrNone;
+	if (aWriter.IowNarrowWrite())
+		{
+		RLtkBuf8 buf;
+		buf.CreateLC(aWriter.IowWriteLength());
+		aWriter.IowWrite(buf);
+		err = iFile.Write(buf);
+		CleanupStack::PopAndDestroy(&buf);
+		}
+	else
+		{
+		RLtkBuf buf;
+		buf.CreateLC(aWriter.IowWriteLength());
+		aWriter.IowWrite(buf);
+		if (aWriter.IorwMode() == RIoReadWriteHandle::EText)
+			{
+			// Convert to UTF-8
+			HBufC8* narrowBuf = LtkUtils::Utf8L(buf);
+			err = iFile.Write(*narrowBuf);
+			delete narrowBuf;
+			}
+		else
+			{
+			// Just collapse it
+			err = iFile.Write(buf.Collapse());
+			}
+		CleanupStack::PopAndDestroy(&buf);
+		}
 	aWriter.IowComplete(err);
-	CleanupStack::PopAndDestroy(buf);
 	}
 
 void CIoFile::IowepWriteCancel(MIoWriter&)

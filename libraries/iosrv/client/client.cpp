@@ -474,6 +474,16 @@ EXPORT_C void RIoReadHandle::Read(TDes& aDes, TRequestStatus& aStatus)
 #endif
 	}
 
+EXPORT_C void RIoReadHandle::Read(TDes8& aDes, TRequestStatus& aStatus)
+	{
+	SendReceive(EIoRead8, TIpcArgs(&aDes), aStatus);
+	}
+
+EXPORT_C TInt RIoReadHandle::Read(TDes8& aDes)
+	{
+	return SendReceive(EIoRead8, TIpcArgs(&aDes));
+	}
+
 EXPORT_C TInt RIoReadHandle::SetLineSeparator(const TDesC& aSeparator)
 	{
 #ifdef EKA2
@@ -752,6 +762,16 @@ EXPORT_C void RIoWriteHandle::WriteCancel()
 #endif
 	}
 
+
+EXPORT_C TInt RIoWriteHandle::Write(const TDesC8& aDes)
+	{
+	return SendReceive(EIoWrite8, TIpcArgs(&aDes));
+	}
+
+EXPORT_C void RIoWriteHandle::Write(const TDesC8& aDes, TRequestStatus& aStatus)
+	{
+	SendReceive(EIoWrite8, TIpcArgs(&aDes), aStatus);
+	}
 
 //
 // RIoConsoleWriteHandle.

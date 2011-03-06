@@ -262,7 +262,7 @@ This console is intended for use only when comm port support is not present in t
 
 =item *
 
-Binary mode is not available. This means that xmodem/ymodem cannot be used.
+Binary mode is not available. This means that xmodem/ymodem/muxcons cannot be used.
 
 =item *
 

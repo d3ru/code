@@ -61,6 +61,11 @@ EXPORT_C TInt MIosrvConsoleHelper::WriteStdErr(const TDesC& /*aDes*/)
 	return KErrExtensionNotSupported;
 	}
 
+EXPORT_C TInt MIosrvConsoleHelper::Write(const TDesC8& /*aDes*/)
+	{
+	return KErrExtensionNotSupported;
+	}
+
 EXPORT_C TInt MIosrvConsoleHelper::MIosrvConsoleHelper_Extension(TUint aExtensionId, TAny*& /*a0*/, TAny* a1)
 	{
 	if (aExtensionId == UnderlyingConsole::KSetUnderlyingConsoleExtension)

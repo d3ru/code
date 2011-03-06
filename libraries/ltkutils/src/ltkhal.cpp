@@ -297,7 +297,7 @@ EXPORT_C LtkUtils::CHalAttribute* LtkUtils::GetHalInfoL(TInt aAttribute)
 EXPORT_C LtkUtils::CHalAttribute* LtkUtils::GetHalInfoL(TInt aDeviceNumber, TInt aAttribute)
 	{
 	TInt val = 0;
-	TInt err = HAL::Get((HALData::TAttribute)aAttribute, val);
+	TInt err = HAL::Get(aDeviceNumber, (HALData::TAttribute)aAttribute, val);
 	CHalAttribute* attrib = NULL;
 	if (err == KErrNone)
 		{

@@ -32,17 +32,17 @@ const TUint8 KByteTelnetIac = 0xff;
 const TUint8 KByteTelnetDo = 0xfd;
 const TUint8 KByteTelnetWill = 0xfb;
 const TUint8 KByteTelnetBinaryMode = 0x00;
-_LIT(KLitEot, "\x04");
-_LIT(KLitAck, "\x06");
-_LIT(KLitNak, "\x15");
-_LIT(KLitCancel, "\x18\x18\x18");
-_LIT(KLitC, "C");
-_LIT(KLitTelnetDoBinaryMode, "\xff\xfd\x00");
-_LIT(KLitTelnetWillBinaryMode, "\xff\xfb\x00");
+_LIT8(KLitEot, "\x04");
+_LIT8(KLitAck, "\x06");
+_LIT8(KLitNak, "\x15");
+_LIT8(KLitCancel, "\x18\x18\x18");
+_LIT8(KLitC, "C");
+_LIT8(KLitTelnetDoBinaryMode, "\xff\xfd\x00");
+_LIT8(KLitTelnetWillBinaryMode, "\xff\xfb\x00");
 
 #ifdef FSHELL_CORE_SUPPORT_XMODEM_CRCNOTAB
 
-TUint16 Crc16(const TDesC& aData)
+TUint16 Crc16(const TDesC8& aData)
 	{
 	TInt crc	= 0;
 	const TInt length = aData.Length();
@@ -101,13 +101,13 @@ static TUint16 KCrc16Tab[256]= {
 	0x6e17,0x7e36,0x4e55,0x5e74,0x2e93,0x3eb2,0x0ed1,0x1ef0
 };
   
-TUint16 Crc16(const TDesC& aData)
+TUint16 Crc16(const TDesC8& aData)
 	{
 	TUint16 crc = 0;
 	const TInt length = aData.Length();
 	for (TInt i = 0; i < length; ++i)
 		{
-		crc = (crc<<8) ^ KCrc16Tab[((crc>>8) ^ (TUint8)aData[i])&0x00FF];
+		crc = (crc<<8) ^ KCrc16Tab[((crc>>8) ^ aData[i])&0x00FF];
 		}
 	return crc;
 	}
@@ -140,12 +140,7 @@ void CCmdXmodem::ConstructL()
 
 TUint8 CCmdXmodem::ReceiveByteL(TInt aTimeout, TBool* aTimeoutOccurred)
 	{
-	return (TUint8)ReceiveShortL(aTimeout, aTimeoutOccurred);
-	}
-
-TUint16 CCmdXmodem::ReceiveShortL(TInt aTimeout, TBool* aTimeoutOccurred)
-	{
-	TBuf<1> buf;
+	TBuf8<1> buf;
 	ReceiveWithTimeoutL(buf, aTimeout, aTimeoutOccurred);
 	if (buf.Length() == 1)
 		{
@@ -154,7 +149,7 @@ TUint16 CCmdXmodem::ReceiveShortL(TInt aTimeout, TBool* aTimeoutOccurred)
 	return 0;
 	}
 
-void CCmdXmodem::ReceiveWithTimeoutL(TDes& aBuf, TInt aTimeout, TBool* aTimeoutOccurred)
+void CCmdXmodem::ReceiveWithTimeoutL(TDes8& aBuf, TInt aTimeout, TBool* aTimeoutOccurred)
 	{
 	aBuf.Zero();
 	TBool timeOutOccurred(EFalse);
@@ -164,7 +159,7 @@ void CCmdXmodem::ReceiveWithTimeoutL(TDes& aBuf, TInt aTimeout, TBool* aTimeoutO
 		TBool prevReceiveEndedWithIac(EFalse);
 		while ((aBuf.Length() < aBuf.MaxLength()) && !timeOutOccurred)
 			{
-			TPtr ptr(const_cast<TUint16*>(aBuf.Ptr()) + aBuf.Length(), 0, aBuf.MaxLength() - aBuf.Length()); // Create a TPtr over the unused part of aBuf.
+			TPtr8 ptr(const_cast<TUint8*>(aBuf.Ptr()) + aBuf.Length(), 0, aBuf.MaxLength() - aBuf.Length()); // Create a TPtr over the unused part of aBuf.
 			DoReceiveWithTimeoutL(ptr, aTimeout, &timeOutOccurred);
 			if (!timeOutOccurred)
 				{
@@ -210,7 +205,7 @@ void CCmdXmodem::ReceiveWithTimeoutL(TDes& aBuf, TInt aTimeout, TBool* aTimeoutO
 		}
 	}
 
-void CCmdXmodem::DoReceiveWithTimeoutL(TDes& aBuf, TInt aTimeout, TBool* aTimeoutOccurred)
+void CCmdXmodem::DoReceiveWithTimeoutL(TDes8& aBuf, TInt aTimeout, TBool* aTimeoutOccurred)
 	{
 	iStarted = ETrue;
 	aBuf.Zero();
@@ -224,7 +219,7 @@ void CCmdXmodem::DoReceiveWithTimeoutL(TDes& aBuf, TInt aTimeout, TBool* aTimeou
 	else
 		{
 		aBuf.Copy(iUngetBuf);
-		TPtr ptr(const_cast<TUint16*>(aBuf.Ptr()) + aBuf.Length(), 0, aBuf.MaxLength() - aBuf.Length()); // Create a TPtr over the unused part of aBuf.
+		TPtr8 ptr(const_cast<TUint8*>(aBuf.Ptr()) + aBuf.Length(), 0, aBuf.MaxLength() - aBuf.Length()); // Create a TPtr over the unused part of aBuf.
 		iUngetBuf.Zero();
 		TRequestStatus readStatus;
 		TRequestStatus timeoutStatus;
@@ -278,7 +273,7 @@ void CCmdXmodem::PurgeInputL()
 		while (!timeoutOccurred);
 	}
 
-void CCmdXmodem::SendL(const TDesC& aData)
+void CCmdXmodem::SendL(const TDesC8& aData)
 	{
 	Progress(_L("Sending:\r\n"));
 	Dump(aData);
@@ -298,8 +293,8 @@ void CCmdXmodem::SendL(const TDesC& aData)
 		if (numIacs > 0)
 			{
 			Progress(_L("Escaping %d IACs\r\n"), numIacs);
-			HBufC* newBuf = HBufC::NewLC(aData.Length() + numIacs);
-			TPtr newBufPtr(newBuf->Des());
+			HBufC8* newBuf = HBufC8::NewLC(aData.Length() + numIacs);
+			TPtr8 newBufPtr(newBuf->Des());
 			for (TInt i = 0; i < numChars; ++i)
 				{
 				if (aData[i] == KByteTelnetIac)
@@ -385,7 +380,7 @@ void CCmdXmodem::Progress(TRefByValue<const TDesC> aFmt, ...) const
 		}
 	}
 
-void CCmdXmodem::Dump(const TDesC& aData)
+void CCmdXmodem::Dump(const TDesC8& aData)
 	{
 	if (iVerbose)
 		{
@@ -471,7 +466,7 @@ CCmdXmodem::TSyncResult CCmdXmodem::SendSyncL()
 	{
 	Progress(_L("Sending sync...\r\n"));
 	iCrc = ETrue;
-	const TDesC* syncLit = &KLitC();
+	const TDesC8* syncLit = &KLitC;
 	FOREVER
 		{
 		TBool skipNextSync(EFalse);
@@ -537,7 +532,7 @@ TBool IsValidTelnetCommand(TChar aChar)
 void CCmdXmodem::HandleTelnetCommandL()
 	{
 	Progress(_L("Received (what looks like) the start of a Telnet command\r\n"));
-	TBuf<1> buf;
+	TBuf8<1> buf;
 	TBool timedOut(EFalse);
 	ReceiveWithTimeoutL(buf, KShortTimeout, &timedOut);
 	if (!timedOut)
@@ -623,29 +618,29 @@ void CCmdXmodem::CleanupClonsoleAfterTransferL()
 		}
 	}
 
-void CCmdXmodem::SendBlockL(const TDesC& aBlock)
+void CCmdXmodem::SendBlockL(const TDesC8& aBlock)
 	{
 	Progress(_L("Sending block...\r\n"));
 	ASSERT(aBlock.Length() <= iBlockSize);
 
 	if (iBuf == NULL)
 		{
-		iBuf = HBufC::NewL(iBlockSize + ProtocolOverhead());
+		iBuf = HBufC8::NewL(iBlockSize + ProtocolOverhead());
 		}
 
-	TPtr buf(iBuf->Des());
+	TPtr8 buf(iBuf->Des());
 
 	FOREVER
 		{
 		buf.Zero();
-		buf.Append((TUint16)KByteSoh);
-		buf.Append((TUint16)iPacketNumber);
-		buf.Append((TUint16)((TUint8)(~iPacketNumber)));
+		buf.Append(KByteSoh);
+		buf.Append(iPacketNumber);
+		buf.Append((TUint8)(~iPacketNumber));
 		buf.Append(aBlock);
 		if (aBlock.Length() < iBlockSize)
 			{
 			// There's not enough data to fill this block, so pad with SUB.
-			buf.AppendFill((TUint16)KByteSub, iBlockSize - aBlock.Length());
+			buf.AppendFill(KByteSub, iBlockSize - aBlock.Length());
 			}
 		if (iCrc)
 			{
@@ -660,7 +655,7 @@ void CCmdXmodem::SendBlockL(const TDesC& aBlock)
 				{
 				sum += (*iBuf)[i];
 				}
-			buf.Append((TUint16)sum);
+			buf.Append(sum);
 			}
 
 		Progress(_L("Sending block %d\r\n"), iPacketNumber);
@@ -697,17 +692,17 @@ void CCmdXmodem::SendBlockL(const TDesC& aBlock)
 		}
 	}
 
-TPtrC CCmdXmodem::ReceiveBlockL(TBool aIsFirstBlock, TBool& aIsFinalBlock)
+TPtrC8 CCmdXmodem::ReceiveBlockL(TBool aIsFirstBlock, TBool& aIsFinalBlock)
 	{
 	_LIT(KFirst, "first ");
 	Progress(_L("Receiving %Sblock...\r\n"), aIsFirstBlock ? &KFirst : &KNullDesC);
-	TPtrC ret(NULL, 0);
+	TPtrC8 ret(NULL, 0);
 	TInt repeats = 0;
 	aIsFinalBlock = EFalse;
 
 	if (iBuf == NULL)
 		{
-		iBuf = HBufC::NewL(iBlockSize + ProtocolOverhead());
+		iBuf = HBufC8::NewL(iBlockSize + ProtocolOverhead());
 		}
 	if (!aIsFirstBlock)	// The first byte of the first block should have already been read by SendSyncL.
 		{
@@ -781,7 +776,7 @@ again:
 		}
 
 	Progress(_L("Receiving remainder of block...\r\n"));
-	TPtr ptr(const_cast<TUint16*>(iBuf->Ptr()), 0, iBlockSize + ProtocolOverhead() - 1); // - 1 because the first byte of the header isn't in the buffer. Note, can't use HBufC::Des because the max length of the resulting TPtr could be larger than the amount of data we are expecting.
+	TPtr8 ptr(const_cast<TUint8*>(iBuf->Ptr()), 0, iBlockSize + ProtocolOverhead() - 1); // - 1 because the first byte of the header isn't in the buffer. Note, can't use HBufC::Des because the max length of the resulting TPtr could be larger than the amount of data we are expecting.
 	TBool timeoutOccurred;
 	ReceiveWithTimeoutL(ptr, KLongTimeout, &timeoutOccurred);
 	if (timeoutOccurred)
@@ -843,8 +838,8 @@ void CCmdXmodem::SendTerminateL()
 
 void CCmdXmodem::SendStdinL()
 	{
-	HBufC* buf = HBufC::NewLC(iBlockSize);
-	TPtr bufPtr(buf->Des());
+	HBufC8* buf = HBufC8::NewLC(iBlockSize);
+	TPtr8 bufPtr(buf->Des());
 
 	while (Stdin().Read(bufPtr) == KErrNone)
 		{
@@ -864,16 +859,14 @@ void CCmdXmodem::SendFileL(const TDesC& aFileName)
 	CleanupClosePushL(file);
 
 	HBufC8* buf = HBufC8::NewLC(iBlockSize);
-	HBufC* wideBuf = HBufC::NewLC(iBlockSize);
 	TPtr8 bufPtr(buf->Des());
 	while ((file.Read(bufPtr, iBlockSize) == KErrNone) && (buf->Length() > 0))
 		{
-		wideBuf->Des().Copy(*buf);
-		SendBlockL(*wideBuf);
+		SendBlockL(*buf);
 		}
 	SendTerminateL();
 
-	CleanupStack::PopAndDestroy(3, &file);
+	CleanupStack::PopAndDestroy(2, &file); // buf, file
 	}
 
 void CCmdXmodem::ReceiveToStdoutL()
@@ -882,7 +875,7 @@ void CCmdXmodem::ReceiveToStdoutL()
 	TBool finalBlock(EFalse);
 	while (!finalBlock)
 		{
-		TPtrC block(ReceiveBlockL(firstBlock, finalBlock));
+		TPtrC8 block(ReceiveBlockL(firstBlock, finalBlock));
 		User::LeaveIfError(Stdout().Write(block));
 		firstBlock = EFalse;
 		}
@@ -902,28 +895,16 @@ void CCmdXmodem::ReceiveToFileL(const TDesC& aFileName)
 		}
 	CleanupClosePushL(file);
 
-	HBufC8* narrowBuf = HBufC8::NewLC(iBlockSize);
-	TPtr8 narrowBufPtr(narrowBuf->Des());
 	TBool firstBlock(ETrue);
 	TBool finalBlock(EFalse);
 	while (!finalBlock)
 		{
-		TPtrC block(ReceiveBlockL(firstBlock, finalBlock));
+		TPtrC8 block(ReceiveBlockL(firstBlock, finalBlock));
 		firstBlock = EFalse;
-		if (block.Length() > narrowBufPtr.MaxLength())
-			{
-			HBufC8* newNarrowBuf = narrowBuf->ReAllocL(iBuf->Length());
-			CleanupStack::Pop(narrowBuf);
-			narrowBuf = newNarrowBuf;
-			CleanupStack::PushL(narrowBuf);
-			narrowBufPtr.Set(narrowBuf->Des());
-			}
-		narrowBufPtr.Copy(block);
-		User::LeaveIfError(file.Write(*narrowBuf));
-		narrowBufPtr.Zero();
+		User::LeaveIfError(file.Write(block));
 		}
 
-	CleanupStack::PopAndDestroy(2, &file);
+	CleanupStack::PopAndDestroy(&file);
 	}
 
 void CCmdXmodem::ReceiveToNullL()

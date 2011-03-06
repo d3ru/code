@@ -97,6 +97,8 @@ enum TIoOpcodes
 	EIoDuplicateReaderHandleFromThread,
 	EIoDuplicateWriterHandleFromThread,
 	EIoSetIsStdErr,
+	EIoRead8,
+	EIoWrite8,
 	};
 
 class TServerStart

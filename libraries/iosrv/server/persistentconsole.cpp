@@ -854,12 +854,22 @@ void CIoPersistentConsole::TIoWriterProxy::SetAttributesL(TUint aAttributes, Con
 		}
 	}
 
+TBool CIoPersistentConsole::TIoWriterProxy::IowNarrowWrite() const
+	{
+	return iWriter.IowNarrowWrite();
+	}
+
 TInt CIoPersistentConsole::TIoWriterProxy::IowWriteLength() const
 	{
 	return iWriter.IowWriteLength();
 	}
 
 TInt CIoPersistentConsole::TIoWriterProxy::IowWrite(TDes& aBuf)
+	{
+	return iWriter.IowWrite(aBuf);
+	}
+
+TInt CIoPersistentConsole::TIoWriterProxy::IowWrite(TDes8& aBuf)
 	{
 	return iWriter.IowWrite(aBuf);
 	}
@@ -1040,6 +1050,11 @@ TDes& CIoPersistentConsole::TIoReaderProxy::IorReadBuf()
 	return iReader.IorReadBuf();
 	}
 
+TDes8* CIoPersistentConsole::TIoReaderProxy::IorReadBuf8()
+	{
+	return iReader.IorReadBuf8();
+	}
+
 void CIoPersistentConsole::TIoReaderProxy::IorDataBuffered(TInt aLength)
 	{
 	iReader.IorDataBuffered(aLength);
@@ -1113,6 +1128,12 @@ TConsoleTitleSetter::TConsoleTitleSetter(HBufC*& aTitle)
 	{
 	}
 
+TBool TConsoleTitleSetter::IowNarrowWrite() const
+	{
+	ASSERT(0);
+	return EFalse;
+	}
+
 TInt TConsoleTitleSetter::IowWriteLength() const
 	{
 	ASSERT(0);
@@ -1120,6 +1141,12 @@ TInt TConsoleTitleSetter::IowWriteLength() const
 	}
 
 TInt TConsoleTitleSetter::IowWrite(TDes&)
+	{
+	ASSERT(0);
+	return 0;
+	}
+
+TInt TConsoleTitleSetter::IowWrite(TDes8&)
 	{
 	ASSERT(0);
 	return 0;

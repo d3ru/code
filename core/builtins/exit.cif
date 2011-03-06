@@ -14,11 +14,11 @@
 
 ==short-description
 
-Shutdown fshell.
+Exit fshell.
 
 ==long-description
 
-Note, this causes fshell's command history to be persisted to a file.
+Note, if called from within a script being executed with 'source', it does not quit fshell, merely exits the current script. In other words in the case of nested scripts called from other scripts via source, only the innermost script exits.
 
 ==copyright
 

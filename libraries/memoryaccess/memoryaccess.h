@@ -455,6 +455,7 @@ public:
 		EControlPropertyNotifyCancel,
 		EControlSubscribeToProperty,
 		EControlAcquireCodeSegMutexAndFilterCodesegsForProcess,
+		EControlFindPtrInCodeSegments2,
 		ENumRequests,  // Add new commands above this line
         };
 public:
@@ -472,6 +473,8 @@ public:
 	TInt GetAllocatorAddress(TUint aThreadId, TUint8*& aAddressOfKernelObject);
 	TInt GetCurrentAllocatorAddress(TUint aThreadId, TUint8*& aAddressOfKernelObject);
 	TInt FindAddressInCodeSegments(TFullName8& aDllName, TAny* aPtr);
+	TInt FindAddressInCodeSegments(TFullName8& aDllName, TAny* aPtr, RProcess& aInProcess);
+	TInt FindAddressInCodeSegments(TFullName8& aDllName, TAny* aPtr, RThread& aInThread);
 	TInt GetHandleOwners(TAny* aKernelObjectPtr, TDes8& aOwnersBuf);
 	TInt GetThreadHandles(TUint aThreadId, TDes8& aHandlesBuf);
 	TInt GetProcessHandles(TUint aProcessId, TDes8& aHandlesBuf);
@@ -638,6 +641,20 @@ inline TInt RMemoryAccess::GetCurrentAllocatorAddress(TUint aThreadId, TUint8*& 
 	{	return DoControl(EControlGetCurrentAllocatorAddress, (TAny*)aThreadId, &aAddressOfKernelObject);	}
 inline TInt RMemoryAccess::FindAddressInCodeSegments(TFullName8& aDllName, TAny* aPtr)
 	{	return DoControl(EControlFindPtrInCodeSegments, (TAny*)&aDllName, aPtr);	}
+inline TInt RMemoryAccess::FindAddressInCodeSegments(TFullName8& aDllName, TAny* aPtr, RProcess& aInProcess)
+	{
+	TAny* params[2] = { aPtr, (TAny*)aInProcess.Handle() };
+	return DoControl(EControlFindPtrInCodeSegments2, (TAny*)&aDllName, params);
+	}
+inline TInt RMemoryAccess::FindAddressInCodeSegments(TFullName8& aDllName, TAny* aPtr, RThread& aInThread)
+	{
+	RProcess proc;
+	TInt err = aInThread.Process(proc);
+	if (err) return err;
+	err = FindAddressInCodeSegments(aDllName, aPtr, proc);
+	proc.Close();
+	return err;
+	}
 inline TInt RMemoryAccess::GetHandleOwners(TAny* aHandle, TDes8& aOwnersBuf)
 	{	return DoControl(EControlGetHandleOwners, (TAny*)aHandle, (TAny*)&aOwnersBuf);	}
 inline TInt RMemoryAccess::GetThreadHandles(TUint aThreadId, TDes8& aHandlesBuf)

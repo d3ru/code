@@ -1,0 +1,44 @@
+# muxserver.cif
+# 
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name muxserver
+
+==short-description
+
+Create a multiplexed connection for use by the muxcons PC tool.
+
+==long-description
+
+Note: Normally you don't need to use this command directly; muxcons takes care of launching it. 
+
+Unless C<--ost> is specified, connects via the existing iosrv connection (ie the context in which the muxserver command was launched).
+
+==option bool p ping
+
+Start the server and immediately issue a ping response. Don't print any human-readable text.
+
+==option bool o ost
+
+Instead of connecting using the iosrv channel, connect via the USB OST router. Only available on builds with FSHELL_OST_SUPPORT defined. Implies C<--ping>.
+
+==option int n nest
+
+The nesting ID of the muxcons.exe instance.
+
+==copyright
+
+Copyright (c) 2010-2011 Accenture. All rights reserved.
+
+==smoke-test
+
+# There's not much we can smoketest short of checking linkage
+muxserver --help $Quiet || $Error

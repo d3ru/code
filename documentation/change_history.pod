@@ -14,7 +14,9 @@ __END__
 
 =head1 FShell Change History
 
-=head2 Release 003 [NOT YET MADE]
+=head2 Release 003
+
+=head3 Highlights
 
 =over 5
 
@@ -24,15 +26,47 @@ Fshell moved to http://sourceforge.net/projects/fshell (although if you're readi
 
 =item *
 
+Performance improvements to iosrv (which make use of the BinaryMode extensions when available), that means things like bulk data transfers over ymodem are much faster (around 8x). All relevant commands and consoles updated to use Binary mode where necessary.
+
+=item *
+
+Support for PC-side muxcons tool, by means of a new muxserver command which permits multiple fshell sessions to be multiplexed over a single connection.
+
+=back
+
+=head3 New features
+
+=over 5
+
+=item *
+
+Added L<ost|commands::ost> command for debugging USB OST connections. Added build macro C<FSHELL_OST_SUPPORT>.
+
+=item *
+
+Added L<C<FSHELL_QT_SUPPORT>|internal::common_mmh/item_FSHELL_QT_SUPPORT> build macro and enabled it on S^3 and tb92 platforms. Sysinfo command now returns Qt version info if Qt is available.
+
+=item * 
+
+Added L<whoami|commands::whoami> command for identifying the current fshell process.
+
+=item *
+
+Added new console extension functions: BinaryMode::Read() and BinaryMode::Write().
+
+=back
+
+=head3 Bugfixes
+
+=over 5
+
+=item *
+
 Fixed objinfo command so that it works on modern (S^3 or later, S60 5th or later) baselines. Added C<--match> option.
 
 =item *
 
 Fixed reporting of exit reasons in fshell pipelines. (Previously the "***PANIC***" prints would incorrectly report an exit reason of -13 for any thread command that exited with a non-negative error code, so for example "KERN-EXEC 0" would appear to be "KERN-EXEC -13".)
-
-=item *
-
-Added L<whoami|commands::whoami> command for identifying the current fshell process.
 
 =item *
 
@@ -72,15 +106,7 @@ Changed cat command to open files with EFileShareReadersOnly permissions, meanin
 
 =item *
 
-Added L<ost|commands::ost> command for debugging USB OST connections. Added guard macro C<FSHELL_OST_SUPPORT>.
-
-=item *
-
 Fixed long-standing bug in L<hello's|commands::hello> C<--color> option that caused the text colour to get stuck on cyan after the command exited.
-
-=item *
-
-Added L<C<FSHELL_QT_SUPPORT>|internal::common_mmh/item_FSHELL_QT_SUPPORT> build config and enabled it on S^3 and tb92 platforms. Sysinfo command now returns Qt version info if Qt is available.
 
 =item *
 
@@ -92,11 +118,31 @@ Added support for detecting linkage against ABSENT ordinals to chkdeps command, 
 
 =item *
 
-Fixed hang (actually stray signal panic) in fdb. Fixed map file parsing.
+Fixed hang (actually stray signal panic) in fdb. Fixed map file parsing and reporting of symbols in RAM-loaded EXE codesegments.
 
 =item *
 
 Fixed long-standing bug in VT100 console size detect that caused it to give up and make fshell think the console window was tiny if there was junk data in the serial port buffer.
+
+=item *
+
+Introduced iocli_qt.dll to hold Qt<->fshell integration APIs. First is C<IoUtils::GetIosrvDebugHandler()> that retuns a QtMsgHandler that routes to fshell. qDebug is rerouted to iosrv stdout, qFatal/qWarning to stderr.
+
+=item *
+
+Hal command's --device option now does what it's supposed to.
+
+=item *
+
+Fixed bug in win32cons where it truncated any writes > 256 chars. Most obvious with missing linefeeds in drvinfo -v.
+
+=item *
+
+Fixed hang in iosrv when running C<cat E<lt> file.txt> and the file was larger than the cat buffer size and contained multi-byte UTF-8 characters. Stopped incorrect UTF-8 escaping when redirecting to or from a file in binary mode.
+
+=item *
+
+Added --cd option to fshell, to set the working directory.
 
 =back
 

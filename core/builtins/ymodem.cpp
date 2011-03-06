@@ -96,13 +96,14 @@ void CCmdYmodem::DoRunL()
 				{
 				iPacketNumber = 0;
 				TBool isFinalBlock(EFalse);
-				TPtrC block(ReceiveBlockL(ETrue, isFinalBlock));
-				TPtrC fileName(block.Ptr()); // filename is the first null terminated string in the block.
+				TPtrC8 block(ReceiveBlockL(ETrue, isFinalBlock));
+				TPtrC8 fileName(block.Ptr()); // filename is the first null terminated string in the block.
 				if (fileName.Length() > 0)
 					{
-					TFileName2 fileName2(fileName);
+					TFileName2 fileName2;
+					fileName2.Copy(fileName);
 					fileName2.MakeAbsoluteL(receiveDir);
-					TLex lex(block.Mid(fileName.Length() + 1));
+					TLex8 lex(block.Mid(fileName.Length() + 1));
 					TInt size;
 					User::LeaveIfError(lex.Val(size));
 					TInt err = KErrNone;
@@ -221,8 +222,8 @@ void CCmdYmodem::DoRunL()
 				}
 			}
 		WaitForSyncL();
-		HBufC* buf = HBufC::NewLC(iBlockSize);
-		TPtr bufPtr(buf->Des());
+		HBufC8* buf = HBufC8::NewLC(iBlockSize);
+		TPtr8 bufPtr(buf->Des());
 		for (TInt i = 0; i < numFiles; ++i)
 			{
 			const TFileName2& fileName = iFileNames[i];

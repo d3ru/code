@@ -225,18 +225,7 @@ void CCmdGrabscreen::RunL()
 	if (!iArguments.IsPresent(0))
 		{
 		User::LeaveIfNull(iImageData);
-		
-		// we need to expand the 8 bit data when writing to stdout
-		static const TInt KBufferSize = 0x100;
-		TBuf<KBufferSize> buf;
-		TPtr8 imageData(iImageData->Des());
-		while (imageData.Length())
-			{
-			TInt thisCopyLen = Min(KBufferSize, imageData.Length());
-			buf.Copy(imageData.Left(thisCopyLen));
-			imageData.Set(imageData.MidTPtr(thisCopyLen));
-			Stdout().WriteL(buf);
-			}
+		Stdout().Write(*iImageData);
 		}
 	Complete(KErrNone);
 	}

@@ -69,7 +69,9 @@ enum TIoPanicReason
 	EPanicCannotReadFromUnderlyingConsole = 37,
 	EPanicSetAttributesWhenNotAttached = 38,
 	EPanicSetAttributesAlreadyPending = 39,
-	EPanicSetModeAlreadyPending = 40
+	EPanicSetModeAlreadyPending = 40,
+	EPanicEightBitReadNotInBinaryMode = 41,
+	EPanicEightBitWriteNotInBinaryMode = 42,
 	};
 
 void PanicClient(const RMsg& aMessage, TIoPanicReason aReason);

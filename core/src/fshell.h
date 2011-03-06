@@ -88,6 +88,7 @@ private:
 	HBufC* iScriptArgs;
 	HBufC* iOneLiner;
 	TBool iKeepGoing;
+	TFileName2 iCd;
 	TBool iIgnoreNextStdinChange;
 	RMutex iJobsLock;
 	};

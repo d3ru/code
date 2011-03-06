@@ -33,6 +33,8 @@ public:
 		EWriteStdErr,
 		ENotifySizeChange,
 		ECancelNotifySizeChange,
+		EBinaryRead,
+		EBinaryWrite,
 		};
 public:
 	TInt SetLazyConstruct();
@@ -42,6 +44,10 @@ public:
 	void WriteStdErr(const TDesC& aDescriptor, TRequestStatus& aStatus);
 	void NotifySizeChanged(TRequestStatus& aStatus);
 	void CancelNotifySizeChanged();
+	using RConsoleProxy::Read;
+	void Read(TDes8& aBuf, TRequestStatus& aStatus);
+	using RConsoleProxy::Write;
+	void Write(const TDesC8& aBuf, TRequestStatus& aStatus);
 	};
 	
 class CIoConsole : public CIoEndPoint
@@ -79,6 +85,7 @@ private:
 	void ConstructL(const TDesC& aImplementation, const TDesC& aTitle, const TSize& aSize, CIoConsole* aUnderlying, TUint aOptions);
 	void ReadComplete(TInt aError);
 	void ReadComplete(TUint aKeyCode, TUint aModifiers);
+	void ReadComplete(TDes8& aBinaryRead);
 	void QueueReaderIfRequired();
 	void CreateComplete(TInt aError);
 	void NewRequest(TConsoleRequest* aRequest) const;
@@ -91,7 +98,7 @@ private:
 	public:
 		static CConsoleReader* NewL(CIoConsole& aConsole);
 		~CConsoleReader();
-		void QueueRead();
+		void QueueRead(TDes8* aBinaryReadBuffer = NULL);
 	private:
 		CConsoleReader(CIoConsole& aConsole);
 	private: // From CActive.
@@ -103,6 +110,7 @@ private:
 		TUint iKeyModifiers;
 		TPckg<TKeyCode> iKeyCodePckg;
 		TPckg<TUint> iKeyModifiersPckg;
+		TDes8* iBinaryReadBuffer;
 		};
 		
 	class TConsoleRequest
@@ -154,6 +162,7 @@ private:
 		virtual void CompleteD(TInt aError);
 	private:
 		HBufC* iBuf;
+		HBufC8* iBuf8;
 		};
 	
 	class TConsoleCursorPosRequest : public TConsoleWriterRequest
@@ -375,6 +384,24 @@ private:
 	CConsoleBase* iActualConsole;
 	};
 
+class CBinaryReadMessageCompleter : public CActive
+	{
+public:
+	CBinaryReadMessageCompleter(CConsoleBase* aConsole);
+	~CBinaryReadMessageCompleter();
+	void Read(TDes8& aBuf, RMessage2& aMessage);
+	void CancelRead();
+
+protected:
+	void RunL();
+	void DoCancel();
+
+private:
+	RMessagePtr2 iMessage;
+	CConsoleBase* iActualConsole;
+	};
+
+
 class CIoConsoleProxySession : public CConsoleProxySession
 	{
 public:
@@ -390,6 +417,7 @@ private:
 		ELazy				= 0x01,
 		EHaveDetectedSize   = 0x02,
 		ESupportsStdErr		= 0x04,
+		ESupportsBinaryWrite= 0x08,
 		};
 private:
 	CIoConsoleProxyServer* Server() { return (CIoConsoleProxyServer*)CConsoleProxySession::Server();}
@@ -405,6 +433,7 @@ private:
 	TUint iFlags;
 	TSize iDetectedSize;
 	CSizeChangeMessageCompleter* iSizeChangedMessageCompleter;
+	CBinaryReadMessageCompleter* iBinaryReadMessageCompleter;
 	};
 	
 class CWriteOnlyConsoleProxy : public CConsoleProxy
@@ -452,6 +481,7 @@ private:
 	mutable TInt iCreateError;
 	mutable CConsoleBase* iConsole;
 	mutable TRequestStatus* iStatusForNotifySizeRequest; // Only needed if a notify request comes in before we've instantiated
+	mutable CConsoleBase* iUnderlyingConsole;
 	};
 
 #endif //__CONSOLE_H__

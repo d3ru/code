@@ -21,6 +21,7 @@
 #include <e32rom.h>
 
 #ifdef FSHELL_QT_SUPPORT
+#include <fshell/iocli_qt.h>
 #include <QtCore/QSysInfo>
 #endif
 	

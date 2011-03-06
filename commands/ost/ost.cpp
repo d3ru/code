@@ -12,7 +12,12 @@
 
 #include <fshell/ioutils.h>
 #include <fshell/common.mmh>
+#if FSHELL_OST_SUPPORT == 2 // BC breakage...
+#include <usbostcomm.h>
+#else
 #include <dbgtrccomm.h>
+typedef RDbgTrcComm RUsbOstComm;
+#endif
 #include <ostprotdefs.h>
 #include <fshell/ltkutils.h>
 
@@ -40,7 +45,7 @@ private:
 	TOperation iOperation;
 	TOstProtIds iChannelId; // See TOstProtIds in ostprotdefs.h
 
-	RDbgTrcComm iOstServer; // Cli-srv connection to usbostrouter
+	RUsbOstComm iOstServer; // Cli-srv connection to usbostrouter
 	RBuf8 iBuf;
 	};
 
@@ -88,8 +93,8 @@ void CCmdOst::OptionsL(RCommandOptionList& aOptions)
 
 void CCmdOst::DoRunL()
 	{
-	LeaveIfErr(iOstServer.Connect(), _L("Couldn't connect to RDbgTrcComm"));
-	LeaveIfErr(iOstServer.Open(), _L("Couldn't open RDbgTrcComm"));
+	LeaveIfErr(iOstServer.Connect(), _L("Couldn't connect to RUsbOstComm"));
+	LeaveIfErr(iOstServer.Open(), _L("Couldn't open RUsbOstComm"));
 	LeaveIfErr(iOstServer.RegisterProtocolID(iChannelId, EFalse), _L("Failed to register protocol id 0x%x"), iChannelId);
 
 	if (iOperation == ESend || iOperation == ESendReceive)
@@ -97,7 +102,7 @@ void CCmdOst::DoRunL()
 		TRequestStatus stat;
 		iOstServer.WriteMessage(stat, _L8("PLING"));
 		User::WaitForRequest(stat);
-		LeaveIfErr(stat.Int(), _L("Failed to send message to RDbgTrcComm"));
+		LeaveIfErr(stat.Int(), _L("Failed to send message to RUsbOstComm"));
 		}
 	
 	if (iOperation == EReceive || iOperation == ESendReceive)
@@ -109,7 +114,7 @@ void CCmdOst::DoRunL()
 			TRequestStatus stat;
 			iOstServer.ReadMessage(stat, iBuf);
 			User::WaitForRequest(stat);
-			LeaveIfErr(stat.Int(), _L("Failed to read message from RDbgTrcComm"));
+			LeaveIfErr(stat.Int(), _L("Failed to read message from RUsbOstComm"));
 			LtkUtils::HexDumpToOutput(iBuf, Stdout());
 			}
 		}

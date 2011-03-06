@@ -240,7 +240,7 @@ The HTTP libraries and all associated headers are available.
 
 =item FSHELL_OST_SUPPORT
 
-The OST router is available, in the form of the RDbgTrcComm API in dbgtrccomm.h
+The OST router is available, in the form of the RDbgTrcComm API in dbgtrccomm.h. If the platform uses the newer RUsbOstComm in usbostcomm.h instead, it must be set as C<#define FSHELL_OST_SUPPORT 2>.
 
 =item FSHELL_QT_SUPPORT
 

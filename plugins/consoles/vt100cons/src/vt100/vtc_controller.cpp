@@ -643,7 +643,7 @@ CVtConsoleInputController::~CVtConsoleInputController()
 
 EXPORT_C void CVtConsoleInputController::GetKeyPress(TKeyPress& aKeyPress, TRequestStatus& aStatus)
 	{
-	ASSERT((iClientKeyPress == NULL) && (iClientRequestStatus == NULL));
+	ASSERT(iClientKeyPress == NULL && iClientRequestStatus == NULL && !BinaryReadInProgress());
 	iClientKeyPress = &aKeyPress;
 	iClientRequestStatus = &aStatus;
 	*iClientRequestStatus = KRequestPending;
@@ -672,6 +672,38 @@ EXPORT_C void CVtConsoleInputController::CancelGetKeyPress()
 		}
 	}
 
+TBool CVtConsoleInputController::BinaryReadInProgress() const
+	{
+	return iClientRequestStatus != NULL && iClientKeyPress == NULL; // A binary read is the only time we'll have a client TRequestStatus but not a keypress
+	}
+
+void CVtConsoleInputController::Read(TDes8& aBuf, TRequestStatus& aStatus)
+	{
+	ASSERT(iClientKeyPress == NULL && iClientRequestStatus == NULL && !BinaryReadInProgress() && iMode == ConsoleMode::EBinary);
+	Cancel();
+	iEscapeTimer->Cancel();
+
+	if (iBuf.Length())
+		{
+		// Can this happen?
+		ASSERT(EFalse);
+		}
+
+	iClientRequestStatus = &aStatus;
+	if (iInputError)
+		{
+		User::RequestComplete(iClientRequestStatus, iInputError);
+		iInputError = KErrNone;
+		}
+	else
+		{
+		// Bypass iBuf, ProcessInputBuffer, etc, and just pass the buffer straight through to the Input implementation
+		iConsoleInput.Input(aBuf, iStatus);
+		SetActive();
+		}
+	}
+
+
 EXPORT_C void CVtConsoleInputController::SetMode(ConsoleMode::TMode aMode)
 	{
 	Reset();
@@ -680,6 +712,7 @@ EXPORT_C void CVtConsoleInputController::SetMode(ConsoleMode::TMode aMode)
 
 void CVtConsoleInputController::ProcessInputBuffer()
 	{
+	ASSERT(!BinaryReadInProgress());
 	iEscapeTimer->Cancel();
 
 	while (iClientRequestStatus && (iBufPos < iBuf.Length()))
@@ -763,7 +796,8 @@ void CVtConsoleInputController::ProcessInputBuffer()
 
 void CVtConsoleInputController::CompleteReadRequest(TInt aError)
 	{
-	ASSERT(iClientKeyPress && iClientRequestStatus);
+	ASSERT(iClientRequestStatus);
+	ASSERT(iClientKeyPress || BinaryReadInProgress());
 	iClientKeyPress = NULL;
 	User::RequestComplete(iClientRequestStatus, aError);
 	}
@@ -771,6 +805,7 @@ void CVtConsoleInputController::CompleteReadRequest(TInt aError)
 void CVtConsoleInputController::CompleteReadRequest(TKeyCode aKeyCode)
 	{
 	ASSERT(iClientKeyPress && iClientRequestStatus);
+	ASSERT(!BinaryReadInProgress());
 	iClientKeyPress->iCode = (TKeyCode)aKeyCode;
 	iClientKeyPress->iModifiers = 0;
 	iClientKeyPress = NULL;
@@ -780,6 +815,7 @@ void CVtConsoleInputController::CompleteReadRequest(TKeyCode aKeyCode)
 void CVtConsoleInputController::CompleteReadRequest(TKeyCode aKeyCode1, TKeyCode aKeyCode2)
 	{
 	ASSERT(!iKeyCodePending);
+	ASSERT(!BinaryReadInProgress());
 	// Store the second key-code in a member variable to be used the next time GetKeyPress is called.
 	iKeyCodePending = ETrue;
 	iPendingKeyCode = aKeyCode2;
@@ -796,6 +832,7 @@ void CVtConsoleInputController::Reset()
 
 void CVtConsoleInputController::RequestInput()
 	{
+	ASSERT(!BinaryReadInProgress());
 	if (iClientRequestStatus && !IsActive()) // Note, if the escape timer expired we could already be active.
 		{
 		ASSERT(iBufPos == iBuf.Length());
@@ -809,6 +846,12 @@ void CVtConsoleInputController::RequestInput()
 void CVtConsoleInputController::RunL()
 	{
 	TInt err = iStatus.Int();
+	if (BinaryReadInProgress())
+		{
+		CompleteReadRequest(err);
+		return;
+		}
+
 #ifdef FSHELL_PLATFORM_OPP
 	if (err == KErrAbort)
 		{

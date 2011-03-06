@@ -83,12 +83,13 @@ void CCmdHal::DoRunL()
 			if (iOptions.IsPresent(&iDeviceNumber))
 				{
 				TRAPL(attrib = LtkUtils::GetHalInfoL(iDeviceNumber, iAttribute), _L("Couldn't get attribute value"));
+				Printf(_L("%S[%d]: %S\r\n"), &attrib->iAttributeName, attrib->iDeviceNumber, attrib->iDescription);
 				}
 			else
 				{
 				TRAPL(attrib = LtkUtils::GetHalInfoL(iAttribute), _L("Couldn't get attribute value"));
+				Printf(_L("%S: %S\r\n"), &attrib->iAttributeName, attrib->iDescription);
 				}
-			Printf(_L("%S: %S\r\n"), &attrib->iAttributeName, attrib->iDescription);
 			delete attrib;
 			}
 			break;

@@ -55,4 +55,8 @@ FSHELL_EXECUTABLE_FILE(terminalkeyboardcons.dll)
 FSHELL_EXECUTABLE_FILE(tefcons.dll)
 #endif
 
+FSHELL_EXECUTABLE_FILE(muxserver.exe)
+FSHELL_EXECUTABLE_FILE(muxcons.dll)
+FSHELL_COMMAND_INFO_FILE(fshell,muxserver.cif)
+
 #endif // FSHELL_IBY

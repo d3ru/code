@@ -340,7 +340,7 @@ CIoReadObject::~CIoReadObject()
 	CompleteIfPending(iReadKeyMessage, KErrSessionClosed);
 	CompleteIfPending(iChangeNotifyMessage, KErrSessionClosed);
 
-	delete iBuf;
+	delete iReadBuffer;
 	delete iLineSeparator;
 	iCapturedKeys.Close();
 	iKeyBuffer.Close();
@@ -397,18 +397,32 @@ void CIoReadObject::ReadL(const RMsg& aMessage)
 	{
 	__ASSERT_RETURN(iEndPoint, PanicClient(aMessage, EPanicReadWhenNotAttached));
 	__ASSERT_RETURN(!MessagePending(iReadMessage) && !MessagePending(iReadKeyMessage), PanicClient(aMessage, EPanicReadAlreadyPending));
+	const TBool wideRead = aMessage.Function() == EIoRead;
+	__ASSERT_RETURN(wideRead || IorwMode() == RIoReadWriteHandle::EBinary, PanicClient(aMessage, EPanicEightBitReadNotInBinaryMode));
+	ASSERT(iReadBuffer == NULL || iReadBuffer->Length() == 0 || !wideRead == !iReadBuffer16.Ptr()); // Can't cope with a buffer's worth of 16-bit data left over when we want to do an 8-bit read... or at least I want to see if it can happen!
 
-	const TInt maxReadLength = MaxDesLengthL(aMessage, 0);
-	AllocateBufferL(maxReadLength);
-	iReadMessage = aMessage;
+	TInt maxReadLength = MaxDesLengthL(aMessage, 0);
 	iMaxReadLength = maxReadLength;
+	if (wideRead) maxReadLength = maxReadLength * 2; // AllocateBuffer is in bytes not chars
+	AllocateBufferL(maxReadLength);
+	if (wideRead)
+		{
+		iReadBuffer16.Set((TUint16*)iReadBuffer->Ptr(), iReadBuffer->Length() / 2, iMaxReadLength);
+		}
+	else
+		{
+		iReadBuffer16.Set(NULL, 0, 0);
+		}
+
+	iReadMessage = aMessage;
 
 	if (iCompleteErr)
 		{
-		if ((iCompleteErr == KErrEof) && (iBuf->Length() > 0))
+		if ((iCompleteErr == KErrEof) && (iReadBuffer->Length() > 0))
 			{
 			// the end point has reached the end of the stream
 			// but we haven't finished processing the data in our buffer yet
+			ASSERT(iReadBuffer16.Ptr()); // This shouldn't happen when doing 8-bit reads...
 			TryToCompleteRead();
 			}
 		else
@@ -427,7 +441,8 @@ void CIoReadObject::ReadCancel(const CIoSession& aSession)
 	if (MessagePending(iReadMessage) && (iReadMessage.Session() == static_cast<const CSession2*>(&aSession)))
 		{
 		Complete(iReadMessage, KErrCancel);
-		iBuf->Des().Zero();
+		iReadBuffer->Des().Zero();
+		iReadBuffer16.Zero();
 		}
 	}
 
@@ -447,15 +462,7 @@ void CIoReadObject::ProcessRead()
 
 			if (IorReadPending())
 				{
-				TRAPD(err, ReadEndPoint()->IorepReadL(*this));
-				if (err)
-					{
-					Complete(iReadMessage, err);
-					}
-				else if (IorReadPending())
-					{
-					TryToCompleteRead();
-					}
+				AskEndPointForData();
 				}
 			}
 		}
@@ -480,6 +487,27 @@ void CIoReadObject::ProcessRead()
 					Complete(iReadKeyMessage, err);
 					}
 				}
+			}
+		}
+	}
+
+TInt CIoReadObject::AskEndPointForDataCallback(TAny* aSelf)
+	{
+	static_cast<CIoReadObject*>(aSelf)->AskEndPointForData();
+	return 0;
+	}
+
+void CIoReadObject::AskEndPointForData()
+	{
+	if (IorReadPending()) // This would normally be a given, but if we're called async via iAsyncAskEndPointForData then the situation might have changed by the time we get to run
+		{
+		ASSERT(!iCallingIorepReadL);
+		iCallingIorepReadL = ETrue;
+		TRAPD(err, ReadEndPoint()->IorepReadL(*this));
+		iCallingIorepReadL = EFalse;
+		if (err)
+			{
+			Complete(iReadMessage, err);
 			}
 		}
 	}
@@ -651,20 +679,64 @@ TBool CIoReadObject::IorReadKeyPending() const
 
 TDes& CIoReadObject::IorReadBuf()
 	{
-	ASSERT((iMaxReadLength - iBuf->Length()) > 0);
-	iPtr.Set(const_cast<TText*>(iBuf->Des().Ptr()) + iBuf->Length(), 0, iMaxReadLength - iBuf->Length());
-	return iPtr;
+	ASSERT(iReadBuffer);
+	ASSERT(iReadBuffer16.Ptr()); // Shouldn't be calling this if an 8-bit read was requested
+	ASSERT((iMaxReadLength - iReadBuffer16.Length()) > 0);
+	iIorepPtr16.Set(((TText*)iReadBuffer->Des().Ptr()) + iReadBuffer16.Length(), 0, iMaxReadLength - iReadBuffer16.Length());
+	return iIorepPtr16;
+	}
+
+TDes8* CIoReadObject::IorReadBuf8()
+	{
+	ASSERT(iReadBuffer);
+
+	if (iReadBuffer16.Ptr() == NULL)
+		{
+		iIorepPtr8.Set((TUint8*)iReadBuffer->Ptr() + iReadBuffer->Length(), 0, iMaxReadLength - iReadBuffer->Length());
+		return &iIorepPtr8;
+		}
+	else
+		{
+		return NULL; // Indicating client is wanting a 16-bit read, and caller should call IorReadBuf() instead
+		}
 	}
 
 void CIoReadObject::IorDataBuffered(TInt aLength)
 	{
-	iBuf->Des().SetLength(iBuf->Length() + aLength);
-	TryToCompleteRead();
+	if (iReadBuffer16.Ptr())
+		{
+		iReadBuffer16.SetLength(iReadBuffer16.Length() + aLength);
+		iReadBuffer->Des().SetLength(iReadBuffer16.Size());
+		}
+	else
+		{
+		//RDebug::Printf("CIoReadObject received %d bytes", aLength);
+		iReadBuffer->Des().SetLength(iReadBuffer->Length() + aLength);
+		}
+	ASSERT(iKeyBuffer.Count() == 0); // There really shouldn't be anything in here and the logic below assumes it
+	TInt canComplete = BufferSatisfiesReadRequest();
+	if (canComplete)
+		{
+		CompleteRead(KErrNone, canComplete);
+		}
+	else
+		{
+		// We need to ask the read end point for some more data
+		if (iCallingIorepReadL)
+			{
+			// Need to queue a callback otherwise we'll go recursive, not to mention risk confusing the end point!
+			iAsyncAskEndPointForData.CallBack();
+			}
+		else
+			{
+			AskEndPointForData();
+			}
+		}
 	}
 
 TBool CIoReadObject::IorDataIsBuffered() const
 	{
-	return (iBuf->Length() > 0);
+	return (iReadBuffer->Length() > 0);
 	}
 
 TBool CIoReadObject::IorIsKeyCaptured(TUint aKeyCode, TUint aModifiers) const
@@ -692,9 +764,10 @@ TBool CIoReadObject::IorAllKeysCaptured() const
 
 void CIoReadObject::IorReadComplete(TInt aError)
 	{
+	iAsyncAskEndPointForData.Cancel(); // If we've reached the end of the stream there's no point asking for more data
 	if ((aError == KErrNone) || (aError==KErrEof))
 		{
-		CompleteRead(aError, iBuf->Length());
+		CompleteRead(aError, iReadBuffer16.Ptr() ? iReadBuffer16.Length() : iReadBuffer->Length());
 		}
 	else
 		{
@@ -771,19 +844,20 @@ void CIoReadObject::IorSetConsoleModeComplete(TInt aError)
 	}
 
 CIoReadObject::CIoReadObject(TInt aId)
-	: CIoReadWriteObject(aId), iPtr(NULL, 0, 0)
+	: CIoReadWriteObject(aId), iReadBuffer16(NULL, 0, 0), iIorepPtr8(NULL, 0, 0), iIorepPtr16(NULL, 0, 0), iAsyncAskEndPointForData(CActive::EPriorityHigh)
 	{
+	iAsyncAskEndPointForData.Set(TCallBack(&AskEndPointForDataCallback, this));
 	}
 
-void CIoReadObject::AllocateBufferL(TInt aLength)
+void CIoReadObject::AllocateBufferL(TInt aBytes)
 	{
-	if (iBuf == NULL)
+	if (iReadBuffer == NULL)
 		{
-		iBuf = HBufC::NewL(aLength);
+		iReadBuffer = HBufC8::NewL(aBytes);
 		}
-	else if (iBuf->Des().MaxLength() < aLength)
+	else if (iReadBuffer->Des().MaxLength() < aBytes)
 		{
-		iBuf = iBuf->ReAllocL(aLength);
+		iReadBuffer = iReadBuffer->ReAllocL(aBytes);
 		}
 	}
 
@@ -792,12 +866,12 @@ void CIoReadObject::TryToCompleteRead()
 	if (iKeyBuffer.Count() > 0)
 		{
 		// There are buffered key events so copy them into the read buffer.
-		TDes& readBuf = IorReadBuf();
 		while (iKeyBuffer.Count())
 			{
 			const RIoConsoleReadHandle::TConsoleKey& consoleKey = iKeyBuffer[0];
 			if ((IorwMode() == RIoReadWriteHandle::EText) && (consoleKey.iKeyCode == EKeyEnter))
 				{
+				TDes& readBuf = iReadBuffer16;
 				if ((readBuf.Length() + KNewLine().Length()) <= readBuf.MaxLength())
 					{
 					// If there's enough room, expand EKeyEnter into "\r\n" (otherwise RIoReadHandle::ELine reads won't complete).
@@ -816,63 +890,41 @@ void CIoReadObject::TryToCompleteRead()
 				}
 			else
 				{
-				if (readBuf.Length() < readBuf.MaxLength())
+				if (iReadBuffer16.Ptr())
 					{
-					TPtrC keyCodePtr((TUint16*)&consoleKey.iKeyCode, 1);
-					readBuf.Append(keyCodePtr);
+					if (iReadBuffer16.Length() < iMaxReadLength)
+						{
+						TPtrC keyCodePtr((TUint16*)&consoleKey.iKeyCode, 1);
+						iReadBuffer16.Append(keyCodePtr);
+						}
+					else
+						{
+						break;
+						}
 					}
 				else
 					{
-					break;
+					// Not sure if this can ever happen, not gonna risk it
+					if (iReadBuffer->Length() < iMaxReadLength && consoleKey.iKeyCode < 256)
+						{
+						TUint8 ch = (TUint8)consoleKey.iKeyCode;
+						iReadBuffer->Des().Append(&ch, 1);
+						}
+					else
+						{
+						break;
+						}
 					}
 				}
 			iKeyBuffer.Remove(0);
 			}
-		iBuf->Des().SetLength(iBuf->Length() + readBuf.Length());
+		if (iReadBuffer16.Ptr()) iReadBuffer->Des().SetLength(iReadBuffer16.Size());
 		}
 
-	switch (iReadMode)
-		{
-		case RIoReadHandle::EFull:
-			{
-			if (iBuf->Length() == iMaxReadLength)
-				{
-				CompleteRead(KErrNone, iMaxReadLength);
-				}
-			break;
-			}
-		case RIoReadHandle::ELine:
-			{
-			const TDesC* lineSeparator = iLineSeparator;
-			if (lineSeparator == NULL) lineSeparator = &KLf;
+	const TInt bufLen = (iReadBuffer16.Ptr() ? iReadBuffer16.Length() : iReadBuffer->Length());
 
-			TInt pos = iBuf->Find(*lineSeparator);
-			if (pos >= 0)
-				{
-				CompleteRead(KErrNone, pos + lineSeparator->Length());
-				}
-			else if (iBuf->Length() == iMaxReadLength)
-				{
-				CompleteRead(KErrNone, iMaxReadLength);
-				}
-			else if ((iBuf->Length() > 0) && (iCompleteErr == KErrEof))
-				{
-				// the read end point has reached the end of the stream
-				// there is still some data remaining, but no new line
-				// to just send the last bit
-				CompleteRead(KErrNone, iBuf->Length());
-				}
-			break;
-			}
-		case RIoReadHandle::EOneOrMore:
-			{
-			if (iBuf->Length() > 0)
-				{
-				CompleteRead(KErrNone, iBuf->Length());
-				}
-			break;
-			}
-		}
+	TInt shouldComplete = BufferSatisfiesReadRequest();
+	if (shouldComplete) CompleteRead(KErrNone, shouldComplete);
 	}
 
 void CIoReadObject::CompleteRead(TInt aError, TInt aLength)
@@ -884,17 +936,27 @@ void CIoReadObject::CompleteRead(TInt aError, TInt aLength)
 		if ((aError == KErrNone)||(aError == KErrEof))
 			{
 			LOG(CIoLog::Printf(_L("Read object \'%S\' writing %d characters"), &objName, aLength));
-			TPtrC ptr(iBuf->Des().Ptr(), aLength);
-			LOG(Dump(ptr));
-			TRAPD(err, MessageWriteL(iReadMessage, 0, ptr));
-			if (err == KErrNone)
+			TInt err;
+			if (iReadBuffer16.Ptr())
 				{
-				iBuf->Des().Delete(0, aLength);
+				TPtrC ptr = iReadBuffer16.Left(aLength);
+				LOG(Dump(ptr));
+				TRAP(err, MessageWriteL(iReadMessage, 0, ptr));
+				if (!err)
+					{
+					iReadBuffer16.Delete(0, ptr.Length());
+					iReadBuffer->Des().SetLength(iReadBuffer16.Size());
+					}
 				}
 			else
 				{
-				aError = err;
+				TPtrC8 ptr = iReadBuffer->Left(aLength);
+				LOG(Dump(ptr));
+				TRAP(err, MessageWriteL(iReadMessage, 0, ptr));
+				if (!err) iReadBuffer->Des().Delete(0, ptr.Length());
 				}
+
+			if (err) aError = err;
 			}
 		
 		LOG(CIoLog::Printf(_L("Read object \'%S\' completing read message with %d"), &objName, aError));
@@ -924,6 +986,53 @@ MIoReadEndPoint* CIoReadObject::ReadEndPoint() const
 CIoReadObject::TCapturedKey::TCapturedKey(TUint aKeyCode, TUint aModifierMask, TUint aModifiers)
 	: iKeyCode(aKeyCode), iModifierMask(aModifierMask), iModifiers(aModifiers)
 	{
+	}
+
+TInt CIoReadObject::BufferSatisfiesReadRequest() const
+	{
+	const TInt bufLen = (iReadBuffer16.Ptr() ? iReadBuffer16.Length() : iReadBuffer->Length());
+
+	switch (iReadMode)
+		{
+	case RIoReadHandle::EFull:
+		if (bufLen == iMaxReadLength) return iMaxReadLength;
+		break;
+	case RIoReadHandle::ELine:
+		{
+		ASSERT(IorwMode() == RIoReadWriteHandle::EText); // Makes no sense to ask for a line in binary mode...
+		ASSERT(iReadBuffer16.Ptr()); // This really must be true if the above line is
+		const TDesC* lineSeparator = iLineSeparator;
+		if (lineSeparator == NULL) lineSeparator = &KLf;
+
+		TInt pos = iReadBuffer16.Find(*lineSeparator);
+		if (pos >= 0)
+			{
+			return pos + lineSeparator->Length();
+			}
+		else if (bufLen == iMaxReadLength)
+			{
+			// Buffer is full, need to complete
+			return iMaxReadLength;
+			}
+		else if ((bufLen > 0) && (iCompleteErr == KErrEof))
+			{
+			// the read end point has reached the end of the stream
+			// there is still some data remaining, but no new line
+			// so just send the last bit
+			return bufLen;
+			}
+		break;
+		}
+	case RIoReadHandle::EOneOrMore:
+		{
+		return bufLen;
+		}
+	default:
+		ASSERT(EFalse);
+		}
+
+	// If we reach here, the answer is no
+	return 0;
 	}
 
 
@@ -990,6 +1099,7 @@ void CIoWriteObject::WriteL(const RMsg& aMessage)
 	{
 	__ASSERT_RETURN(iEndPoint, PanicClient(aMessage, EPanicWriteWhenNotAttached));
 	__ASSERT_RETURN(!MessagePending(iWriteMessage), PanicClient(aMessage, EPanicWriteAlreadyPending));
+	__ASSERT_RETURN(aMessage.Function() == EIoWrite || IorwMode() == RIoReadWriteHandle::EBinary, PanicClient(aMessage, EPanicEightBitWriteNotInBinaryMode));
 	iWriteMessage = aMessage;
 	iOffset = 0;
 	iWriteLength = DesLengthL(iWriteMessage, 0);
@@ -1008,6 +1118,12 @@ void CIoWriteObject::WriteCancel(const CIoSession& aSession)
 		}
 	}
 
+TBool CIoWriteObject::IowNarrowWrite() const
+	{
+	ASSERT(MessagePending(iWriteMessage));
+	return iWriteMessage.Function() == EIoWrite8;
+	}
+
 TInt CIoWriteObject::IowWriteLength() const
 	{
 	ASSERT(MessagePending(iWriteMessage));
@@ -1017,9 +1133,47 @@ TInt CIoWriteObject::IowWriteLength() const
 TInt CIoWriteObject::IowWrite(TDes& aBuf)
 	{
 	ASSERT(MessagePending(iWriteMessage));
+	//ASSERT(aBuf.Length() <= (iWriteLength - iOffset));
+	OBJ_NAME(*this);
+
+	TInt err = KErrNone;
+	if (IowNarrowWrite())
+		{
+		// iosrv client called RIoWriteHandle::Write(const TDesC8&) but the destination only understands 16-bit data - so we widen (without attempting to compensate for line endings or anything, since we're still in binary mode, just 16-bit binary mode
+		TPtr8 buf8((TUint8*)aBuf.Ptr(), 0, aBuf.MaxSize());
+		TPtr8 buf8lim((TUint8*)aBuf.Ptr(), 0, aBuf.MaxSize()/2);
+		err = iWriteMessage.Read(0, buf8lim, iOffset);
+		if (!err)
+			{
+			buf8.SetLength(buf8lim.Length());
+			aBuf.SetLength(buf8.Expand().Length());
+			}
+		}
+	else
+		{
+		err = iWriteMessage.Read(0, aBuf, iOffset);
+		}
+
+	if (err == KErrNone)
+		{
+		LOG(CIoLog::Printf(_L("Write object \'%S\' read %d characters"), &objName, aBuf.Length()));
+		LOG(Dump(aBuf));
+		iOffset += aBuf.Length();
+		}
+	else
+		{
+		LOG(CIoLog::Printf(_L("Write object \'%S\' failed to read: %d"), &objName, err));
+		}
+	return err;
+	}
+
+TInt CIoWriteObject::IowWrite(TDes8& aBuf)
+	{
+	ASSERT(MessagePending(iWriteMessage));
+	ASSERT(IowNarrowWrite());
 	ASSERT(aBuf.Length() <= (iWriteLength - iOffset));
 	OBJ_NAME(*this);
-	TRAPD(err, MessageReadL(iWriteMessage, 0, aBuf, iOffset));
+	TInt err = iWriteMessage.Read(0, aBuf, iOffset);
 	if (err == KErrNone)
 		{
 		LOG(CIoLog::Printf(_L("Write object \'%S\' read %d characters"), &objName, aBuf.Length()));

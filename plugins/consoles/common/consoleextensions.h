@@ -33,6 +33,22 @@ public:
 	static inline TInt Set(CBase* aConsole, TMode aMode);
 	};
 
+class BinaryMode
+	{
+public:
+	static const TUint KBinaryModeWriteExtension = 0x10286F76;
+	static const TUint KBinaryModeReadExtension = 0x10286F77;
+
+	/**
+	If a console supports block reading and/or writing of 8-bit binary data when the console is in 
+	binary mode (as per ConsoleMode::Set(EBinary), it should implement one or both of these extensions.
+	This is to avoid having to expand 8-bit data to get it through the console API (in the case of writes)
+	and in the case of reads, means you don't have to read the data a single character at a time.
+	*/
+	static inline TInt Write(CBase* aConsole, const TDesC8& aBuf);
+	static inline TBool Read(CBase* aConsole, TDes8& aBuf, TRequestStatus& aStatus); // Returns EFalse if extension not supported. Any other error reported by completing aStatus
+	};
+
 class UnderlyingConsole
 	{
 public:
@@ -161,6 +177,7 @@ protected:
 	IMPORT_C TInt MIosrvConsoleHelper_Extension(TUint aExtensionId, TAny*& a0, TAny* a1);
 	
 	IMPORT_C virtual TInt WriteStdErr(const TDesC& aDes); // Default returns KErrExtensionNotSupported
+	IMPORT_C virtual TInt Write(const TDesC8& aDes); // Default returns KErrExtensionNotSupported
 	
 private:
 	TBool iDebug;

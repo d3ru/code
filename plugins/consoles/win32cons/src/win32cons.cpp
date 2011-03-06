@@ -257,12 +257,13 @@ int TWin32Console::Write(const WCHAR* aText, int aLen)
 		while (pos < aLen)
 			{
 			int len = Min(KBufLen, aLen - pos);
-			int narrowLen = WideCharToMultiByte(CP_ACP, 0, aText, len, outbuf, KBufLen, NULL, NULL);
+			int narrowLen = WideCharToMultiByte(CP_ACP, 0, aText+pos, len, outbuf, KBufLen, NULL, NULL);
 			if (narrowLen == 0 && aLen != 0) return 0;
-			int ok = Write(outbuf, narrowLen);
-			if (!ok) return ok;
+			int err = Write(outbuf, narrowLen);
+			if (err) return err;
+			pos += len;
 			}
-		return 1;
+		return 0;
 		}
 	}
 	

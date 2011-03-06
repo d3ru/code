@@ -1,6 +1,6 @@
 # cat.cif
 # 
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -62,5 +62,20 @@ Specify the block size to use for reading the file(s), in bytes. If not specifie
 
 ==copyright
 
-Copyright (c) 2005-2010 Accenture. All rights reserved.
+Copyright (c) 2005-2011 Accenture. All rights reserved.
 
+==smoke-test
+
+export WIDE_RESULT "00000000: 54 00 65 00 73 00 74 00 21 00 0D 00 0A 00       T.e.s.t.!.....^r^n"
+
+echo "Test!" > cattest.txt
+
+cat -e latin1 cattest.txt | dump | export -s RESULT
+var RESULT == "$WIDE_RESULT" || $Error
+
+cat -b cattest.txt | dump | export -s RESULT
+# This isn't strictly speaking correct as cattest.txt isn't UTF-16 and cat -b should give the raw data but dump doesn't handle binary reading from stdin yet so widens everything
+# In due course when dump is fixed this test needs updating
+var RESULT == "$WIDE_RESULT" || $Error
+
+rm cattest.txt

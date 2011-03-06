@@ -1,0 +1,3 @@
+EXPORTS
+	?GetIosrvDebugHandler@IoUtils@@YAP6AXW4QtMsgType@@PBD@ZXZ @ 1 NONAME ; void (*)(enum QtMsgType, char const *) IoUtils::GetIosrvDebugHandler(void)
+

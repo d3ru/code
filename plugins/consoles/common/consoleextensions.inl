@@ -85,3 +85,16 @@ void ConsoleSize::CancelNotifySizeChanged(CBase* aConsole)
 	((CBaseExtensionDummy*)aConsole)->Extension_(KConsoleSizeNotifyChangedExtension, ignore, NULL);
 	}
 
+TInt BinaryMode::Write(CBase* aConsole, const TDesC8& aBuf)
+	{
+	TAny* ignore;
+	return ((CBaseExtensionDummy*)aConsole)->Extension_(KBinaryModeWriteExtension, ignore, (TAny*)&aBuf);
+	}
+
+TBool BinaryMode::Read(CBase* aConsole, TDes8& aBuf, TRequestStatus& aStatus)
+	{
+	TAny* buf = &aBuf;
+	TInt result = ((CBaseExtensionDummy*)aConsole)->Extension_(KBinaryModeReadExtension, buf, (TAny*)&aStatus);
+	ASSERT(result == KErrNone || result == KErrExtensionNotSupported);
+	return (result == KErrNone);
+	}

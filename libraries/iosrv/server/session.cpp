@@ -283,6 +283,7 @@ void CIoSession::ServiceL(const RMsg& aMessage)
 			break;
 			}
 		case EIoRead:
+		case EIoRead8:
 			{
 			FindReadObjectL(aMessage.Int3(), aMessage).ReadL(aMessage);
 			break;
@@ -299,6 +300,7 @@ void CIoSession::ServiceL(const RMsg& aMessage)
 			break;
 			}
 		case EIoWrite:
+		case EIoWrite8:
 			{
 			FindWriteObjectL(aMessage.Int3(), aMessage).WriteL(aMessage);
 			break;

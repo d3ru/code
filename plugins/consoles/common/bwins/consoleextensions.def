@@ -7,4 +7,5 @@ EXPORTS
 	?MIosrvConsoleHelper_Extension@MIosrvConsoleHelper@@IAEHIAAPAXPAX@Z @ 6 NONAME ; int MIosrvConsoleHelper::MIosrvConsoleHelper_Extension(unsigned int, void * &, void *)
 	?CleanupUnderlyingConsole@MIosrvConsoleHelper@@IAEXXZ @ 7 NONAME ; void MIosrvConsoleHelper::CleanupUnderlyingConsole(void)
 	?UnderlyingConsole@MIosrvConsoleHelper@@IBEPAVCConsoleBase@@XZ @ 8 NONAME ; class CConsoleBase * MIosrvConsoleHelper::UnderlyingConsole(void) const
+	?Write@MIosrvConsoleHelper@@MAEHABVTDesC8@@@Z @ 9 NONAME ; int MIosrvConsoleHelper::Write(class TDesC8 const &)
 

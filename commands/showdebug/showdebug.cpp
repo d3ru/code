@@ -133,6 +133,7 @@ void CCmdShowDebug::DoRunL()
 	LeaveIfErr(iRouter.Open(), _L("Couldn't open debug router"));
 	LeaveIfErr(iRouter.OpenChunk(iChunk), _L("Couldn't open debug router shared chunk"));
 	LeaveIfErr(iRouter.EnableDebugRouting(RCloggerDebugRouter::EEnableRouting), _L("Couldn't enable routing"));
+	if (iFilter && iProcessName == NULL) LeaveIfErr(KErrArgument, _L("A process must be specified when using --filter"));
 
 	iRouter.ReceiveData(iStatus);
 	SetActive();
@@ -235,6 +236,12 @@ void CCmdShowDebug::RunL()
 
 void CCmdShowDebug::Log(TUint8 /*aWhere*/, TUint32 aTickCount, TUint aThreadId, const TDesC8& aMsg)
 	{
+	if (iFilter && aThreadId < iProcess.Process().Id().Id())
+		{
+		// A thread ID less than the process ID can never belong to that process
+		return;
+		}
+
 	RThread thread; thread.SetHandle(0);
 	if (iVerbose.Count() > 1 || iFilter)
 		{
