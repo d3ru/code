@@ -67,6 +67,10 @@ private:
 	//void GetDllTableL(TUint8* aImportData,TInt aDllRefTableCount,TUint aFlags);
 	//void GetDllTableL(const TDesC& aFileName, E32ImageHeader* aImageHeader, TUint8* aRestOfFile);
 	void GetDllTableL(const TDesC& aFileName, const E32ImageHeader* aImageHeader, const TUint8* aCode, const TUint8* aImportData);
+	enum TStuffNotIn91
+		{
+		KUidCompressionBytePair=0x102822AA
+		};
 public:	
 	CDllChecker();
 	~CDllChecker();

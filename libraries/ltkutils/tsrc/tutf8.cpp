@@ -80,9 +80,9 @@ void CCmdtutf8::DoRunL()
 	if (iFile.Length() == 0)
 		{
 		CleanupStack::PushL((CBase*)1); // Panicker
-		_LIT(KTest, "A \u03A9 \u8A9E \uFFFD \uFEFF \uD800 "); // The original UTF-16 string: A LowercaseOmega SomeGlyphOrOther ReplacementChar ZWNBSP UnmatchedLeadingSurrogate
+		_LIT(KTest, "A \x03A9 \x8A9E \xFFFD \xFEFF \xD800 "); // The original UTF-16 string: A LowercaseOmega SomeGlyphOrOther ReplacementChar ZWNBSP UnmatchedLeadingSurrogate
 		_LIT8(KOut, "A \xCE\xA9 \xE8\xAA\x9E \xEF\xBF\xBD \xEF\xBB\xBF \xEF\xBF\xBD "); // What it should be in UTF-8
-		_LIT(KOutInUnicode, "A \u03A9 \u8A9E \uFFFD \uFEFF \uFFFD "); // Almost the same as the original, except that the UnmatchedSurrogate was transformed into ReplacementChar in UTF-8 so the last char here is U+FFFD
+		_LIT(KOutInUnicode, "A \x03A9 \x8A9E \xFFFD \xFEFF \xFFFD "); // Almost the same as the original, except that the UnmatchedSurrogate was transformed into ReplacementChar in UTF-8 so the last char here is U+FFFD
 		RLtkBuf8 buf;
 		buf.CopyAsUtf8L(KTest);
 		ASSERT(buf == KOut());
@@ -96,7 +96,7 @@ void CCmdtutf8::DoRunL()
 		TInt firstprob;
 		wbuf.FinalizeUtf8(firstprob);
 		ASSERT(firstprob == 5); // Correctly indentified the first invalid bit
-		_LIT(KFirstFrag, "A \u03A9 \uFFFD");
+		_LIT(KFirstFrag, "A \x03A9 \xFFFD");
 		ASSERT(wbuf == KFirstFrag());
 		wbuf.SetLength(4);
 		wbuf.AppendUtf8L(KOut().Mid(5,1));
@@ -113,7 +113,7 @@ void CCmdtutf8::DoRunL()
 		wbuf.Close();
 
 		_LIT8(KBomTest, "\xEF\xBB\xBF BB \xEF\xBB\xBF");
-		_LIT(KBomOutput, " BB \uFEFF");
+		_LIT(KBomOutput, " BB \xFEFF");
 		wbuf.AppendUtf8L(KBomTest);
 		wbuf.FinalizeUtf8(firstprob);
 		ASSERT(wbuf == KBomOutput());
@@ -130,7 +130,7 @@ void CCmdtutf8::DoRunL()
 
 		// Maximal subexpression replacement test - Example taken from unicode standard section 3.9, table 3-8.
 		_LIT8(KInvalid, "\x61\xF1\x80\x80\xE1\x80\xC2\x62\x80\x63\x80\xBF\x64");
-		_LIT(KInvalidOutput, "\u0061\uFFFD\uFFFD\uFFFD\u0062\uFFFD\u0063\uFFFD\uFFFD\u0064"); // And this is how the standard recommends it is processed
+		_LIT(KInvalidOutput, "\x0061\xFFFD\xFFFD\xFFFD\x0062\xFFFD\x0063\xFFFD\xFFFD\x0064"); // And this is how the standard recommends it is processed
 		wbuf.AppendUtf8L(KInvalid);
 		wbuf.FinalizeUtf8(firstprob);
 		ASSERT(wbuf == KInvalidOutput());

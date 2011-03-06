@@ -550,4 +550,12 @@ EXPORTS
 	__12TIoHandleSetR10RIoSessionR13RIoReadHandleR14RIoWriteHandleT3 @ 549 NONAME ; TIoHandleSet::TIoHandleSet(RIoSession &, RIoReadHandle &, RIoWriteHandle &, RIoWriteHandle &)
 	__vc__CQ27IoUtils20RCommandArgumentListi @ 550 NONAME R3UNUSED ; IoUtils::RCommandArgumentList::operator[](int) const
 	AcceptsMultiple__CQ27IoUtils6TValue @ 551 NONAME R3UNUSED ; IoUtils::TValue::AcceptsMultiple(void) const
+	CifFileName__CQ27IoUtils16CCommandInfoFile @ 552 NONAME R3UNUSED ; IoUtils::CCommandInfoFile::CifFileName(void) const
+	GetSmokeTestStartingLineNumber__CQ27IoUtils16CCommandInfoFile @ 553 NONAME R3UNUSED ; IoUtils::CCommandInfoFile::GetSmokeTestStartingLineNumber(void) const
+	Read__13RIoReadHandleR5TDes8 @ 554 NONAME R3UNUSED ; RIoReadHandle::Read(TDes8 &)
+	Read__13RIoReadHandleR5TDes8R14TRequestStatus @ 555 NONAME R3UNUSED ; RIoReadHandle::Read(TDes8 &, TRequestStatus &)
+	SmokeTest__CQ27IoUtils16CCommandInfoFile @ 556 NONAME R3UNUSED ; IoUtils::CCommandInfoFile::SmokeTest(void) const
+	Write__14RIoWriteHandleRC6TDesC8 @ 557 NONAME R3UNUSED ; RIoWriteHandle::Write(TDesC8 const &)
+	Write__14RIoWriteHandleRC6TDesC8R14TRequestStatus @ 558 NONAME R3UNUSED ; RIoWriteHandle::Write(TDesC8 const &, TRequestStatus &)
+	__Q27IoUtils13RChildProcess @ 559 NONAME R3UNUSED ; IoUtils::RChildProcess::RChildProcess(void)
 

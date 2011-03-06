@@ -89,7 +89,7 @@ public:
 	};
 
 _LIT(KDash, "-");
-_LIT(KUnicodeDash, "\u2500"); // horizontal box line
+_LIT(KUnicodeDash, "\x2500"); // horizontal box line
 
 void CCommandWindow::WriteStatus(const TDesC& aNameToTruncate, TRefByValue<const TDesC> aFmt, ...)
 	{

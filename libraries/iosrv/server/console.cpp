@@ -357,7 +357,7 @@ void CIoConsole::CConsoleReader::QueueRead(TDes8* aBinaryReadBuffer)
 	iBinaryReadBuffer = aBinaryReadBuffer;
 	if (aBinaryReadBuffer)
 		{
-		iConsole.iConsole.Read(*iBinaryReadBuffer, iStatus);
+		iConsole.iConsole.Read8(*iBinaryReadBuffer, iStatus);
 		}
 	else
 		{
@@ -480,7 +480,7 @@ void CIoConsole::TConsoleWriteRequest::Request(RIoConsoleProxy aProxy, TRequestS
 	{
 	if (iBuf8)
 		{
-		aProxy.Write(*iBuf8, aStatus);
+		aProxy.Write8(*iBuf8, aStatus);
 		}
 	else if (iWriter.IowIsStdErr())
 		{
@@ -925,12 +925,12 @@ void RIoConsoleProxy::CancelNotifySizeChanged()
 	SendReceive(ECancelNotifySizeChange, TIpcArgs());
 	}
 
-void RIoConsoleProxy::Read(TDes8& aBuf, TRequestStatus& aStatus)
+void RIoConsoleProxy::Read8(TDes8& aBuf, TRequestStatus& aStatus)
 	{
 	SendReceive(EBinaryRead, TIpcArgs(&aBuf), aStatus);
 	}
 
-void RIoConsoleProxy::Write(const TDesC8& aBuf, TRequestStatus& aStatus)
+void RIoConsoleProxy::Write8(const TDesC8& aBuf, TRequestStatus& aStatus)
 	{
 	SendReceive(EBinaryWrite, TIpcArgs(&aBuf), aStatus);;
 	}

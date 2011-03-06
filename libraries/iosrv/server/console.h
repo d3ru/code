@@ -44,10 +44,8 @@ public:
 	void WriteStdErr(const TDesC& aDescriptor, TRequestStatus& aStatus);
 	void NotifySizeChanged(TRequestStatus& aStatus);
 	void CancelNotifySizeChanged();
-	using RConsoleProxy::Read;
-	void Read(TDes8& aBuf, TRequestStatus& aStatus);
-	using RConsoleProxy::Write;
-	void Write(const TDesC8& aBuf, TRequestStatus& aStatus);
+	void Read8(TDes8& aBuf, TRequestStatus& aStatus);
+	void Write8(const TDesC8& aBuf, TRequestStatus& aStatus);
 	};
 	
 class CIoConsole : public CIoEndPoint

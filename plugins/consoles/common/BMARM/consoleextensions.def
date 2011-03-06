@@ -7,4 +7,5 @@ EXPORTS
 	SetDebug__19MIosrvConsoleHelperi @ 6 NONAME R3UNUSED ; MIosrvConsoleHelper::SetDebug(int)
 	UnderlyingConsole__C19MIosrvConsoleHelper @ 7 NONAME R3UNUSED ; MIosrvConsoleHelper::UnderlyingConsole(void) const
 	CleanupUnderlyingConsole__19MIosrvConsoleHelper @ 8 NONAME R3UNUSED ; MIosrvConsoleHelper::CleanupUnderlyingConsole(void)
+	Write__19MIosrvConsoleHelperRC6TDesC8 @ 9 NONAME R3UNUSED ; MIosrvConsoleHelper::Write(TDesC8 const &)
 

@@ -16,9 +16,9 @@
 using namespace IoUtils;
 
 _LIT(KSnakeSeg, "*");
-_LIT(KUnicodeSnakeSeg, "\u2588"); // Full block
+_LIT(KUnicodeSnakeSeg, "\x2588"); // Full block
 _LIT(KBait, "$");
-_LIT(KUnicodeBait, "\u2665"); // heart
+_LIT(KUnicodeBait, "\x2665"); // heart
 
 class CKeyWatcher;
 

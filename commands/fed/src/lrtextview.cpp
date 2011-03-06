@@ -518,7 +518,7 @@ void CLRTextView::WriteLineContinue()
 	CColorConsoleBase* cons = iConsoleProvider.ColorConsole();
 	if (cons) cons->SetTextAttribute(ETextAttributeHighlight);
 	_LIT(KContinuation, "\\");
-	_LIT(KUnicodeContinuation, "\u2026"); // ellipsis
+	_LIT(KUnicodeContinuation, "\x2026"); // ellipsis
 	iConsole.Write(Unicode() ? KUnicodeContinuation() : KContinuation());
 	if (cons) cons->SetTextAttribute(ETextAttributeNormal);
 

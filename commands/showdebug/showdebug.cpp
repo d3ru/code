@@ -38,7 +38,6 @@ private: // From CCommandBase.
 private: // From MCommandExtensionsV2
 	virtual void CtrlCPressed();
 
-
 	class CLogonCompleter : public CActive
 		{
 	public:
@@ -55,6 +54,7 @@ private: // From MCommandExtensionsV2
 	private:
 		CCmdShowDebug* iCommand;
 		};
+	friend class CLogonCompleter; // GCC 2.9 needs this, anything more recent correctly identifies the inner class friendliness
 
 private:
 	RCloggerDebugRouter iRouter;
