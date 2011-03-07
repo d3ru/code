@@ -460,7 +460,7 @@ PRJ_MMPFILES
 ..\memspy\memspy.mmp
 #endif
 
-#ifdef FSHELL_TESTEXECUTE_SUPPORT
+#ifdef FSHELL_CORE_SUPPORT_TESTEXECUTE
 PRJ_EXPORTS
 ..\testexecute\testexecute.cif           z:\resource\cif\fshell\testexecute.cif
 PRJ_MMPFILES

@@ -280,6 +280,6 @@ Prerelease to the SF staging server.
 
 =head1 Copyright
 
-Copyright (c) 2010 Accenture. All rights reserved.
+Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 
 =cut

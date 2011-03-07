@@ -373,7 +373,7 @@ FSHELL_EXECUTABLE_FILE(top.exe)
 FSHELL_COMMAND_INFO_FILE(fshell,top.cif)
 #endif
 
-#ifdef FSHELL_TESTEXECUTE_SUPPORT
+#ifdef FSHELL_CORE_SUPPORT_TESTEXECUTE
 FSHELL_EXECUTABLE_FILE(fshell_testexecute.exe)
 FSHELL_COMMAND_INFO_FILE(fshell,testexecute.cif)
 #endif

@@ -12,7 +12,9 @@
 #include "terminalkeyboardcons.h"
 #include <fshell/common.mmh>
 #include <e32debug.h>
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 #include <fshell/memoryaccess.h>
+#endif
 
 const TInt KTkbdMessageId = 0xD6;
 // These are the defaults unless overridden by --console-size
@@ -100,6 +102,7 @@ void CTerminalKeyboardCons::ConstructL(const TDesC& aTitle, const TSize& aSize)
 		User::Leave(err);
 		}
 
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	// Annoying driver only accepts connections from processes with nokia vid - like that will stop us
 	TUint originalVid = RProcess().VendorId();
 	RMemoryAccess memAccess;
@@ -116,6 +119,10 @@ void CTerminalKeyboardCons::ConstructL(const TDesC& aTitle, const TSize& aSize)
 	memAccess.SetProcessProperties(me, props);
 	me.Close();
 	memAccess.Close();
+#else
+	Message(EDebug, _L("MemoryAccess not available to hack vendorid!"));
+	err = iDriver.Open();
+#endif
 
 	if (err)
 		{
