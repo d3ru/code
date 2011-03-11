@@ -1,6 +1,6 @@
 // client.cpp
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -11,37 +11,15 @@
 //
 
 #include <fshell/iocli.h>
-#include "clientserver.h"
-#include <e32math.h>
-
-
-#ifndef EKA2
-
-//
-// TServerStart.
-//
-
-TServerStart::TServerStart(TRequestStatus& aStatus)
-	: iId(RThread().Id()), iStatus(&aStatus)
-	{
-	aStatus = KRequestPending;
-	}
-
-TPtrC TServerStart::AsCommand() const
-	{
-	return TPtrC(reinterpret_cast<const TText*>(this),sizeof(TServerStart)/sizeof(TText));
-	}
-
+#include <fshell/common.mmh>
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+#include <fshell/memoryaccess.h>
 #endif
-
-
-//
-// Statics.
-//
+#include "clientserver.h"
+#include <e32debug.h>
 
 static TInt StartServer()
 	{
-#ifdef EKA2
 	const TUidType serverUid(KNullUid, KNullUid, KServerUid3);
 	RProcess server;
 	TInt r = server.Create(KIoServerName, KNullDesC, serverUid);
@@ -63,65 +41,7 @@ static TInt StartServer()
 	r = (server.ExitType() == EExitPanic) ? KErrGeneral : stat.Int();
 	server.Close();
 	return r;
-#else
-	TRequestStatus started;
-	TServerStart start(started);
-	const TUidType serverUid(KNullUid, KNullUid, KServerUid3);
-#ifdef __WINS__
-	RLibrary lib;
-	TInt r = lib.Load(KIoServerName, serverUid);
-	if (r != KErrNone)
-		{
-		return r;
-		}
-	TLibraryFunction ordinal1 = lib.Lookup(1);
-	TThreadFunction serverFunc = reinterpret_cast<TThreadFunction>(ordinal1());
-	TName name(KIoServerName);
-	name.AppendNum(Math::Random(), EHex);
-	RThread server;
-	r=server.Create(name, serverFunc,
-					KIoStackSize,
-					&start, &lib, NULL,
-					KIoInitHeapSize, KIoMaxHeapSize, EOwnerProcess);
-	lib.Close();
-#else
-	RProcess server;
-	TInt r=server.Create(KIoServerName, start.AsCommand(), serverUid);
-#endif
-	if (r != KErrNone)
-		{
-		return r;
-		}
-	TRequestStatus died;
-	server.Logon(died);
-	if (died != KRequestPending)
-		{
-		User::WaitForRequest(died);
-		server.Kill(0);
-		server.Close();
-		return died.Int();
-		}
-	server.Resume();
-	User::WaitForRequest(started, died);
-	if (started == KRequestPending)
-		{
-		server.Close();
-		return died.Int();
-		}
-	server.LogonCancel(died);
-	server.Close();
-	User::WaitForRequest(died);
-	return KErrNone;
-#endif // EKA2
 	}
-
-#ifndef EKA2
-TInt E32Dll(TDllReason)
-	{
-	return 0;
-	}
-#endif
-
 
 //
 // RIoSession.
@@ -1332,23 +1252,137 @@ EXPORT_C TIoHandleSet::TIoHandleSet(RIoSession& aIoSession, RIoReadHandle& aStdi
 	{
 	}
 
-EXPORT_C RIoSession& TIoHandleSet::IoSession() const
+EXPORT_C TIoHandleSet::TIoHandleSet()
+	: iSpare(0)
+	{
+	}
+
+EXPORT_C RIoSession& TIoHandleSet::IoSession()
 	{
 	return iIoSession;
 	}
 
-EXPORT_C RIoReadHandle& TIoHandleSet::Stdin() const
+EXPORT_C RIoReadHandle& TIoHandleSet::Stdin()
 	{
 	return iStdin;
 	}
 
-EXPORT_C RIoWriteHandle& TIoHandleSet::Stdout() const
+EXPORT_C RIoWriteHandle& TIoHandleSet::Stdout()
 	{
 	return iStdout;
 	}
 
-EXPORT_C RIoWriteHandle& TIoHandleSet::Stderr() const
+EXPORT_C RIoWriteHandle& TIoHandleSet::Stderr()
 	{
 	return iStderr;
 	}
 
+EXPORT_C TInt TIoHandleSet::OpenExisting(RIoSession& aIoSession, TThreadId aClient, TBool aRecurse)
+	{
+	// See if iosrv has any handles ready for us
+	TInt err = iStdin.Open(aIoSession);
+	if (err)
+		{
+		// If not, see if there are any handles ready for our client/creator
+		if (aClient.Id() != 0)
+			{
+			err = iStdin.Open(aIoSession, aClient);
+			if (!err) err = iStdout.Open(aIoSession, aClient);
+			if (!err) err = iStderr.Open(aIoSession, aClient);
+			if (err != KErrNone)
+				{
+				Close();
+				}
+			if (!err) RDebug::Print(_L("Found handles for our client %d"), TUint(aClient));
+			}
+
+		if (err && (aClient.Id() || aRecurse))
+			{
+			// Try and see if our client/creator has some handles we can use, and if not, the thread that created it etc until we find one or lose track
+			TInt setuperr = KErrNone;
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+			RMemoryAccess::LoadDriver();
+			RMemoryAccess memAccess;
+			setuperr = memAccess.Open();
+#endif
+			if (!setuperr) setuperr = iStdin.Create(aIoSession);
+			if (!setuperr) setuperr = iStdout.Create(aIoSession);
+			if (!setuperr) setuperr = iStderr.Create(aIoSession);
+			if (setuperr)
+				{
+				err = setuperr;
+				Close();
+				}
+			else
+				{
+				TThreadId creator = aClient;
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+				if (creator.Id() == 0 && aRecurse)
+					{
+					creator = TThreadId(memAccess.GetThreadCreatorId(RThread().Id()));
+					}
+#endif
+				while (creator.Id() != 0)
+					{
+					err = iStdin.DuplicateHandleFromThread(creator);
+					if (err == KErrNone)
+						{
+						// Found one - open the writer too...
+						RDebug::Print(_L("Found handles for parent %d"), TUint(creator));
+						err = iStdout.DuplicateHandleFromThread(creator);
+						if (!err) iStderr.DuplicateHandleFromThread(creator);
+						break; // Stop looking if we found one
+						}
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+					creator = TThreadId(aRecurse ? memAccess.GetThreadCreatorId(creator) : 0);
+#else
+					creator = 0;
+#endif
+					}
+				}
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+			memAccess.Close();
+#endif
+			}
+		}
+	else
+		{
+		RDebug::Print(_L("Found handles for our thread %d"), TUint(RThread().Id()));
+		err = iStdout.Open(aIoSession);
+		if (!err) iStderr.Open(aIoSession);
+		}
+
+	if (err) Close();
+	return err;
+	}
+
+EXPORT_C TInt TIoHandleSet::Create(RIoSession& aIoSession, RIoConsole& aConsole, const TDesC& aTitle, const TSize& aSize)
+	{
+	RDebug::Print(_L("Giving up, creating console %S"), &aTitle);
+	TInt err = aConsole.Create(aIoSession, aTitle, aSize);
+	if (err) return err;
+	err = iStdin.Create(aIoSession);
+	if (!err) err = iStdout.Create(aIoSession);
+	if (!err) err = iStderr.Create(aIoSession);
+	if (!err) err = aConsole.Attach(iStdin, RIoEndPoint::EForeground);
+	if (!err) err = aConsole.Attach(iStdout);
+	if (!err) err = aConsole.Attach(iStderr);
+	TThreadId id = RThread().Id();
+	if (!err) err = iStdin.SetOwner(id);
+	if (!err) err = iStdout.SetOwner(id);
+	if (!err) err = iStderr.SetOwner(id);
+	
+	if (err)
+		{
+		Close();
+		aConsole.Close();
+		}
+	return err;
+	}
+
+EXPORT_C void TIoHandleSet::Close()
+	{
+	iStdin.Close();
+	iStdout.Close();
+	iStderr.Close();
+	}

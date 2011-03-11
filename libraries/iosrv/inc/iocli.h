@@ -1,6 +1,6 @@
 // iocli.h
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -298,20 +298,26 @@ public:
 	IMPORT_C void CreateL(RIoSession& aSession);
 	};
 
-// Convenience class to wrap up a set of stdin, stdout, stderr handles
+// Convenience class for wrapping up or connecting a set of stdin, stdout, stderr handles
 class TIoHandleSet
 	{
 public:
+	IMPORT_C TIoHandleSet();
 	IMPORT_C TIoHandleSet(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr);
-	IMPORT_C RIoSession& IoSession() const;
-	IMPORT_C RIoReadHandle& Stdin() const;
-	IMPORT_C RIoWriteHandle& Stdout() const;
-	IMPORT_C RIoWriteHandle& Stderr() const;
+	IMPORT_C void Close();
+
+	IMPORT_C RIoSession& IoSession();
+	IMPORT_C RIoReadHandle& Stdin();
+	IMPORT_C RIoWriteHandle& Stdout();
+	IMPORT_C RIoWriteHandle& Stderr();
+
+	IMPORT_C TInt OpenExisting(RIoSession& aIoSession, TThreadId aClient = 0, TBool aRecurse = EFalse);
+	IMPORT_C TInt Create(RIoSession& aIoSession, RIoConsole& aConsole, const TDesC& aTitle, const TSize& aSize = TSize(-1,-1));
 private:
-	RIoSession& iIoSession;
-	RIoReadHandle& iStdin;
-	RIoWriteHandle& iStdout;
-	RIoWriteHandle& iStderr;
+	RIoSession iIoSession;
+	RIoReadHandle iStdin;
+	RIoWriteHandle iStdout;
+	RIoWriteHandle iStderr;
 	TUint32 iSpare;
 	};
 

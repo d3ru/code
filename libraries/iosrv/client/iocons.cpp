@@ -15,9 +15,6 @@
 #include "iocons.h"
 #include <fshell/ioutils.h>
 #include <fshell/common.mmh>
-#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
-#include <fshell/memoryaccess.h>
-#endif
 
 // This constant is used to find the PIPS Stdio Server CServer2 object in the situation
 // where iocons in running in the stdioserver.exe process. Normally, when iocons calls
@@ -67,108 +64,43 @@ TInt CIoConsole::Create(const TDesC& aTitle, TSize aSize)
 	// This should only be called via iocons, ie when the zero arguments constructor was used.
 	// When the 3-arg constructor is used, the console is fully constructed and Create should not be called
 	TInt err = iIoSession.Connect();
+	TIoHandleSet handles;
 	if (err == KErrNone)
 		{
-		// See if iosrv has any handles ready for us
-		err = iReadHandle.Open(iIoSession);
+		// Any for us?
+		err = handles.OpenExisting(iIoSession);
 		if (err)
 			{
-			// If not, check if we're being opened from the stdioserver on behalf of the client PIPS exe
+			// See if we're being opened from the stdioserver on behalf of the client PIPS exe
 			TThreadId clientThreadId;
 			if (FindClientThreadId(clientThreadId) == KErrNone)
 				{
-				err = iReadHandle.Open(iIoSession, clientThreadId);
-				if (!err) err = iWriteHandle.Open(iIoSession, clientThreadId);
-				if (!err) err = iStdErrHandle.Open(iIoSession, clientThreadId);
-				if (err != KErrNone)
-					{
-					iReadHandle.Close();
-					iWriteHandle.Close();
-					}
+				// See if there's any for the client PIPS exe or any of its parents
+				err = handles.OpenExisting(iIoSession, clientThreadId, ETrue);
 				}
-
-#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
-			if (err)
+			else
 				{
-				// Try and see if the thread that created us has some handles we can use, and if not, the thread that created it etc until we find one or lose track
-				RMemoryAccess::LoadDriver();
-				RMemoryAccess memAccess;
-				err = memAccess.Open();
-				if (!err) err = iReadHandle.Create(iIoSession);
-				if (!err) iWriteHandle.Create(iIoSession);
-				if (!err) iStdErrHandle.Create(iIoSession);
-				if (!err)
-					{
-					TUint creator = RThread().Id();
-					while (creator != 0)
-						{
-						creator = memAccess.GetThreadCreatorId(creator);
-						err = iReadHandle.DuplicateHandleFromThread(TThreadId(creator));
-						if (err == KErrNone)
-							{
-							// Found one - open the writer too...
-							err = iWriteHandle.DuplicateHandleFromThread(TThreadId(creator));
-							if (!err) iStdErrHandle.DuplicateHandleFromThread(TThreadId(creator));
-							break; // Stop looking if we found one
-							}
-						}
-					memAccess.Close();
-					}
-				if (err)
-					{
-					iReadHandle.Close();
-					iWriteHandle.Close();
-					iStdErrHandle.Close();
-					}
-				}
-#endif
-
-			if (err)
-				{
-				// If all else fails, create a new console
-				err = CreateNewConsole(aTitle, aSize);
+				// Otherwise just try our creator and its parents
+				err = handles.OpenExisting(iIoSession, 0, ETrue);
 				}
 			}
-		else
+
+		if (err)
 			{
-			err = iWriteHandle.Open(iIoSession);
-			if (!err) iStdErrHandle.Open(iIoSession);
+			err = handles.Create(iIoSession, iConsole, aTitle, aSize);
 			}
 		}
-	if (err)
+
+	if (err == KErrNone)
 		{
-		iReadHandle.Close();
-		iWriteHandle.Close();
-		iStdErrHandle.Close();
-		iConsole.Close();
+		iReadHandle = handles.Stdin();
+		iWriteHandle = handles.Stdout();
+		iStdErrHandle = handles.Stderr();
+		}
+	else
+		{
 		iIoSession.Close();
 		}
-	return err;
-	}
-
-TInt CIoConsole::CreateNewConsole(const TDesC& aTitle, TSize aSize)
-	{
-	TInt err = iConsole.Create(iIoSession, aTitle, aSize);
-	if (err) return err;
-	err = iReadHandle.Create(iIoSession);
-	if (err) return err;
-	err = iWriteHandle.Create(iIoSession);
-	if (err) return err;
-	err = iStdErrHandle.Create(iIoSession);
-	if (err) return err;
-	err = iConsole.Attach(iReadHandle, RIoEndPoint::EForeground);
-	if (err) return err;
-	err = iConsole.Attach(iWriteHandle);
-	if (err) return err;
-	err = iConsole.Attach(iStdErrHandle);
-	if (err) return err;
-
-	err = iReadHandle.SetOwner(RThread().Id());
-	if (err) return err;
-	err = iWriteHandle.SetOwner(RThread().Id());
-	if (err) return err;
-	err = iStdErrHandle.SetOwner(RThread().Id());
-	
 	return err;
 	}
 
@@ -201,7 +133,7 @@ TInt CIoConsole::FindClientThreadId(TThreadId& aThreadId)
 	if (processName.MatchF(KPipsStdioServer) == 0)
 		{
 		LtkUtils::RAllocatorHelper allocHelper;
-		TInt err = allocHelper.Open(&User::Allocator());
+		err = allocHelper.Open(&User::Allocator());
 		if (!err) err = allocHelper.Walk(&HeapWalk, this);
 		allocHelper.Close();
 		if (err == KErrNone && iServerAddress)

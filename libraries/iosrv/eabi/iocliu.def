@@ -595,9 +595,9 @@ EXPORTS
 	_ZN12TIoHandleSetC2ER10RIoSessionR13RIoReadHandleR14RIoWriteHandleS5_ @ 594 NONAME
 	_ZN7IoUtils12CCommandBase18CreateEnvironmentLEPNS_12CEnvironmentE @ 595 NONAME
 	_ZN7IoUtils12CCommandBase6SetCifERKNS_16CCommandInfoFileE @ 596 NONAME
-	_ZNK12TIoHandleSet5StdinEv @ 597 NONAME
-	_ZNK12TIoHandleSet6StderrEv @ 598 NONAME
-	_ZNK12TIoHandleSet6StdoutEv @ 599 NONAME
+	_ZN12TIoHandleSet5StdinEv @ 597 NONAME
+	_ZN12TIoHandleSet6StderrEv @ 598 NONAME
+	_ZN12TIoHandleSet6StdoutEv @ 599 NONAME
 	_ZNK7IoUtils12CCommandBase3CifEv @ 600 NONAME
 	_ZNK7IoUtils20RCommandArgumentList5CountEv @ 601 NONAME
 	_ZNK7IoUtils20RCommandArgumentList6AllSetEv @ 602 NONAME
@@ -610,7 +610,7 @@ EXPORTS
 	_ZN7IoUtils12CEnvironment9SetLocalLERK7TDesC16 @ 609 NONAME
 	_ZNK7IoUtils12CEnvironment13ExternalizeLCEv @ 610 NONAME
 	_ZNK7IoUtils12CEnvironment8GetKeysLER13RPointerArrayI7HBufC16E @ 611 NONAME
-	_ZNK12TIoHandleSet9IoSessionEv @ 612 NONAME
+	_ZN12TIoHandleSet9IoSessionEv @ 612 NONAME
 	_ZNK7IoUtils6TValue4TypeEv @ 613 NONAME
 	_ZNK7IoUtils6TValue8ValuePtrEv @ 614 NONAME
 	_ZNK7IoUtils6TValue13EnumValueListEv @ 615 NONAME
@@ -635,4 +635,9 @@ EXPORTS
 	_ZN14RIoWriteHandle5WriteERK6TDesC8 @ 634 NONAME
 	_ZN14RIoWriteHandle5WriteERK6TDesC8R14TRequestStatus @ 635 NONAME
 	_ZN13RIoReadHandle4ReadER5TDes8 @ 636 NONAME
+	_ZN12TIoHandleSet12OpenExistingER10RIoSession9TThreadIdi @ 637 NONAME
+	_ZN12TIoHandleSet6CreateER10RIoSessionR10RIoConsoleRK7TDesC16RK5TSize @ 638 NONAME
+	_ZN12TIoHandleSet5CloseEv @ 639 NONAME
+	_ZN12TIoHandleSetC1Ev @ 640 NONAME
+	_ZN12TIoHandleSetC2Ev @ 641 NONAME
 

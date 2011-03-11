@@ -69,6 +69,7 @@ FSHELL_DATA_FILE(ZRESOURCE\Apps\fshell_launch_serial_loc.rsc, Resource\Apps\fshe
 #endif // FSHELL_CORE_SUPPORT_SERIAL_ICON
 
 FSHELL_DATA_FILE(ZSYSTEM\console\scripts\comm.script, system\console\scripts\comm.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\start-stdio.script, system\console\scripts\start-stdio.script)
 
 FSHELL_EXECUTABLE_FILE(iosrv.exe)
 FSHELL_EXECUTABLE_FILE(iocli.dll)
@@ -227,6 +228,7 @@ FSHELL_EXECUTABLE_FILE(fshell_tinteger.exe)
 FSHELL_EXECUTABLE_FILE(tfshellarguments.exe)
 FSHELL_EXECUTABLE_FILE(tenvarguments.exe)
 FSHELL_EXECUTABLE_FILE(tnoncifenvarguments.exe)
+FSHELL_EXECUTABLE_FILE(tpips.exe)
 #endif
 
 #endif

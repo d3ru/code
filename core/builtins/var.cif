@@ -1,6 +1,6 @@
 # var.cif
 # 
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -68,14 +68,33 @@ Subtracts the given value from the environment variable. Semantics as per add.
 
 Multiply the specified environment variable by the given value.
 
+==enum-value startswith
+
+Tests if the specified environment variable starts with the supplied argument.
+
+==enum-value endswith
+
+Tests if the specified environment variable ends with the supplied argument.
+
 ==argument string argument optional
 
 The argument to the operation.
 
 ==copyright
 
-Copyright (c) 2006-2010 Accenture. All rights reserved.
+Copyright (c) 2006-2011 Accenture. All rights reserved.
 
 ==smoke-test
 
-# Tested by fshell-basic-test.script, this section is just so ciftest doesn't report it as a command without any tests
+# Some further tests in addition to fshell-basic-test.script
+
+export N 5
+var N multiply 2
+var N == 10 || $Error
+
+export V "Something amazing"
+var V startswith Some || $Error
+var V startswith Incredible && $Error
+
+var V endswith zing || $Error
+var V endswith Some && $Error

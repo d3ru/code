@@ -1,6 +1,6 @@
 // session.cpp
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -415,7 +415,11 @@ void CIoSession::ServiceL(const RMsg& aMessage)
 			RIoEndPoint::TReadMode mode = (RIoEndPoint::TReadMode)aMessage.Int1();
 			LOG(CIoLog::Printf(_L("read obj id:      %d, address: 0x%08x"), readObj.Id(), &readObj));
 			LOG(CIoLog::Printf(_L("end point handle: %d, address: 0x%08x"), aMessage.Int3(), &endPoint));
-			readObj.AttachL(endPoint, mode);
+			RThread client;
+			aMessage.ClientL(client);
+			TThreadId clientId = client.Id();
+			client.Close();
+			readObj.AttachL(endPoint, mode, clientId);
 			Complete(aMessage, KErrNone);
 			break;
 			}
@@ -425,7 +429,11 @@ void CIoSession::ServiceL(const RMsg& aMessage)
 			CIoWriteObject& writeObj = FindWriteObjectL(aMessage.Int0(), aMessage);
 			LOG(CIoLog::Printf(_L("write obj id:     %d, address: 0x%08x"), writeObj.Id(), &writeObj));
 			LOG(CIoLog::Printf(_L("end point handle: %d, address: 0x%08x"), aMessage.Int3(), &endPoint));
-			writeObj.AttachL(endPoint);
+			RThread client;
+			aMessage.ClientL(client);
+			TThreadId clientId = client.Id();
+			client.Close();
+			writeObj.AttachL(endPoint, clientId);
 			Complete(aMessage, KErrNone);
 			break;
 			}

@@ -14,6 +14,20 @@ __END__
 
 =head1 FShell Change History
 
+=head2 Release 004 **NOT YET RELEASED**
+
+=over 5
+
+=item *
+
+Added fshell_stdioserver.exe and start-stdio.script to present an fshell-aware replacement for PIPS's stdioserver.exe.
+
+=item *
+
+Fixed crash when running fshell --console defcons from within an fshell session
+
+=back
+
 =head2 Release 003
 
 =head3 Highlights

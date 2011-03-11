@@ -47,7 +47,6 @@ public: // From CColorConsoleBase
 	virtual void SetTextAttribute(TTextAttribute aAttribute);
 
 private:
-	TInt CreateNewConsole(const TDesC& aTitle, TSize aSize);
 	TInt FindClientThreadId(TThreadId& aThreadId);
 	static TBool HeapWalk(TAny* aSelf, RAllocatorHelper::TCellType aCellType, TLinAddr aCellPtr, TInt aCellLength);
 private:

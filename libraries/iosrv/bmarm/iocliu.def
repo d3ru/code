@@ -532,7 +532,7 @@ EXPORTS
 	ExtensionVersion__CQ27IoUtils20MCommandExtensionsV2 @ 531 NONAME R3UNUSED ; IoUtils::MCommandExtensionsV2::ExtensionVersion(void) const
 	ExternalizeLC__CQ27IoUtils12CEnvironment @ 532 NONAME R3UNUSED ; IoUtils::CEnvironment::ExternalizeLC(void) const
 	GetKeysL__CQ27IoUtils12CEnvironmentRt13RPointerArray1Z7HBufC16 @ 533 NONAME R3UNUSED ; IoUtils::CEnvironment::GetKeysL(RPointerArray<HBufC16> &) const
-	IoSession__C12TIoHandleSet @ 534 NONAME R3UNUSED ; TIoHandleSet::IoSession(void) const
+	IoSession__12TIoHandleSet @ 534 NONAME R3UNUSED ; TIoHandleSet::IoSession(void)
 	KeyPressed__Q27IoUtils20MCommandExtensionsV2UiUi @ 535 NONAME R3UNUSED ; IoUtils::MCommandExtensionsV2::KeyPressed(unsigned int, unsigned int)
 	Normalize__Q27IoUtils10TFileName2R3RFs @ 536 NONAME R3UNUSED ; IoUtils::TFileName2::Normalize(RFs &)
 	ReadKey__Q27IoUtils12CCommandBase @ 537 NONAME R3UNUSED ; IoUtils::CCommandBase::ReadKey(void)
@@ -541,9 +541,9 @@ EXPORTS
 	SetCif__Q27IoUtils12CCommandBaseRCQ27IoUtils16CCommandInfoFile @ 540 NONAME R3UNUSED ; IoUtils::CCommandBase::SetCif(IoUtils::CCommandInfoFile const &)
 	SetExtension__Q27IoUtils12CCommandBasePQ27IoUtils20MCommandExtensionsV1 @ 541 NONAME R3UNUSED ; IoUtils::CCommandBase::SetExtension(IoUtils::MCommandExtensionsV1 *)
 	SetLocalL__Q27IoUtils12CEnvironmentRC7TDesC16 @ 542 NONAME R3UNUSED ; IoUtils::CEnvironment::SetLocalL(TDesC16 const &)
-	Stderr__C12TIoHandleSet @ 543 NONAME R3UNUSED ; TIoHandleSet::Stderr(void) const
-	Stdin__C12TIoHandleSet @ 544 NONAME R3UNUSED ; TIoHandleSet::Stdin(void) const
-	Stdout__C12TIoHandleSet @ 545 NONAME R3UNUSED ; TIoHandleSet::Stdout(void) const
+	Stderr__12TIoHandleSet @ 543 NONAME R3UNUSED ; TIoHandleSet::Stderr(void)
+	Stdin__12TIoHandleSet @ 544 NONAME R3UNUSED ; TIoHandleSet::Stdin(void)
+	Stdout__12TIoHandleSet @ 545 NONAME R3UNUSED ; TIoHandleSet::Stdout(void)
 	StringifyError__CQ27IoUtils20MCommandExtensionsV1i @ 546 NONAME R3UNUSED ; IoUtils::MCommandExtensionsV1::StringifyError(int) const
 	Type__CQ27IoUtils6TValue @ 547 NONAME R3UNUSED ; IoUtils::TValue::Type(void) const
 	ValuePtr__CQ27IoUtils6TValue @ 548 NONAME R3UNUSED ; IoUtils::TValue::ValuePtr(void) const
@@ -558,4 +558,8 @@ EXPORTS
 	Write__14RIoWriteHandleRC6TDesC8 @ 557 NONAME R3UNUSED ; RIoWriteHandle::Write(TDesC8 const &)
 	Write__14RIoWriteHandleRC6TDesC8R14TRequestStatus @ 558 NONAME R3UNUSED ; RIoWriteHandle::Write(TDesC8 const &, TRequestStatus &)
 	__Q27IoUtils13RChildProcess @ 559 NONAME R3UNUSED ; IoUtils::RChildProcess::RChildProcess(void)
+	Close__12TIoHandleSet @ 560 NONAME R3UNUSED ; TIoHandleSet::Close(void)
+	Create__12TIoHandleSetR10RIoSessionR10RIoConsoleRC7TDesC16RC5TSize @ 561 NONAME ; TIoHandleSet::Create(RIoSession &, RIoConsole &, TDesC16 const &, TSize const &)
+	OpenExisting__12TIoHandleSetR10RIoSessionG9TThreadIdi @ 562 NONAME ; TIoHandleSet::OpenExisting(RIoSession &, TThreadId, int)
+	__12TIoHandleSet @ 563 NONAME R3UNUSED ; TIoHandleSet::TIoHandleSet(void)
 

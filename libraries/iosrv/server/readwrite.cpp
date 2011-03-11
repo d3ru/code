@@ -1,6 +1,6 @@
 // readwrite.cpp
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -221,7 +221,15 @@ TInt CIoReadWriteObject::Open(TThreadId aOwningThread)
 		}
 	return err;
 	}
-	
+
+void CIoReadWriteObject::Attach(TThreadId aClient)
+	{
+	if (IsOwner(aClient))
+		{
+		iOpenedByOwner = ETrue; // This is so the logic in CIoServer::LastOpenedReadObj/LastOpenedWriteObj correctly can find a handle for a *created* console rather than an *opened* previously existing handle
+		}
+	}
+
 void CIoReadWriteObject::SetModeL(const RMsg& aMessage)
 	{
 	TInt mode(aMessage.Int0());
@@ -355,7 +363,7 @@ void CIoReadObject::DuplicateL(const CIoReadObject& aDuplicate)
 		}
 	}
 
-void CIoReadObject::AttachL(MIoReadEndPoint& aEndPoint, RIoEndPoint::TReadMode aMode)
+void CIoReadObject::AttachL(MIoReadEndPoint& aEndPoint, RIoEndPoint::TReadMode aMode, TThreadId aClient)
 	{
 	if (iEndPoint)
 		{
@@ -369,6 +377,7 @@ void CIoReadObject::AttachL(MIoReadEndPoint& aEndPoint, RIoEndPoint::TReadMode a
 		iEndPoint = NULL;
 		User::Leave(err);
 		}
+	if (aClient) CIoReadWriteObject::Attach(aClient);
 	}
 
 void CIoReadObject::SetReadMode(RIoReadHandle::TReadMode aMode)
@@ -1079,7 +1088,7 @@ void CIoWriteObject::DuplicateL(const CIoWriteObject& aDuplicate)
 	iIsStdErr = aDuplicate.iIsStdErr;
 	}
 
-void CIoWriteObject::AttachL(MIoWriteEndPoint& aEndPoint)
+void CIoWriteObject::AttachL(MIoWriteEndPoint& aEndPoint, TThreadId aClient)
 	{
 	if (iEndPoint)
 		{
@@ -1093,6 +1102,7 @@ void CIoWriteObject::AttachL(MIoWriteEndPoint& aEndPoint)
 		iEndPoint = NULL;
 		User::Leave(err);
 		}
+	if (aClient) CIoReadWriteObject::Attach(aClient);
 	}
 
 void CIoWriteObject::WriteL(const RMsg& aMessage)

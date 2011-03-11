@@ -1,6 +1,6 @@
 // readwrite.h
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -129,6 +129,7 @@ public:
 	TUint Id() const;
 	void SetOwnerL(TThreadId aOwningThread);
 	TInt Open(TThreadId aOwningThread);
+	void Attach(TThreadId aClient);
 	void DoDuplicateL(const CIoReadWriteObject& aDuplicate);
 	TBool IsOwner(TThreadId aOwningThread) const;
 	TBool OpenedByOwner() const;
@@ -157,7 +158,7 @@ public:
 	static CIoReadObject* NewLC(TInt aId);
 	virtual ~CIoReadObject();
 	void DuplicateL(const CIoReadObject& aDuplicate);
-	void AttachL(MIoReadEndPoint& aEndPoint, RIoEndPoint::TReadMode aMode);
+	void AttachL(MIoReadEndPoint& aEndPoint, RIoEndPoint::TReadMode aMode, TThreadId aClient = 0);
 	void SetReadMode(RIoReadHandle::TReadMode aMode);
 	void SetToForegroundL();
 	TBool IsForegroundL() const;
@@ -244,7 +245,7 @@ public:
 	static CIoWriteObject* NewLC(TInt aId);
 	~CIoWriteObject();
 	void DuplicateL(const CIoWriteObject& aDuplicate);
-	void AttachL(MIoWriteEndPoint& aEndPoint);
+	void AttachL(MIoWriteEndPoint& aEndPoint, TThreadId aClient = 0);
 	void WriteL(const RMsg& aMessage);
 	void WriteCancel(const CIoSession& aSession);
 	void CursorPosL(const RMsg& aMessage);

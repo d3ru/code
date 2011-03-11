@@ -1491,6 +1491,12 @@ void CCommandBase::DoCreateHandlesL(RIoConsole& aConsole, RIoConsoleReadHandle& 
 	name.Append(KStderr);
 	iIoSession.SetObjectNameL(aStderr.SubSessionHandle(), name);
 
+	// It is useful (but not strictly required) to claim these handles - that way legacy iocons/TIoHandleSet stuff can more easily find some handles to use
+	TThreadId me = RThread().Id();
+	aStdin.SetOwnerL(me);
+	aStdout.SetOwnerL(me);
+	aStderr.SetOwnerL(me);
+
 	aConsole.AttachL(aStdin, RIoEndPoint::EForeground);
 	aConsole.AttachL(aStdout);
 	aConsole.AttachL(aStderr);

@@ -3425,6 +3425,12 @@ CCmdVar::CCmdVar()
 void CCmdVar::DoRunL()
 	{
 	IoUtils::CEnvironment& env = Env();
+
+	if (iArg == NULL && iOperation != EDefined && iOperation != ENotDefined)
+		{
+		LeaveIfErr(KErrArgument, _L("Argument must be specified for this operation"));
+		}
+
 	switch (iOperation)
 		{
 		case EDefined:
@@ -3450,32 +3456,17 @@ void CCmdVar::DoRunL()
 				}
 			break;
 		case EEqual:
-			if (iArg == NULL)
-				{
-				Complete(KErrArgument, _L("Argument must be specified for == operation"));
-				}
-			else
-				{
-				SetErrorReported(ETrue); // To silence leaves.
-				Complete(!(env.GetAsDesL(*iVar1) == *iArg));
-				}
+			SetErrorReported(ETrue); // To silence leaves.
+			Complete(!(env.GetAsDesL(*iVar1) == *iArg));
 			break;
 		case ENotEqual:
-			if (iArg == NULL)
-				{
-				Complete(KErrArgument, _L("Argument must be specified for != operation"));
-				}
-			else
-				{
-				SetErrorReported(ETrue); // To silence leaves.
-				Complete(env.GetAsDesL(*iVar1) == *iArg);
-				}
+			SetErrorReported(ETrue); // To silence leaves.
+			Complete(env.GetAsDesL(*iVar1) == *iArg);
 			break;
 		case EAdd:
 		case ESubtract:
 		case EMultiply:
 			{
-			if (iArg == NULL) LeaveIfErr(KErrArgument, _L("Argument must be specified for add, subtract and multiply operations"));
 			TLex lex(*iArg);
 			TInt operand;
 			TInt err = lex.Val(operand);
@@ -3488,6 +3479,14 @@ void CCmdVar::DoRunL()
 			env.SetL(*iVar1, value);
 			break;
 			}
+		case EEndsWith:
+			SetErrorReported(ETrue);
+			Complete(!(env.GetAsDesL(*iVar1).Right(iArg->Length()) == *iArg));
+			break;
+		case EStartsWith:
+			SetErrorReported(ETrue);
+			Complete(!(env.GetAsDesL(*iVar1).Left(iArg->Length()) == *iArg));
+			break;
 		default:
 			User::Leave(KErrNotSupported);
 		}
@@ -3730,6 +3729,8 @@ void CCmdStart::DoRunL()
 		Write(_L("\r\n"));
 		}
 
+	if (iQuiet) SetErrorReported(ETrue);
+
 	if (iRendezvous)
 		{
 		LeaveIfErr(waitStatus.Int(), _L("Error returned from rendezvous"));
@@ -3761,11 +3762,13 @@ void CCmdStart::OptionsL(RCommandOptionList& aOptions)
 	_LIT(KOptWait, "wait");
 	_LIT(KOptTimeout, "timeout");
 	_LIT(KOptMeasure, "measure");
+	_LIT(KOptQuiet, "quiet");
 
 	aOptions.AppendBoolL(iRendezvous, KOptRendezvous);
 	aOptions.AppendBoolL(iWait, KOptWait);
 	aOptions.AppendIntL(iTimeout, KOptTimeout);
 	aOptions.AppendBoolL(iMeasure, KOptMeasure);
+	aOptions.AppendBoolL(iQuiet, KOptQuiet);
 	}
 
 

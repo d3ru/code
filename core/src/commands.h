@@ -740,6 +740,8 @@ private:
 		EAdd,
 		ESubtract,
 		EMultiply,
+		EStartsWith,
+		EEndsWith,
 		} iOperation;
 	HBufC* iVar1;
 	HBufC* iArg;
@@ -792,6 +794,7 @@ private:
 	HBufC* iExe;
 	HBufC* iCommandLine;
 	TBool iMeasure;
+	TBool iQuiet;
 	};
 
 

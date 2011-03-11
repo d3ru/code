@@ -1,6 +1,6 @@
 # find.cif
 # 
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -24,15 +24,33 @@ Searches the file system for files or directories matching the given conditions.
 
 ...to find all files in the current directory (including subdirectories) whose names end with C<.ini>. The results are printed to stdout.
 
-==argument filename path
+  find --one --path ?:\sys\bin\fshell.exe
 
-The directory to base the search in. Use C<.> to search in current directory.
+...to find the path to fshell.exe
+
+==argument filename search-base optional
+
+The directory to base the search in. Defaults to C<.> if not specified.
 
 ==option string n name
 
 Include files whose name (excluding path) matches the given pattern (according to C<TDesC::MatchF>).
 
+==option string p path
+
+Search for files whose path (including filename) matches the given pattern (according to C<TDesC::MatchF>). If the path starts with a wildcarded drive (ie "?:\") then all drives are searched in standard search order (Y: through A: then Z:), and the C<search-base> argument is ignored. Wildcards are only allowed in the drive letter and in the name (if given). Specifying a name on the end of the path is equivalent to using the C<--name> option.
+
+Currently paths starting "?:\" are the only ones supported; any other C<--path> argument will be ignored.
+
+==option bool 1 one
+
+Print only the first match, without terminating newline. Useful in scripts for piping to export -s.
+
 ==copyright
 
-Copyright (c) 2009-2010 Accenture. All rights reserved.
+Copyright (c) 2009-2011 Accenture. All rights reserved.
 
+==smoke-test
+
+find -1 --path ?:\resource\cif\fshell\find.* | export -s RESULT
+var RESULT endswith \resource\cif\fshell\find.cif || $Error

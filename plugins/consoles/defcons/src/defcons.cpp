@@ -165,7 +165,14 @@ TUint CDefaultConsole::KeyModifiers() const
 
 TInt CDefaultConsole::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
 	{
-	return ((CDefaultConsole*)iUnderlyingConsole)->Extension_(aExtensionId, a0, a1); // Evil cast to work around the fact that Extension_ is protected in CConsoleBase.
+	if (iUnderlyingConsole)
+		{
+		return ((CBaseExtensionDummy*)iUnderlyingConsole)->Extension_(aExtensionId, a0, a1);
+		}
+	else
+		{
+		return KErrExtensionNotSupported;
+		}
 	}
 
 TInt CDefaultConsole::DoCreate()

@@ -1,6 +1,6 @@
 # start.cif
 # 
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -19,6 +19,10 @@ Starts the specified process and then completely disowns it.
 ==long-description
 
 This is useful in the situation where you want the process to have a longer lifetime than the L<fshell|fshell> instance that created it. Note the child process does not inherit fshell's I/O handles or environment variables.
+
+Note that non-fshell-aware programs may still end up connected to the same I/O handles even though the start command has disowned it, because of the necessarily agressive handle-hunting code in TIoHandleSet::OpenExisting(). If it is necessary to be completely detached you can use defcons and the (unsupported, undocumented) C<--console-flags> lazy instanciation flag:
+
+  fshell --console defcons --console-flags 2 --exec '<command>'
 
 ==see-also
 
@@ -48,7 +52,11 @@ Only relevant with either C<--rendezvous> or C<--wait>. Causes the command to ab
 
 If specified, measure the time taken for the child process to rendezvous (if C<--rendezvous> is specified) or exit (if C<--wait> is specified). This can be more accurate than using the fshell L<time|time> command if C<exe-name> is not an fshell command, because start doesn't attempt to parse its arguments as an fshell command line (adding the overhead of variable expansion, pipeline establishment etc) or to set up iosrv connections for the child process.
 
+==option bool q quiet
+
+If specified, do not print an error message if the rendezvous or wait return an error. Only applicable if C<--rendezvous> or C<--wait> were specified.
+
 ==copyright
 
-Copyright (c) 2006-2010 Accenture. All rights reserved.
+Copyright (c) 2006-2011 Accenture. All rights reserved.
 

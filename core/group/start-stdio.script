@@ -1,0 +1,33 @@
+#!fshell
+# start-stdio.script
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+# Shutdown PIPS stdioserver if running
+kill -am stdioserver.exe*
+
+# Tell Qt to use stdout rather than RDebug::Print()
+mkdir -a c:\system\data\
+touch c:\system\data\qtusestdout
+
+start --quiet --rendezvous fshell_stdioserver.exe || export ERR "$?"
+var ERR defined && var ERR != "-11" && error $ERR "Couldn't start fshell_stdioserver.exe"
+
+exit
+
+==name start-stdio
+
+==short-description
+
+Kill the PIPS stdioserver if running and launch the fshell one instead (if not already running).
+
+==long-description
+

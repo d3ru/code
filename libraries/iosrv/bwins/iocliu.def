@@ -529,10 +529,10 @@ EXPORTS
 	?CreateEnvironmentL@CCommandBase@IoUtils@@IAEXPAVCEnvironment@2@@Z @ 528 NONAME ; void IoUtils::CCommandBase::CreateEnvironmentL(class IoUtils::CEnvironment *)
 	?AllSet@RCommandArgumentList@IoUtils@@QBEHXZ @ 529 NONAME ; int IoUtils::RCommandArgumentList::AllSet(void) const
 	?Session@RIoHandle@@QBE?AVRIoSession@@XZ @ 530 NONAME ; class RIoSession RIoHandle::Session(void) const
-	?Stdout@TIoHandleSet@@QBEAAVRIoWriteHandle@@XZ @ 531 NONAME ; class RIoWriteHandle & TIoHandleSet::Stdout(void) const
-	?IoSession@TIoHandleSet@@QBEAAVRIoSession@@XZ @ 532 NONAME ; class RIoSession & TIoHandleSet::IoSession(void) const
-	?Stdin@TIoHandleSet@@QBEAAVRIoReadHandle@@XZ @ 533 NONAME ; class RIoReadHandle & TIoHandleSet::Stdin(void) const
-	?Stderr@TIoHandleSet@@QBEAAVRIoWriteHandle@@XZ @ 534 NONAME ; class RIoWriteHandle & TIoHandleSet::Stderr(void) const
+	?Stdout@TIoHandleSet@@QAEAAVRIoWriteHandle@@XZ @ 531 NONAME ; class RIoWriteHandle & TIoHandleSet::Stdout(void)
+	?IoSession@TIoHandleSet@@QAEAAVRIoSession@@XZ @ 532 NONAME ; class RIoSession & TIoHandleSet::IoSession(void)
+	?Stdin@TIoHandleSet@@QAEAAVRIoReadHandle@@XZ @ 533 NONAME ; class RIoReadHandle & TIoHandleSet::Stdin(void)
+	?Stderr@TIoHandleSet@@QAEAAVRIoWriteHandle@@XZ @ 534 NONAME ; class RIoWriteHandle & TIoHandleSet::Stderr(void)
 	?GetKeysL@CEnvironment@IoUtils@@QBEXAAV?$RPointerArray@VHBufC16@@@@@Z @ 535 NONAME ; void IoUtils::CEnvironment::GetKeysL(class RPointerArray<class HBufC16> &) const
 	?RemoveAll@CEnvironment@IoUtils@@QAEXXZ @ 536 NONAME ; void IoUtils::CEnvironment::RemoveAll(void)
 	?ExternalizeLC@CEnvironment@IoUtils@@QBEPAVHBufC8@@XZ @ 537 NONAME ; class HBufC8 * IoUtils::CEnvironment::ExternalizeLC(void) const
@@ -558,4 +558,8 @@ EXPORTS
 	?Write@RIoWriteHandle@@QAEHABVTDesC8@@@Z @ 557 NONAME ; int RIoWriteHandle::Write(class TDesC8 const &)
 	?Write@RIoWriteHandle@@QAEXABVTDesC8@@AAVTRequestStatus@@@Z @ 558 NONAME ; void RIoWriteHandle::Write(class TDesC8 const &, class TRequestStatus &)
 	?Read@RIoReadHandle@@QAEHAAVTDes8@@@Z @ 559 NONAME ; int RIoReadHandle::Read(class TDes8 &)
+	?OpenExisting@TIoHandleSet@@QAEHAAVRIoSession@@VTThreadId@@H@Z @ 560 NONAME ; int TIoHandleSet::OpenExisting(class RIoSession &, class TThreadId, int)
+	?Close@TIoHandleSet@@QAEXXZ @ 561 NONAME ; void TIoHandleSet::Close(void)
+	?Create@TIoHandleSet@@QAEHAAVRIoSession@@AAVRIoConsole@@ABVTDesC16@@ABVTSize@@@Z @ 562 NONAME ; int TIoHandleSet::Create(class RIoSession &, class RIoConsole &, class TDesC16 const &, class TSize const &)
+	??0TIoHandleSet@@QAE@XZ @ 563 NONAME ; TIoHandleSet::TIoHandleSet(void)
 
