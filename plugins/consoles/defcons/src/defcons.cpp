@@ -167,7 +167,7 @@ TInt CDefaultConsole::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
 	{
 	if (iUnderlyingConsole)
 		{
-		return ((CBaseExtensionDummy*)iUnderlyingConsole)->Extension_(aExtensionId, a0, a1);
+		return ((CBaseExtensionDummy*)iUnderlyingConsole)->CallExtension_(aExtensionId, a0, a1);
 		}
 	else
 		{

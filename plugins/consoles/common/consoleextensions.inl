@@ -15,6 +15,11 @@ class CBaseExtensionDummy : public CBase
 	{
 public:
 	using CBase::Extension_;
+	// Workaround for weird RVCT compiler error in defcons when trying to use Extension_ directly
+	inline TInt CallExtension_(TInt aArg, TAny*& a1, TAny* a2)
+		{
+		return Extension_(aArg, a1, a2);
+		}
 	};
 
 TInt ConsoleMode::Set(CBase* aConsole, ConsoleMode::TMode aMode)
