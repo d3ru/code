@@ -69,6 +69,20 @@ TInt32 ToBigEndian(TInt32 aVal)
 	return (TInt32)ToBigEndian((TUint32)aVal);
 	}
 
+TInt GetInt(const TAny* aPtr)
+	{
+	TInt result;
+	memcpy(&result, aPtr, 4);
+	return result;
+	}
+
+TUint16 GetUint16(const TAny* aPtr)
+	{
+	TUint16 result;
+	memcpy(&result, aPtr, 2);
+	return result;
+	}
+
 CCommandBase* CCmdMuxserver::NewLC()
 	{
 	CCmdMuxserver* self = new(ELeave) CCmdMuxserver();
@@ -497,7 +511,7 @@ void CCmdMuxserver::HandleCommand(TInt aCmd, const TDesC8& aPayload)
 			}
 
 		TInt n = iMuxServer->CountSessions();
-		TBool createIfNecessary = *(TBool*)aPayload.Ptr();
+		TBool createIfNecessary = GetInt(aPayload.Ptr());
 		if (n == 0 && createIfNecessary)
 			{
 			iListOnNextCreate = ETrue;
@@ -511,7 +525,7 @@ void CCmdMuxserver::HandleCommand(TInt aCmd, const TDesC8& aPayload)
 		}
 	case EConsoleShouldClose:
 		{
-		TInt id = *(TInt32*)aPayload.Ptr();
+		TInt id = GetInt(aPayload.Ptr());
 		CMuxSession* session = iMuxServer->SessionForId(id);
 		if (session != NULL)
 			{
@@ -611,9 +625,12 @@ void CCmdMuxserver::HandleCommand(TInt aCmd, const TDesC8& aPayload)
 	default:
 		if (aCmd == ELaunchProcess || aCmd <= ECustomCommandBase)
 			{
-			TUint16 procLen = *(TUint16*)aPayload.Ptr();
-			TPtrC16 procName((TUint16*)(aPayload.Ptr() + 2), procLen);
-			TPtrC16 args((TUint16*)(aPayload.Ptr() + 2 + procLen*2), (aPayload.Length()/2) - 1 - procLen);
+			TUint16 procLen = GetUint16(aPayload.Ptr());
+			TInt argsLen = (aPayload.Length()/2) - 1 - procLen;
+			// Copy into output buf temporarily, to guarantee alignment.
+			memcpy((void*)iOutputBuf.Ptr(), aPayload.Ptr() + 2, aPayload.Length()-2);
+			TPtrC16 procName((TUint16*)(iOutputBuf.Ptr()), procLen);
+			TPtrC16 args(((TUint16*)iOutputBuf.Ptr()) + procLen, argsLen);
 
 			if (aCmd == ELaunchProcess)
 				{

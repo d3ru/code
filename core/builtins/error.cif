@@ -20,10 +20,10 @@ Exits with the given error. Useful in scripts.
 
 This command exits with the given error and optionally prints the specified text to stderr. This is useful to abort scripts, for example as a precondition check:
 
-	# Some setup...
-	var SOMEVARIABLE not-defined && error -6 "The variable SOMEVARIABLE must be defined before you run this script"
-	
-	# Rest of script...
+    # Some setup...
+    var SOMEVARIABLE not-defined && error -6 "The variable SOMEVARIABLE must be defined before you run this script"
+    
+    # Rest of script...
 
 ==argument int error-number optional
 
@@ -36,4 +36,3 @@ If specified, prints the given text to stderr before exiting.
 ==copyright
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
-

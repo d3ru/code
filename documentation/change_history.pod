@@ -24,7 +24,11 @@ Added fshell_stdioserver.exe and start-stdio.script to present an fshell-aware r
 
 =item *
 
-Fixed crash when running fshell --console defcons from within an fshell session
+Fixed crash when running fshell --console defcons from within an fshell session.
+
+=item *
+
+Fixed muxserver crash on hardware that enforces aligned memory accesses.
 
 =back
 
