@@ -74,6 +74,7 @@ void CStdioSession::ServiceL(const RMessage2& aMessage)
 		{
 	case EWrite:
 		{
+		iBuf.Zero();
 		iBuf.ReAllocL(aMessage.Int1());
 		aMessage.ReadL(0, iBuf);
 		iBuf.ReAllocL(iBuf.Length() * 2);

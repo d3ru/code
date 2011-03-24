@@ -1,0 +1,29 @@
+# qpluginloader.cif
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name qpluginloader
+
+==short-description
+
+Test loading a plugin using QPluginLoader.
+
+==long-description
+
+Only available if FSHELL_QT_SUPPORT is defined.
+
+==argument filename filename
+
+The plugin to attempt to load (as a path into \resource\qt\plugin).
+
+==copyright
+
+Copyright (c) 2011 Accenture. All rights reserved.

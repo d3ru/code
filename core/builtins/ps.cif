@@ -32,10 +32,6 @@ Verbose output. Prints warnings if threads couldn't be opened, and displays full
 
 A pattern used to match processes by name (defaults to C<*>).
 
-==option string M matchify
-
-Like C<--match> but without the need for leading/trailing asterisks (see C<LtkUtils::Matchify>).
-
 ==option bool H human
 
 Print human readable sizes.
@@ -62,7 +58,7 @@ Print kernel object addresses.
 
 ==option bool t threads
 
-Print thread information.
+Print thread information. This option uses the TFindThread API, and therefore cannot show local (anonymous) threads.
 
 ==option bool s stacks
 
@@ -78,7 +74,7 @@ Print thread CPU time (only valid with the C<--thread> option).
 
 ==option bool k chunks
 
-Print details about the chunks belonging to each process.
+Print details about the chunks belonging to each process. This option uses the TFindChunk API, and therefore can only list Global chunks. It will not show local chunks.
 
 ==option bool f filename
 

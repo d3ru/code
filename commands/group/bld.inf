@@ -480,3 +480,10 @@ PRJ_EXPORTS
 PRJ_MMPFILES
 ..\ost\ost.mmp
 #endif
+
+#ifdef FSHELL_QT_SUPPORT
+PRJ_EXPORTS
+..\qpluginloader\qpluginloader.cif           z:\resource\cif\fshell\qpluginloader.cif
+PRJ_MMPFILES
+..\qpluginloader\qpluginloader.mmp
+#endif

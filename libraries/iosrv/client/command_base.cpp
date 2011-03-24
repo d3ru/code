@@ -2412,7 +2412,7 @@ void CCommandBase::SetValueL(TLex& aLex, TValue& aValue)
 					}
 				else
 					{
-					HBufC* string = ReadStringLC(aLex, (aValue.ValueType() & KValueTypeFlagLast) ? 0 : EDisallowLeadingHyphen);
+					HBufC* string = ReadStringLC(aLex, 0); //(aValue.ValueType() & KValueTypeFlagLast) ? 0 : EDisallowLeadingHyphen);
 					aValue.SetValueL(string);
 					CleanupStack::Pop(string);
 					}

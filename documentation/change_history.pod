@@ -30,6 +30,10 @@ Fixed crash when running fshell --console defcons from within an fshell session.
 
 Fixed muxserver crash on hardware that enforces aligned memory accesses.
 
+=item *
+
+Added L<qpluginloader|commands::qpluginloader> command.
+
 =back
 
 =head2 Release 003

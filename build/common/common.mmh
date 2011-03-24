@@ -620,6 +620,7 @@
 #define FSHELL_UID_OST                        0x10286F92
 #define FSHELL_UID_IOCLI_QT                   0x10286F93
 #define FSHELL_UID_STDIOSERVER                0x10286F94
+#define FSHELL_UID_QPLUGINLOADER              0x10286F95
 
 #else // Not FSHELL_PROTECTED_UIDS
 
@@ -781,6 +782,7 @@
 #define FSHELL_UID_OST                        0xE0286F92
 #define FSHELL_UID_IOCLI_QT                   0xE0286F93
 #define FSHELL_UID_STDIOSERVER                0xE0286F94
+#define FSHELL_UID_QPLUGINLOADER              0xE0286F95
 
 #endif // FSHELL_PROTECTED_UIDS
 
