@@ -968,6 +968,11 @@ private:
 	TUint iThreadId;
 	TBool iAll;
 	HBufC* iMatch;
+
+	// Reduce stack usage
+	TFindThread iThreadFinder;
+	TFindProcess iProcessFinder;
+	TObjectKernelInfo iTempObjectInfo; // Only for use by PrintObjectDetailsL
 	};
 
 #endif

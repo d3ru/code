@@ -4538,12 +4538,11 @@ void CCmdObjInfo::PrintObjectDetailsL(TUint aObjectAddress)
 	TInt err = iMemAccess.GetObjectType((TUint8*)aObjectAddress, objectType);
 	if (err == KErrNone)
 		{
-		TObjectKernelInfo objectInfo;
-		TPckg<TObjectKernelInfo> objectInfoPckg(objectInfo);
+		TPckg<TObjectKernelInfo> objectInfoPckg(iTempObjectInfo);
 		err = iMemAccess.GetObjectInfo(objectType, (TUint8*)(aObjectAddress), objectInfoPckg);
 		if (err == KErrNone)
 			{
-			DoPrintObjectDetailsL(objectType, objectInfo);
+			DoPrintObjectDetailsL(objectType, iTempObjectInfo);
 			}
 		else
 			{
@@ -4558,9 +4557,11 @@ void CCmdObjInfo::PrintObjectDetailsL(TUint aObjectAddress)
 
 void CCmdObjInfo::DoPrintObjectDetailsL(TObjectType aType, const TObjectKernelInfo& aInfo)
 	{
-	TFullName fullName;
+	LtkUtils::RLtkBuf fullName;
+	fullName.CreateLC(aInfo.iFullName.Length());
 	fullName.Copy(aInfo.iFullName);
 	Printf(_L("0x%08x %2d %S (type=%d) %S\r\n"), aInfo.iAddressOfKernelObject, aInfo.iAccessCount, StringifyObjectType(aType), aType, &fullName);
+	CleanupStack::PopAndDestroy(&fullName);
 
 	if (iReferencers)
 		{
@@ -4689,12 +4690,12 @@ void CCmdObjInfo::DoRunL()
 			Write(_L("\r\n"));
 
 			processName.Append(_L("*"));
-			TFindThread threadFinder(processName);
+			iThreadFinder.Find(processName);
 			RThread thread;
 			TFullName threadName;
-			while (threadFinder.Next(threadName) == KErrNone)
+			while (iThreadFinder.Next(threadName) == KErrNone)
 				{
-				TInt err = thread.Open(threadFinder, EOwnerThread);
+				TInt err = thread.Open(iThreadFinder, EOwnerThread);
 				if (err)
 					{
 					continue;
@@ -4715,34 +4716,38 @@ void CCmdObjInfo::DoRunL()
 		}
 	else if (iMatch)
 		{
-		TFindProcess findProc(*iMatch);
+		iProcessFinder.Find(*iMatch);
 		TFullName name;
-		while (findProc.Next(name) == KErrNone)
+		TProcessKernelInfo* procInfo = new(ELeave) TProcessKernelInfo;
+		CleanupStack::PushL(procInfo);
+		while (iProcessFinder.Next(name) == KErrNone)
 			{
-			TProcessKernelInfo objectInfo;
-			TPckg<TProcessKernelInfo> objectInfoPckg(objectInfo);
+			TPckg<TProcessKernelInfo> objectInfoPckg(*procInfo);
 			TInt err = iMemAccess.GetObjectInfo(EProcess, name, objectInfoPckg);
 			if (err) continue; // Ignore if, say, the process has already dissappeared
-			DoPrintObjectDetailsL(EProcess, objectInfo);
+			DoPrintObjectDetailsL(EProcess, *procInfo);
 
 			Printf(_L("Objects owned by process \"%S\":\r\n"), &name);
-			PrintReferencedObjectDetailsL(EOwnerProcess, objectInfo.iProcessId);
+			PrintReferencedObjectDetailsL(EOwnerProcess, procInfo->iProcessId);
 			Write(_L("\r\n"));
 			}
+		CleanupStack::PopAndDestroy(procInfo);
 
-		TFindThread findThread(*iMatch);
-		while (findThread.Next(name) == KErrNone)
+		iThreadFinder.Find(*iMatch);
+		TThreadKernelInfo* threadInfo = new(ELeave) TThreadKernelInfo;
+		CleanupStack::PushL(threadInfo);
+		while (iThreadFinder.Next(name) == KErrNone)
 			{
-			TThreadKernelInfo objectInfo;
-			TPckg<TThreadKernelInfo> objectInfoPckg(objectInfo);
+			TPckg<TThreadKernelInfo> objectInfoPckg(*threadInfo);
 			TInt err = iMemAccess.GetObjectInfo(EThread, name, objectInfoPckg);
 			if (err) continue; // Ignore if, say, the process has already dissappeared
-			DoPrintObjectDetailsL(EThread, objectInfo);
+			DoPrintObjectDetailsL(EThread, *threadInfo);
 
 			Printf(_L("Objects owned by thread \"%S\":\r\n"), &name);
-			PrintReferencedObjectDetailsL(EOwnerThread, objectInfo.iThreadId);
+			PrintReferencedObjectDetailsL(EOwnerThread, threadInfo->iThreadId);
 			Write(_L("\r\n"));
 			}
+		CleanupStack::PopAndDestroy(threadInfo);
 		}
 	}
 

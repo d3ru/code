@@ -32,6 +32,10 @@ Fixed muxserver crash on hardware that enforces aligned memory accesses.
 
 =item *
 
+Fixed stack overflow in objinfo command (bug 3188256). For some time objinfo had been non-functional on all but WINS builds.
+
+=item *
+
 Added L<qpluginloader|commands::qpluginloader> command.
 
 =back
