@@ -46,6 +46,7 @@ private:
 	void AppendExternalCommandsL(const TUidType& aUidType, const TDesC& aExtension);
 	void AppendExternalCifCommandsL();
 	void DoAppendExternalCommandL(const TEntry& aEntry, TInt aUid);
+	void AppendExternalScriptCommandsL();
 	void WaitLC() const;
 	TInt FindCommandL(const TDesC& aCommandName);
 	MCommand* DoCreateCommandL(const TDesC& aCommandName, const TDesC& aArguments, RProcess& aProcess);

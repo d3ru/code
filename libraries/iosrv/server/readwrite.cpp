@@ -1113,7 +1113,13 @@ void CIoWriteObject::WriteL(const RMsg& aMessage)
 	iWriteMessage = aMessage;
 	iOffset = 0;
 	iWriteLength = DesLengthL(iWriteMessage, 0);
-	WriteEndPoint()->IowepWriteL(*this);
+	TRAPD(err, WriteEndPoint()->IowepWriteL(*this));
+	if (err)
+		{
+		// Caller will complete the message
+		iWriteMessage = RMsg();
+		User::Leave(err);
+		}
 	}
 
 void CIoWriteObject::WriteCancel(const CIoSession& aSession)

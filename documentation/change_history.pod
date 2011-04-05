@@ -12,11 +12,35 @@
 
 __END__
 
-=head1 FShell Change History
+=head1 fshell Change History
 
-=head2 Release 004 **NOT YET RELEASED**
+=head2 Release 004
+
+=head3 New features
 
 =over 5
+
+=item *
+
+Added support for conditional L<if|commands::if> statements in fshell scripts. Usage:
+
+    if var ERR == 0
+        echo "No error"
+    else
+        echo "Error $ERR occurred."
+    endif
+
+=item *
+
+Added support for L<while|commands::while> loops. Usage:
+
+    export I 0
+    while var I != 10
+        echo "Loop iteration $I"
+        var I add 1
+    endwhile
+
+L<break|commands::break> and L<continue|commands::continue> commands are also supported, with C-style semantics.
 
 =item *
 
@@ -24,7 +48,27 @@ Added fshell_stdioserver.exe and start-stdio.script to present an fshell-aware r
 
 =item *
 
-Fixed crash when running fshell --console defcons from within an fshell session.
+Scripts located in F<\system\console\scripts\> are now first-class objects from the point of view of the command-line interpreter. This means you can launch a script by typing just the script name, without needing to prepend it with C<fshell>. Assuming a script called c:\system\console\scripts\myscript.script, the following are equivalent:
+
+    c:\>fshell c:\system\console\scripts\myscript.script
+    c:\>fshell myscript.script
+    c:\>fshell myscript
+    c:\>myscript.script
+    c:\>myscript
+
+=item *
+
+Added L<qpluginloader|commands::qpluginloader> command. Added more comparison operations to var command. Added skip operation ('z') to debug command. Improved syntax of version command.
+
+=back
+
+=head3 Bugfixes
+
+=over 5
+
+=item *
+
+Fixed crash when running C<fshell --console defcons> from within an fshell session.
 
 =item *
 
@@ -36,7 +80,11 @@ Fixed stack overflow in objinfo command (bug 3188256). For some time objinfo had
 
 =item *
 
-Added L<qpluginloader|commands::qpluginloader> command.
+Symbols for the current EXEs codeseg were not being displayed in fdb's "stack" command unless "stack all" was specified. Fixed. Also improved display of non-symbol data in "stack all" format.
+
+=item *
+
+Reporting of errors from console creation now correctly reflected in fshell's return code. Added warning if a CCommandBase::Printf() format string overflows.
 
 =back
 

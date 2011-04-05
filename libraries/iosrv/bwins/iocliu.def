@@ -562,4 +562,6 @@ EXPORTS
 	?Close@TIoHandleSet@@QAEXXZ @ 561 NONAME ; void TIoHandleSet::Close(void)
 	?Create@TIoHandleSet@@QAEHAAVRIoSession@@AAVRIoConsole@@ABVTDesC16@@ABVTSize@@@Z @ 562 NONAME ; int TIoHandleSet::Create(class RIoSession &, class RIoConsole &, class TDesC16 const &, class TSize const &)
 	??0TIoHandleSet@@QAE@XZ @ 563 NONAME ; TIoHandleSet::TIoHandleSet(void)
+	?ExtensionVersion@MCommandExtensionsV3@IoUtils@@UBE?AW4TCommandExtensionVersion@2@XZ @ 564 NONAME ; enum IoUtils::TCommandExtensionVersion IoUtils::MCommandExtensionsV3::ExtensionVersion(void) const
+	?Extension@CCommandBase@IoUtils@@QBEPAVMCommandExtensionsV1@2@XZ @ 565 NONAME ; class IoUtils::MCommandExtensionsV1 * IoUtils::CCommandBase::Extension(void) const
 

@@ -85,6 +85,13 @@ FSHELL_ROM_INCLUDE(fshell_core.iby)
 ..\builtins\undertaker.cif        z:\resource\cif\fshell\undertaker.cif
 ..\builtins\ciftest.cif           z:\resource\cif\fshell\ciftest.cif
 ..\builtins\whoami.cif            z:\resource\cif\fshell\whoami.cif
+..\builtins\while.cif             z:\resource\cif\fshell\while.cif
+..\builtins\endwhile.cif          z:\resource\cif\fshell\endwhile.cif
+..\builtins\break.cif             z:\resource\cif\fshell\break.cif
+..\builtins\continue.cif          z:\resource\cif\fshell\continue.cif
+..\builtins\if.cif                z:\resource\cif\fshell\if.cif
+..\builtins\else.cif              z:\resource\cif\fshell\else.cif
+..\builtins\endif.cif             z:\resource\cif\fshell\endif.cif
 
 #ifdef FSHELL_CORE_SUPPORT_CHUNKINFO
 ..\builtins\chunkinfo.cif         z:\resource\cif\fshell\chunkinfo.cif

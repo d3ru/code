@@ -1,6 +1,6 @@
 // pipe_line.h
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -81,21 +81,20 @@ private:
 class CPipeLine : public CBase, public MCommandObserver
 	{
 public:
-	static CPipeLine* NewL(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, const RArray<RPipeSection>& aPipeSections, TBool aBackground, MPipeLineObserver* aObserver, TError& aErrorContext);
-	static CPipeLine* NewLC(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, const RArray<RPipeSection>& aPipeSections, TBool aBackground, MPipeLineObserver* aObserver, TError& aErrorContext);
+	static CPipeLine* NewL(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, const RArray<RPipeSection>& aPipeSections, TBool aBackground, MPipeLineObserver* aObserver, TError& aErrorContext, MConditionalBlock* aCurrentBlock);
+	static CPipeLine* NewLC(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, const RArray<RPipeSection>& aPipeSections, TBool aBackground, MPipeLineObserver* aObserver, TError& aErrorContext, MConditionalBlock* aCurrentBlock);
 	~CPipeLine();
 	void Kill();
 	TInt Suspend();
 	TInt Resume();
 	TInt BringToForeground();
 	void SendToBackground();
-	const TDesC& Name() const;
 	TInt Reattach(RIoEndPoint& aStdinEndPoint, RIoEndPoint& aStdoutEndPoint, RIoEndPoint& aStderrEndPoint);
 	TBool IsDisownable() const;
 	void Disown();
 private:
 	CPipeLine(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MPipeLineObserver* aObserver);
-	void ConstructL(const RArray<RPipeSection>& aPipeSections, TBool aBackground, TError& aErrorContext);
+	void ConstructL(const RArray<RPipeSection>& aPipeSections, TBool aBackground, TError& aErrorContext, MConditionalBlock* aCurrentBlock);
 	static TInt CompletionCallBack(TAny* aSelf);
 private:	// From MCommandObserver.
 	virtual void HandleCommandComplete(MCommand& aCommand, TInt aError);

@@ -1,6 +1,6 @@
 // ioutils.h
 // 
-// Copyright (c) 2005 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2005 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -23,6 +23,8 @@
 #include <fshell/line_editor_observer.h>
 
 class CColorConsoleBase;
+class MConditionalBlock;
+class MControlStatement;
 
 namespace IoUtils
 	{
@@ -109,12 +111,15 @@ class CCommandCompleter;
 class MLineReader;
 class CKeypressWatcher;
 
+
+// Deprecated. Any new code should consider LtkUtils::TOverflowDetect instead
 class TOverflowTruncate : public TDes16Overflow
 	{
 public:
 	virtual void Overflow(TDes16&) {}
 	};
 
+// Deprecated. Any new code should consider LtkUtils::TOverflowDetect8 instead
 class TOverflowTruncate8 : public TDes8Overflow
 	{
 public:
@@ -650,6 +655,7 @@ enum TCommandExtensionVersion
 	{
 	ECommandExtensionV1 = 1,
 	ECommandExtensionV2 = 2,
+	ECommandExtensionV3 = 3,
 	};
 
 class MCommandExtensionsV1
@@ -670,6 +676,15 @@ public:
 
 	// Override this and set the ECaptureCtrlC flag to get a callback for custom cleanup when ctrl-c is pressed
 	IMPORT_C virtual void CtrlCPressed();
+	};
+
+class MCommandExtensionsV3 : public MCommandExtensionsV2
+	{
+public:
+	IMPORT_C virtual TCommandExtensionVersion ExtensionVersion() const; // Don't override this yourself!
+	// These are used internally by fshell
+	virtual MConditionalBlock* IsConditionalBlockCommand() { return NULL; }
+	virtual MControlStatement* IsControlStatement() { return NULL; }
 	};
 
 class CCommandBase : public CActive
@@ -738,6 +753,7 @@ public:
 	IMPORT_C void PageL(const CTextBuffer& aText);
 	IMPORT_C void PageL(RIoReadHandle& aInput);
 	IMPORT_C TBool UsingCif() const;
+	IMPORT_C MCommandExtensionsV1* Extension() const;
 
 public:
 	virtual const TDesC& Name() const = 0;

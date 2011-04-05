@@ -25,6 +25,8 @@
 #include "ymodem.h"
 #include "version.h"
 #include "ciftest.h"
+#include "while.h"
+#include "if_command.h"
 #include "worker_thread.h"
 
 //
@@ -167,6 +169,18 @@ MCommand* CCommandFactory::DoCreateCommandL(const TDesC& aCommandName, const TDe
 		// (3) The user spelled it out for us.
 		return CProcessCommand::NewL(aCommandName);
 		}
+	else if (aCommandName.Right(KScriptSuffix().Length()).CompareF(KScriptSuffix) == 0)
+		{
+		// (3a) ditto
+		return CScriptCommandWrapper::NewL(aCommandName);
+		}
+
+	// See if it's a script
+	if (CScriptCommandWrapper::ScriptExists(iFs, aCommandName))
+		{
+		// (4) it's a script in \system\console\scripts
+		return CScriptCommandWrapper::NewL(aCommandName);
+		}
 
 	// Next, see if it's a process command prefixed with "fshell_".
 	TFileName commandName(KFshellPrefix);
@@ -252,7 +266,7 @@ void CCommandFactory::ConstructL()
 	User::LeaveIfError(iFs.DriveList(iDriveList));
 	iThreadPool = CThreadPool::NewL();
 
-	AddThreadCommandL(CCmdExit::NewLC); // Note, this command should never execute as 'exit' has handled explicitly by CParser. It exists so that 'exit' appears in fshell's help list and also to support 'exit --help'.
+	AddThreadCommandL(CCmdExit::NewLC); // Note, this command should never execute as 'exit' is handled explicitly by CParser. It exists so that 'exit' appears in fshell's help list and also to support 'exit --help'.
 	AddThreadCommandL(CCmdHelp::NewLC, CThreadCommand::ESharedHeap);
 	AddThreadCommandL(CCmdCd::NewLC, CThreadCommand::EUpdateEnvironment);
 	AddThreadCommandL(CCmdClear::NewLC);
@@ -336,6 +350,14 @@ void CCommandFactory::ConstructL()
 #endif
 	AddThreadCommandL(CCmdCifTest::NewLC);
 	AddThreadCommandL(CCmdWhoAmI::NewLC);
+	AddThreadCommandL(CCmdWhile::NewLC, CThreadCommand::EUpdateEnvironment); // The while command has a lifetime beyond its thread (it's sort of like a 'local' command) so has to be in the same heap as its parent. Also it shares the environment
+	AddThreadCommandL(CCmdEndWhile::NewLC, CThreadCommand::EUpdateEnvironment);
+	// These two don't require EUpdateEnvironment because they do their stuff by completing the pipeline with an error, and basically do nothing significant in their DoRunLs.
+	AddThreadCommandL(CCmdBreak::NewLC);
+	AddThreadCommandL(CCmdContinue::NewLC);
+	AddThreadCommandL(CCmdIf::NewLC, CThreadCommand::EUpdateEnvironment); // Similar to while
+	AddThreadCommandL(CCmdElse::NewLC, CThreadCommand::EUpdateEnvironment);
+	AddThreadCommandL(CCmdEndIf::NewLC, CThreadCommand::EUpdateEnvironment);
 
 	// Add some DOS-style namings of common commands.
 	AddThreadCommandL(_L("del"), CCmdRm::NewLC, CCommandConstructorBase::EAttAlias);
@@ -392,9 +414,9 @@ void CCommandFactory::AddCommandL(CCommandConstructorBase* aCommandConstructor)
 
 		// The order of precedence is:
 		//
-		// 1) Local commands (because if they get overridden, there is no way to access them - external commands can always be specified explicitly using a file extension).
+		// 1) Local (thread) commands (because if they get overridden, there is no way to access them - external commands can always be specified explicitly using a file extension).
 		// 2) "fshell_" prefixed commands.
-		// 3) EXE commands.
+		// 3) EXE/PIPS/script commands.
 
 		ASSERT(aCommandConstructor->Attributes() & CCommandConstructorBase::EAttExternal); // Assert that local commands have a unique name.
 		TInt pos = FindCommandL(aCommandConstructor->CommandName());
@@ -404,6 +426,7 @@ void CCommandFactory::AddCommandL(CCommandConstructorBase* aCommandConstructor)
 		if (existingCommand->Attributes() & CCommandConstructorBase::EAttExternal) 
 			{
 			// Existing is not a local command.
+			//TOMSCI TODO the logic below is flawed!!!
 			CExeCommandConstructor* existingExeCommand = static_cast<CExeCommandConstructor*>(existingCommand); // Note, this cast assumes that ALL external commands are sub-classed from CExeCommandConstructor (which at the time of writing is true).
 			if (existingExeCommand->ExeName().Left(KFshellPrefix().Length()).Compare(KFshellPrefix) != 0)
 				{
@@ -499,6 +522,7 @@ void CCommandFactory::FindExternalCommandsL()
 	AppendExternalCommandsL(pipsUids, KExeExtension);
 	*/
 	AppendExternalCifCommandsL();
+	AppendExternalScriptCommandsL();
 
 	iFileSystemScanned = ETrue;
 
@@ -666,6 +690,32 @@ void CCommandFactory::DoAppendExternalCommandL(const TEntry& aEntry, TInt aUid)
 	AddCommandL(commandConstructor);
 	CleanupStack::Pop(commandConstructor);
 	CleanupStack::PopAndDestroy(nameBuf);
+	}
+
+void CCommandFactory::AppendExternalScriptCommandsL()
+	{
+	_LIT(KScriptPath, "y:\\system\\console\\scripts\\*.script");
+
+	TFindFile find(iFs);
+	CDir* matches = NULL;
+	TInt err = find.FindWildByDir(KScriptPath, KNullDesC, matches);
+	while (err == KErrNone)
+		{
+		CleanupStack::PushL(matches);
+		TPtrC dir = TParsePtrC(find.File()).DriveAndPath();
+		for (TInt i = 0; i < matches->Count(); i++)
+			{
+			const TEntry& entry = (*matches)[i];
+			TPtrC name = TParsePtrC(entry.iName).Name();
+
+			CScriptCommandConstructor* commandConstructor = CScriptCommandConstructor::NewLC(name);
+			commandConstructor->SetAttributes(CCommandConstructorBase::EAttExternal);
+			AddCommandL(commandConstructor);
+			CleanupStack::Pop(commandConstructor);
+			}
+		CleanupStack::PopAndDestroy(matches);
+		err = find.FindWild(matches);
+		}
 	}
 
 void CCommandFactory::WaitLC() const

@@ -1,6 +1,6 @@
 // version.h
 // 
-// Copyright (c) 2008 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2008 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -25,7 +25,10 @@ private: // From CCommandBase.
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();
 	virtual void OptionsL(RCommandOptionList& aOptions);
+	virtual void ArgumentsL(RCommandArgumentList& aArguments);
 private:
 	TBool iVerbose;
+	TBool iShort;
+	HBufC* iRequiredVersion;
 	};
 

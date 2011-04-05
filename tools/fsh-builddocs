@@ -500,15 +500,18 @@ sub Cif2Pod {
       print OUTPUT "=head1 OPTIONS\n\n";
       print OUTPUT "=over5\n\n";
       foreach my $option (@$options) {
-	print OUTPUT "=item -$option->{short_name} (--$option->{long_name}) $option->{type}\n\n$option->{description}";
+	print OUTPUT "=item -$option->{short_name} (--$option->{long_name}) $option->{type}\n\n";
+	my $trimmed = $option->{description};
+	$trimmed =~ s/\s*$//g; # Remove trailing newline
+	print OUTPUT "$trimmed";
 	if ($option->{type} eq 'enum') {
 	  FormatEnum($option->{enum_values});
 	}
 	if ($option->{flags}->{multiple}) {
-	  print OUTPUT " Can be specified more than once.";
+	  print OUTPUT " I<Can be specified more than once.>";
 	}
 	if ($option->{env_var}) {
-	  print OUTPUT " Can also be specified by defining the environment variable '$option->{env_var}'.";
+	  print OUTPUT " I<Can also be specified by defining the environment variable '$option->{env_var}'.>";
 	}
 	print OUTPUT "\n\n";
       }
@@ -535,13 +538,13 @@ sub Cif2Pod {
 	}
 	print OUTPUT $argument->{description};
 	if ($argument->{flags}->{multiple}) {
-	  print OUTPUT ' Can be specified more than once.';
+	  print OUTPUT ' I<Can be specified more than once.>';
 	}
 	if ($argument->{env_var}) {
-	  print OUTPUT " Can also be specified by defining the environment variable '$argument->{env_var}'.";
+	  print OUTPUT " I<Can also be specified by defining the environment variable '$argument->{env_var}'.>";
 	}
 	if ($argument->{flags}->{last}) {
-	  print OUTPUT ' Any further arguments or options will be coalesced into this one.';
+	  print OUTPUT ' I<Any further arguments or options will be coalesced into this one.>';
 	}
 	
 	if ($argument->{type} eq 'enum') {

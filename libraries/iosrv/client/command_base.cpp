@@ -14,6 +14,7 @@
 #include "ioutils.h"
 #include "command_base.h"
 #include <fshell/ltkutils.h>
+#include <fshell/descriptorutils.h>
 #include <fshell/line_editor.h> // for definition of CTRL()
 using namespace IoUtils;
 
@@ -1883,18 +1884,29 @@ EXPORT_C void CCommandBase::PrintWarning(TRefByValue<const TDesC> aFmt, ...)
 
 EXPORT_C void CCommandBase::PrintList(TRefByValue<const TDesC> aFmt, VA_LIST& aList)
 	{
-	TOverflowTruncate overflow;
+	LtkUtils::TOverflowDetect overflow;
 	TBuf<0x100> buf;
 	buf.AppendFormatList(aFmt, aList, &overflow);
+	if (overflow.iOverflowed)
+		{
+		// This could itself overflow if the format string was very long, ah well
+		const TDesC& fmt(aFmt);
+		PrintWarning(_L("Descriptor overflow in CCommandBase::Printf() while formatting '%S'"), &fmt);
+		}
 	iStdout.Write(buf);
 	}
 
 EXPORT_C void CCommandBase::PrintList(TRefByValue<const TDesC8> aFmt, VA_LIST& aList)
 	{
-	TOverflowTruncate8 overflow;
+	LtkUtils::TOverflowDetect8 overflow;
 	TBuf8<0x200> buf;
-	buf.AppendFormatList(aFmt, aList, &overflow);
-	if (buf.Length() > 0x100) buf.SetLength(0x100); // Truncate to half the buffer size so that the call to Expand doesn't panic
+	TPtr8 bufPtr((TUint8*)buf.Ptr(), 0, buf.MaxLength() / 2); // Make sure we only format into half of the buffer so that the Expand below can't panic
+	bufPtr.AppendFormatList(aFmt, aList, &overflow);
+	buf.SetLength(bufPtr.Length());
+	if (overflow.iOverflowed)
+		{
+		PrintWarning(_L("Descriptor overflow in CCommandBase::Printf(const TDesC8&)"));		
+		}
 	TPtrC wideBuf = buf.Expand();
 	iStdout.Write(wideBuf);
 	}
@@ -3941,6 +3953,11 @@ EXPORT_C void CCommandBase::SetExtension(MCommandExtensionsV1* aExtension)
 	iExtension = aExtension;
 	}
 
+EXPORT_C MCommandExtensionsV1* CCommandBase::Extension() const
+	{
+	return iExtension;
+	}
+
 EXPORT_C TCommandExtensionVersion MCommandExtensionsV2::ExtensionVersion() const
 	{
 	return ECommandExtensionV2;
@@ -3954,4 +3971,9 @@ EXPORT_C void MCommandExtensionsV2::KeyPressed(TUint /*aKeyCode*/, TUint /*aModi
 EXPORT_C void MCommandExtensionsV2::CtrlCPressed()
 	{
 	// Default is to do nothing
+	}
+
+EXPORT_C TCommandExtensionVersion MCommandExtensionsV3::ExtensionVersion() const
+	{
+	return ECommandExtensionV3;
 	}

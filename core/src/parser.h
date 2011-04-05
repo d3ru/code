@@ -1,6 +1,6 @@
 // parser.h
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -19,19 +19,60 @@
 
 class CLexer;
 class CParser;
+namespace IoUtils { class CCommandBase; }
 
+_LIT(KScriptPath, "SCRIPT_PATH");
+_LIT(KScriptName, "SCRIPT_NAME");
+_LIT(KScriptLine, "SCRIPT_LINE");
+_LIT(KScriptArgCount, "ARG_COUNT");
+_LIT(KKeepGoing, "KEEP_GOING");
+_LIT(KChildError, "?");
 
 class MParserObserver
 	{
 public:
 	virtual void HandleParserComplete(CParser& aParser, const TError& aError) = 0;
 	virtual void HandleParserExit(CParser& aParser);
-	virtual void AboutToExecuteLine(const TDesC& aOrignalLine, const TDesC& aExpandedLine);
+	virtual TBool AboutToExecutePipeLineStage(const TDesC& aOriginalLine, const TDesC& aExpandedLine, const TDesC& aPipelineCondition);
 	virtual void LineReturned(TInt aError);
 	};
 
+class MBlockObserver
+	{
+public:
+	virtual void StartingNewBlockL(MConditionalBlock* aBlock) = 0;
+	virtual void BlockFinished(MConditionalBlock* aBlock) = 0;
+	};
 
-class CParser : public CBase, public MPipeLineObserver
+class MConditionalBlock : public MParserObserver, public IoUtils::MCommandExtensionsV3
+	{
+public:
+	virtual TBool Break() { return EFalse; }
+	virtual TBool Continue() { return EFalse; }
+	virtual TBool ElseL(CCommandBase* /*aElseCommand*/, const TDesC* /*aCondition*/) { return EFalse; }
+	virtual void EndBlockL(CCommandBase* aEndCommand) = 0; // aEndCommand can be null in the case of aborting a block, in which case this fn must not leave
+	void SetParentBlock(MConditionalBlock* aParent) { iParentBlock = aParent; }
+	MConditionalBlock* ParentBlock() { return iParentBlock; }
+	void SetBlockObserver(MBlockObserver* aObserver) { iBlockObserver = aObserver; }
+	MBlockObserver* BlockObserver() const { return iBlockObserver; }
+	MConditionalBlock* IsConditionalBlockCommand() { return this; }
+
+protected:
+	MConditionalBlock* iParentBlock;
+	MBlockObserver* iBlockObserver;
+	};
+
+class MControlStatement : public IoUtils::MCommandExtensionsV3
+	{
+public:
+	virtual MControlStatement* IsControlStatement() { return this; }
+	virtual void SetConditionalBlock(MConditionalBlock* aBlock) { iConditionalBlock = aBlock; }
+
+protected:
+	MConditionalBlock* iConditionalBlock;
+	};
+
+class CParser : public CBase, public MPipeLineObserver, public MBlockObserver
 	{
 public:
 	enum TMode
@@ -55,6 +96,7 @@ public:
 	TInt Reattach(RIoEndPoint& aStdinEndPoint, RIoEndPoint& aStdoutEndPoint, RIoEndPoint& aStderrEndPoint);
 	TBool IsDisownable() const;
 	void Disown();
+	void SetParentConditionalBlockL(MConditionalBlock* aBlock);
 private:
 	enum TCondition
 		{
@@ -69,7 +111,7 @@ private:
 	void CreateNextPipeLine(TBool* aIsForeground);
 	void CreateNextPipeLineL(TBool* aIsForeground);
 	void FindNextPipeLineL(TPtrC& aData, TCondition& aCondition, TBool& aReachedLineEnd);
-	HBufC* ExpandVariablesLC(const TDesC& aData);
+	HBufC* ExpandVariablesLC(const TDesC& aData) const;
 	void SkipLineRemainderL();
 	void DoSkipLineRemainderL();
 	void SkipToEnd();
@@ -78,8 +120,12 @@ private:
 	static TInt CompletionCallBack(TAny* aSelf);
 	static TInt NextCallBack(TAny* aSelf);
 	static TInt ExitCallBack(TAny* aSelf);
+	MConditionalBlock* CurrentConditionalScope();
 private:	// From MPipeLineObserver.
 	virtual void HandlePipeLineComplete(CPipeLine& aPipeLine, const TError& aError);
+private: // From MBlockObserver
+	virtual void StartingNewBlockL(MConditionalBlock* aBlock);
+	virtual void BlockFinished(MConditionalBlock* aBlock);
 private:
 	const TUint iMode;
 	TCondition iCondition;
@@ -101,6 +147,16 @@ private:
 	TBool iAbort;
 	TInt iNextLineNumber;
 	TBool iOwnsIoHandles;
+	RArray<MConditionalBlock*> iConditionalScopes;
+	RFastLock iScopeLock; // This is necessary because the BlockFinished() callback is from a different thread (namely, the endwhile command's)
+	class TRootBlock : public MConditionalBlock
+		{
+	public:
+		TRootBlock(CParser* aParser);
+		void EndBlockL(CCommandBase* aEndCommand);
+		void HandleParserComplete(CParser& aParser, const TError& aError);
+		};
+	TRootBlock iRootBlock;
 	};
 
 

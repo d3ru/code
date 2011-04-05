@@ -3473,10 +3473,27 @@ void CCmdVar::DoRunL()
 			LeaveIfErr(err, _L("Couldn't parse an integer from argument '%S'"), iArg);
 			TInt value = 0;
 			TRAP_IGNORE(value = env.GetAsIntL(*iVar1)); // If it doesn't yet exist or isn't an int, we'll treat it as if it was zero
-			if (iOperation == ESubtract) value = value - operand;
-			else if (iOperation == EMultiply) value = value * operand;
-			else value = value + operand;
+			value = Operation(value, operand);
 			env.SetL(*iVar1, value);
+			break;
+			}
+		case ELessThan:
+		case ELt:
+		case ELessThanOrEqual:
+		case ELe:
+		case EGreaterThan:
+		case EGt:
+		case EGreaterThanOrEqual:
+		case EGe:
+			{
+			TLex lex(*iArg);
+			TInt operand;
+			TInt err = lex.Val(operand);
+			LeaveIfErr(err, _L("Couldn't parse an integer from argument '%S'"), iArg);
+			TInt value = 0;
+			TRAP_IGNORE(value = env.GetAsIntL(*iVar1)); // If it doesn't yet exist or isn't an int, we'll treat it as if it was zero
+			TBool result = Condition(value, operand);
+			Complete(!result);
 			break;
 			}
 		case EEndsWith:
@@ -3507,6 +3524,44 @@ void CCmdVar::ArgumentsL(RCommandArgumentList& aArguments)
 	aArguments.AppendStringL(iVar1, KArgVariable);
 	aArguments.AppendEnumL((TInt&)iOperation, KArgOperation);
 	aArguments.AppendStringL(iArg, KArgArgument);
+	}
+
+TInt CCmdVar::Operation(TInt aValue, TInt aOperand) const
+	{
+	switch (iOperation)
+		{
+	case EAdd:
+		return aValue + aOperand;
+	case ESubtract:
+		return aValue - aOperand;
+	case EMultiply:
+		return aValue * aOperand;
+	default:
+		ASSERT(EFalse);
+		return 0;
+		}
+	}
+
+TBool CCmdVar::Condition(TInt aValue, TInt aOperand) const
+	{
+	switch (iOperation)
+		{
+	case ELessThan:
+	case ELt:
+		return aValue < aOperand;
+	case ELessThanOrEqual:
+	case ELe:
+		return aValue <= aOperand;
+	case EGreaterThan:
+	case EGt:
+		return aValue > aOperand;
+	case EGreaterThanOrEqual:
+	case EGe:
+		return aValue >= aOperand;
+	default:
+		ASSERT(EFalse);
+		return 0;
+		}
 	}
 
 
@@ -4171,11 +4226,13 @@ void CCmdDebug::HandleParserComplete(CParser&, const TError& aError)
 	Complete(aError.Error());
 	}
 
-void CCmdDebug::AboutToExecuteLine(const TDesC& aOrignalLine, const TDesC& aExpandedLine)
+TBool CCmdDebug::AboutToExecutePipeLineStage(const TDesC& aOriginalLine, const TDesC& aExpandedLine, const TDesC& /*aPipelineCondition*/)
 	{
-	Write(aOrignalLine);
+	Write(aOriginalLine);
 	Write(KNewLine);
-	TRAP_IGNORE(InteractL(aExpandedLine));
+	TBool result = ETrue;
+	TRAP_IGNORE(result = InteractL(aExpandedLine));
+	return result;
 	}
 
 void CCmdDebug::LineReturned(TInt aError)
@@ -4183,7 +4240,7 @@ void CCmdDebug::LineReturned(TInt aError)
 	Printf(_L("Returned %d (%S)\r\n"), aError, Stringify::Error(aError));
 	}
 
-void CCmdDebug::InteractL(const TDesC& aExpandedLine)
+TBool CCmdDebug::InteractL(const TDesC& aExpandedLine)
 	{
 	FOREVER
 		{
@@ -4192,15 +4249,20 @@ void CCmdDebug::InteractL(const TDesC& aExpandedLine)
 
 		_LIT(KStep, "s");
 		_LIT(KExpand, "x");
+		_LIT(KSkip, "z");
 
 		if (command == KStep)
 			{
-			return;
+			return ETrue;
 			}
 		else if (command == KExpand)
 			{
 			Write(aExpandedLine);
 			Write(KNewLine);
+			}
+		else if (command == KSkip)
+			{
+			return EFalse;
 			}
 		else
 			{

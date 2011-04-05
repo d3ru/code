@@ -1,6 +1,6 @@
 // fshell.h
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -22,13 +22,6 @@
 #include "console.h"
 #include <fshell/line_editor.h>
 #include <fshell/iocons_writer.h>
-
-
-_LIT(KScriptPath, "SCRIPT_PATH");
-_LIT(KScriptName, "SCRIPT_NAME");
-_LIT(KScriptLine, "SCRIPT_LINE");
-_LIT(KScriptArgCount, "ARG_COUNT");
-_LIT(KKeepGoing, "KEEP_GOING");
 
 class CLineCompleter;
 class CCommandFactory;

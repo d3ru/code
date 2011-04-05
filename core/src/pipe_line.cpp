@@ -104,18 +104,18 @@ HBufC* RPipeSection::GetCommandArguments() const
 // CPipeLine.
 //
 
-CPipeLine* CPipeLine::NewL(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, const RArray<RPipeSection>& aPipeSections, TBool aBackground, MPipeLineObserver* aObserver, TError& aErrorContext)
+CPipeLine* CPipeLine::NewL(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, const RArray<RPipeSection>& aPipeSections, TBool aBackground, MPipeLineObserver* aObserver, TError& aErrorContext, MConditionalBlock* aCurrentBlock)
 	{
-	CPipeLine* self = NewLC(aIoSession, aStdin, aStdout, aStderr, aEnv, aFactory, aPipeSections, aBackground, aObserver, aErrorContext);
+	CPipeLine* self = NewLC(aIoSession, aStdin, aStdout, aStderr, aEnv, aFactory, aPipeSections, aBackground, aObserver, aErrorContext, aCurrentBlock);
 	CleanupStack::Pop(self);
 	return self;
 	}
 
-CPipeLine* CPipeLine::NewLC(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, const RArray<RPipeSection>& aPipeSections, TBool aBackground, MPipeLineObserver* aObserver, TError& aErrorContext)
+CPipeLine* CPipeLine::NewLC(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, const RArray<RPipeSection>& aPipeSections, TBool aBackground, MPipeLineObserver* aObserver, TError& aErrorContext, MConditionalBlock* aCurrentBlock)
 	{
 	CPipeLine* self = new(ELeave) CPipeLine(aIoSession, aStdin, aStdout, aStderr, aEnv, aFactory, aObserver);
 	CleanupStack::PushL(self);
-	self->ConstructL(aPipeSections, aBackground, aErrorContext);
+	self->ConstructL(aPipeSections, aBackground, aErrorContext, aCurrentBlock);
 	return self;
 	}
 
@@ -308,7 +308,7 @@ void SetIoObjectName(RIoSession& aIoSession, TInt aObjHandle, TRefByValue<const 
 	aIoSession.SetObjectName(aObjHandle, name);
 	}
 
-void CPipeLine::ConstructL(const RArray<RPipeSection>& aPipeSections, TBool aBackground, TError& aErrorContext)
+void CPipeLine::ConstructL(const RArray<RPipeSection>& aPipeSections, TBool aBackground, TError& aErrorContext, MConditionalBlock* aCurrentBlock)
 	{
 	// Run the pipe-line in the background even if we weren't explicitly asked to if fshell's
 	// STDIN read handle isn't in the foreground. This prevents the pipe-line from stealing the
@@ -548,7 +548,7 @@ void CPipeLine::ConstructL(const RArray<RPipeSection>& aPipeSections, TBool aBac
 		TInt err = KErrNoMemory;
 		if (args)
 			{
-			err = thisPipedCommand.iCommand->CmndRun(*args, iEnv, *this, iIoSession);
+			err = thisPipedCommand.iCommand->CmndRun(*args, iEnv, *this, iIoSession, aCurrentBlock);
 			if ((err == KErrNone) && thisPipedCommand.iCommand)
 				{
 				aBackground ? thisPipedCommand.iCommand->CmndBackground() : thisPipedCommand.iCommand->CmndForeground();
@@ -566,7 +566,8 @@ void CPipeLine::ConstructL(const RArray<RPipeSection>& aPipeSections, TBool aBac
 TInt CPipeLine::CompletionCallBack(TAny* aSelf)
 	{
 	CPipeLine* self = static_cast<CPipeLine*>(aSelf);
-	self->iCompletionError.Set(self->iCommands[self->iCommands.Count() - 1].iCompletionError, TError::ECommandError);
+	const RPipedCommand& cmd = self->iCommands[self->iCommands.Count() - 1];
+	self->iCompletionError.Set(cmd.iCompletionError, TError::ECommandError, *cmd.iCommandName);
 	self->iObserver->HandlePipeLineComplete(*self, self->iCompletionError);
 	return KErrNone;
 	}

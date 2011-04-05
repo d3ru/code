@@ -1,0 +1,53 @@
+# else.cif
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name else
+
+==short-description
+
+Part of an if-else-endif block.
+
+==argument enum if optional
+
+Dummy argument, just so that you can write C<else if E<lt>conditionE<gt>>.
+
+==enum-value if
+
+==argument string condition optional last
+
+The condition is optional - specify as either C<else if E<lt>conditionE<gt>> or just C<else> for the final else clause.
+
+==long-description
+
+Example usage:
+
+    if var ERR == 0
+        <do something>
+    else if var ERR == -5
+        <do something else>
+    else
+        <do something in all other cases>
+    endif
+
+Just as in C or C++, an else block without any C<if E<lt>conditionE<gt>> must be the last else in the C<if...endif> block.
+    
+==see-also
+
+L<if|if>, L<endif|endif>
+
+==copyright
+
+Copyright (c) 2011 Accenture. All rights reserved.
+
+==smoke-test
+
+# Handled by if's.

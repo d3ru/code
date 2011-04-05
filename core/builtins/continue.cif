@@ -1,0 +1,36 @@
+# continue.cif
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name continue
+
+==short-description
+
+Continues a while loop.
+
+==long-description
+
+Example usage:
+
+    while var ERR == 0
+        <something> | export -s RESULT &| export ERR "$?"
+        # Ignore result if it doesn't start with the right data
+        var RESULT startswith "Important Text" || continue
+        ...
+    endwhile
+
+==see-also
+
+L<while|while>, L<endwhile|endwhile>, L<break|break>
+
+==copyright
+
+Copyright (c) 2011 Accenture. All rights reserved.

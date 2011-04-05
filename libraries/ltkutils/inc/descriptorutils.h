@@ -1,6 +1,6 @@
 // descriptorutils.h
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -167,6 +167,24 @@ namespace LtkUtils
 #define DESC(x) { ((sizeof(L##x) / 2)-1) | 0x10000000, (const TUint16*) L##x }
 #define DESC8(x) { (sizeof(x) - 1) | 0x10000000, (const TUint8*)x }
 // 0x10000000 is EPtrC<<KShiftDesType
+
+	NONSHARABLE_CLASS(TOverflowDetect) : public TDes16Overflow
+		{
+	public:
+		TOverflowDetect() : iOverflowed(EFalse) {}
+		virtual void Overflow(TDes16& /*aDes*/) { iOverflowed = ETrue; }
+
+		TBool iOverflowed;
+		};
+
+	NONSHARABLE_CLASS(TOverflowDetect8) : public TDes8Overflow
+		{
+	public:
+		TOverflowDetect8() : iOverflowed(EFalse) {}
+		virtual void Overflow(TDes8& /*aDes*/) { iOverflowed = ETrue; }
+
+		TBool iOverflowed;
+		};
 
 	}
 

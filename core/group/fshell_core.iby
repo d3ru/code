@@ -184,6 +184,13 @@ FSHELL_COMMAND_INFO_FILE(fshell,reboot.cif)
 #endif
 FSHELL_COMMAND_INFO_FILE(fshell,ciftest.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,whoami.cif)
+FSHELL_COMMAND_INFO_FILE(fshell,while.cif)
+FSHELL_COMMAND_INFO_FILE(fshell,endwhile.cif)
+FSHELL_COMMAND_INFO_FILE(fshell,break.cif)
+FSHELL_COMMAND_INFO_FILE(fshell,continue.cif)
+FSHELL_COMMAND_INFO_FILE(fshell,if.cif)
+FSHELL_COMMAND_INFO_FILE(fshell,else.cif)
+FSHELL_COMMAND_INFO_FILE(fshell,endif.cif)
 
 #ifdef FSHELL_REPLACE_ECONS
 FSHELL_EXECUTABLE_AS_DATA(iocons.dll,iocons.dll)

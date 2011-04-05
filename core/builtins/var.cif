@@ -26,11 +26,14 @@ This command returns zero (KErrNone) in the success case, and a non-zero positiv
     var SOMETHING defined && echo Defined # "Defined" will be printed
     var SOMETHING == 1 && echo "Equal" # "Equal" will be printed
     var SOMETHING add 3 && echo "$SOMETHING" # $SOMETHING now has value "4"
+    var SOMETHING lt 10 && echo "Less than 10" # "Less than 10" will be printed
 
 C<==> and C<!=> are text comparisons not numerical, and all environment variables are strings, so the following will I<not> work:
 
     export VAL 16
     var VAL == 0x10 && echo Equal # Error! "16" does not equal "0x10"
+
+The numerical comparison operators are named C<lessthan>, C<greaterthan> etc (with abbreviations like C<lt>, C<le>) because the C<E<lt>> and C<E<gt>> operators are reserved for stdio redirection.
 
 ==argument string variable
 
@@ -76,6 +79,38 @@ Tests if the specified environment variable starts with the supplied argument.
 
 Tests if the specified environment variable ends with the supplied argument.
 
+==enum-value lessthan
+
+Tests if the specified environment variable is numerically less than the supplied argument.
+
+==enum-value lt
+
+Abbreviation for lessthan.
+
+==enum-value lessorequal
+
+Tests if the specified environment variable is numerically less than or equal to the supplied argument.
+
+==enum-value le
+
+Abbreviation for lessorequal.
+
+==enum-value greaterthan
+
+Tests if the specified environment variable is numerically greater than the supplied argument.
+
+==enum-value gt
+
+Abbreviation for greaterthan.
+
+==enum-value greaterorequal
+
+Tests if the specified environment variable is numerically greater than or equal to the supplied argument.
+
+==enum-value ge
+
+Abbreviation for greaterorequal.
+
 ==argument string argument optional
 
 The argument to the operation.
@@ -86,7 +121,7 @@ Copyright (c) 2006-2011 Accenture. All rights reserved.
 
 ==smoke-test
 
-# Some further tests in addition to fshell-basic-test.script
+# Some further tests for things not covered by fshell-basic-test.script
 
 export N 5
 var N multiply 2
@@ -98,3 +133,13 @@ var V startswith Incredible && $Error
 
 var V endswith zing || $Error
 var V endswith Some && $Error
+
+var N lessthan 11 || $Error
+var N lessthan 9 && $Error
+var N lt 10 && $Error
+var N gt 10 && $Error
+var N lessorequal 10 || $Error
+var N le 10 || $Error
+var N greaterorequal 10 || $Error
+var N ge 10 || $Error
+var N ge 11 && $Error

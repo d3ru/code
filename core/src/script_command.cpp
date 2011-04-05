@@ -10,7 +10,7 @@
 // Accenture - Initial contribution
 //
 #include "script_command.h"
-#include "fshell.h" // For KScriptArgCount etc
+#include "parser.h" // For KScriptArgCount etc
 #include <fshell/descriptorutils.h>
 
 using namespace IoUtils;
@@ -53,7 +53,7 @@ void CScriptCommand::ConstructL(const TDesC& aScriptPath, TIoHandleSet& aIoHandl
 	Stderr().Duplicate(aIoHandles.Stderr());
 	
 	iScriptPath = aScriptPath.AllocL();
-	iName.Set(TParsePtrC(*iScriptPath).NameAndExt());
+	iName.Set(TParsePtrC(*iScriptPath).Name());
 	RFs fs; // Can't use FsL(), that needs an env set up
 	CleanupClosePushL(fs);
 	User::LeaveIfError(fs.Connect());

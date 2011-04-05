@@ -1,6 +1,6 @@
 // descriptorJuggling.cpp
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -358,15 +358,6 @@ EXPORT_C void LtkUtils::RLtkBuf16::CreateMaxL(TInt aMaxLength)
 	User::LeaveIfError(CreateMax(aMaxLength));
 	}
 
-class TOverflowDetect : public TDes16Overflow
-	{
-public:
-	TOverflowDetect() : iOverflowed(EFalse) {}
-	virtual void Overflow(TDes16& /*aDes*/) { iOverflowed = ETrue; }
-
-	TBool iOverflowed;
-	};
-
 EXPORT_C void LtkUtils::RLtkBuf16::AppendFormatL(TRefByValue<const TDesC16> aFmt, ...)
 	{
 	TInt origLen = Length();
@@ -563,15 +554,6 @@ EXPORT_C void LtkUtils::RLtkBuf8::CreateMaxL(TInt aMaxLength)
 	{
 	User::LeaveIfError(CreateMax(aMaxLength));
 	}
-
-class TOverflowDetect8 : public TDes8Overflow
-	{
-public:
-	TOverflowDetect8() : iOverflowed(EFalse) {}
-	virtual void Overflow(TDes8& /*aDes*/) { iOverflowed = ETrue; }
-
-	TBool iOverflowed;
-	};
 
 EXPORT_C void LtkUtils::RLtkBuf8::AppendFormatL(TRefByValue<const TDesC8> aFmt, ...)
 	{

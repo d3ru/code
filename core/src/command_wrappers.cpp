@@ -10,8 +10,10 @@
 // Accenture - Initial contribution
 //
 
+#include <fshell/descriptorutils.h>
 #include "command_wrappers.h"
 #include "worker_thread.h"
+#include "parser.h" // For MControlStatement
 
 //
 // CCommandWrapperBase.
@@ -151,9 +153,36 @@ void CThreadCommand::DoCommandThreadStartL(TAny* aSelf)
 
 	CCommandBase* command = (*self->iCommandConstructor)();
 	//RDebug::Print(_L("5. DoCommandThreadStartL rendezvousing for %S %S"), &self->CmndName(), self->iCommandLine);
+	MConditionalBlock* block = NULL;
+	if (command->Extension() && command->Extension()->ExtensionVersion() >= ECommandExtensionV3)
+		{
+		MCommandExtensionsV3* ext = static_cast<MCommandExtensionsV3*>(command->Extension());
+		block = ext->IsConditionalBlockCommand();
+		if (block)
+			{
+			self->iCurrentBlock->BlockObserver()->StartingNewBlockL(block);
+			}
+		MControlStatement* controlStatement = ext->IsControlStatement();
+		if (controlStatement)
+			{
+			controlStatement->SetConditionalBlock(self->iCurrentBlock);
+			}
+		}
 	RThread::Rendezvous(KErrNone);
-	command->RunCommandL(self->iCommandLine, env);
-	CleanupStack::PopAndDestroy(2, env); // command, env
+	TRAPD(err, command->RunCommandL(self->iCommandLine, env));
+	if (block && err == KRequestPending)
+		{
+		// Conditional block commands are a special case and their lifespan extends until the matching end command, so we don't destroy them here
+		CleanupStack::Pop(2, env); // command, env
+		}
+	else if (err) // *not* "err<0" because we actually rely on leaving with a positive error code, which is a bit nasty
+		{
+		User::Leave(err);
+		}
+	else
+		{
+		CleanupStack::PopAndDestroy(2, env); // command, env
+		}
 	}
 
 
@@ -164,7 +193,7 @@ void SetHandleOwnersL(TThreadId aThreadId, RIoReadHandle& aStdin, RIoWriteHandle
 	User::LeaveIfError(aStderr.SetOwner(aThreadId));
 	};
 
-TInt CThreadCommand::CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession&)
+TInt CThreadCommand::CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession&, MConditionalBlock* aCurrentBlock)
 	{
 	ASSERT(iObserver == NULL);
 
@@ -189,6 +218,7 @@ TInt CThreadCommand::CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& a
 		{
 		iSuppliedEnv = &aEnv;
 		iObserver = &aObserver;
+		iCurrentBlock = aCurrentBlock;
 		thread->ExecuteTask(iStatus);
 		SetActive();
 		}
@@ -255,7 +285,6 @@ void CThreadCommand::DoCancel()
 	{
 	CmndKill(); // This is a bit drastic, but effective...
 	}
-
 
 //
 // CProcessCommand.
@@ -339,7 +368,7 @@ void CProcessCommand::CmndRunL(const TDesC& aCommandLine, IoUtils::CEnvironment&
 	iProcess.Resume();
 	}
 
-TInt CProcessCommand::CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession&)
+TInt CProcessCommand::CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession&, MConditionalBlock*)
 	{
 	ASSERT(iObserver == NULL);
 	TRAPD(err, CmndRunL(aCommandLine, aEnv, aObserver));
@@ -511,9 +540,9 @@ CPipsCommand::~CPipsCommand()
 	{
 	}
 
-TInt CPipsCommand::CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession)
+TInt CPipsCommand::CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession, MConditionalBlock* aCurrentBlock)
 	{
-	TInt err = CProcessCommand::CmndRun(aCommandLine, aEnv, aObserver, aIoSession);
+	TInt err = CProcessCommand::CmndRun(aCommandLine, aEnv, aObserver, aIoSession, aCurrentBlock);
 	if ((err == KErrNone) && iUsingPipsRun)
 		{
 		TRequestStatus status;
@@ -616,7 +645,7 @@ RIoWriteHandle& CAliasCommand::CmndStderr()
 	return iAliasedCommand.CmndStderr();
 	}
 
-TInt CAliasCommand::CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession)
+TInt CAliasCommand::CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession, MConditionalBlock* aCurrentBlock)
 	{
 	if (iAdditionalArguments && !iReplacementArguments)
 		{
@@ -639,7 +668,7 @@ TInt CAliasCommand::CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aE
 		{
 		args = iAdditionalArguments;
 		}
-	return iAliasedCommand.CmndRun(*args, aEnv, *this, aIoSession);
+	return iAliasedCommand.CmndRun(*args, aEnv, *this, aIoSession, aCurrentBlock);
 	}
 
 void CAliasCommand::CmndForeground()
@@ -685,4 +714,64 @@ TInt CAliasCommand::CmndExitReason() const
 void CAliasCommand::HandleCommandComplete(MCommand&, TInt aError)
 	{
 	iCommandObserver->HandleCommandComplete(*this, aError);
+	}
+
+//
+// CScriptCommandWrapper
+//
+
+CScriptCommandWrapper* CScriptCommandWrapper::NewL(const TDesC& aScriptName)
+	{
+	CScriptCommandWrapper* self = new(ELeave) CScriptCommandWrapper();
+	CleanupStack::PushL(self);
+	self->ConstructL(aScriptName);
+	CleanupStack::Pop(self);
+	return self;
+	}
+
+CScriptCommandWrapper::~CScriptCommandWrapper()
+	{
+	}
+
+CScriptCommandWrapper::CScriptCommandWrapper()
+	{
+	}
+
+void CScriptCommandWrapper::ConstructL(const TDesC& aScriptName)
+	{
+	// Remove the .script if specified
+	TPtrC name(aScriptName);
+	if (name.Right(KScriptSuffix().Length()).CompareF(KScriptSuffix) == 0)
+		{
+		name.Set(name.Left(name.Length() - KScriptSuffix().Length()));
+		}
+	CProcessCommand::ConstructL(name);
+	}
+
+void CScriptCommandWrapper::CreateProcessL(const TDesC& aCommandLine, IoUtils::CEnvironment& /*aEnv*/)
+	{
+	_LIT(KFshell, "fshell.exe");
+	LtkUtils::RLtkBuf cmdLine;
+	CleanupClosePushL(cmdLine);
+	cmdLine.AppendL(CmndName());
+	cmdLine.AppendL(_L(" "));
+	cmdLine.AppendL(aCommandLine);
+	User::LeaveIfError(iProcess.Create(KFshell, cmdLine));
+	CleanupStack::PopAndDestroy(&cmdLine);
+	}
+
+_LIT(KScriptDir, "y:\\system\\console\\scripts\\");
+
+TBool CScriptCommandWrapper::ScriptExists(RFs& aFs, const TDesC& aCommandName)
+	{
+	TFindFile finder(aFs);
+	TFileName scriptName;
+	scriptName.Copy(aCommandName);
+	if (scriptName.Right(KScriptSuffix().Length()).CompareF(KScriptSuffix) != 0)
+		{
+		scriptName.Append(KScriptSuffix);
+		}
+
+	TInt found = finder.FindByDir(scriptName, KScriptDir);
+	return found == KErrNone;
 	}

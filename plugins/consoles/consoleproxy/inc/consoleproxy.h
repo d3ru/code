@@ -265,6 +265,7 @@ protected:
 	IMPORT_C virtual void ConsoleCreatedL(MProxiedConsole* aConsole);
 private:
 	void CreateL(const RMessage2& aMessage);
+	void CheckCreatedL();
 protected:
 	TConsoleCreateFunction iConsoleCreate;
 	MProxiedConsole* iConsole;
@@ -276,6 +277,7 @@ protected:
 		} iReadType;
 	TKeyCode iKeyCode;
 	TUint iKeyModifiers;
+	TInt iCreateErr;
 	};
 
 

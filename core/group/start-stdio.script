@@ -14,10 +14,6 @@
 # Shutdown PIPS stdioserver if running
 kill -am stdioserver.exe*
 
-# Tell Qt to use stdout rather than RDebug::Print()
-mkdir -a c:\system\data\
-touch c:\system\data\qtusestdout
-
 start --quiet --rendezvous fshell_stdioserver.exe || export ERR "$?"
 var ERR defined && var ERR != "-11" && error $ERR "Couldn't start fshell_stdioserver.exe"
 
@@ -28,6 +24,3 @@ exit
 ==short-description
 
 Kill the PIPS stdioserver if running and launch the fshell one instead (if not already running).
-
-==long-description
-

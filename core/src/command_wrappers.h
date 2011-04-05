@@ -23,7 +23,7 @@ using namespace IoUtils;
 
 
 class MCommandObserver;
-
+class MConditionalBlock;
 
 class MCommand
 	{
@@ -31,7 +31,7 @@ public:
 	virtual RIoReadHandle& CmndStdin() = 0;
 	virtual RIoWriteHandle& CmndStdout() = 0;
 	virtual RIoWriteHandle& CmndStderr() = 0;
-	virtual TInt CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession) = 0;
+	virtual TInt CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession, MConditionalBlock* aCurrentBlock) = 0;
 	virtual void CmndForeground() = 0;
 	virtual void CmndBackground() = 0;
 	virtual void CmndKill() = 0;
@@ -104,7 +104,7 @@ private:
 	void DoCancel();
 	static void DoCommandThreadStartL(TAny* aSelf);
 private: // From MCommand.
-	virtual TInt CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession);
+	virtual TInt CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession, MConditionalBlock* aCurrentBlock);
 	virtual void CmndForeground();
 	virtual void CmndBackground();
 	virtual void CmndKill();
@@ -121,6 +121,7 @@ private:
 	MTaskRunner* iTaskRunner;
 	CEnvironment* iSuppliedEnv;
 	HBufC* iCommandLine;
+	MConditionalBlock* iCurrentBlock;
 	};
 
 
@@ -137,7 +138,7 @@ protected:
 private:
 	void CmndRunL(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver);
 protected: // From MCommand.
-	virtual TInt CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession);
+	virtual TInt CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession, MConditionalBlock* aCurrentBlock);
 	virtual void CmndForeground();
 	virtual void CmndBackground();
 	virtual void CmndKill();
@@ -179,7 +180,7 @@ public:
 	CPipsCommand();
 	~CPipsCommand();
 private: // From MCommand.
-	virtual TInt CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession);
+	virtual TInt CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession, MConditionalBlock* aCurrentBlock);
 	virtual void CmndKill();
 private: // From CProcessCommand.
 	virtual void CreateProcessL(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv);
@@ -201,7 +202,7 @@ private: // From MCommand.
 	RIoReadHandle& CmndStdin();
 	RIoWriteHandle& CmndStdout();
 	RIoWriteHandle& CmndStderr();
-	TInt CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession);
+	TInt CmndRun(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv, MCommandObserver& aObserver, RIoSession& aIoSession, MConditionalBlock* aCurrentBlock);
 	void CmndForeground();
 	void CmndBackground();
 	void CmndKill();
@@ -219,5 +220,20 @@ private:
 	MCommandObserver* iCommandObserver;
 	};
 
+_LIT(KScriptSuffix, ".script");
+
+class CScriptCommandWrapper : public CProcessCommand
+	{
+public:
+	static CScriptCommandWrapper* NewL(const TDesC& aScriptName);
+	static TBool ScriptExists(RFs& aFs, const TDesC& aCommandName);
+	~CScriptCommandWrapper();
+private:
+	CScriptCommandWrapper();
+	void ConstructL(const TDesC& aScriptName);
+
+private: // From CProcessCommand.
+	virtual void CreateProcessL(const TDesC& aCommandLine, IoUtils::CEnvironment& aEnv);
+	};
 
 #endif // __COMMAND_WRAPPERS_H__

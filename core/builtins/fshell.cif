@@ -134,7 +134,7 @@ See also the commands L<fg|fg>, L<bg|bg> and L<jobs|jobs>.
 
 =item * Conditional Execution
 
-Commands can conditionally execute using the logical 'and' operator C<&&>, the logical 'or' operator C<||> or the (somewhat strange) 'andor' operator C<&|>. For example...
+Commands can conditionally execute using the logical 'and' operator C<&&>, the logical 'or' operator C<||> or the (somewhat strange) 'andor' operator C<&|>. For example:
 
   command_1 && command_2
 
@@ -150,6 +150,8 @@ The 'andor' operator is effectively an alternative for proper block support. It 
 
 In this example, "do_something" is only executed if "some_dir" does not already exist. However, if "do_something" is run, then "do_something_else" is also guaranteed to also run.
 
+More advanced multi-line conditional statements are possible using the L<if command|if>. Looping is possible using the L<while|while> command, or for more basic iterations the L<repeat|repeat> or L<foreach|foreach> commands.
+
 =item * Environment variables
 
 Environment variables can be defined (and undefined) using the L<export|export> command. Once defined, variables can be used in fshell command lines (or scripts) by prefixing them with a C<$> sign as follows:
@@ -157,6 +159,21 @@ Environment variables can be defined (and undefined) using the L<export|export> 
   c:\>export MYVAL 'some value'
   c:\>echo $MYVAL
   some value
+
+The L<var|var> command is useful for manipulating environment variables, particularly in combination with conditional execution:
+
+  c:\>export I 3
+  c:\>var I add 2
+  c:\>echo "I is now $I"
+  I is now 5
+
+Or, in a script:
+
+  export I 0
+  while I lessthan 10
+      echo "I is $I"
+      var I add 1
+  endwhile
 
 Fshell defines some variables at all times. C<PWD> is set to the current directory, and C<?> is set to the return code of the last command that ran. For example:
 
@@ -225,7 +242,7 @@ A list of all the supported commands is available L<here|commands>.
 
 =head2 Scripting Support
 
-F<fshell> supports simple scripting to allow more than one command to be run in succession. Scripts can be invoked in two ways:
+F<fshell> supports simple scripting to allow more than one command to be run in succession. Scripts can be invoked in multiple ways:
 
 =over 5
 
@@ -236,6 +253,15 @@ By running fshell with the script file name as an argument. If a path isn't give
   c:\>fshell myscript.script # checks for c:\myscript.script and ?:\system\console\scripts\myscript.script
   c:\>fshell e:\scripts\something # tries to run e:\scripts\something
   c:\>fshell myscript # checks for c:\myscript, ?:\system\console\scripts\myscript and finally ?:\system\console\scripts\myscript.script
+
+=item *
+
+For a script in F<\system\console\scripts>, you can use the name of the script as if it was a normal command, without needing to explicitly type C<fshell>. For example:
+
+  c:\>myscript
+  c:\>myscript.script
+
+Scripts in this location will override EXE commands of the same name. Built-in commands cannot be overridden.
 
 =item *
 

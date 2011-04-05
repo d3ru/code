@@ -726,6 +726,8 @@ public:
 	~CCmdVar();
 private:
 	CCmdVar();
+	TInt Operation(TInt aValue, TInt aOperand) const;
+	TBool Condition(TInt aValue, TInt aOperand) const;
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();
@@ -742,6 +744,14 @@ private:
 		EMultiply,
 		EStartsWith,
 		EEndsWith,
+		ELessThan,
+		ELt,
+		ELessThanOrEqual,
+		ELe,
+		EGreaterThan,
+		EGt,
+		EGreaterThanOrEqual,
+		EGe,
 		} iOperation;
 	HBufC* iVar1;
 	HBufC* iArg;
@@ -881,7 +891,7 @@ public:
 	~CCmdDebug();
 private:
 	CCmdDebug();
-	void InteractL(const TDesC& aExpandedLine);
+	TBool InteractL(const TDesC& aExpandedLine);
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();
@@ -889,7 +899,7 @@ private: // From CCommandBase.
 	virtual void OptionsL(RCommandOptionList& aOptions);
 private: // From MParserObserver.
 	virtual void HandleParserComplete(CParser& aParser, const TError& aError);
-	virtual void AboutToExecuteLine(const TDesC& aOrignalLine, const TDesC& aExpandedLine);
+	virtual TBool AboutToExecutePipeLineStage(const TDesC& aOrignalLine, const TDesC& aExpandedLine, const TDesC& aPipelineCondition);
 	virtual void LineReturned(TInt aError);
 private:
 	TFileName2 iFileName;

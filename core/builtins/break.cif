@@ -1,0 +1,38 @@
+# break.cif
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name break
+
+==short-description
+
+Exits a while loop early.
+
+==long-description
+
+Example usage:
+
+    while
+        ...
+        var ERR != 0 && break
+    endwhile
+
+==see-also
+
+L<while|while>, L<endwhile|endwhile>, L<continue|continue>
+
+==copyright
+
+Copyright (c) 2011 Accenture. All rights reserved.
+
+==smoke-test
+
+# Handled by while's

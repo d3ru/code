@@ -1,0 +1,134 @@
+# while.cif
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name while
+
+==short-description
+
+Support for conditional loops in fshell scripts.
+
+==long-description
+
+Execute all the following statements (up until C<endwhile>) repeatedly while C<condition> evaluates to KErrNone. The semantics are the same as for C-style while loops. For example:
+
+    export I 0
+    while var I lessthan 10
+        echo "Loop iteration $I"
+        var I add 1
+    endwhile
+    # $I is now 10
+
+Indentation of the block is optional but recommended. There are a couple of restrictions on usage of C<while> and C<endwhile> that don't apply to most other fshell commands:
+
+=over 5
+
+=item *
+
+while and endwhile cannot participate in pipelines, nor can they be backgrounded using '&' or redirected. For example the following is I<not> allowed: C<while 'var ERR == 0' && echo 'no error'>
+
+=item *
+
+while and endwhile must each appear on a line on their own (although comments are permitted on those lines).
+
+=item *
+
+The C<endwhile> command will return an error if the most recently-entered block is not a while block.
+
+=item *
+
+Every C<while> command must be followed by exactly one C<endwhile> call, which cannot be in a different script. A missing endwhile will probably mean nothing from the while command onwards gets executed (although this behaviour may change).
+
+=item *
+
+Issuing the while command in an interactive fshell session is not a good idea and will probably do something strange. Currently, it will usually exit with an error or cause the shell to hang, requiring you to press CTRL-C to kill the while command.
+
+=back
+
+Behaviour is unspecified if the above rules are ignored.
+
+Nested while blocks are permitted providing there are the correct number of endwhile statements. Modifications to the environment within the while block (or even within the conditional, although this isn't recommended) are visible outside the block. In other words there is no scoping associated with the block.
+
+Be careful when using dollar-expansion in the C<condition> argument - it will be expanded when the while command is constructed, ie I<before> being used as the conditional, unless it is single-quoted. It is allowed to put multiple statements in the C<condition>, but note it must be quoted to prevent it appearing as if it is the while command that should be in the pipeline. Eg the correct way of including two conditions in the while statement is:
+
+    while 'var I == 0 && exists some_file'
+        ...
+    endwhile
+
+Note: If you are executing a script using L<source|source> and kill the script while it is exectuting a C<while> block (by for example pressing CTRL-C) it will I<not> terminate the while block. This is not unique to the while command, no command that is in the middle of running in a source script will be terminated when pressing CTRL-C - it's just a bit more obvious when you're using the while command.
+
+==argument string condition optional last
+
+The given condition is evaluated each time through the loop. If not specified the loop continues forever (or until a break statement). The conditional is an fshell expression that must return zero (KErrNone) in order for the loop to continue. It is common to use a C<var> command in the condition, although any command can be used if desired.
+
+==see-also
+
+L<endwhile|endwhile>, L<break|break>, L<continue|continue>, L<repeat|repeat>, L<if|if>
+
+==copyright
+
+Copyright (c) 2011 Accenture. All rights reserved.
+
+==smoke-test
+
+# Test that loop terminates, and that env is updated
+export I 0
+while var I lessthan 10
+	var I add 1
+endwhile
+var I == 10 || $Error
+
+export I 0
+while 'var I defined && var I != 5' # Multiple statements in condition is permitted
+	var I add 1
+endwhile
+var I == 5 || $Error
+
+# Check that a negative in the first part of a conditional using && prevents execution
+while "var NONEXIST defined && var NONEXIST2 defined"
+    $Error
+endwhile
+
+# Check nested loops work as expected
+export SUM 0
+export I 0
+while var I lessthan 5
+	export J 0
+	while var J != 3
+		var SUM add 1
+		var J add 1
+	endwhile
+	var I add 1
+endwhile
+
+var SUM == 15 || $Error
+
+# Check break works properly
+export I 0
+while var I lessthan 10
+	var I == 5 && break
+	var I add 1
+	continue
+	# And that continue doesn't execute this
+	$Error
+endwhile
+var I == 5 || $Error
+
+# check while --help doesn't lock up
+while --help $Quiet
+
+# check that no condition works
+export I 0
+while
+    var I add 1
+	var I == 3 && break
+endwhile
+var I == 3 || $Error

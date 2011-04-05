@@ -95,7 +95,7 @@ private:
 	// Thread context
 	struct SThreadContext
 		{
-		SThreadContext() : iUserValidRegisters(0), iSupervisorValidRegisters(0), iFlags(0) {}
+		SThreadContext() : iUserValidRegisters(0), iSupervisorValidRegisters(0), iFlags(0), iExeCodeBase(0), iExeCodeSize(0) {}
 
 		RThread iThread;
 		TUint32 iUserRegisters[KMaxRegisters];
@@ -105,6 +105,8 @@ private:
 		TThreadKernelInfo iKernelInfo;
 		enum TFlags { ERunning = 1, };
 		TBitFlags32 iFlags;
+		TLinAddr iExeCodeBase;
+		TInt iExeCodeSize;
 		};
 	SThreadContext* iCurrent;
 	RPointerArray<SThreadContext> iThreads;
@@ -511,6 +513,20 @@ void CCmdFdb::RefreshL(SThreadContext& aContext)
 	err = iMemAccess.GetObjectInfoByHandle(EThread, RThread().Id(), aContext.iThread.Handle(), kerninfo);
 	if (err) PrintError(err, _L("Couldn't read thread info from memoryaccess for thread %u\r\n"), tid);
 	//aContext.iFlags.Assign(SThreadContext::ESuspended, aContext.iKernelInfo.iNThreadSuspendCount != 0);
+
+	RProcess proc;
+	err = aContext.iThread.Process(proc);
+	if (!err)
+		{
+		TProcessMemoryInfo info;
+		err = proc.GetMemoryInfo(info);
+		if (!err)
+			{
+			aContext.iExeCodeBase = info.iCodeBase;
+			aContext.iExeCodeSize = info.iCodeSize;
+			}
+		proc.Close();
+		}
 	}
 	
 TPtrC CCmdFdb::LookupSymbol(TUint32 aAddress)
@@ -1056,7 +1072,20 @@ void CCmdFdb::PrintMemL(TUint aThreadId, TUint32 aStart, TUint32 aEnd, TPrintMod
 			if (print)
 				{
 				Printf(_L("%08x: %08x "), aStart + i*4, word);
-				Write(LookupSymbol(word));
+				TPtrC symbol = LookupSymbol(word);
+				if (symbol.Length())
+					{
+					Write(symbol);
+					}
+				else if (aMode == EAllData)
+					{
+					const TUint8* wordPtr = (const TUint8*)(ptr + i);
+					for (TInt b = 0; b < 4; b++)
+						{
+						if (Rng(32, (TInt)wordPtr[b], 127)) Printf(_L("%c"), wordPtr[b]);
+						else Write(_L("."));
+						}
+					}
 				Write(KCrLf);
 				}
 			}
@@ -1144,6 +1173,10 @@ TBool CCmdFdb::IsSymbol(TUint aAddress) const
 	{
 	// Ranges probably not perfect, seem to be roughly ok though
 	TBool okRange = Rng(0x70000000u, aAddress, 0xA0000000u) || Rng(0xC0000000u, aAddress, 0xFC000000u);
+	if (iCurrent && !okRange)
+		{
+		okRange = Rng(iCurrent->iExeCodeBase, (TLinAddr)aAddress, iCurrent->iExeCodeBase + iCurrent->iExeCodeSize);
+		}
 	return okRange && aAddress != 0xDEDEDEDE && aAddress != 0xAAAAAAAA && aAddress != 0xBBBBBBBB && aAddress != 0xCCCCCCCC; 
 	}
 

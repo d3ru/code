@@ -20,11 +20,46 @@ Display the version of this build of fshell.
 
 Display verbose version information.
 
+==option bool s short
+
+Display just the version number, in a form suitable to piping into an environment variable, eg C<version --short | export -s FSHELL_VERSION>. Release 004 is represented as C<4000>, a theoretical 4.1 would be C<4001>.
+
+==argument string required-version optional
+
+If specified, instead of just printing the current version, exit with an error if the current version is not at least C<required-version>.
+
+==long-description
+
+The version command can also be used to test if the current version is at least of a given version. For example:
+
+    version 4.1 # Will error if version isn't at least Release 004.1
+
+or for more complex checks, use the C<--short> option to put the version into an environment variable and then implement your own custom logic:
+
+    version --short | export -s FSHELL_VERSION
+    if var FSHELL_VERSION greaterorequal 5000
+        # Do something that relies on Release 005
+    else
+        # Fall back to something else on earlier versions
+    endif
+
+The C<--short> and C<required-version> syntax was introduced in Release 004, as was the C<if> conditional statement, so you may wish to add a special case if you need to support versions of fshell older than that. For example if you need to write a script that works on Release 003 or later, ie before the more advanced syntax was available, you could use a check similar to the following:
+
+    version | export -s FSHELL_VERSION
+    version --short 2>&1 >/dev/null || export TOO_OLD # Assume anything before --short was supported is too old
+    var TOO_OLD defined && var FSHELL_VERSION == "Release 003" && export TOO_OLD # except for Release 003
+    var TOO_OLD defined && error -5 "Fshell version is too old to support this script - Release 003 or later is required"
+
 ==copyright
 
-Copyright (c) 2008-2010 Accenture. All rights reserved.
+Copyright (c) 2008-2011 Accenture. All rights reserved.
 
 ==smoke-test
 
 version | export -s VERSION
 var VERSION startswith "Release" || $Error
+
+version --short | export -s VERSION
+var VERSION ge 4000 || $Error
+version 4 || $Error
+version 999 $Silent && $Error

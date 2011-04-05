@@ -149,11 +149,17 @@ EXPORT_C void CConsoleProxySession::CreateL()
 	Server()->AddSession();
 	}
 
+void CConsoleProxySession::CheckCreatedL()
+	{
+	User::LeaveIfError(iCreateErr);
+	if (!iConsole) User::Leave(KErrNotReady);
+	}
+
 EXPORT_C void CConsoleProxySession::ServiceL(const RMessage2& aMessage)
 	{
-	if (!iConsole && (aMessage.Function() != RConsoleProxy::ECreate))
+	if (aMessage.Function() != RConsoleProxy::ECreate)
 		{
-		User::Leave(KErrNotReady);
+		CheckCreatedL();
 		}
 	RBuf buf;
 	CleanupClosePushL(buf);
@@ -246,7 +252,7 @@ EXPORT_C void CConsoleProxySession::ServiceL(const RMessage2& aMessage)
 		}
 	case RConsoleProxy::ESetAttributes:
 		{
-		if (!iConsole) User::Leave(KErrNotReady);
+		CheckCreatedL();
 		ConsoleAttributes::TAttributes attributes((TUint)aMessage.Int0(), (ConsoleAttributes::TColor)aMessage.Int1(), (ConsoleAttributes::TColor)aMessage.Int2());
 		TInt err = ConsoleAttributes::Set(iConsole->Console(), attributes);
 		aMessage.Complete(err);
@@ -256,7 +262,7 @@ EXPORT_C void CConsoleProxySession::ServiceL(const RMessage2& aMessage)
 	case RConsoleProxy::EIsConstructed:
 		{
 		if (aMessage.GetDesLengthL(0)!=sizeof(TBool)) User::Leave(KErrArgument);
-		if (!iConsole) User::Leave(KErrNotReady);
+		CheckCreatedL();
 		if (!LazyConsole::IsLazy(iConsole->Console())) User::Leave(KErrExtensionNotSupported);
 		TPckgBuf<TBool> constructed = LazyConsole::IsConstructed(iConsole->Console());
 		aMessage.WriteL(0, constructed);
@@ -303,9 +309,9 @@ EXPORT_C void CConsoleProxySession::DoCreateL(const TDesC& aTitle, const TSize& 
 	__ASSERT_ALWAYS(cons, Panic(ENoConsoleInstatiated));
 	CleanupClosePushL(*cons);
 	TName procName = RProcess().Name(); // econseik sets the process name to the console title...
-	TInt err = cons->Console()->Create(aTitle, aSize);
+	iCreateErr = cons->Console()->Create(aTitle, aSize);
 	User::RenameProcess(procName.Left(procName.Locate('['))); // ...so restore it just in case
-	User::LeaveIfError(err);
+	User::LeaveIfError(iCreateErr);
 	
 	ConsoleCreatedL(cons);
 	

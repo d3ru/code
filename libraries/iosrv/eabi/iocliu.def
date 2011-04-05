@@ -640,4 +640,8 @@ EXPORTS
 	_ZN12TIoHandleSet5CloseEv @ 639 NONAME
 	_ZN12TIoHandleSetC1Ev @ 640 NONAME
 	_ZN12TIoHandleSetC2Ev @ 641 NONAME
+	_ZNK7IoUtils20MCommandExtensionsV316ExtensionVersionEv @ 642 NONAME
+	_ZTIN7IoUtils20MCommandExtensionsV3E @ 643 NONAME
+	_ZTVN7IoUtils20MCommandExtensionsV3E @ 644 NONAME
+	_ZNK7IoUtils12CCommandBase9ExtensionEv @ 645 NONAME
 

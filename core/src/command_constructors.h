@@ -38,7 +38,8 @@ public:
 		ETypeThread,
 		ETypeAlias,
 		ETypeExe,
-		ETypePips
+		ETypePips,
+		ETypeScript,
 		};
 public:
 	const TDesC& CommandName() const;
@@ -119,6 +120,17 @@ private:
 	CCommandConstructorBase* iAliasedConstructor;
 	HBufC* iAdditionalArguments;
 	HBufC* iReplacementArguments;
+	};
+
+class CScriptCommandConstructor : public CCommandConstructorBase
+	{
+public:
+	static CScriptCommandConstructor* NewLC(const TDesC& aCommandName);
+private:
+	CScriptCommandConstructor();
+private: // From CCommandConstructorBase.
+	virtual MCommand* ConstructCommandL();
+	virtual void AppendDescriptionL(RLtkBuf16& aBuf) const;
 	};
 
 #endif // __COMMAND_CONSTRUCTORS_H__

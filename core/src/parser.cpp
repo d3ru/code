@@ -1,6 +1,6 @@
 // parser.cpp
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -13,7 +13,6 @@
 #include <fshell/ioutils.h>
 #include <fshell/ltkutils.h>
 #include "parser.h"
-#include "fshell.h"
 #include "lexer.h"
 #include "command_factory.h"
 
@@ -21,7 +20,6 @@
 // Globals.
 //
 
-_LIT(KChildError, "?");
 _LIT(KPipe, "|");
 _LIT(KDoublePipe, "||");
 _LIT(KRedirectStdinFromFile, "<");
@@ -42,18 +40,43 @@ _LIT(KNewLine3, "\r\n");
 _LIT(KNewLine4, "\n\r");
 _LIT(KSemicolon, ";");
 _LIT(KDollar, "$");
-
+const TDesC* KPipelineConditions [] = 
+	{
+	&KNullDesC,
+	&KDoubleAmpersand,
+	&KDoublePipe,
+	&KAmpersandPipe,
+	};
 
 void MParserObserver::HandleParserExit(CParser&)
 	{
 	CActiveScheduler::Stop();
 	}
 
-void MParserObserver::AboutToExecuteLine(const TDesC&, const TDesC&)
+TBool MParserObserver::AboutToExecutePipeLineStage(const TDesC&, const TDesC&, const TDesC&)
 	{
+	return ETrue;
 	}
 
 void MParserObserver::LineReturned(TInt)
+	{
+	}
+
+CParser::TRootBlock::TRootBlock(CParser* aParser)
+	{
+	SetParentBlock(NULL);
+	SetBlockObserver(aParser);
+	}
+
+void CParser::TRootBlock::EndBlockL(CCommandBase* aEndCommand)
+	{
+	if (aEndCommand)
+		{
+		CommandLeaveIfErr(*aEndCommand, KErrArgument, _L("Unexpected %S statement"), &aEndCommand->Name());
+		}
+	}
+
+void CParser::TRootBlock::HandleParserComplete(CParser&, const TError&)
 	{
 	}
 
@@ -77,6 +100,13 @@ CParser* CParser::NewL(TUint aMode, RIoReadHandle& aSourceHandle, RIoSession& aI
 
 CParser::~CParser()
 	{
+	// Cleanup any blocks that we exited abnormally from (ie make sure any 'if's are cleaned up)
+	for (TInt i = iConditionalScopes.Count() - 1; i >= 0; i--)
+		{
+		MConditionalBlock* rootBlock = &iRootBlock;
+		if (iConditionalScopes[i] == rootBlock) break; // Anything before iRootBlock is not owned by us so we shouldn't end it
+		iConditionalScopes[i]->EndBlockL(NULL); // Does not leave
+		}
 	delete iForegroundPipeLine;
 	iBackgroundPipeLines.ResetAndDestroy();
 	delete iLexer1;
@@ -90,15 +120,17 @@ CParser::~CParser()
 		iStdout.Close();
 		iStderr.Close();
 		}
+	iConditionalScopes.Close();
 	}
 
 CParser::CParser(TUint aMode, RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv, CCommandFactory& aFactory, MParserObserver* aObserver, TInt aStartingLineNumber)
-	: iMode(aMode), iIoSession(aIoSession), iStdin(aStdin), iStdout(aStdout), iStderr(aStderr), iEnv(aEnv), iFactory(aFactory), iObserver(aObserver), iCompletionError(aStderr, aEnv), iNextLineNumber(aStartingLineNumber)
+	: iMode(aMode), iIoSession(aIoSession), iStdin(aStdin), iStdout(aStdout), iStderr(aStderr), iEnv(aEnv), iFactory(aFactory), iObserver(aObserver), iCompletionError(aStderr, aEnv), iNextLineNumber(aStartingLineNumber), iRootBlock(this)
 	{
 	}
 
 void CParser::ConstructL(const TDesC* aDes, RIoReadHandle* aSourceHandle)
 	{
+	iConditionalScopes.AppendL(&iRootBlock);
 	if (iObserver)
 		{
 		iCompletionCallBack = new(ELeave) CAsyncCallBack(TCallBack(CompletionCallBack, this), CActive::EPriorityStandard);
@@ -501,28 +533,43 @@ void CParser::CreateNextPipeLineL(TBool* aIsForeground)
 			pipeSection.iFullName.Set(iLexer2->Ptr() + offset, iLexer2->CurrentOffset() - offset);
 			User::LeaveIfError(pipeSections.Append(pipeSection));
 			CleanupStack::Pop(&pipeSection);
-			if ((iMode & EDebug) && iObserver)
+			TBool shouldExecute = ETrue;
+			if (CurrentConditionalScope())
 				{
-				iObserver->AboutToExecuteLine(pipeLineData, *expandedPipeLine);
+				shouldExecute = CurrentConditionalScope()->AboutToExecutePipeLineStage(pipeLineData, *expandedPipeLine, *KPipelineConditions[iCondition]);
 				}
-			if (background)
+			if (shouldExecute && (iMode & EDebug) && iObserver)
 				{
-				CPipeLine* pipeLine = CPipeLine::NewLC(iIoSession, iStdin, iStdout, iStderr, iEnv, iFactory, pipeSections, background, this, iCompletionError);
-				User::LeaveIfError(iBackgroundPipeLines.Append(pipeLine));
-				CleanupStack::Pop(pipeLine);
+				shouldExecute = iObserver->AboutToExecutePipeLineStage(pipeLineData, *expandedPipeLine, *KPipelineConditions[iCondition]);
+				}
+			if (shouldExecute)
+				{
+				if (background)
+					{
+					// We don't pass CurrentConditionalScope() to backgrounded commands, because it's only used by control statements and it's not
+					// allowed to run control statements in the background - so we want a syntax error
+					CPipeLine* pipeLine = CPipeLine::NewLC(iIoSession, iStdin, iStdout, iStderr, iEnv, iFactory, pipeSections, background, this, iCompletionError, NULL);
+					User::LeaveIfError(iBackgroundPipeLines.Append(pipeLine));
+					CleanupStack::Pop(pipeLine);
+					}
+				else
+					{
+					ASSERT(iForegroundPipeLine == NULL);
+					iForegroundPipeLine = CPipeLine::NewL(iIoSession, iStdin, iStdout, iStderr, iEnv, iFactory, pipeSections, background, this, iCompletionError, CurrentConditionalScope());
+					}
+				CleanupStack::PopAndDestroy(&pipeSections);
+				if (aIsForeground && !iLexer1->MoreL())
+					{
+					*aIsForeground = !background;
+					}
+				if (background && iLexer1->MoreL())
+					{
+					iNextPipeLineCallBack->Call();
+					}
 				}
 			else
 				{
-				ASSERT(iForegroundPipeLine == NULL);
-				iForegroundPipeLine = CPipeLine::NewL(iIoSession, iStdin, iStdout, iStderr, iEnv, iFactory, pipeSections, background, this, iCompletionError);
-				}
-			CleanupStack::PopAndDestroy(&pipeSections);
-			if (aIsForeground && !iLexer1->MoreL())
-				{
-				*aIsForeground = !background;
-				}
-			if (background && iLexer1->MoreL())
-				{
+				CleanupStack::PopAndDestroy(&pipeSections);
 				iNextPipeLineCallBack->Call();
 				}
 			}
@@ -533,7 +580,7 @@ void CParser::CreateNextPipeLineL(TBool* aIsForeground)
 			{
 			iCompletionCallBack->CallBack();
 			}
-		CleanupStack::PopAndDestroy(2, &pipeSections);
+		CleanupStack::PopAndDestroy(2, &pipeSections); // pipeSection, pipeSections
 		}
 
 	CleanupStack::PopAndDestroy(expandedPipeLine);
@@ -708,9 +755,9 @@ HBufC* ExpandVariablesLC(const TDesC& aData, CLexer& aLexer, IoUtils::CEnvironme
 	return buf;
 	}
 
-HBufC* CParser::ExpandVariablesLC(const TDesC& aData)
+HBufC* CParser::ExpandVariablesLC(const TDesC& aData) const
 	{
-	CLexer* lexer1 = CLexer::NewLC(CLexer::EHandleSingleQuotes | CLexer::EHandleDoubleQuotes  | CLexer::EHandleComments);
+	CLexer* lexer1 = CLexer::NewLC(CLexer::EHandleSingleQuotes | CLexer::EHandleDoubleQuotes | CLexer::EHandleComments);
 	CLexer* lexer2 = CLexer::NewLC(0);
 
 	// Populate 'lexer2' with a token definition for each environment variable (preceded with '$').
@@ -921,3 +968,46 @@ void CParser::HandlePipeLineCompleteL(CPipeLine& aPipeLine, const TError& aError
 		}
 	}
 
+MConditionalBlock* CParser::CurrentConditionalScope()
+	{
+	if (iConditionalScopes.Count())
+		{
+		return iConditionalScopes[iConditionalScopes.Count()-1];
+		}
+	return NULL;
+	}
+
+void CParser::SetParentConditionalBlockL(MConditionalBlock* aBlock)
+	{
+	ASSERT(iConditionalScopes.Count() == 1); // Should only be iRootBlock in the array at this point
+	User::LeaveIfError(iConditionalScopes.Insert(aBlock, 0)); // Parent must go before iRootBlock
+	iRootBlock.SetParentBlock(aBlock);
+	}
+
+void CParser::StartingNewBlockL(MConditionalBlock* aBlock)
+	{
+	//RDebug::Printf("Parser %x starting block %x", this, aBlock);
+	if (iScopeLock.Handle() == KNullHandle) User::LeaveIfError(iScopeLock.CreateLocal());
+	iScopeLock.Wait();
+	aBlock->SetBlockObserver(this);
+	aBlock->SetParentBlock(CurrentConditionalScope());
+	TInt err = iConditionalScopes.Append(aBlock);
+	iScopeLock.Signal();
+	User::LeaveIfError(err);
+	}
+
+void CParser::BlockFinished(MConditionalBlock* aBlock)
+	{
+	//RDebug::Printf("Parser %x BlockFinished %x", this, aBlock);
+	iScopeLock.Wait();
+	for (TInt i = iConditionalScopes.Count() - 1; i >= 0; i--)
+		{
+		MConditionalBlock* block = iConditionalScopes[i];
+		iConditionalScopes.Remove(i);
+		if (block == aBlock)
+			{
+			break;
+			}
+		}
+	iScopeLock.Signal();
+	}

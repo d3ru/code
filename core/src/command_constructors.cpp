@@ -231,3 +231,30 @@ void CAliasCommandConstructor::AppendDescriptionL(RLtkBuf16& aBuf) const
 		}
 	aBuf.AppendL(_L("'"));
 	}
+
+//
+// CScriptCommandConstructor
+//
+
+CScriptCommandConstructor* CScriptCommandConstructor::NewLC(const TDesC& aCommandName)
+	{
+	CScriptCommandConstructor* self = new(ELeave) CScriptCommandConstructor;
+	CleanupStack::PushL(self);
+	self->BaseConstructL(aCommandName);
+	return self;
+	}
+
+CScriptCommandConstructor::CScriptCommandConstructor()
+	: CCommandConstructorBase(ETypeScript)
+	{
+	}
+
+MCommand* CScriptCommandConstructor::ConstructCommandL()
+	{
+	return CScriptCommandWrapper::NewL(CommandName());
+	}
+
+void CScriptCommandConstructor::AppendDescriptionL(RLtkBuf16& aBuf) const
+	{
+	aBuf.AppendFormatL(_L("script command '%S.script'"), &CommandName());
+	}

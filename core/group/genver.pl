@@ -22,27 +22,32 @@ my $compilerVersion = CompilerVersion();
 
 
 print "
-#include <fshell/iocli.h>
+#include <e32base.h>
+#include <fshell/descriptorutils.h>
 
-extern void PrintVersionInfo(RIoWriteHandle& aOut, TBool aVerbose)
+extern HBufC* GetVersionInfoL(TBool aVerbose)
 	{
+	LtkUtils::RLtkBuf buf;
+	CleanupClosePushL(buf);
 	if (aVerbose)
 		{
-		aOut.Write(_L(\"Version:              $version\\r\\n\"));
-		aOut.Write(_L(\"Local build time:     $localTime\\r\\n\"));
-		aOut.Write(_L(\"GMT build time:       $gmTime\\r\\n\"));
-		aOut.Write(_L(\"User-name of builder: $builder\\r\\n\"));
-		aOut.Write(_L(\"Compiler version:     $compilerVersion\\r\\n\"));
+		buf.AppendL(_L(\"Version:              $version\\r\\n\"));
+		buf.AppendL(_L(\"Local build time:     $localTime\\r\\n\"));
+		buf.AppendL(_L(\"GMT build time:       $gmTime\\r\\n\"));
+		buf.AppendL(_L(\"User-name of builder: $builder\\r\\n\"));
+		buf.AppendL(_L(\"Compiler version:     $compilerVersion\\r\\n\"));
 #ifdef _DEBUG
-		aOut.Write(_L(\"Build configuration:  debug\\r\\n\"));
+		buf.AppendL(_L(\"Build configuration:  debug\\r\\n\"));
 #else
-		aOut.Write(_L(\"Build configuration:  release\\r\\n\"));
+		buf.AppendL(_L(\"Build configuration:  release\\r\\n\"));
 #endif
 		}
 	else
 		{
-		aOut.Write(_L(\"$version\\r\\n\"));
+		buf.AppendL(_L(\"$version\\r\\n\"));
 		}
+	CleanupStack::Pop(&buf);
+	return buf.ToHBuf();
 	}
 ";
 

@@ -56,6 +56,7 @@ private:
 	void NewLine() const;
 	void PrintError() const;
 	void FormatError(TRefByValue<const TDesC> aFmt, ...) const;
+	void SetScriptContextFromEnvironment();
 private:
 	RIoWriteHandle* iStderr;
 	IoUtils::CEnvironment* iEnv;

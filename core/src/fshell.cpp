@@ -1,6 +1,6 @@
 // fshell.cpp
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -45,9 +45,17 @@ TInt gExitValue(KErrNone);
 //
 
 TError::TError(RIoWriteHandle& aStderr, IoUtils::CEnvironment& aEnv)
-	: iStderr(&aStderr), iEnv(&aEnv), iScriptLineNumber(-1)
+	: iStderr(&aStderr), iEnv(&aEnv), iError(KErrNone), iReason(EUnknown), iSet(EFalse), iScriptLineNumber(-1)
 	{
-	if (iEnv->IsDefined(KScriptLine))
+	SetScriptContextFromEnvironment();
+	}
+
+void TError::SetScriptContextFromEnvironment()
+	{
+	// Don't change the env if we already set it in the constructor. This is a compromise between cases where the definitive env is the one we 
+	// had at construction (which happens for command errors) and times when the correct env wasn't available then (which is the case for pipeline
+	// errors)
+	if (iScriptLineNumber == -1 && iEnv->IsDefined(KScriptLine) && iEnv->IsDefined(KScriptPath) && iEnv->IsDefined(KScriptName))
 		{
 		iScriptFileName = iEnv->GetAsDes(KScriptPath);
 		iScriptFileName.Append(iEnv->GetAsDes(KScriptName));
@@ -72,6 +80,7 @@ void TError::Set(TInt aError, TReason aReason)
 	{
 	if (!iSet)
 		{
+		SetScriptContextFromEnvironment();
 		iError = aError;
 		iReason = aReason;
 		iContext.Zero();
@@ -86,6 +95,7 @@ void TError::Set(TInt aError, TReason aReason, TRefByValue<const TDesC> aFmt, ..
 	VA_START(list, aFmt);
 	if (!iSet)
 		{
+		SetScriptContextFromEnvironment();
 		iError = aError;
 		iReason = aReason;
 		Format(aFmt, list);

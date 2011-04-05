@@ -562,4 +562,6 @@ EXPORTS
 	Create__12TIoHandleSetR10RIoSessionR10RIoConsoleRC7TDesC16RC5TSize @ 561 NONAME ; TIoHandleSet::Create(RIoSession &, RIoConsole &, TDesC16 const &, TSize const &)
 	OpenExisting__12TIoHandleSetR10RIoSessionG9TThreadIdi @ 562 NONAME ; TIoHandleSet::OpenExisting(RIoSession &, TThreadId, int)
 	__12TIoHandleSet @ 563 NONAME R3UNUSED ; TIoHandleSet::TIoHandleSet(void)
+	ExtensionVersion__CQ27IoUtils20MCommandExtensionsV3 @ 564 NONAME R3UNUSED ; IoUtils::MCommandExtensionsV3::ExtensionVersion(void) const
+	Extension__CQ27IoUtils12CCommandBase @ 565 NONAME R3UNUSED ; IoUtils::CCommandBase::Extension(void) const
 
