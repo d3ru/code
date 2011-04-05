@@ -110,7 +110,12 @@ void CCmdKerninfo::DoRunL()
 	iModel = CKernelObjectList::NewL(&iMemAccess);
 	
 	iModel->SetCurrentType(iType);
-	TRAPL(iModel->RefreshDataL(), _L("Couldn't get model data"));
+	TRAPD(err, iModel->RefreshDataL());
+	if (err)
+		{
+		TPtrC type = iArguments.AsString(&iType);
+		LeaveIfErr(err, _L("Couldn't get model data for type %S"), &type);
+		}
 
 	iTitle.CreateL(256);
 	iInfo.CreateL(256);

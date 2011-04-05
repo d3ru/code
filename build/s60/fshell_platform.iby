@@ -34,7 +34,8 @@ HASH{"fshell (S60)"},(FSHELL_UID_SIS),FSHELL_VERSION,0,FSHELL_TIMESTAMP,TYPE=SA
 #endif
 
 #if FSHELL_PLATFORM_S60 >= 5
-FSHELL_DATA_FILE(ZSYSTEM\console\scripts\vt100btcons_preamble.script, system\console\scripts\vt100btcons_preamble.script)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\vt100btcons_preamble.script, system\console\scripts\vt100btcons_preamble)
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\vt100usbcons_preamble.script, system\console\scripts\vt100usbcons_preamble)
 #endif
 
 #endif // FSHELL_PLATFORM_IBY

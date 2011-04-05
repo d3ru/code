@@ -22,6 +22,7 @@ FSHELL_ROM_INCLUDE(fshell_platform.iby)
 
 #if FSHELL_PLATFORM_S60 >= 5
 .\vt100btcons_preamble.script z:\system\console\scripts\vt100btcons_preamble.script
+.\vt100usbcons_preamble.script z:\system\console\scripts\vt100usbcons_preamble.script
 #endif
 
 #include "../common/bld.inf"

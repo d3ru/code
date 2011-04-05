@@ -33,3 +33,6 @@ library         ltkutils.lib
 systeminclude	/epoc32/include/fshell/pcre
 library			spcre.lib
 #endif
+
+// Max heap 16MB. There can be a lot of objects!
+epocheapsize 0x1000 0x1000000
