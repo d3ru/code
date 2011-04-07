@@ -69,7 +69,11 @@ FSHELL_DATA_FILE(ZRESOURCE\Apps\fshell_launch_serial_loc.rsc, Resource\Apps\fshe
 #endif // FSHELL_CORE_SUPPORT_SERIAL_ICON
 
 FSHELL_DATA_FILE(ZSYSTEM\console\scripts\comm.script, system\console\scripts\comm.script)
+
+#ifdef FSHELL_CORE_SUPPORT_STDIOSERVER
+FSHELL_EXECUTABLE_FILE(fshell_stdioserver.exe)
 FSHELL_DATA_FILE(ZSYSTEM\console\scripts\start-stdio.script, system\console\scripts\start-stdio.script)
+#endif
 
 FSHELL_EXECUTABLE_FILE(iosrv.exe)
 FSHELL_EXECUTABLE_FILE(iocli.dll)

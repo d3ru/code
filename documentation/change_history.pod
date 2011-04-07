@@ -14,6 +14,20 @@ __END__
 
 =head1 fshell Change History
 
+=head2 Release 004.1
+
+=over 5
+
+=item *
+
+Fixed missing IBY include; start-stdioserver.script now works.
+
+=item *
+
+Fixed device freeze when unplugging USB cable during fshell connection setup.
+
+=back
+
 =head2 Release 004
 
 =head3 New features

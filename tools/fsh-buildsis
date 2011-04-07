@@ -105,16 +105,19 @@ sub BuildSis {
   #    Also, substitute some version information.
   #
   my $version = fshu::Version();
-  $version =~ s/[^\d]//g;
-  if ($version =~ /^\s*$/) {
-    $version = 0;
+  my $majorversion = 0;
+  my $minorversion = 0;
+  if ($version =~ /Release (\d+)(?:\.(\d+))?/) {
+    $majorversion = $1;
+	if (defined($2)) { $minorversion = $2; }
   }
   my $timestamp = int ((time() % (24*60*60)) / 4); # Number of seconds since midnight, munged to fit in the buildnum (max 2^16)
   copy ($tempFileName, "$tempFileName.bak") or die "Error: Couldn't copy \"$tempFileName\" to \"$tempFileName.bak\": $!\n";
   open (ORIG, "$tempFileName.bak") or die "Error: Couldn't open \"$tempFileName.bak\" for reading: $!\n";
   open (NEW, ">$tempFileName") or die "Error: Couldn't open \"$tempFileName\" for writing: $!\n";
   while (my $line = <ORIG>) {
-    $line =~ s/FSHELL_VERSION/$version/;
+    $line =~ s/FSHELL_VERSION/$majorversion/;
+    $line =~ s/FSHELL_MINOR_VERSION/$minorversion/;
     $line =~ s/FSHELL_TIMESTAMP/$timestamp/;
    print NEW $line;
   }
