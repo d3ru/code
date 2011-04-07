@@ -100,7 +100,7 @@ void CCmdSetpriority::DoRunL()
 	LoadMemoryAccessL();
 	TInt err = KErrNone;
 
-	// Fix up priorities that we had to make different to kernel cos fshell can't handle negative arguments
+	// Fix up priorities that we had to make different to kernel cos fshell didn't use to be able to handle negative arguments
 	// See enum TThrdPriority in kern_priv.h for the meaning of these negative numbers
 	switch(iPriority)
 		{

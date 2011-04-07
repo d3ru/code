@@ -205,6 +205,13 @@ TInt CVtcConsoleBase::DoDetectScreenSize(TSize& aSize)
 			// We got some data, cancel timer and wait again
 			timer.Cancel();
 			User::WaitForRequest(timerStat);
+			err = stat.Int();
+			if (err)
+				{
+				// If we got an error from the read, abort
+				timer.Close();
+				return err;
+				}
 			}
 		}
 	timer.Close();

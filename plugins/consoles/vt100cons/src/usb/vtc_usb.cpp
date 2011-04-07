@@ -45,6 +45,7 @@ void CUsbConsole::ConstructL(const TDesC& aTitle)
 	{
 	TUsbPortConfig portConfig;
 	User::LeaveIfError(ReadConfig(aTitle, portConfig));
+	if (portConfig.iDebug) SetDebug(ETrue);
 
 	User::LeaveIfError(iUsb.Connect());
 	
@@ -129,6 +130,7 @@ TInt CUsbConsole::ReadConfig(const TDesC& aConfigDes, TUsbPortConfig& aConfig)
 	{
 	_LIT(KKeywordPort, "port");
 	_LIT(KKeywordPersonality, "personality");
+	_LIT(KKeywordDebug, "debug");
 
 	TBool keywordFound(EFalse);
 	TLex lex(aConfigDes);
@@ -151,6 +153,13 @@ TInt CUsbConsole::ReadConfig(const TDesC& aConfigDes, TUsbPortConfig& aConfig)
 			{
 			TLex lex(value);
 			TInt err = lex.Val(aConfig.iPersonality);
+			if (err) return err;
+			keywordFound = ETrue;
+			}
+		else if (keyword == KKeywordDebug)
+			{
+			TLex lex(value);
+			TInt err = lex.Val(aConfig.iDebug);
 			if (err) return err;
 			keywordFound = ETrue;
 			}

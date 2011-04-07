@@ -136,6 +136,10 @@ The USB port name. This is platform specific but is usually C<ACM::0> or C<ACM::
 
 If it is necessary to start a USB personality before connecting, specify the personality number here, for example C<personality=1>. This parameter is not usually needed except on some text-shell builds.
 
+=item * C<debug=1>
+
+If present, the console will print out some debugging diagnostics to the underlying console during construction.
+
 =back
 
 Example usage:

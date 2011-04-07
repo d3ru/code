@@ -24,6 +24,7 @@ public:
 
 	TPtrC iPort;
 	TInt iPersonality;
+	TBool iDebug;
 	};
 
 NONSHARABLE_CLASS(CUsbConsole) : public CVtcSerialConsole
