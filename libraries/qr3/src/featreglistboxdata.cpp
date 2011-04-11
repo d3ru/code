@@ -1,6 +1,6 @@
 // featreglistboxdata.cpp
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -22,7 +22,9 @@ void CFeatRegListBoxData::DoFormatL(TObjectKernelInfo* aInfo, RBuf& name, RBuf& 
 	{
 	SFeature& info = *reinterpret_cast<SFeature*>(aInfo);
 	more.Format(_L("Value: %i Info: %i"), info.iErr, info.iInfo);
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
 	gPlugin->FormatValue(name, MProductPlugin::EFeature, info.iFeature, 0);
+#endif
 	}
 
 void CFeatRegListBoxData::DumpToCloggerL(RClogger& clogger, TInt i, TInt /*count*/)
@@ -33,7 +35,9 @@ void CFeatRegListBoxData::DumpToCloggerL(RClogger& clogger, TInt i, TInt /*count
 	if (i == 0) clogger.Log(KFeatureDesc);
 	SFeature& info = *reinterpret_cast<SFeature*>(iInfo);
 	TBuf<256> buf;
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
 	gPlugin->FormatValue(buf, MProductPlugin::EFeature, info.iFeature, 0);
+#endif
 	clogger.Log(KFeatureFmt, info.iFeature, &buf, info.iErr, info.iInfo);
 	}
 
@@ -44,7 +48,9 @@ void CFeatRegListBoxData::DoInfoForDialogL(RBuf& aTitle, RBuf& inf, TDes* /*name
 	_LIT(KInfo, "Feature info");
 	aTitle.Copy(KInfo);
 
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
 	gPlugin->FormatValue(inf, MProductPlugin::EFeature, info.iFeature, 0);
+#endif
 	_LIT(KFeatureFmt, "\n0x%x\n\nFeature present: %i\n(Additional info: %i)");
 
 	inf.AppendFormat(KFeatureFmt, info.iFeature, info.iErr, info.iInfo);

@@ -421,6 +421,10 @@
 #define FSHELL_QR3_SUPPORT_KERNINFO
 #endif
 
+#ifdef FSHELL_GUI_SUPPORT
+#define FSHELL_QR3_SUPPORT_PLUGIN
+#endif
+
 
 //
 // clogger.

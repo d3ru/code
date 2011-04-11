@@ -1,6 +1,6 @@
 // objectlist.cpp
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -105,7 +105,9 @@ CKernelObjectList::CKernelObjectList(RMemoryAccess* aMemAccess)
 
 void CKernelObjectList::ConstructL()
 	{
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
 	CDefaultProductPlugin::LoadProductPluginL(); // A bit nasty but reduces the amount of refactoring needed!
+#endif
 	iModel = new(ELeave) CKernListBoxModel(*iMemAccess);
 	CleanupStack::PushL(iModel);
 	iModel->ConstructL();
@@ -120,7 +122,9 @@ EXPORT_C void CKernelObjectList::SetInfoChangedCallback(TInt aIndex, const TCall
 CKernelObjectList::~CKernelObjectList()
 	{
 	delete iModel;
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
 	delete gPlugin;
+#endif
 	}
 
 #else // not FSHELL_MEMORY_ACCESS_SUPPORT

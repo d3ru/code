@@ -1,6 +1,6 @@
 // QR3ProductPlugin.h
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -32,6 +32,8 @@ enum TPluginEnumValues
 #define KQr3ProductPluginEcomUid 0x102831C5
 
 #ifdef __cplusplus
+#include <fshell/common.mmh>
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
 // We reuse this file as an HRH as well, so we have to escape everything for when we're being run by rcomp
 
 #include <e32base.h>
@@ -112,5 +114,6 @@ public:
  */
 typedef MProductPluginV4 MProductPlugin;
 
-#endif
-#endif
+#endif // FSHELL_GUI_SUPPORT
+#endif // __cplusplus
+#endif // QR3PRODUCTPLUGIN_H

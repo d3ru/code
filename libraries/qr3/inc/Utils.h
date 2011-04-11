@@ -1,6 +1,6 @@
 // Utils.h
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -12,7 +12,10 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <fshell/common.mmh>
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
 #include <fshell/QR3ProductPlugin.h>
+#endif
 #include <fshell/qr3dll.h>
 
 void HR(TDes& aDes, TInt64 aSize); // Human readable formatting of aSize as a memory size (eg 1500 -> "1.46 KB")
@@ -28,12 +31,11 @@ void ToStringHalVal(TDes& aDes, TInt aHalAttribute, TInt aHalValue);
 
 void PrettyName(TInt aType, TDes& aName); // aType is a TKernelObjectType
 
-//extern const char*const* KKTraceFlags[];
 TPtrC8 TraceFlagName(TInt aWord, TInt aBit);
 
 extern char const* const* const KCloggerTags[];
 
-//extern const char* KFileServerTraceFlags[];
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
 
 class CEcomWatcher;
 
@@ -93,6 +95,8 @@ private:
 #else
 extern CDefaultProductPlugin* gPlugin;
 #endif
+
+#endif // FSHELL_QR3_SUPPORT_PLUGIN
 
 void StartProfilerL();
 TBool IsProfilerRunning();

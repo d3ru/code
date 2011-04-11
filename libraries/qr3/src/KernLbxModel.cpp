@@ -1,6 +1,6 @@
 // KernLbxModel.cpp
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -1197,8 +1197,9 @@ void CKernListBoxModel::RefreshDataL(TInt aIndex)
 			{
 			RArray<TUid> features;
 			CleanupClosePushL(features);
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
 			gPlugin->GetFeatureUidsL(features);
-
+#endif
 			for (TInt i = 0; i < features.Count(); i++)
 				{
 				SFeature* info = new(ELeave) SFeature;

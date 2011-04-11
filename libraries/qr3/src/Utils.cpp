@@ -1,6 +1,6 @@
 // Utils.cpp
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -15,7 +15,9 @@
 #include <e32base.h>
 #include "Utils.h"
 #include <HAL.h>
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
 #include <eikenv.h>
+#endif
 #include <u32std.h>
 
 #ifdef INCLUDE_UIQ_DEFINITIONS
@@ -55,10 +57,14 @@ namespace NFeature
 	}
 */
 
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
+
 #ifdef __DLL__
 #define gPlugin ((CDefaultProductPlugin*)Dll::Tls())
 #else
 CDefaultProductPlugin* gPlugin = NULL;
+#endif
+
 #endif
 
 // GCC has issues with the CASE_LIT definition that ran along the same lines as CASE_LIT2 below - more than 8 CASE_LITs in one switch made the compiler blow up
@@ -220,8 +226,8 @@ static char const *const w0[] = /* kernel debugging */ { "Word 0", "khardware", 
 static char const *const w1[] = /* kernel debugging */ { "Word 1", "kusb", "kusbpsl", "knetwork1", "knetwork2", "ksound1", "kusbhost", "kusbotg", "kusbjournal", "kusbho", "kresmanager", "kiic", "khcr", "" };
 static char const *const w2[] = /* kernel behaviour */ { "Word 2", "kallthreadssystem", "ktestfast", "ktestlatency", "kdebugmonitordisable", "kcrashmonitordisable", "" };
 static char const *const w3[] = /* kernel behaviour */  { "Word 3", "kuserheaptrace", "" };
-static char const *const w4[] = /* file server debug*/ { "" };
-static char const *const w5[] = /* file server debug*/ { "" };
+static char const *const w4[] = /* file server debug*/ { "", "" };
+static char const *const w5[] = /* file server debug*/ { "", "" };
 static char const *const w6[] = /* licensee specific*/ { "Word 6", "Bit 0", "Bit 1", "Bit 2", "Bit 3", "Bit 4", "Bit 5", "Bit 6", "Bit 7", "Bit 8", "Bit 9", "Bit 10", "Bit 11", "Bit 12", "Bit 13", "Bit 14", "Bit 15", "Bit 16", "Bit 17", "Bit 18", "Bit 19", "Bit 20", "Bit 21", "Bit 22", "Bit 23", "Bit 24", "Bit 25", "Bit 26", "Bit 27", "Bit 28", "Bit 29", "Bit 30", "Bit 31", "" };
 static char const *const w7[] = /* licensee specific*/ { "Word 7", "Bit 0", "Bit 1", "Bit 2", "Bit 3", "Bit 4", "Bit 5", "Bit 6", "Bit 7", "Bit 8", "Bit 9", "Bit 10", "Bit 11", "Bit 12", "Bit 13", "Bit 14", "Bit 15", "Bit 16", "Bit 17", "Bit 18", "Bit 19", "Bit 20", "Bit 21", "Bit 22", "Bit 23", "Bit 24", "Bit 25", "Bit 26", "Bit 27", "Bit 28", "Bit 29", "Bit 30", "Bit 31", "" };
 static char const *const fs[] = /* file server debug*/ { "File server", "kfsys", "kfserv", "kfldr", "kalloc", "klffs", "kiso9660", "kntfs", "krofs", "kthrd", "kcache", "kcompfs", ""};
@@ -230,9 +236,16 @@ static char const*const*const KKTraceFlags[] = { w0, w1, w2, w3, w4, w5, w6, w7,
 
 TPtrC8 TraceFlagName(TInt aWord, TInt aBit)
 	{
-	return gPlugin->TraceFlagName(aWord, aBit);
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
+	TPtrC8 result = gPlugin->TraceFlagName(aWord, aBit);
+	if (result.Length()) return result;
+#endif
+
+	aBit++; // Because we use -1 to mean the word title, and the bits go from 0-32, whereas in the array the title is at index 0 and the bits go from 1 to 33
+	return TPtrC8((const TUint8*)KKTraceFlags[aWord][aBit]);
 	}
 
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
 TPtrC8 CDefaultProductPlugin::TraceFlagName(TInt aWord, TInt aBit)
 	{
 	if (iPluginForThisDevice)
@@ -240,15 +253,10 @@ TPtrC8 CDefaultProductPlugin::TraceFlagName(TInt aWord, TInt aBit)
 		return iPluginForThisDevice->TraceFlagName(aWord, aBit);
 		}
 
-	if (aBit == 0 && *KKTraceFlags[aWord][aBit] == 0)
-		{
-		// Special-case this because the caller expects to be able to test whether the first bit name is empty to decide whether the word is empty, and our data structure doesn't let you do that any more
-		return TPtrC8();
-		}
-
 	aBit++; // Because we use -1 to mean the word title, and the bits go from 0-32, whereas in the array the title is at index 0 and the bits go from 1 to 33
-	return TPtrC8((const TUint8*)KKTraceFlags[aWord][aBit]);
+	return TPtrC8();
 	}
+#endif
 
 // Format is tag name, followed by the names of the bits, starting from bit 0. Terminate with a "" and remember you only have 32 bits to play with!
 //const char* qres[] = { "QResources3", "Bit0", "Bit1", "Bit2", "" };
@@ -387,7 +395,92 @@ TPtrC ToStringHal(TInt aHalAttribute)
 
 void ToStringHalVal(TDes& aDes, TInt aHalAttribute, TInt aHalValue)
 	{
-	gPlugin->FormatValue(aDes, MProductPlugin::EHal, aHalAttribute, aHalValue);
+	TBool hex = EFalse;
+	switch (aHalAttribute)
+		{
+		case HAL::EManufacturer:
+			{
+			switch (aHalValue)
+				{
+			case HAL::EManufacturer_Ericsson:
+				aDes = _L("Ericsson"); return;
+			case HAL::EManufacturer_Motorola:
+				aDes = _L("Motorola"); return;
+			case HAL::EManufacturer_Nokia:
+				aDes = _L("Nokia"); return;
+			case HAL::EManufacturer_Panasonic:
+				aDes = _L("Panasonic"); return;
+			case HAL::EManufacturer_Psion:
+				aDes = _L("Psion"); return;
+			case HAL::EManufacturer_Intel:
+				aDes = _L("Intel"); return;
+			case HAL::EManufacturer_Cogent:
+				aDes = _L("Cogent"); return;
+			case HAL::EManufacturer_Cirrus:
+				aDes = _L("Cirrus"); return;
+			case HAL::EManufacturer_Linkup:
+				aDes = _L("Linkup"); return;
+			case HAL::EManufacturer_TexasInstruments:
+				aDes = _L("TI"); return;
+			default:
+				hex = ETrue;
+				break;
+				}
+			break;
+			}
+		case HAL::EMemoryRAM:
+		case HAL::EMemoryRAMFree:
+		case HAL::EMemoryROM:
+		case HAL::EMemoryPageSize:
+		case HAL::EMaxRAMDriveSize:
+			HR(aDes, aHalValue);
+			return;
+		case HAL::ECPU:
+			switch (aHalValue)
+				{
+				case HAL::ECPU_ARM:
+					aDes = _L("ARM"); return;
+				case HAL::ECPU_MCORE:
+					aDes = _L("MCORE"); return;
+				case HAL::ECPU_X86:
+					aDes = _L("x86"); return;
+				default:
+					break;
+				}
+			break;
+		case HAL::EModel:
+		case HAL::EMachineUid:
+		case HAL::ELEDmask:
+		case HAL::EDisplayMemoryAddress:
+			hex = ETrue;
+			break;
+		case HAL::EDeviceFamily:
+			hex = ETrue;
+			break;
+		case HAL::ESystemDrive:
+		case HAL::EClipboardDrive:
+			if (aHalValue == -1)
+				{
+				// Emulator returns -1 for system drive...
+				aDes = _L("Unknown");
+				return;
+				}
+			aDes.SetLength(1);
+			aDes[0] = 'A' + aHalValue;
+			return;
+		default:
+			break;
+		}
+
+	// Fall back if nothing recognised it
+	if (hex)
+		{
+		aDes.Format(_L("0x%x"), aHalValue);
+		}
+	else
+		{
+		aDes.Format(_L("%i"), aHalValue);
+		}
 	}
 
 const TPtrC ToStringUid(TInt aVal)
@@ -421,6 +514,7 @@ const TPtrC ToStringUid(TInt aVal)
 
 TPtrC KeyName(TInt aKeyCode);
 
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
 void CDefaultProductPlugin::FormatValue(TDes& aDes, TValueType aType, TInt aAttrib, TInt aVal)
 	{
 	aDes.SetLength(0);
@@ -433,94 +527,7 @@ void CDefaultProductPlugin::FormatValue(TDes& aDes, TValueType aType, TInt aAttr
 
 	if (aType == MProductPlugin::EHal)
 		{
-		const TInt aHalAttribute = aAttrib;
-		const TInt aHalValue = aVal;
-		TBool hex = EFalse;
-		switch (aHalAttribute)
-			{
-			case HAL::EManufacturer:
-				{
-				switch (aHalValue)
-					{
-				case HAL::EManufacturer_Ericsson:
-					aDes = _L("Ericsson"); return;
-				case HAL::EManufacturer_Motorola:
-					aDes = _L("Motorola"); return;
-				case HAL::EManufacturer_Nokia:
-					aDes = _L("Nokia"); return;
-				case HAL::EManufacturer_Panasonic:
-					aDes = _L("Panasonic"); return;
-				case HAL::EManufacturer_Psion:
-					aDes = _L("Psion"); return;
-				case HAL::EManufacturer_Intel:
-					aDes = _L("Intel"); return;
-				case HAL::EManufacturer_Cogent:
-					aDes = _L("Cogent"); return;
-				case HAL::EManufacturer_Cirrus:
-					aDes = _L("Cirrus"); return;
-				case HAL::EManufacturer_Linkup:
-					aDes = _L("Linkup"); return;
-				case HAL::EManufacturer_TexasInstruments:
-					aDes = _L("TI"); return;
-				default:
-					hex = ETrue;
-					break;
-					}
-				break;
-				}
-			case HAL::EMemoryRAM:
-			case HAL::EMemoryRAMFree:
-			case HAL::EMemoryROM:
-			case HAL::EMemoryPageSize:
-			case HAL::EMaxRAMDriveSize:
-				HR(aDes, aHalValue);
-				return;
-			case HAL::ECPU:
-				switch (aHalValue)
-					{
-					case HAL::ECPU_ARM:
-						aDes = _L("ARM"); return;
-					case HAL::ECPU_MCORE:
-						aDes = _L("MCORE"); return;
-					case HAL::ECPU_X86:
-						aDes = _L("x86"); return;
-					default:
-						break;
-					}
-				break;
-			case HAL::EModel:
-			case HAL::EMachineUid:
-			case HAL::ELEDmask:
-			case HAL::EDisplayMemoryAddress:
-				hex = ETrue;
-				break;
-			case HAL::EDeviceFamily:
-				hex = ETrue;
-				break;
-			case HAL::ESystemDrive:
-			case HAL::EClipboardDrive:
-				if (aHalValue == -1)
-					{
-					// Emulator returns -1 for system drive...
-					aDes = _L("Unknown");
-					return;
-					}
-				aDes.SetLength(1);
-				aDes[0] = 'A' + aHalValue;
-				return;
-			default:
-				break;
-			}
-
-		// Fall back if nothing recognised it
-		if (hex)
-			{
-			aDes.Format(_L("0x%x"), aHalValue);
-			}
-		else
-			{
-			aDes.Format(_L("%i"), aHalValue);
-			}
+		ToStringHalVal(aDes, aAttrib, aVal);
 		} 
 	else if (aType == MProductPlugin::EKey)
 		{
@@ -547,6 +554,7 @@ void CDefaultProductPlugin::FormatValue(TDes& aDes, TValueType aType, TInt aAttr
 		aDes = ToStringUid(aAttrib);
 		}
 	}
+#endif // FSHELL_QR3_SUPPORT_PLUGIN
 
 void PrettyName(TInt aType, TDes& aName)
 	{
@@ -740,6 +748,8 @@ User::TCritical FlagsToCritical(TUint aFlags)
 			return User::ENotCritical;
 		}
 	}
+
+#ifdef FSHELL_QR3_SUPPORT_PLUGIN
 
 TUint32 CDefaultProductPlugin::GetDeviceType()
 	{
@@ -1214,3 +1224,5 @@ TPtrC KeyName(TInt aKeyCode)
 			return TPtrC();
 		}
 	}
+
+#endif // FSHELL_QR3_SUPPORT_PLUGIN
