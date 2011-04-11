@@ -97,6 +97,7 @@ public:
 	TBool IsDisownable() const;
 	void Disown();
 	void SetParentConditionalBlockL(MConditionalBlock* aBlock);
+	static HBufC* ExpandVariablesLC(const TDesC& aData, CLexer& aLexer, IoUtils::CEnvironment& aEnv, TBool aEscape);
 private:
 	enum TCondition
 		{

@@ -686,7 +686,7 @@ void CParser::FindNextPipeLineL(TPtrC& aData, TCondition& aCondition, TBool& aRe
 		}
 	}
 
-HBufC* ExpandVariablesLC(const TDesC& aData, CLexer& aLexer, IoUtils::CEnvironment& aEnv, TBool aEscape)
+/*static*/ HBufC* CParser::ExpandVariablesLC(const TDesC& aData, CLexer& aLexer, IoUtils::CEnvironment& aEnv, TBool aEscape)
 	{
 	TChar escapeChar = aEnv.EscapeChar();
 	RArray<TInt> charsToEscape;
@@ -786,7 +786,7 @@ HBufC* CParser::ExpandVariablesLC(const TDesC& aData) const
 			{
 			if (token.String()[0] != '\'')
 				{
-				HBufC* expandedString = ::ExpandVariablesLC(token.String(), *lexer2, iEnv, token.String()[0] == '\"');
+				HBufC* expandedString = ExpandVariablesLC(token.String(), *lexer2, iEnv, token.String()[0] == '\"');
 				if (*expandedString != token.String())
 					{
 					TPtr bufPtr(buf->Des());

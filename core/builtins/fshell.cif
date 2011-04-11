@@ -184,6 +184,14 @@ Fshell defines some variables at all times. C<PWD> is set to the current directo
   c:\somewhere\>echo "Last command returned $?"
   Last command returned -3
 
+The special variable C<FSHELL_PROMPT> can be defined to override the default fshell prompt. For example:
+
+  c:\>export FSHELL_PROMPT "fsh ^$PWD>"
+  fsh c:\>cd system
+  fsh c:\system\>
+
+Note the use of C<^$> to prevent C<$PWD> being expanded when export runs rather than when C<FSHELL_PROMPT> is evaluated by the shell.
+
 See the section on scripting for some further uses of environment variables. 
 
 =item * Escaping and Quoting
@@ -210,6 +218,8 @@ The following escape sequences have special meanings:
   ^Unnnnnnnn  (same as ^u but for a UTF-32 character)
   ^^          (to represent the escape character itself.
                if $ESCAPE was a backslash, the sequence would be \\ etc.)
+  ^$          (literal dollar sign. Useful to prevent environment
+               variable names from being expanded).
 
 For example:
 

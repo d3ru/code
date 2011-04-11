@@ -44,6 +44,7 @@ private:
 	CShell();
 	void ConstructL();
 	void PrintPrompt();
+	void SetupPromptLexerL(TDes& aPromptBuf);
 	void PrintErr(TInt aError);
 	void ProcessLineL(const TDesC& aLine);
 	TInt NextJobId();

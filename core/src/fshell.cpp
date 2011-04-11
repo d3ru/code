@@ -20,6 +20,7 @@
 #include "fshell.h"
 #include "license.h"
 #include "script_command.h"
+#include "lexer.h"
 
 #ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 #include <fshell/memoryaccess.h>
@@ -30,6 +31,7 @@
 //
 
 const TInt KNoForegroundJob = -1;
+_LIT(KEnvPrompt, "FSHELL_PROMPT");
 
 
 //
@@ -436,26 +438,74 @@ void CShell::ConstructL()
 #endif
 	}
 
+void CShell::SetupPromptLexerL(TDes& aPromptBuf)
+	{
+	CLexer* promptLexer = CLexer::NewLC(0);
+	// Populate lexer with a token definition for each environment variable (preceded with '$').
+	RPointerArray<HBufC> keys;
+	LtkUtils::CleanupResetAndDestroyPushL(keys);
+	Env().GetKeysL(keys);
+
+	const TInt numVars = keys.Count();
+	_LIT(KDollar, "$");
+	for (TInt i = 0; i < numVars; ++i)
+		{
+		keys[i] = keys[i]->ReAllocL(keys[i]->Length() + KDollar().Length());
+		keys[i]->Des().Insert(0, KDollar);
+		promptLexer->DefineTokenTypeL(TToken::EVariable, *keys[i]);
+		}
+
+	const TDesC& promptVar = Env().GetAsDes(KEnvPrompt);
+	HBufC* expanded = CParser::ExpandVariablesLC(promptVar, *promptLexer, Env(), EFalse);
+	aPromptBuf.Copy(expanded->Right(aPromptBuf.MaxLength()));
+	CleanupStack::PopAndDestroy(3, promptLexer); // expanded, keys, promptLexer
+	}
+
 void CShell::PrintPrompt()
 	{
-	const TDesC& pwd = Env().Pwd();
-	// Truncate the prompt if it will take up more than half the screen, or half of KMaxLineLength
-	TInt maxLen = KMaxLineLength / 2;
-	TSize screenSize;
-	TInt err = Stdout().GetScreenSize(screenSize);
-	if (err == KErrNone && screenSize.iWidth > 3) maxLen = Min(maxLen, screenSize.iWidth / 2); // Nullcons has a width of 1, apparently
 	TBuf<KMaxLineLength> prompt;
-	if (pwd.Length() > maxLen)
+	if (Env().IsDefined(KEnvPrompt))
 		{
-		TPtrC left(pwd.Left(3)); // For the driveletter:\ bit
-		TPtrC right = pwd.Right(maxLen - 3);
-		prompt.Format(_L("%S...%S>"), &left, &right);
+		TRAP_IGNORE(SetupPromptLexerL(prompt));
 		}
-	else
+
+	if (prompt.Length() == 0)
 		{
-		prompt.Format(_L("%S>"), &pwd);
+		const TDesC& pwd = Env().Pwd();
+		// Truncate the prompt if it will take up more than half the screen, or half of KMaxLineLength
+		TInt maxLen = KMaxLineLength / 2;
+		TSize screenSize;
+		TInt err = Stdout().GetScreenSize(screenSize);
+		if (err == KErrNone && screenSize.iWidth > 3) maxLen = Min(maxLen, screenSize.iWidth / 2); // Nullcons has a width of 1, apparently
+		if (pwd.Length() > maxLen)
+			{
+			TPtrC left(pwd.Left(3)); // For the driveletter:\ bit
+			TPtrC right = pwd.Right(maxLen - 3);
+			prompt.Format(_L("%S...%S>"), &left, &right);
+			}
+		else
+			{
+			prompt.Format(_L("%S>"), &pwd);
+			}
 		}
-	iLineEditor->Start(prompt);
+
+	// Now we need to check for newlines in the prompt string and sort them out before passing the remainder to CLineEditor
+	TPtrC realPrompt(prompt);
+	TInt foundNewline = realPrompt.Locate('\n');
+	while (foundNewline != KErrNotFound)
+		{
+		TPtrC line(realPrompt.Left(foundNewline));
+		if (line.Length() && line[line.Length()-1] == '\r') line.Set(line.Left(line.Length()-1));
+		Stdout().Write(line);
+		Stdout().ClearToEndOfLine();
+		_LIT(KCrLf, "\r\n");
+		Stdout().Write(KCrLf);
+
+		realPrompt.Set(realPrompt.Mid(foundNewline+1));
+		foundNewline = realPrompt.Locate('\n');
+		}
+
+	iLineEditor->Start(realPrompt);
 	iLineEditor->ReinstatePromptAndUserInput();
 	}
 

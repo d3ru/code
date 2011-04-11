@@ -14,6 +14,20 @@ __END__
 
 =head1 fshell Change History
 
+=head2 Release 005 **NOT YET RELEASED**
+
+=over 5
+
+=item *
+
+Added support for changing the default C<c:\E<gt>> prompt by setting an environment variable C<FSHELL_PROMPT>. To put a newline between commands you could use:
+
+    export FSHELL_PROMPT "^r^n^$PWD>"
+
+Note the use of C<^$> to prevent C<$PWD> being expanded when export runs rather than when C<$FSHELL_PROMPT> is evaluated.
+
+=back
+
 =head2 Release 004.1
 
 =over 5
