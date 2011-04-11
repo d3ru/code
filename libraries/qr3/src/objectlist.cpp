@@ -13,7 +13,9 @@
 #include <fshell/qr3dll.h>
 #include "Utils.h"
 #include <e32uid.h>
+#ifdef FSHELL_APPARC_SUPPORT
 #include <apgcli.h>
+#endif
 
 #ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 

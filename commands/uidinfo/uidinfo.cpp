@@ -11,7 +11,6 @@
 //
 
 #include <fshell/ioutils.h>
-#include <apgcli.h>
 #include <fshell/ltkutils.h>
 #include <fshell/qr3dll.h>
 

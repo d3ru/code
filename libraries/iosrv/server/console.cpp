@@ -1195,9 +1195,7 @@ MProxiedConsole* CIoConsoleProxySession::InstantiateConsoleL()
 		{
 		cons = CConsoleProxySession::InstantiateConsoleL();
 		}
-	
-	Server()->SetTheConsole(cons);
-	
+		
 	if (iUnderlyingConsole)
 		{
 		TInt err = UnderlyingConsole::Set(cons->Console(), iUnderlyingConsole);
@@ -1215,6 +1213,7 @@ MProxiedConsole* CIoConsoleProxySession::InstantiateConsoleL()
 	
 void CIoConsoleProxySession::ConsoleCreatedL(MProxiedConsole* aConsole)
 	{
+	Server()->SetTheConsole(aConsole);
 	if (!GetFlag(ELazy))
 		{
 		// If it's lazy, we can't check ReportedCorrectly until it's been instantiated

@@ -23,7 +23,7 @@ SOURCE		GuiCons.cpp
 SOURCE		clientserver.cpp
 
 USERINCLUDE	..\inc
-USERINCLUDE	\epoc32\build\fshell/guicons\generated
+USERINCLUDE	\epoc32\build\fshell\guicons\generated
 
 #include <fshell/fsh_system_include.mmh>
 
