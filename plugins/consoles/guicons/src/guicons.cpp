@@ -196,7 +196,7 @@ EXPORT_C void CConsoleControl::Draw(const TRect& aRect) const
 	
 	for (TInt y=0; y<iSizeChars.iHeight; ++y)
 		{
-		TViewPosition line(*this, 0, y);
+		TViewCharacterPosition line(*this, 0, y);
 		if (aRect.Intersects(LineRect(line)))
 			{
 			DrawLine(line, gc);
@@ -329,7 +329,7 @@ EXPORT_C void CConsoleControl::InjectKeysL(const TDesC& aKeys)
 	SendKey();
 	}
 	
-void CConsoleControl::DrawLine(TViewPosition aLine, CBitmapContext& aDrawTo) const
+void CConsoleControl::DrawLine(TViewCharacterPosition aLine, CBitmapContext& aDrawTo) const
 	{
 	CConsoleLine* line = GetLine(aLine);
 	if (line)
@@ -338,9 +338,9 @@ void CConsoleControl::DrawLine(TViewPosition aLine, CBitmapContext& aDrawTo) con
 		}
 	}
 
-TRect CConsoleControl::LineRect(TViewPosition aLine) const
+TRect CConsoleControl::LineRect(TViewCharacterPosition aLine) const
 	{
-	return TRect(TScreenPosition(aLine).iPoint, TSize(iFont->GlyphSize().iWidth * iSizeChars.iWidth, iFont->GlyphSize().iHeight));
+	return TRect(TPixelPosition(aLine).iPoint, TSize(iFont->GlyphSize().iWidth * iSizeChars.iWidth, iFont->GlyphSize().iHeight));
 	}
 
 
@@ -554,7 +554,7 @@ TInt CConsoleControl::BlinkCallback(TAny* aPtr)
 	TBool neededToBlink(EFalse);
 	for (TInt y = 0; y < self->iSizeChars.iHeight; ++y)
 		{
-		TViewPosition line(*self, 0, y);
+		TViewCharacterPosition line(*self, 0, y);
 		if (self->GetLine(line)->NeedToBlink(self->iBlinkOn))
 			{
 			neededToBlink = ETrue;
@@ -713,7 +713,7 @@ void CConsoleControl::CursorWindowScrollDown()
 		Invalidate5Way();
 		Window().Scroll(Rect(), TPoint(0, -(iFont->GlyphSize().iHeight)));
 		Invalidate5Way();
-		TRect invalidRect(LineRect(TViewPosition(*this, 0, iSizeChars.iHeight - 1)));
+		TRect invalidRect(LineRect(TViewCharacterPosition(*this, 0, iSizeChars.iHeight - 1)));
 		Window().Invalidate(invalidRect);
 		}
 	}
@@ -1229,12 +1229,12 @@ void CConsoleLine::ClearFrom(TBufferPosition aPos)
 	iAttributeMap.RemoveFrom(pos);
 	}
 
-void CConsoleLine::Draw(CBitmapContext& aDrawTo, TViewPosition aViewPosition) const
+void CConsoleLine::Draw(CBitmapContext& aDrawTo, TViewCharacterPosition aViewPosition) const
 	{
 	const TSize glyphSize(iFont.GlyphSize());
 
-	TScreenPosition screenPos(aViewPosition);
-	TRect rectToClear(screenPos.iPoint, TScreenPosition(aViewPosition.iConsole, 0, (aViewPosition.iPoint.iY + 1) * glyphSize.iHeight).iPoint);
+	TPixelPosition screenPos(aViewPosition);
+	TRect rectToClear(screenPos.iPoint, TPixelPosition(aViewPosition.iConsole, 0, (aViewPosition.iPoint.iY + 1) * glyphSize.iHeight).iPoint);
 
 	const TInt numAttributeBlocks = iAttributeMap.NumberOfBlocks();
 	for (TInt i = 0; i < numAttributeBlocks; ++i)
@@ -1373,7 +1373,7 @@ void TConsoleCursor::Update()
 	{
 	if (iOwner.IsFocused() && !iOwner.IsNonFocusing())
 		{
-		TViewPosition viewPos = Position();
+		TViewCharacterPosition viewPos = Position();
 		TPoint cursorPosPixels;
 		cursorPosPixels.iX = viewPos.iPoint.iX * iGlyphSize.iWidth;
 		cursorPosPixels.iY = ((viewPos.iPoint.iY) * iGlyphSize.iHeight) + iTextCursorOffset;
@@ -1652,7 +1652,7 @@ TBufferPosition::TBufferPosition(const TConsCursorPosition& aCursorPosition)
 	{
 	}
 
-TBufferPosition::TBufferPosition(const TViewPosition& aViewPosition)
+TBufferPosition::TBufferPosition(const TViewCharacterPosition& aViewPosition)
 	: iConsole(aViewPosition.iConsole)
 	, iPoint(aViewPosition.iPoint + aViewPosition.iConsole.ViewPosition())
 	{
@@ -1678,7 +1678,7 @@ TConsCursorPosition::TConsCursorPosition(const TBufferPosition& aBufferPosition)
 	{
 	}
 
-TConsCursorPosition::TConsCursorPosition(const TViewPosition& aViewPosition)
+TConsCursorPosition::TConsCursorPosition(const TViewCharacterPosition& aViewPosition)
 	: iConsole(aViewPosition.iConsole)
 	, iPoint(aViewPosition.iPoint + aViewPosition.iConsole.ViewPosition() - aViewPosition.iConsole.CursorWindowPosition())
 	{
@@ -1688,43 +1688,44 @@ TConsCursorPosition::TConsCursorPosition(const TViewPosition& aViewPosition)
 
 //______________________________________________________________________________
 //						TViewPosition
-TViewPosition::TViewPosition(const CConsoleControl& aConsole, TPoint aPosition)
+TViewCharacterPosition::TViewCharacterPosition(const CConsoleControl& aConsole, TPoint aPosition)
 	: iConsole(aConsole), iPoint(aPosition)
 	{
 	}
 
-TViewPosition::TViewPosition(const CConsoleControl& aConsole, TInt aX, TInt aY)
+TViewCharacterPosition::TViewCharacterPosition(const CConsoleControl& aConsole, TInt aX, TInt aY)
 	: iConsole(aConsole), iPoint(aX, aY)
 	{
 	}
 
-TViewPosition::TViewPosition(const TConsCursorPosition& aCursorPosition)
+TViewCharacterPosition::TViewCharacterPosition(const TConsCursorPosition& aCursorPosition)
 	: iConsole(aCursorPosition.iConsole)
 	, iPoint(aCursorPosition.iPoint + aCursorPosition.iConsole.CursorWindowPosition() - aCursorPosition.iConsole.ViewPosition())
 	{
 	}
 
-TViewPosition::TViewPosition(const TBufferPosition& aBufferPosition)
+TViewCharacterPosition::TViewCharacterPosition(const TBufferPosition& aBufferPosition)
 	: iConsole(aBufferPosition.iConsole)
 	, iPoint(aBufferPosition.iPoint - aBufferPosition.iConsole.ViewPosition())
 	{
 	}
 
 //______________________________________________________________________________
-//						TScreenPosition
-TScreenPosition::TScreenPosition(const CConsoleControl& aConsole, TPoint aPosition)
-	: iConsole(aConsole), iPoint(aPosition)
+//						TPixelPosition
+TPixelPosition::TPixelPosition(const CConsoleControl& aConsole, TPoint aPosition)
+	: iConsole(aConsole), iPoint(iConsole.Position() + aPosition)
 	{
 	}
 
-TScreenPosition::TScreenPosition(const CConsoleControl& aConsole, TInt aX, TInt aY)
-	: iConsole(aConsole), iPoint(aX, aY)
+TPixelPosition::TPixelPosition(const CConsoleControl& aConsole, TInt aX, TInt aY)
+	: iConsole(aConsole), iPoint(iConsole.Position() + TPoint(aX, aY))
 	{
 	}
 
-TScreenPosition::TScreenPosition(const TViewPosition& aViewPosition)
+TPixelPosition::TPixelPosition(const TViewCharacterPosition& aViewPosition)
 	: iConsole(aViewPosition.iConsole)
-	, iPoint(aViewPosition.iPoint.iX * aViewPosition.iConsole.GlyphSize().iWidth, aViewPosition.iPoint.iY * aViewPosition.iConsole.GlyphSize().iHeight)
+	, iPoint(iConsole.Position() + TPoint(aViewPosition.iPoint.iX * aViewPosition.iConsole.GlyphSize().iWidth,
+			                              aViewPosition.iPoint.iY * aViewPosition.iConsole.GlyphSize().iHeight))
 	{
 	}
 

@@ -26,6 +26,10 @@ Added support for changing the default C<c:\E<gt>> prompt by setting an environm
 
 Note the use of C<^$> to prevent C<$PWD> being expanded when export runs rather than when C<$FSHELL_PROMPT> is evaluated.
 
+=item *
+
+Build fixes for platforms without CONE or apparc. Fixed rare crash when console creation returned an error. Fixed guicons drawing issue when embedded in another control.
+
 =back
 
 =head2 Release 004.1

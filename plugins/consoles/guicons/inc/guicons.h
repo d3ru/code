@@ -34,7 +34,7 @@ class MGuiConsoleReader;
 class MConsoleUi;
 class TBufferPosition;
 class TConsCursorPosition;
-class TViewPosition;
+class TViewCharacterPosition;
 class CImageDecoder;
 class RImageDecodeThreadParams;
 
@@ -59,7 +59,7 @@ public:
 	TBufferPosition(const CConsoleControl& aConsole, TPoint aPosition);
 	TBufferPosition(const CConsoleControl& aConsole, TInt aX, TInt aY);
 	TBufferPosition(const TConsCursorPosition& aCursorPosition);
-	TBufferPosition(const TViewPosition& aViewPosition);
+	TBufferPosition(const TViewCharacterPosition& aViewPosition);
 public:
 	const CConsoleControl& iConsole;
 	TPoint iPoint;
@@ -74,7 +74,7 @@ public:
 	TConsCursorPosition(const CConsoleControl& aConsole, TPoint aPosition);
 	TConsCursorPosition(const CConsoleControl& aConsole, TInt aX, TInt aY);
 	TConsCursorPosition(const TBufferPosition& aBufferPosition);
-	TConsCursorPosition(const TViewPosition& aViewPosition);
+	TConsCursorPosition(const TViewCharacterPosition& aViewPosition);
 public:
 	const CConsoleControl& iConsole;
 	TPoint iPoint;
@@ -83,13 +83,13 @@ public:
 /**
 Position relative to the view window - i.e. the area of the console seen on the screen
 */
-class TViewPosition
+class TViewCharacterPosition
 	{
 public:
-	TViewPosition(const CConsoleControl& aConsole, TPoint aPosition);
-	TViewPosition(const CConsoleControl& aConsole, TInt aX, TInt aY);
-	TViewPosition(const TConsCursorPosition& aCursorPosition);
-	TViewPosition(const TBufferPosition& aBufferPosition);
+	TViewCharacterPosition(const CConsoleControl& aConsole, TPoint aPosition);
+	TViewCharacterPosition(const CConsoleControl& aConsole, TInt aX, TInt aY);
+	TViewCharacterPosition(const TConsCursorPosition& aCursorPosition);
+	TViewCharacterPosition(const TBufferPosition& aBufferPosition);
 public:
 	const CConsoleControl& iConsole;
 	TPoint iPoint;
@@ -98,12 +98,12 @@ public:
 /**
 Position in pixels relative to CConsoleControl's rectangle.
 */
-class TScreenPosition
+class TPixelPosition
 	{
 public:
-	TScreenPosition(const CConsoleControl& aConsole, TPoint aPosition);
-	TScreenPosition(const CConsoleControl& aConsole, TInt aX, TInt aY);
-	TScreenPosition(const TViewPosition& aViewPosition);
+	TPixelPosition(const CConsoleControl& aConsole, TPoint aPosition);
+	TPixelPosition(const CConsoleControl& aConsole, TInt aX, TInt aY);
+	TPixelPosition(const TViewCharacterPosition& aViewPosition);
 public:
 	const CConsoleControl& iConsole;
 	TPoint iPoint;
@@ -244,8 +244,8 @@ private:
 	void ConstructL(CConsoleFont* aFont);
 	void SizeChangedL();
 	
-	void DrawLine(TViewPosition aLine, CBitmapContext& aDrawTo) const;
-	TRect LineRect(TViewPosition aLine) const;
+	void DrawLine(TViewCharacterPosition aLine, CBitmapContext& aDrawTo) const;
+	TRect LineRect(TViewCharacterPosition aLine) const;
 	
 	TBool IsSpecialChar(TChar aChar) const;
 	void HandleSpecialChar(TChar aChar);
@@ -343,7 +343,7 @@ public:
 	void Clear();
 	void ClearFrom(TBufferPosition aPosition);
 	
-	void Draw(CBitmapContext& aDrawTo, TViewPosition aViewPosition) const;
+	void Draw(CBitmapContext& aDrawTo, TViewCharacterPosition aViewPosition) const;
 	TBool NeedToBlink(TBool aBlinkOn);
 private:
 	CConsoleLine(CConsoleControl& aControl, const CConsoleFont& aFont);
