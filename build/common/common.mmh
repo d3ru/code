@@ -408,6 +408,41 @@
 #define FSHELL_CORE_SUPPORT_TESTEXECUTE
 #endif
 
+//TODO enable this when the new launcher is ready
+//#ifdef FSHELL_PLATFORM_S60
+//#define FSHELL_CORE_SUPPORT_LAUNCHER
+//#endif
+
+#ifndef FSHELL_CORE_SUPPORT_LAUNCHER
+// Fall back to the old icons
+
+#ifdef FSHELL_LAUNCHER_SUPPORT_LOCAL
+#define FSHELL_CORE_SUPPORT_LOCAL_ICON
+#endif
+
+#ifdef FSHELL_LAUNCHER_SUPPORT_TCP
+#define FSHELL_CORE_SUPPORT_TCP_ICON
+#endif
+
+#ifdef FSHELL_LAUNCHER_SUPPORT_BT
+#define FSHELL_CORE_SUPPORT_BT_ICON
+#endif
+
+#ifdef FSHELL_LAUNCHER_SUPPORT_USB
+#define FSHELL_CORE_SUPPORT_USB_ICON
+#endif
+
+#ifdef FSHELL_LAUNCHER_SUPPORT_SERIAL
+#define FSHELL_CORE_SUPPORT_SERIAL_ICON
+#endif
+
+#endif // FSHELL_CORE_SUPPORT_LAUNCHER
+
+// Launcher doesn't do rcons, if it's still defined just add the icon
+#ifdef FSHELL_LAUNCHER_SUPPORT_RCONS
+#define FSHELL_CORE_SUPPORT_RCONS_ICON
+#endif
+
 //
 // qr3.
 //

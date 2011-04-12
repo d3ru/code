@@ -34,8 +34,8 @@ void RunL()
 #define EXPAND(f, x) f(x)
 
 #ifdef FSHELL_CORE_LAUNCH_USB
-	// FSHELL_CORE_SUPPORT_USB_ICON is "ACM::3" or whatever
-	_LIT(KUsbArgs, "--console vt100usbcons --console-title '" EXPAND(LCONS, FSHELL_CORE_SUPPORT_USB_ICON) L"'");
+	// FSHELL_LAUNCHER_SUPPORT_USB is "ACM::3" or whatever
+	_LIT(KUsbArgs, "--console vt100usbcons --console-title '" EXPAND(LCONS, FSHELL_LAUNCHER_SUPPORT_USB) L"'");
 	User::LeaveIfError(process.Create(KProcess, KUsbArgs));
 #endif
 
@@ -45,8 +45,8 @@ void RunL()
 #endif
 
 #ifdef FSHELL_CORE_LAUNCH_SERIAL
-	// FSHELL_CORE_SUPPORT_SERIAL_ICON is "COMM::1" or whatever
-	_LIT(KSerialArgs, "--console vt100cons --console-title '" EXPAND(LCONS, FSHELL_CORE_SUPPORT_SERIAL_ICON) L"'");
+	// FSHELL_LAUNCHER_SUPPORT_SERIAL is "COMM::1" or whatever
+	_LIT(KSerialArgs, "--console vt100cons --console-title '" EXPAND(LCONS, FSHELL_LAUNCHER_SUPPORT_SERIAL) L"'");
 	User::LeaveIfError(process.Create(KProcess, KSerialArgs));
 #endif
 

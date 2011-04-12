@@ -16,12 +16,12 @@
 // Note FSHELL_PLATFORM_S60 is defined in the 3rd or 5th ed platform.mmh
 
 #ifdef WINS
-#define FSHELL_CORE_SUPPORT_LOCAL_ICON
-#define FSHELL_CORE_SUPPORT_RCONS_ICON
+#define FSHELL_LAUNCHER_SUPPORT_LOCAL
+#define FSHELL_LAUNCHER_SUPPORT_RCONS
 #else
-#define FSHELL_CORE_SUPPORT_LOCAL_ICON
-#define FSHELL_CORE_SUPPORT_TCP_ICON
-#define FSHELL_CORE_SUPPORT_BT_ICON
+#define FSHELL_LAUNCHER_SUPPORT_LOCAL
+#define FSHELL_LAUNCHER_SUPPORT_TCP
+#define FSHELL_LAUNCHER_SUPPORT_BT
 #endif
 
 // Seems like this should be defined in a variant.hrh file, but it doesn't appear to be...

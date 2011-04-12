@@ -118,29 +118,29 @@ The image conversion libraries (ICL) are available.
 
 RAM defrag (in form of TRamDefragRequest API) is supported.
 
-=item FSHELL_CORE_SUPPORT_LOCAL_ICON
+=item FSHELL_LAUNCHER_SUPPORT_LOCAL
 
-Create a launch icon for running fshell local.
+Indicate that local fshell connections (using the device screen and keyboard) should be available from the app launcher. If the combined launcher is not available, a separate application icon called "fshell (local)" will be created.
 
-=item FSHELL_CORE_SUPPORT_TCP_ICON
+=item FSHELL_LAUNCHER_SUPPORT_TCP
 
-Create a launch icon for running fshell remotely via TCP/IP.
+Indicate that remote TCP/IP connections (using vt100tcpcons) should be available from the app launcher. If the combined launcher is not available, a separate application icon called "fshell (TCP)" will be created.
 
-=item FSHELL_CORE_SUPPORT_BT_ICON
+=item FSHELL_LAUNCHER_SUPPORT_BT
 
-Create a launch icon for running fshell remotely via Bluetooth.
+Indicate that remote Bluetooth connections (using vt100btcons) should be available from the app launcher. If the combined launcher is not available, a separate application icon called "fshell (BT)" will be created.
 
-=item FSHELL_CORE_SUPPORT_USB_ICON
+=item FSHELL_LAUNCHER_SUPPORT_USB
 
-Create a launch icon for running fshell remotely via USB. The value of the macro is the console-title arguments to use (eg C<"port=ACM::1">).
+Indicate that remote USB connections (using vt100usbcons) should be available from the app launcher. If the combined launcher is not available, a separate application icon called "fshell (USB)" will be created. The value of the macro is the console-title arguments to use (eg C<"port=ACM::1">).
 
-=item FSHELL_CORE_SUPPORT_SERIAL_ICON
+=item FSHELL_LAUNCHER_SUPPORT_SERIAL
 
-Create a launch icon for running fshell remotely via Serial. The value of the macro is the console-title arguments to use (eg C<"port=COMM::1,rate=115200">).
+Indicate that remote USB connections (using vt100usbcons) should be available from the app launcher. If the combined launcher is not available, a separate application icon called "fshell (Serial)" will be created. The value of the macro is the console-title arguments to use (eg C<"port=COMM::1,rate=115200">).
 
-=item FSHELL_CORE_SUPPORT_RCONS_ICON
+=item FSHELL_LAUNCHER_SUPPORT_RCONS
 
-Create a launch icon for running fshell remotely via rcons.
+Indicate that remote rcons connections should be available from the app launcher. Legacy. If defined a separate application icon called "fshell (rcons)" will be created.
 
 =item FSHELL_CORE_SUPPORT_LICENSE
 

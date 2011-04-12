@@ -34,6 +34,10 @@ Instead of connecting using the iosrv channel, connect via the USB OST router. O
 
 The nesting ID of the muxcons.exe instance.
 
+==see-also
+
+http://muxcons.sourceforge.net/
+
 ==copyright
 
 Copyright (c) 2010-2011 Accenture. All rights reserved.
