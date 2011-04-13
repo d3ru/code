@@ -408,12 +408,11 @@
 #define FSHELL_CORE_SUPPORT_TESTEXECUTE
 #endif
 
-//TODO enable this when the new launcher is ready
-//#ifdef FSHELL_PLATFORM_S60
-//#define FSHELL_CORE_SUPPORT_LAUNCHER
-//#endif
+#ifdef FSHELL_PLATFORM_S60
+#define FSHELL_CORE_SUPPORT_LAUNCHER
+#endif
 
-#ifndef FSHELL_CORE_SUPPORT_LAUNCHER
+//Don't remove them just yet... #ifndef FSHELL_CORE_SUPPORT_LAUNCHER
 // Fall back to the old icons
 
 #ifdef FSHELL_LAUNCHER_SUPPORT_LOCAL
@@ -436,7 +435,7 @@
 #define FSHELL_CORE_SUPPORT_SERIAL_ICON
 #endif
 
-#endif // FSHELL_CORE_SUPPORT_LAUNCHER
+//#endif // FSHELL_CORE_SUPPORT_LAUNCHER
 
 // Launcher doesn't do rcons, if it's still defined just add the icon
 #ifdef FSHELL_LAUNCHER_SUPPORT_RCONS
@@ -660,6 +659,7 @@
 #define FSHELL_UID_IOCLI_QT                   0x10286F93
 #define FSHELL_UID_STDIOSERVER                0x10286F94
 #define FSHELL_UID_QPLUGINLOADER              0x10286F95
+#define FSHELL_UID_FSHELL_LAUNCHER            0x10286F96
 
 #else // Not FSHELL_PROTECTED_UIDS
 
@@ -822,6 +822,7 @@
 #define FSHELL_UID_IOCLI_QT                   0xE0286F93
 #define FSHELL_UID_STDIOSERVER                0xE0286F94
 #define FSHELL_UID_QPLUGINLOADER              0xE0286F95
+#define FSHELL_UID_FSHELL_LAUNCHER            0xE0286F96
 
 #endif // FSHELL_PROTECTED_UIDS
 

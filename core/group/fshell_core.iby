@@ -16,6 +16,12 @@
 
 FSHELL_EXECUTABLE_FILE(fshell.exe)
 
+#ifdef FSHELL_CORE_SUPPORT_LAUNCHER
+FSHELL_EXECUTABLE_FILE(fshell_launcher.exe)
+FSHELL_DATA_FILE(ZPRIVATE\10003a3f\Apps\fshell_launcher_reg.rsc, Private\10003a3f\import\Apps\fshell_launcher_reg.rsc)
+FSHELL_DATA_FILE(ZRESOURCE\Apps\fshell_launcher.rsc, Resource\Apps\fshell_launcher.rsc)
+#endif
+
 #ifdef FSHELL_CORE_SUPPORT_LOCAL_ICON
 FSHELL_DATA_FILE(ZPRIVATE\10003a3f\Apps\fshell_reg.rsc, Private\10003a3f\import\Apps\fshell_reg.rsc)
 FSHELL_DATA_FILE(ZRESOURCE\Apps\fshell_loc.rsc, Resource\Apps\fshell_loc.rsc)

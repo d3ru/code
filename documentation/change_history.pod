@@ -30,6 +30,10 @@ Note the use of C<^$> to prevent C<$PWD> being expanded when export runs rather 
 
 Build fixes for platforms without CONE or apparc. Fixed rare crash when console creation returned an error. Fixed guicons drawing issue when embedded in another control.
 
+=item *
+
+Added new single launcher app instead of the multiple "fshell (USB)", "fshell (BT)" etc icons. The new launcher is located in the RnD tools folder. For now the new launcher is experimental, so the old icons remain available.
+
 =back
 
 =head2 Release 004.1

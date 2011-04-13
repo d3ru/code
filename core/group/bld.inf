@@ -172,6 +172,10 @@ PRJ_MMPFILES
 ..\extra\launch\fshell_launch_serial.mmp
 #endif
 
+#ifdef FSHELL_CORE_SUPPORT_LAUNCHER
+PRJ_MMPFILES
+..\extra\launch\fshell_launcher\group\fshell_launcher.mmp
+#endif
 
 PRJ_TESTEXPORTS
 ..\tsrc\args.script						z:\system\console\scripts\args.script

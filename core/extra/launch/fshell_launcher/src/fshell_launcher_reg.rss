@@ -1,0 +1,29 @@
+// fshell_launcher_reg.rss
+//
+// Copyright (c) 2011 Accenture. All rights reserved.
+// This component and the accompanying materials are made available
+// under the terms of the "Eclipse Public License v1.0"
+// which accompanies this distribution, and is available
+// at the URL "http://www.eclipse.org/legal/epl-v10.html".
+//
+// Initial Contributors:
+// Accenture - Initial contribution
+//
+
+#include <appinfo.rh>
+#include <fshell_launcher.rsg>
+#include <fshell/common.mmh>
+
+UID2 KUidAppRegistrationResourceFile
+UID3 FSHELL_UID_FSHELL_LAUNCHER // application UID
+
+RESOURCE APP_REGISTRATION_INFO
+    {
+    app_file                  = "fshell_launcher";
+    localisable_resource_file = "\\resource\\apps\\fshell_launcher";
+    localisable_resource_id   = R_FSHELL_LAUNCHER_LOCALISABLE_APP_INFO;
+    embeddability             = KAppNotEmbeddable;
+    newfile                   = KAppDoesNotSupportNewFile;
+    group_name                = "RnD Tools";
+    }
+
