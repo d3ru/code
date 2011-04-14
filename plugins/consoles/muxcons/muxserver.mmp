@@ -15,7 +15,7 @@
 target			muxserver.exe
 targettype		exe
 uid				FSHELL_UID2_FSHELL_EXE FSHELL_UID_MUXSERVER
-capability		FSHELL_CAP_MMP_NORMAL
+capability		FSHELL_CAP_MMP_NORMAL -DRM // Workaround for linking against public coda. TODO fix properly
 
 userinclude		.
 #include <fshell/fsh_system_include.mmh>
