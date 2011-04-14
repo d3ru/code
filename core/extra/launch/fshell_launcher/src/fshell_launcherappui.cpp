@@ -13,13 +13,13 @@
 #include "consolewrapper.h"
 #include "fshell_launcherappui.h"
 #include "fshell_launcherview.h"
+#include "utils.h"
 #include <eikbtgpc.h>
 #include <eikmenup.h>
 
 const TInt KLskPosition = 0;
 const TTimeIntervalMicroSeconds32 KIdleTimeOut(1*1000*1000);
 
-_LIT(KServerName, "guicons");
 static const TInt KConsoleBufferSize = 1024;
 _LIT(KConsoleFont, "");
 
@@ -61,13 +61,15 @@ void CFShellLauncherAppUi::SetConsolePendingConnection(CConsoleWrapper* aConsole
 	DEBUG_PRINTF("CFShellLauncherAppUi::SetConsolePendingConnection 0x%08x", aConsole);
 	if (aConsole)
 		{
-		__ASSERT_ALWAYS(!iConsolePendingConnection, User::Invariant());
+		ASSERT(!iConsolePendingConnection);
 		}
 	iConsolePendingConnection = aConsole;
 	}
 
 void CFShellLauncherAppUi::HandleForegroundEventL(TBool aForeground)
 	{
+	// Don't understand what this was aiming to achieve... -Tomsci
+	/*
 	if(!aForeground && iIdleTimer)
 		{
 		if(!iIdleTimer->IsActive())
@@ -75,6 +77,7 @@ void CFShellLauncherAppUi::HandleForegroundEventL(TBool aForeground)
 			iIdleTimer->Start(KIdleTimeOut, 0, TCallBack(BackgroundCallBack, this) );
 			}
 		}
+	*/
 	}
 
 TInt CFShellLauncherAppUi::BackgroundCallBack(TAny* aSelf)
@@ -145,3 +148,7 @@ const TDesC& CFShellLauncherAppUi::GetConsoleFont()
 	return KConsoleFont;
 	}
 
+void CFShellLauncherAppUi::HandleStatusPaneSizeChange()
+	{
+	iAppView->SetRect(ClientRect());
+	}

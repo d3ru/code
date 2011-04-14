@@ -31,6 +31,7 @@ _LIT(KOptConsoleTitle, "console-title");
 _LIT(KOptConsoleSize, "console-size");
 _LIT(KOptConsoleFlags, "console-flags");
 _LIT(KOptPersistentConsole, "persistent-console");
+_LIT(KOptUnderlyingConsole, "underlying-console");
 _LIT(KDllExt, ".dll");
 _LIT(KNewLine, "\r\n");
 
@@ -1415,7 +1416,23 @@ void CCommandBase::UpdateHandlesL()
 			size.iHeight = iConsoleSize[1];
 			}
 		RIoConsole underlyingConsole;
-		underlyingConsole.OpenL(iIoSession, iStdout);
+		if (iUnderlyingConsoleName)
+			{
+			TPtrC consName(*iUnderlyingConsoleName);
+			TPtrC consTitle;
+			TInt colon = consName.Locate(':');
+			if (colon != KErrNotFound)
+				{
+				consTitle.Set(consName.Mid(colon+1));
+				consName.Set(consName.Left(colon));
+				}
+			underlyingConsole.CreateL(iIoSession, consName, consTitle, TSize(KConsFullScreen, KConsFullScreen));
+			}
+		else
+			{
+			// Otherwise hook up the underlying console to our default stdout
+			underlyingConsole.OpenL(iIoSession, iStdout);
+			}
 		CleanupClosePushL(underlyingConsole);
 		RIoConsole::TOptions createOption = RIoConsole::ENormal;
 		if (iConsoleCreateFlags & EConsoleFlagLazyCreate) createOption = RIoConsole::ELazyCreate;
@@ -1719,6 +1736,7 @@ EXPORT_C CCommandBase::~CCommandBase()
 	delete iConsoleImplementation;
 	delete iConsoleTitle;
 	delete iPersistentConsoleName;
+	delete iUnderlyingConsoleName;
 	iConsoleSize.Close();
 	iOptions.Close();
 	iArguments.Close();
@@ -2605,6 +2623,7 @@ void CCommandBase::DoParseCommandLineL(const TDesC& aCommandLine)
 	iOptions.AppendUintL(iConsoleSize, TChar(0), KOptConsoleSize, KNullDesC);
 	iOptions.AppendUintL(iConsoleCreateFlags, TChar(0), KOptConsoleFlags, KNullDesC);
 	iOptions.AppendStringL(iPersistentConsoleName, TChar(0), KOptPersistentConsole, KNullDesC);
+	iOptions.AppendStringL(iUnderlyingConsoleName, TChar(0), KOptUnderlyingConsole, KNullDesC);
 
 	// Parse the command line.
 	ParseCommandLineL(aCommandLine);

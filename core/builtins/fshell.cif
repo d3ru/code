@@ -353,6 +353,10 @@ Creates a new L<persistent console|persistent_consoles> to be used as the consol
 
 This option is internal to fshell and should not be used directly.
 
+=item * --underlying-console <console_implementation>
+
+When a console is set up as a result of the C<--console> option being specified, the console has the option of outputting debug or diagnostic information to the underlying console, which is usually the context in which the command was launched. The C<--underlying-console> option allows you to override this. If present, text after a colon will be used as the console-title arguments for the underlying console - eg C<--underlying-console mycons:custom_args> Normally only used by the fshell launcher application, this option should be considered internal and unsupported.
+
 =back
 
 =head2 Advanced command-line syntax

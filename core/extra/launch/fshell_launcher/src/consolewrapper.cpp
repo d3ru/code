@@ -153,7 +153,7 @@ CProcessMonitor::~CProcessMonitor()
 
 void CProcessMonitor::Logon(RProcess& aProcess)
 	{
-	__ASSERT_ALWAYS(!IsActive(), User::Invariant());
+	ASSERT(!IsActive());
 	iStatus = KRequestPending;
 	aProcess.Logon(iStatus);
 	iProcess = &aProcess;
@@ -240,7 +240,7 @@ CConsoleControl* CConsoleWrapper::Console() const
 void CConsoleWrapper::HandleNewConsoleL(CConsoleControl* aConsole)
 	{
 	DEBUG_PRINTF("CConsoleWrapper::HandleNewConsoleL 0x%08x console 0x%08x", this, aConsole);
-	__ASSERT_ALWAYS(!iConsole, User::Invariant());
+	ASSERT(!iConsole);
 	if (!aConsole->DrawableWindow())
 		{
 		aConsole->SetContainerWindowL(*this);
@@ -253,7 +253,7 @@ void CConsoleWrapper::HandleNewConsoleL(CConsoleControl* aConsole)
 void CConsoleWrapper::HandleConsoleClosed(CConsoleControl* aConsole)
 	{
 	DEBUG_PRINTF("CConsoleWrapper::HandleConsoleClosed 0x%08x console 0x%08x", this, aConsole);
-	__ASSERT_ALWAYS(aConsole == iConsole, User::Invariant());
+	ASSERT(aConsole == iConsole);
 	iConsole->Write(_L("\n\n*** Console closed ***"));
 	Layout();
 	}
@@ -331,12 +331,9 @@ void CConsoleWrapper::OpenEndpointL(TConnectionType aConnectionType)
 #endif
 			break;
 		}
-	// TODO: find a way to avoid having to create two nested fshell processes (i.e. an --underlying-console option)
-	// Doing so means that we can't clean up (even when the launcher has PowerMgmt), because
-	// the grandchild lives on even when the child is killed.
-	_LIT(KArgsFormat, "--console guicons --exec \"fshell %S\"");
+	_LIT(KArgsFormat, "--underlying-console guicons:servername=%S %S");
 	TBuf<256> argsBuf;
-	argsBuf.Format(KArgsFormat, args);
+	argsBuf.Format(KArgsFormat, &KServerName, args);
 	DEBUG_PRINT(_L("CConsoleWrapper::ConnectL args \"%S\""), &argsBuf);
 	TRAPD(err, iProcess.Create(KProcess, argsBuf));
 	if (KErrNone == err)

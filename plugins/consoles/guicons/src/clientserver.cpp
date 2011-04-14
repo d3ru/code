@@ -14,6 +14,7 @@
 
 
 _LIT(KDefaultServerName, "guicons");
+_LIT(KServerNameArg, "servername=");
 
 //______________________________________________________________________________
 // This function prodes the regular console DLL interface; it MUST be the first
@@ -31,8 +32,14 @@ CGuiConsClient::CGuiConsClient()
 	
 TInt CGuiConsClient::Create(const TDesC &aTitle, TSize aSize)
 	{
-	//TODO parse title for server name, font, etc
-	TInt r = iConsole.Connect(KDefaultServerName);
+	TPtrC serverName(KDefaultServerName);
+	if (aTitle.Left(KServerNameArg().Length()) == KServerNameArg)
+		{
+		serverName.Set(aTitle.Mid(KServerNameArg().Length()));
+		}
+
+	//TODO parse title for font, etc?
+	TInt r = iConsole.Connect(serverName);
 	if (r==KErrNone)
 		{
 		r = CConsoleProxy::Create(aTitle, aSize);

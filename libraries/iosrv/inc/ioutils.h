@@ -848,8 +848,8 @@ private:
 	MCommandExtensionsV1* iExtension;
 	CKeypressWatcher* iKeypressWatcher;
 	TUint iConsoleCreateFlags;
+	HBufC* iUnderlyingConsoleName;
 	void* iSpare1;
-	void* iSpare2;
 	};
 
 

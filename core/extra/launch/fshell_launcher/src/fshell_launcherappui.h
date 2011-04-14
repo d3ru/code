@@ -36,6 +36,7 @@ private:
 	void HandleForegroundEventL(TBool aForeground);
 	static TInt BackgroundCallBack(TAny* aSelf);
 	void BringToForeground();
+	void HandleStatusPaneSizeChange();
 
 private:
 	// MConsoleUi

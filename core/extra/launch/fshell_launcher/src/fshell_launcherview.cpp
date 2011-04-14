@@ -237,18 +237,19 @@ void CFShellLauncherAppView::HandleScrollEventL(CEikScrollBar* aScrollBar, TEikS
 void CFShellLauncherAppView::LayoutL()
     {
 	TInt y = KLayoutPadding;
+	const TInt width = Size().iWidth;
 	for (TInt i=0; i<iControls.Count(); ++i)
 		{
 		CCoeControl* control = iControls[i];
 		if (KErrNotFound == iButtons.Find(static_cast<CConnectButton*>(control)))
 			{
-			control->SetSize(TSize(Size().iWidth - 2*KLayoutPadding, control->Size().iHeight));
+			control->SetSize(TSize(width - 2*KLayoutPadding, control->Size().iHeight));
 			}
 		const TBool visible = (i >= iFirstVisibleControlIndex);
 		control->MakeVisible(visible);
 		if (visible)
 			{
-			control->SetPosition(TPoint(KLayoutPadding, y));
+			control->SetPosition(TPoint((width - control->Size().iWidth)/2, y));
 			y += (control->Size().iHeight + KLayoutPadding);
 			}
 		}

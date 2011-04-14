@@ -28,6 +28,8 @@ const TInt KNumConnectionTypes = 4;
 
 extern const LtkUtils::SLitC KTextConnectionType[KNumConnectionTypes];
 
+_LIT(KServerName, "guicons-fshell-launcher");
+
 #ifdef _DEBUG
 #	define DEBUG_PRINT(ARGS...) RDebug::Print(ARGS);
 #	define DEBUG_PRINTF(ARGS...) RDebug::Printf(ARGS);
@@ -35,6 +37,9 @@ extern const LtkUtils::SLitC KTextConnectionType[KNumConnectionTypes];
 #	define DEBUG_PRINT(ARGS...)
 #	define DEBUG_PRINTF(ARGS...)
 #endif
+
+#undef ASSERT
+#define ASSERT(x) if (!(x)) { DEBUG_PRINTF("Assertion '%s' failed at line %d", #x, __LINE__); User::Invariant(); }
 
 #endif // UTILS_H
 
