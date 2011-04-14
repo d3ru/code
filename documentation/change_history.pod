@@ -28,6 +28,16 @@ Note the use of C<^$> to prevent C<$PWD> being expanded when export runs rather 
 
 =back
 
+=head2 Release 004.2
+
+=over 5
+
+=item *
+
+Fixed bug for using muxserver.exe with public CODA. Muxcons currently relies on CODA being installed if using S60 builds.
+
+=back
+
 =head2 Release 004.1
 
 =over 5
