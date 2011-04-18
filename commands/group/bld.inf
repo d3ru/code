@@ -474,7 +474,7 @@ PRJ_MMPFILES
 ..\showdebug\showdebug.mmp
 #endif
 
-#ifdef FSHELL_OST_SUPPORT
+#if defined(FSHELL_OST_SUPPORT) && defined(MARM)
 PRJ_EXPORTS
 ..\ost\ost.cif           z:\resource\cif\fshell\ost.cif
 PRJ_MMPFILES

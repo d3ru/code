@@ -641,6 +641,7 @@ private:
 	TFullName iFullName;
 	CTextFormatter* iFormatter;
 	CTextBuffer* iBuf;
+	TChunkKernelInfo iChunkInfo; // Used in PrintChunkInfoL, ListChunksL
 	};
 
 #endif

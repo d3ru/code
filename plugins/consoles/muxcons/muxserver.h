@@ -18,6 +18,11 @@
 #include <fshell/descriptorutils.h>
 #include "muxcons_types.h"
 
+#if defined(FSHELL_OST_SUPPORT) && !defined(__MARM__)
+// Not supported on winscw...
+#undef FSHELL_OST_SUPPORT
+#endif
+
 #ifdef FSHELL_OST_SUPPORT
 #if FSHELL_OST_SUPPORT == 2 // BC breakage...
 #include <usbostcomm.h>

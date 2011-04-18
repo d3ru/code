@@ -2798,24 +2798,23 @@ void CCmdChunkInfo::ListChunksL()
 		TInt offset = 0;
 		while (offset < numAddresses)
 			{
-			TChunkKernelInfo chunkInfo;
-			TPckg<TChunkKernelInfo> chunkInfoPckg(chunkInfo);
+			TPckg<TChunkKernelInfo> chunkInfoPckg(iChunkInfo);
 			TUint32* ptr = p + offset++;
 			err = iMemAccess.GetObjectInfo(EChunk, (TUint8*)(*ptr), chunkInfoPckg);
 			if (err == KErrNone)
 				{
-				iFullName.Copy(chunkInfo.iFullName);
+				iFullName.Copy(iChunkInfo.iFullName);
 				if (iIncludeSize)
 					{
 					iBuf->AppendFormatL(_L("0x%08x\t"), *ptr);
 					if (iHumanReadable)
 						{
-						iBuf->AppendHumanReadableSizeL(chunkInfo.iSize, EUnaligned);
+						iBuf->AppendHumanReadableSizeL(iChunkInfo.iSize, EUnaligned);
 						iBuf->AppendFormatL(KTab);
 						}
 					else
 						{
-						iBuf->AppendFormatL(_L("%d\t"), chunkInfo.iSize);
+						iBuf->AppendFormatL(_L("%d\t"), iChunkInfo.iSize);
 						}
 					iBuf->AppendFormatL(_L("\'%S\'\r\n"), &iFullName);
 					}
@@ -2839,8 +2838,7 @@ void CCmdChunkInfo::ListChunksL()
 
 void CCmdChunkInfo::PrintChunkInfoL()
 	{
-	TChunkKernelInfo chunkInfo;
-	TPckg<TChunkKernelInfo> chunkInfoPckg(chunkInfo);
+	TPckg<TChunkKernelInfo> chunkInfoPckg(iChunkInfo);
 	TInt err = iMemAccess.GetObjectInfo(EChunk, (TUint8*)iAddress, chunkInfoPckg);
 	if (err)
 		{
@@ -2849,22 +2847,22 @@ void CCmdChunkInfo::PrintChunkInfoL()
 		}
 	else
 		{
-		iFullName.Copy(chunkInfo.iFullName);
+		iFullName.Copy(iChunkInfo.iFullName);
 		iBuf->AppendFormatL(_L("Name:\t\'%S\'\r\n"), &iFullName);
-		iBuf->AppendFormatL(_L("Base:\t0x%08x\r\n"), chunkInfo.iBase);
-		PrintSizeL(_L("Max size:\t"), chunkInfo.iMaxSize);
-		PrintSizeL(_L("Current size:\t"), chunkInfo.iSize);
-		iBuf->AppendFormatL(_L("Attributes:\t0x%08x\r\n"), chunkInfo.iAttributes);
-		iBuf->AppendFormatL(_L("Type:\t0x%08x\r\n"), chunkInfo.iChunkType);
-		iBuf->AppendFormatL(_L("Restrictions:\t0x%08x\r\n"), chunkInfo.iRestrictions);
+		iBuf->AppendFormatL(_L("Base:\t0x%08x\r\n"), iChunkInfo.iBase);
+		PrintSizeL(_L("Max size:\t"), iChunkInfo.iMaxSize);
+		PrintSizeL(_L("Current size:\t"), iChunkInfo.iSize);
+		iBuf->AppendFormatL(_L("Attributes:\t0x%08x\r\n"), iChunkInfo.iAttributes);
+		iBuf->AppendFormatL(_L("Type:\t0x%08x\r\n"), iChunkInfo.iChunkType);
+		iBuf->AppendFormatL(_L("Restrictions:\t0x%08x\r\n"), iChunkInfo.iRestrictions);
 
 		RProcess process;
-		TInt err = process.Open(chunkInfo.iControllingOwnerProcessId);
+		TInt err = process.Open(iChunkInfo.iControllingOwnerProcessId);
 		if (err == KErrNone)
 			{
 			iName = process.Name();
 			process.Close();
-			iBuf->AppendFormatL(_L("Controlling process:\t\'%S\' (%u)\r\n"), &iName, chunkInfo.iControllingOwnerProcessId);
+			iBuf->AppendFormatL(_L("Controlling process:\t\'%S\' (%u)\r\n"), &iName, iChunkInfo.iControllingOwnerProcessId);
 			LtkUtils::RProxyAllocatorHelper allocHelper;
 			CleanupClosePushL(allocHelper);
 			err = allocHelper.OpenChunkHeap(iMemAccess, (TAny*)iAddress);

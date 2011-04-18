@@ -27,6 +27,6 @@ library			iocli.lib
 library			ltkutils.lib
 library			efsrv.lib
 
-#ifdef FSHELL_OST_SUPPORT
+#if defined(FSHELL_OST_SUPPORT) && defined(MARM)
 library			usbostcomm.lib
 #endif

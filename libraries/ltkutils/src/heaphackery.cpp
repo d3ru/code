@@ -1735,7 +1735,11 @@ TInt LtkUtils::RAllocatorHelper::EuserIsUdeb()
 	TAny* buf = User::Alloc(4096);
 	if (!buf) return KErrNoMemory;
 	RAllocator* dummyHeap = UserHeap::FixedHeap(buf, 4096, 4, ETrue);
-	if (!dummyHeap) return KErrNoMemory; // Don't think this can happen
+	if (!dummyHeap) 
+		{
+		User::Free(buf);
+		return KErrNoMemory; // Don't think this can happen
+		}
 
 	dummyHeap->__DbgSetAllocFail(RAllocator::EFailNext, 1);
 	TAny* ptr = dummyHeap->Alloc(4);
