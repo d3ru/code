@@ -175,7 +175,7 @@ private:
 
 
 private: // From MDebuggerEventClient
-	void BreakpointHit(TDes& aPkg);
+	void ZombieCreated(RMemoryAccess::TZombieNotification& aNotification);
 
 private:
 	DThread* iClient;
@@ -189,8 +189,8 @@ private:
 	SDblQueLink* iCurrentCodeSegLink;
 	DThreadChangeHandler* iEventHandler;
 	DPropertyAccess* iPropertyAccess;
-	TAny* iClientBreakpointNotifyPkg;
-	TRequestStatus* iClientBreakpointNotifyStatus;
+	TAny* iClientZombieNotifyPkg;
+	TRequestStatus* iClientZombieNotifyStatus;
 
 	SDblQue iFilteredCodesegQue;
 	};
@@ -358,13 +358,13 @@ DMemoryAccess::~DMemoryAccess()
 		Kern::MutexSignal(*codeSegLock);
 		}
 
-	if (iClientBreakpointNotifyStatus)
+	if (iClientZombieNotifyStatus)
 		{
 		// Hmm I'm sure there are some threading subtleties here that I'm missing
 		DDebuggerEventHandler* handler = NULL;
 		TInt err = ((DMemoryAccessFactory*)iDevice)->GetEventHandler(handler);
-		if (!err) handler->UnregisterForBreakpointNotification(this);
-		Kern::RequestComplete(iClient, iClientBreakpointNotifyStatus, KErrCancel);
+		if (!err) handler->UnregisterForZombieNotification(this);
+		Kern::RequestComplete(iClient, iClientZombieNotifyStatus, KErrCancel);
 		}
 
 	if (iEventHandler)
@@ -651,13 +651,13 @@ TInt DMemoryAccess::DoControl(TInt aFunction, TAny* a1, TAny* a2)
 	case RMemoryAccess::EControlGetZombies:
 	case RMemoryAccess::EControlReleaseZombie:
 	case RMemoryAccess::EControlSuspendThread:
-	case RMemoryAccess::EControlNotifyBreakpoint:
+	case RMemoryAccess::EControlNotifyZombie:
 	case RMemoryAccess::EControlSetBreakpoint:
 	case RMemoryAccess::EControlSetBreakpointEnabled:
 	case RMemoryAccess::EControlClearBreakpoint:
 	case RMemoryAccess::EControlContinueFromBreakpoint:
 	case RMemoryAccess::EControlGetBreakpoints:
-	case RMemoryAccess::EControlCancelNotifyBreakpoint:
+	case RMemoryAccess::EControlCancelNotifyZombie:
 	case RMemoryAccess::EControlRegisterPersistantBreakpoint:
 	case RMemoryAccess::EControlSetSymbolicBreakpoint:
 		return DebuggerFn(aFunction, a1, a2);
@@ -2995,26 +2995,26 @@ TInt DMemoryAccess::DebuggerFn(TInt aFn, TAny* a1, TAny* a2)
 			thread->Close(NULL);
 			break;
 			}
-		case RMemoryAccess::EControlNotifyBreakpoint:
+		case RMemoryAccess::EControlNotifyZombie:
 			{
-			if (iClientBreakpointNotifyStatus) return KErrAlreadyExists;
-			iClientBreakpointNotifyPkg = a1;
-			iClientBreakpointNotifyStatus = (TRequestStatus*)a2;
-			err = handler->RegisterForBreakpointNotification(this);
+			if (iClientZombieNotifyStatus) return KErrAlreadyExists;
+			iClientZombieNotifyPkg = a1;
+			iClientZombieNotifyStatus = (TRequestStatus*)a2;
+			err = handler->RegisterForZombieNotification(this);
 			if (err)
 				{
-				iClientBreakpointNotifyPkg = NULL;
-				iClientBreakpointNotifyStatus = NULL;
+				iClientZombieNotifyPkg = NULL;
+				iClientZombieNotifyStatus = NULL;
 				}
 			break;
 			}
-		case RMemoryAccess::EControlCancelNotifyBreakpoint:
+		case RMemoryAccess::EControlCancelNotifyZombie:
 			{
-			iClientBreakpointNotifyPkg = NULL;
-			if (iClientBreakpointNotifyStatus)
+			iClientZombieNotifyPkg = NULL;
+			if (iClientZombieNotifyStatus)
 				{
-				handler->UnregisterForBreakpointNotification(this);
-				Kern::RequestComplete(iClient, iClientBreakpointNotifyStatus, KErrCancel);
+				handler->UnregisterForZombieNotification(this);
+				Kern::RequestComplete(iClient, iClientZombieNotifyStatus, KErrCancel);
 				}
 			break;
 			}
@@ -3170,15 +3170,16 @@ TInt DMemoryAccess::GetRegisters(TAny* a1, TAny* /*a2*/)
 	return err;
 	}
 
-void DMemoryAccess::BreakpointHit(TDes& aPkg)
+void DMemoryAccess::ZombieCreated(RMemoryAccess::TZombieNotification& aNotification)
 	{
-	TRequestStatus* stat = (TRequestStatus*)NKern::SafeSwap(NULL, (TAny*&)iClientBreakpointNotifyStatus);
+	TRequestStatus* stat = (TRequestStatus*)NKern::SafeSwap(NULL, (TAny*&)iClientZombieNotifyStatus);
 	if (stat)
 		{
 		// Can't see how we could get here with it being null, but still
-		TInt err = Kern::ThreadDesWrite(iClient, iClientBreakpointNotifyPkg, aPkg, 0);
+		TPckg<RMemoryAccess::TZombieNotification> pkg(aNotification);
+		TInt err = Kern::ThreadDesWrite(iClient, iClientZombieNotifyPkg, pkg, 0);
 		Kern::RequestComplete(iClient, stat, err);
-		iClientBreakpointNotifyPkg = NULL;
+		iClientZombieNotifyPkg = NULL;
 		}
 	}
 

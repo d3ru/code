@@ -68,7 +68,7 @@ Do not display localised time and date formats; instead use microseconds from 0A
 
 ==option bool 1 one
 
-Outputs one entry per line rather than trying to columnise the output. Is implied if C<stdout> is redirected or if C<--long> or <--recurse> are specified.
+Outputs one entry per line rather than trying to columnise the output. Is implied if C<stdout> is redirected or if C<--long> or C<--recurse> are specified.
 
 ==option bool r recurse
 

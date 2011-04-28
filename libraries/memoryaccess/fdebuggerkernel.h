@@ -23,7 +23,7 @@ class TDynDfcQueWrapper;
 class MDebuggerEventClient
 	{
 public:
-	virtual void BreakpointHit(TDes& aPkg) =0;
+	virtual void ZombieCreated(RMemoryAccess::TZombieNotification& aNotification) =0;
 	};
 
 NONSHARABLE_CLASS(DDebuggerEventHandler) : public DKernelEventHandler
@@ -37,8 +37,8 @@ public:
 	TInt ReleaseZombie(DThread* aThread);
 	TInt SuspendThread(DThread* aThread);
 
-	TInt RegisterForBreakpointNotification(MDebuggerEventClient* aClient);
-	void UnregisterForBreakpointNotification(MDebuggerEventClient* aClient);
+	TInt RegisterForZombieNotification(MDebuggerEventClient* aClient);
+	void UnregisterForZombieNotification(MDebuggerEventClient* aClient);
 
 	TInt SetBreakpoint(DThread* aThread, TLinAddr aAddress, const RMemoryAccess::TPredicate& aCondition);
 	TInt SetSymbolicBreakpoint(DThread* aThread, HBuf* aCodesegName, TUint32 aOffset, const RMemoryAccess::TPredicate& aCondition);
@@ -61,12 +61,12 @@ private:
 	void BreakpointLock();
 	void BreakpointUnlock();
 	struct SZombie;
+	struct SBreakpoint;
 	SZombie* FindZombie(DThread* aThread);
 	void ReleaseZombie(SZombie* aZombie);
 	void ReleaseZombieAndUnlock(SZombie* aZombie);
 	void UnsuspendThread(SZombie* aZombie);
-	TInt Zombify(TLinAddr aBreakpointAddr=0);
-	struct SBreakpoint;
+	TInt Zombify(const SBreakpoint* aBreakpoint=NULL);
 	SBreakpoint* FindBreakpointByAddress(/*DThread* aThread,*/ TLinAddr aAddress);
 	SBreakpoint* FindBreakpointById(TInt aId);
 	SBreakpoint* FindBreakpointUsingHardwareContextRegister(TInt aRegister);
@@ -181,7 +181,7 @@ private:
 	TBool iCodeModifierInited;
 	SDblQue iBreakpoints;
 	TInt iNextBreakpointId;
-	MDebuggerEventClient* iBreakpointNotifyClient;
+	MDebuggerEventClient* iNotifyClient;
 	/* Rules for the breakpoint lock: Any manipulation of iBreakpoints, or of any breakpoint on the iBreakpoints list, must be protected by this lock.
 	 * Ditto iFreeHwBreakpoints. SBreakpoint objects not on the list can be manipulated without needing the lock held
 	 */

@@ -627,7 +627,8 @@ TBool CSwiSisInstallerAO::DisplayQuestionL(const Swi::CAppInfo& /* aAppInfo */, 
 		}
 	else if (aQuestion == Swi::EQuestionOverwriteFile)
 		{
-		return iParent.Query(_L("Some system files will be overwritten by this installation. Install anyway?"));
+		Printf(_L("Installation will overwrite %S. "), &aDes);
+		return iParent.Query(_L("Continue?"));
 		}
 	else
 		{

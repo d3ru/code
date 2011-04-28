@@ -412,7 +412,7 @@
 #define FSHELL_CORE_SUPPORT_LAUNCHER
 #endif
 
-//Don't remove them just yet... #ifndef FSHELL_CORE_SUPPORT_LAUNCHER
+#ifndef FSHELL_CORE_SUPPORT_LAUNCHER
 // Fall back to the old icons
 
 #ifdef FSHELL_LAUNCHER_SUPPORT_LOCAL
@@ -435,7 +435,7 @@
 #define FSHELL_CORE_SUPPORT_SERIAL_ICON
 #endif
 
-//#endif // FSHELL_CORE_SUPPORT_LAUNCHER
+#endif // FSHELL_CORE_SUPPORT_LAUNCHER
 
 // Launcher doesn't do rcons, if it's still defined just add the icon
 #ifdef FSHELL_LAUNCHER_SUPPORT_RCONS

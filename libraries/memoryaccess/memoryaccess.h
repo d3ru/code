@@ -439,13 +439,13 @@ public:
 		EControlGetZombieDebugMode,
 		EControlReleaseZombie,
 		EControlSuspendThread,
-		EControlNotifyBreakpoint,
+		ERemoved6, //EControlNotifyBreakpoint,
 		EControlSetBreakpoint,
 		EControlSetBreakpointEnabled,
 		EControlClearBreakpoint,
 		EControlContinueFromBreakpoint,
 		EControlGetBreakpoints,
-		EControlCancelNotifyBreakpoint,
+		ERemoved7, //EControlCancelNotifyBreakpoint,
 		EControlRegisterPersistantBreakpoint,
 		EControlSetSymbolicBreakpoint,
 		EControlSetDebugPort,
@@ -456,6 +456,8 @@ public:
 		EControlSubscribeToProperty,
 		EControlAcquireCodeSegMutexAndFilterCodesegsForProcess,
 		EControlFindPtrInCodeSegments2,
+		EControlNotifyZombie,
+		EControlCancelNotifyZombie,
 		ENumRequests,  // Add new commands above this line
         };
 public:
@@ -561,10 +563,9 @@ public:
 	TInt ReleaseZombie(RThread& aThread);
 	TInt SuspendThread(RThread& aThread); // To resume, call ReleaseZombie
 
-	class TBreakpointNotification
+	class TZombieNotification : public TZombieInfo
 		{
 	public:
-		TUint iThreadId;
 		TInt iBreakpointId;
 		TLinAddr iAddress;
 		};
@@ -595,8 +596,8 @@ public:
 		TUint32 iVals[KNumSlots];
 		};
 
-	void NotifyBreakpoint(TPckg<TBreakpointNotification>& aPkg, TRequestStatus& aStatus);
-	void CancelNotifyBreakpoint();
+	void NotifyZombie(TDes8& aPkg, TRequestStatus& aStatus); // aPkg a TPckg<TZombieNotification>
+	void CancelNotifyZombie();
 	//TInt SetBreakpoint(TLinAddr aAddress); // Global, all threads (except caller and the memaccess DFC thread). Returns breakpoint ID or an error code
 	TInt SetBreakpoint(RThread& aThread, TLinAddr aAddress, TPredicate* aCondition = NULL); // Returns breakpoint ID or an error code. Breakpoint ID may be OR'd with TBreakpointInfo::EHardware if a hardware breakpoint was sucessfully set
 	TInt SetSymbolicBreakpoint(RThread& aThread, const TDesC8& aCodeseg, TUint aOffset, TPredicate* aCondition = NULL);
@@ -957,17 +958,17 @@ inline TInt RMemoryAccess::SuspendThread(RThread& aThread)
 	return DoControl(EControlSuspendThread, (TAny*)aThread.Handle(), NULL);
 	}
 
-inline void RMemoryAccess::NotifyBreakpoint(TPckg<TBreakpointNotification>& aPkg, TRequestStatus& aStatus)
+inline void RMemoryAccess::NotifyZombie(TDes8& aPkg, TRequestStatus& aStatus)
 	{
 	aStatus = KRequestPending;
 	TRequestStatus* stat = &aStatus;
-	TInt err = DoControl(EControlNotifyBreakpoint, &aPkg, stat);
+	TInt err = DoControl(EControlNotifyZombie, &aPkg, stat);
 	if (err) User::RequestComplete(stat, err);
 	}
 
-inline void RMemoryAccess::CancelNotifyBreakpoint()
+inline void RMemoryAccess::CancelNotifyZombie()
 	{
-	DoControl(EControlCancelNotifyBreakpoint, NULL, NULL);
+	DoControl(EControlCancelNotifyZombie, NULL, NULL);
 	}
 	
 inline TInt RMemoryAccess::SetBreakpoint(RThread& aThread, TLinAddr aAddress, RMemoryAccess::TPredicate* aCondition /*=NULL*/)

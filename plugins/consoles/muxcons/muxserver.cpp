@@ -556,7 +556,7 @@ void CCmdMuxserver::HandleCommand(TInt aCmd, const TDesC8& aPayload)
 			{
 			FsL().MkDirAll(fileName);
 			TUint fileMode = EFileWrite;
-#if FSHELL_PLATFORM_S60 > 5 || defined(FSHELL_PLATFORM_SF)
+#if FSHELL_PLATFORM_S60 >= 5 || defined(FSHELL_PLATFORM_FOUNDATION)
 			fileMode |= EFileWriteBuffered;
 #endif
 			err = iPutFile.Replace(FsL(), fileName, fileMode);

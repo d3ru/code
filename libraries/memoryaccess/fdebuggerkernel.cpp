@@ -186,27 +186,18 @@ TUint DDebuggerEventHandler::DoEvent(TKernelEvent aEvent, TAny* a1, TAny* a2)
 				{
 				// Any other threads unlucky enough to hit our temp breakpoint will just have to wait until we see our target thread - otherwise
 				// we'll end up with temp breakpoints for the temp breakpoints and the universe will implode.
+				SBreakpoint bstack = *b;
 				BreakpointUnlock();
-				Zombify(excAddr);
+				Zombify(&bstack);
 				return (TUint)EExcHandled;
 				}
 			}
-		TInt id = b->iBreakpointId;
 		BreakpointUnlock();
 		if (shouldBreak)
 			{
 			// TODO should we suspend the thread rather than semaphoring it, to be more efficient?
-			if (iBreakpointNotifyClient)
-				{
-				RMemoryAccess::TBreakpointNotification notif;
-				notif.iThreadId = Kern::CurrentThread().iId;
-				notif.iBreakpointId = id;
-				notif.iAddress = excAddr;
-				TPckg<RMemoryAccess::TBreakpointNotification> pkg(notif);
-				// We shouldn't really pass blobs of data...
-				iBreakpointNotifyClient->BreakpointHit(pkg);
-				}
-			Zombify(excAddr);
+			SBreakpoint bstack = *b;
+			Zombify(&bstack);
 			}
 		else
 			{
@@ -309,14 +300,14 @@ TUint DDebuggerEventHandler::DoEvent(TKernelEvent aEvent, TAny* a1, TAny* a2)
 	return ERunNext;
 	}
 
-TInt DDebuggerEventHandler::Zombify(TLinAddr aBreakpointAddr)
+TInt DDebuggerEventHandler::Zombify(const SBreakpoint* aBreakpoint)
 	{
 	// The purpose of this code is to prevent dying threads from taking down their address space, so that we can still poke at their memory
 	// Currently, it is also used to pause a thread on a breakpoint
 	SZombie zom; // zombies go on the stack of the thread that is being halted. That way avoids having to alloc.
 	zom.iThread = &Kern::CurrentThread();
 	zom.iBlocker = NULL;
-	zom.iBreakpointAddress = aBreakpointAddr;
+	zom.iBreakpointAddress = aBreakpoint ? aBreakpoint->iAddress : 0;
 	TBuf8<32> semName;
 	semName.Append(_L8("ThreadZombiefier-"));
 	semName.AppendNum((TUint)zom.iThread->iId);
@@ -333,6 +324,26 @@ TInt DDebuggerEventHandler::Zombify(TLinAddr aBreakpointAddr)
 	Unlock();
 	zom.iThread->Open(); // So no-one is tempted to destroy it
 	NKern::ThreadLeaveCS();
+
+	if (iNotifyClient)
+		{
+		RMemoryAccess::TZombieNotification notif;
+		notif.iThreadId = Kern::CurrentThread().iId;
+		if (aBreakpoint)
+			{
+			notif.iBreakpointId = aBreakpoint->iBreakpointId;
+			notif.iAddress = aBreakpoint->iAddress;
+			notif.iFlags = RMemoryAccess::TZombieNotification::EBreakpoint;
+			}
+		else
+			{
+			notif.iBreakpointId = 0;
+			notif.iAddress = 0;
+			notif.iFlags = RMemoryAccess::TZombieNotification::ESuspended;
+			}
+		iNotifyClient->ZombieCreated(notif);
+		}
+
 	Kern::SemaphoreWait(*zom.iBlocker);
 	// The above blocks until a "fdb detach" or equivalent has happened, at which point we'll get signalled on this semaphore and should clean up
 	zom.iBlocker->Close(NULL);
@@ -527,25 +538,25 @@ void DDebuggerEventHandler::ReleaseZombie(SZombie* aZombie)
 		}
 	}
 
-TInt DDebuggerEventHandler::RegisterForBreakpointNotification(MDebuggerEventClient* aClient)
+TInt DDebuggerEventHandler::RegisterForZombieNotification(MDebuggerEventClient* aClient)
 	{
 	Lock();
 	TInt err = KErrAlreadyExists;
-	if (iBreakpointNotifyClient == NULL || iBreakpointNotifyClient == aClient)
+	if (iNotifyClient == NULL || iNotifyClient == aClient)
 		{
 		err = KErrNone;
-		iBreakpointNotifyClient = aClient;
+		iNotifyClient = aClient;
 		}
 	Unlock();
 	return err;
 	}
 
-void DDebuggerEventHandler::UnregisterForBreakpointNotification(MDebuggerEventClient* aClient)
+void DDebuggerEventHandler::UnregisterForZombieNotification(MDebuggerEventClient* aClient)
 	{
 	Lock();
-	if (aClient == iBreakpointNotifyClient)
+	if (aClient == iNotifyClient)
 		{
-		iBreakpointNotifyClient = NULL;
+		iNotifyClient = NULL;
 		}
 	Unlock();
 	}
@@ -1339,7 +1350,7 @@ TInt DDebuggerEventHandler::DoApplyHardwareBreakpoint(SBreakpoint* aBreakpoint, 
 		authStatus = *(TUint32*)(iDebugRegistersChunk->LinearAddress() + 0xFB8);
 		Kern::Printf("authStatus is now 0x%08x", authStatus);
 		}
-#endif
+#endif // FSHELL_ARM_MEM_MAPPED_DEBUG
 	if ((dscr & 0xC000) != 0x8000)
 		{
 		// Set bits [15:14] to b10
@@ -1349,13 +1360,6 @@ TInt DDebuggerEventHandler::DoApplyHardwareBreakpoint(SBreakpoint* aBreakpoint, 
 		}
 	dscr = GetDscr();
 	//Kern::Printf("dscr from MCR=0x%08x", dscr);		
-
-#else
-	// Is ARM, but not ARM11 or A8
-	(void)aBreakpoint;
-	(void)aContextReg;
-	return KErrNotSupported;
-#endif
 	
 	TUint32 contextId = GetArmContextIdForThread(aBreakpoint->iThread);
 	
@@ -1389,12 +1393,19 @@ TInt DDebuggerEventHandler::DoApplyHardwareBreakpoint(SBreakpoint* aBreakpoint, 
 
 	SetBreakpointPair(aBreakpoint->iHardwareBreakpointId, aBreakpoint->iAddress & ~3, bcr);
 	return KErrNone;
-	
+
+#else
+	// Is ARM, but not ARM11 or A8
+	(void)aBreakpoint;
+	(void)aContextReg;
+	return KErrNotSupported;
+#endif // defined(FSHELL_ARM11XX_SUPPORT) || defined(FSHELL_ARM_MEM_MAPPED_DEBUG)
+
 #else
 	(void)aBreakpoint;
 	(void)aContextReg;
 	return KErrNotSupported;
-#endif
+#endif // __EABI__
 	}
 
 TUint32 DDebuggerEventHandler::GetArmContextIdForThread(DThread* aThread)

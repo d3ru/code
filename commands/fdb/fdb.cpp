@@ -67,7 +67,7 @@ private:
 	static TInt BreakTestLtk(TAny* aPtr);
 	static TInt BreakTestCond(TAny* aPtr);
 	void ClearAllBreakpointsL();
-	void BreakpointHit(const RMemoryAccess::TBreakpointNotification& aNotif);
+	void ZombieCreated(const RMemoryAccess::TZombieNotification& aNotif);
 	void CompleteLineWithSymbolL(TConsoleLine& aLine, TLex& aLex);
 	void CheckForConditionL(TLex& aLex, RMemoryAccess::TPredicate& aCondition);
 	
@@ -146,13 +146,13 @@ private:
 	*/
 
 	// Breakpoint support
-	RMemoryAccess::TBreakpointNotification iBreakpointNotification;
-	TPckg<RMemoryAccess::TBreakpointNotification> iBreakpointNotificationPkg;
-	class CBreakpointNotifier : public CActive
+	RMemoryAccess::TZombieNotification iZombieNotification;
+	TPckg<RMemoryAccess::TZombieNotification> iZombieNotificationPkg;
+	class CZombieNotifier : public CActive
 		{
 	public:
-		CBreakpointNotifier(CCmdFdb& aCmd);
-		~CBreakpointNotifier();
+		CZombieNotifier(CCmdFdb& aCmd);
+		~CZombieNotifier();
 
 	private:
 		void Request();
@@ -162,8 +162,8 @@ private:
 	private:
 		CCmdFdb& iCmd;
 		};
-	friend class CBreakpointNotifier; // Declaration needed for gcc 2.9
-	CBreakpointNotifier* iBreakpointNotifier;
+	friend class CZombieNotifier; // Declaration needed for gcc 2.9
+	CZombieNotifier* iZombieNotifier;
 	};
 
 EXE_BOILER_PLATE(CCmdFdb)
@@ -189,7 +189,7 @@ CCmdFdb::~CCmdFdb()
 	iThreads.Close();
 	delete iSymbols;
 	iMemBuf.Close();
-	delete iBreakpointNotifier;
+	delete iZombieNotifier;
 	/*
 	iLinks.Close();
 	iBreadcrumbs.Close();
@@ -198,7 +198,7 @@ CCmdFdb::~CCmdFdb()
 	}
 
 CCmdFdb::CCmdFdb()
-	: CMemoryAccessCommandBase(EManualComplete), iConsoleAdapter(Stdout()), iBreakpointNotificationPkg(iBreakpointNotification)
+	: CMemoryAccessCommandBase(EManualComplete), iConsoleAdapter(Stdout()), iZombieNotificationPkg(iZombieNotification)
 	{
 	}
 
@@ -289,7 +289,7 @@ void CCmdFdb::DoRunL()
 		AttachL(iThreadId);
 		}
 
-	iBreakpointNotifier = new(ELeave) CBreakpointNotifier(*this);
+	iZombieNotifier = new(ELeave) CZombieNotifier(*this);
 	TInt err = iMemAccess.RegisterPersistantBreakpoint(LtkUtils::BreakpointAddr());
 	if (err != KErrNone && err != KErrAlreadyExists)
 		{
@@ -1441,45 +1441,53 @@ void CCmdFdb::ShowBreakpointsL()
 	CleanupStack::PopAndDestroy(&buf);
 	}
 
-void CCmdFdb::CBreakpointNotifier::RunL()
+void CCmdFdb::CZombieNotifier::RunL()
 	{
 	if (iStatus.Int() < 0)
 		{
-		iCmd.PrintError(iStatus.Int(), _L("Error returned from NotifyBreakpoint"));
+		iCmd.PrintError(iStatus.Int(), _L("Error returned from NotifyZombie"));
 		return;
 		}
 	
-	RMemoryAccess::TBreakpointNotification notif = iCmd.iBreakpointNotification;
-	iCmd.iMemAccess.NotifyBreakpoint(iCmd.iBreakpointNotificationPkg, iStatus);
+	RMemoryAccess::TZombieNotification notif = iCmd.iZombieNotification;
+	iCmd.iMemAccess.NotifyZombie(iCmd.iZombieNotificationPkg, iStatus);
 	SetActive();
 
-	iCmd.BreakpointHit(notif);
+	iCmd.ZombieCreated(notif);
 	}
 
-void CCmdFdb::CBreakpointNotifier::DoCancel()
+void CCmdFdb::CZombieNotifier::DoCancel()
 	{
-	iCmd.iMemAccess.CancelNotifyBreakpoint();
+	iCmd.iMemAccess.CancelNotifyZombie();
 	}
 
-CCmdFdb::CBreakpointNotifier::CBreakpointNotifier(CCmdFdb& aCmd)
+CCmdFdb::CZombieNotifier::CZombieNotifier(CCmdFdb& aCmd)
 : CActive(CActive::EPriorityStandard), iCmd(aCmd)
 	{
 	CActiveScheduler::Add(this);
-	iCmd.iMemAccess.NotifyBreakpoint(iCmd.iBreakpointNotificationPkg, iStatus);
+	iCmd.iMemAccess.NotifyZombie(iCmd.iZombieNotificationPkg, iStatus);
 	SetActive();
 	}
 
-CCmdFdb::CBreakpointNotifier::~CBreakpointNotifier()
+CCmdFdb::CZombieNotifier::~CZombieNotifier()
 	{
 	Cancel();
 	}
 
-void CCmdFdb::BreakpointHit(const RMemoryAccess::TBreakpointNotification& aNotif)
+void CCmdFdb::ZombieCreated(const RMemoryAccess::TZombieNotification& aNotif)
 	{
 	iLineEditor->RemovePromptAndUserInput();
-	Printf(_L("Breakpoint %d hit in thread %u: "), aNotif.iBreakpointId, aNotif.iThreadId);
-	Write(LookupSymbol(aNotif.iAddress));
-	Write(KCrLf);
+	if (aNotif.iFlags & RMemoryAccess::TZombieNotification::EBreakpoint)
+		{
+		Printf(_L("Breakpoint %d hit in thread %u: "), aNotif.iBreakpointId, aNotif.iThreadId);
+		Write(LookupSymbol(aNotif.iAddress));
+		Write(KCrLf);
+		}
+	else
+		{
+		Printf(_L("Thread %u has died.\r\n"), aNotif.iThreadId);
+		}
+
 	if (iCurrent == NULL)
 		{
 		Printf(_L("(Attaching to thread %u)\r\n"), aNotif.iThreadId);

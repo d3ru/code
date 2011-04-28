@@ -32,11 +32,15 @@ Build fixes for platforms without CONE or apparc. Fixed rare crash when console 
 
 =item *
 
-Added new single launcher app instead of the multiple "fshell (USB)", "fshell (BT)" etc icons. The new launcher is located in the RnD tools folder. For now the new launcher is experimental, so the old icons remain available.
+Added new single launcher app instead of the multiple "fshell (USB)", "fshell (BT)" etc icons. The new launcher is located in the RnD tools folder.
 
 =item *
 
 Fix for bug 3285378 "chunkinfo <baseAddress> crashes with KERN-EXEC 3"
+
+=item *
+
+fdb now prints a notification (and automatically attaches if nothing focussed) when a thread crashes.
 
 =back
 
