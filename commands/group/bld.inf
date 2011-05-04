@@ -474,12 +474,11 @@ PRJ_MMPFILES
 ..\showdebug\showdebug.mmp
 #endif
 
-#if defined(FSHELL_OST_SUPPORT) && defined(MARM)
 PRJ_EXPORTS
 ..\ost\ost.cif           z:\resource\cif\fshell\ost.cif
+..\ost\usbostcomm.h      fshell/usbostcomm.h
 PRJ_MMPFILES
 ..\ost\ost.mmp
-#endif
 
 #ifdef FSHELL_QT_SUPPORT
 PRJ_EXPORTS

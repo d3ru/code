@@ -24,5 +24,4 @@ source			ost.cpp
 
 library			euser.lib
 library			iocli.lib
-library			usbostcomm.lib
 library			ltkutils.lib

@@ -98,13 +98,11 @@ CCmdMuxserver::~CCmdMuxserver()
 	iOutputCollectors.ResetAndDestroy();
 	delete iMuxServer;
 	iPutFile.Close();
-#ifdef FSHELL_OST_SUPPORT
 	if (iOstServer.Handle())
 		{
 		// RUsbOstComm::Close isn't safe to call when not open, sigh
 		iOstServer.Close();
 		}
-#endif
 	}
 
 CCmdMuxserver::CCmdMuxserver()
@@ -125,9 +123,7 @@ void CCmdMuxserver::ArgumentsL(RCommandArgumentList& /*aArguments*/)
 void CCmdMuxserver::OptionsL(RCommandOptionList& aOptions)
 	{
 	aOptions.AppendBoolL(iPing, _L("ping"));
-#ifdef FSHELL_OST_SUPPORT
 	aOptions.AppendBoolL(iUseOst, _L("ost"));
-#endif
 	aOptions.AppendIntL(iNestLevel, _L("nest"));
 	}
 
@@ -137,7 +133,6 @@ void CCmdMuxserver::DoRunL()
 
 	if (iUseOst)
 		{
-#ifdef FSHELL_OST_SUPPORT
 		iPing = ETrue;
 
 		// Check there isn't already an OST muxserver running
@@ -160,10 +155,9 @@ void CCmdMuxserver::DoRunL()
 		RProperty::Define(RProcess().SecureId(), KOstPubSubKey, RProperty::EInt);
 		LeaveIfErr(RProperty::Set(RProcess().SecureId(), KOstPubSubKey, (TInt)RProcess().Id()), _L("Couldn't set KOstPubSubKey"));
 
-		LeaveIfErr(iOstServer.Connect(), _L("Couldn't connect to RUsbOstComm"));
+		LeaveIfErr(iOstServer.Connect(), _L("Couldn't connect to ustostrouter"));
 		LeaveIfErr(iOstServer.Open(), _L("Couldn't open RUsbOstComm"));
 		LeaveIfErr(iOstServer.RegisterProtocolID(KFshellOstProtocolId, EFalse), _L("Failed to register protocol id 0x%x"), KFshellOstProtocolId);
-#endif
 		}
 
 	iMuxServer = new(ELeave) CMuxServer(*this);
@@ -185,10 +179,8 @@ void CCmdMuxserver::DoRunL()
 
 	if (iUseOst)
 		{
-#ifdef FSHELL_OST_SUPPORT
 		SetErrorReported(ETrue); // Any errors after we start the mux server (eg on disconnection) risk ending back with muxserver itself, because in OST-land we don't have an underlying console
 		iOstServer.ReadMessage(iStatus, iInputBufFreeSpace);
-#endif
 		}
 	else
 		{
@@ -210,9 +202,7 @@ void CCmdMuxserver::DoCancel()
 	{
 	if (iUseOst)
 		{
-#ifdef FSHELL_OST_SUPPORT
 		iOstServer.ReadCancel();
-#endif
 		}
 	else
 		{
@@ -347,9 +337,7 @@ void CCmdMuxserver::RunL()
 
 	if (iUseOst)
 		{
-#ifdef FSHELL_OST_SUPPORT
 		iOstServer.ReadMessage(iStatus, iInputBufFreeSpace);
-#endif
 		}
 	else
 		{
@@ -411,7 +399,6 @@ void CCmdMuxserver::SendOutput(TInt aNestChannelToFakeOwnerOf)
 	//	LOG(_L("Pingleping"));
 	//	}
 	LOG(_L("Muxcons[%d] writing packet id %d of len %d for nest %d"), iNestLevel, FromBigEndian(*(TInt32*)(iOutputBuf.Ptr() + 4)), iOutputBuf.Length(), nestLevel);
-#ifdef FSHELL_OST_SUPPORT
 	if (iUseOst)
 		{
 		TRequestStatus stat;
@@ -419,7 +406,6 @@ void CCmdMuxserver::SendOutput(TInt aNestChannelToFakeOwnerOf)
 		User::WaitForRequest(stat);
 		}
 	else
-#endif
 		{
 		Stdout().Write(iOutputBuf);
 		}

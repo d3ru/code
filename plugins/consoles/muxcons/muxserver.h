@@ -18,21 +18,8 @@
 #include <fshell/descriptorutils.h>
 #include "muxcons_types.h"
 
-#if defined(FSHELL_OST_SUPPORT) && !defined(__MARM__)
-// Not supported on winscw...
-#undef FSHELL_OST_SUPPORT
-#endif
-
-#ifdef FSHELL_OST_SUPPORT
-#if FSHELL_OST_SUPPORT == 2 // BC breakage...
-#include <usbostcomm.h>
-#else
-#include <dbgtrccomm.h>
-typedef RDbgTrcComm RUsbOstComm;
-#endif
-#include <ostprotdefs.h>
-#define KFshellOstProtocolId ((TOstProtIds)(0x95)) // temp until it's included in ostprotdefs.h
-#endif
+#include <fshell/usbostcomm.h>
+#define KFshellOstProtocolId (0x95)
 
 using namespace IoUtils;
 using LtkUtils::RLtkBuf;
@@ -106,9 +93,7 @@ private:
 	TBuf<32> iServerName;
 	TUint16 iNestLevelsInUse; // Only used when --nest isn't specified
 	TUint8 iNestLevelsActualOwners[16];
-#ifdef FSHELL_OST_SUPPORT
 	RUsbOstComm iOstServer; // Client-server connection to usbostrouter
-#endif
 	CMuxSession* iReadBlockedOnSession; // If we had to flow off reading because a nested session couldn't process the data, save that here
 	TBool iDeleting; // To avoid triggering stuff from inside our destructor
 	};

@@ -28,7 +28,7 @@ Start the server and immediately issue a ping response. Don't print any human-re
 
 ==option bool o ost
 
-Instead of connecting using the iosrv channel, connect via the USB OST router. Only available on builds with FSHELL_OST_SUPPORT defined. Implies C<--ping>.
+Instead of connecting using the iosrv channel, connect via the USB OST router. CODA must be installed for the usb OST router to be available. Implies C<--ping>.
 
 ==option int n nest
 

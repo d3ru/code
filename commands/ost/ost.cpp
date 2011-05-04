@@ -12,13 +12,7 @@
 
 #include <fshell/ioutils.h>
 #include <fshell/common.mmh>
-#if FSHELL_OST_SUPPORT == 2 // BC breakage...
-#include <usbostcomm.h>
-#else
-#include <dbgtrccomm.h>
-typedef RDbgTrcComm RUsbOstComm;
-#endif
-#include <ostprotdefs.h>
+#include <fshell/usbostcomm.h>
 #include <fshell/ltkutils.h>
 
 using namespace IoUtils;
@@ -43,7 +37,7 @@ private:
 		ESendReceive,
 		};
 	TOperation iOperation;
-	TOstProtIds iChannelId; // See TOstProtIds in ostprotdefs.h
+	TInt iChannelId; // See TOstProtIds in ostprotdefs.h
 
 	RUsbOstComm iOstServer; // Cli-srv connection to usbostrouter
 	RBuf8 iBuf;
@@ -70,7 +64,7 @@ CCmdOst::~CCmdOst()
 	}
 
 CCmdOst::CCmdOst()
-	: iChannelId(EOstProtTCFTrk)
+	: iChannelId(0x92) // CODA
 	{
 	}
 

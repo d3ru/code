@@ -42,6 +42,10 @@ Fix for bug 3285378 "chunkinfo <baseAddress> crashes with KERN-EXEC 3"
 
 fdb now prints a notification (and automatically attaches if nothing focussed) when a thread crashes.
 
+=item *
+
+Removed compile-time dependancies on usbostcomm.h. As a result the C<FSHELL_OST_SUPPORT> macro is removed, and the RnD fshell SIS no longer requires CODA to be installed to use muxcons.
+
 =back
 
 =head2 Release 004.2

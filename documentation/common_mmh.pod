@@ -240,7 +240,7 @@ The HTTP libraries and all associated headers are available.
 
 =item FSHELL_OST_SUPPORT
 
-The OST router is available, in the form of the RDbgTrcComm API in dbgtrccomm.h. If the platform uses the newer RUsbOstComm in usbostcomm.h instead, it must be set as C<#define FSHELL_OST_SUPPORT 2>.
+This macro has been removed as it is no longer necessary. The header <fshell/usbostcomm.h> is now available in all baselines.
 
 =item FSHELL_QT_SUPPORT
 

@@ -66,7 +66,7 @@ void CFShellLauncherAppUi::SetConsolePendingConnection(CConsoleWrapper* aConsole
 	iConsolePendingConnection = aConsole;
 	}
 
-void CFShellLauncherAppUi::HandleForegroundEventL(TBool aForeground)
+void CFShellLauncherAppUi::HandleForegroundEventL(TBool /*aForeground*/)
 	{
 	// Don't understand what this was aiming to achieve... -Tomsci
 	/*
