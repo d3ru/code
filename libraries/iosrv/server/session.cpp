@@ -491,6 +491,18 @@ void CIoSession::ServiceL(const RMsg& aMessage)
 			Complete(aMessage, impl.Length() > clientDesLen ? KErrOverflow : KErrNone);
 			break;
 			}
+		case EIoConsoleRequestFile:
+			{
+			CIoConsole& console = FindConsoleL(aMessage.Int3(), aMessage);
+			console.RequestFileL(this, aMessage);
+			break;
+			}
+		case EIoConsoleCancelRequestFile:
+			{
+			CIoConsole& console = FindConsoleL(aMessage.Int3(), aMessage);
+			console.CancelRequestFile(aMessage);
+			break;
+			}
 		case EIoCreateFile:
 			{
 			HBufC* fileNameBuf = HBufC::NewLC(DesLengthL(aMessage, 0));

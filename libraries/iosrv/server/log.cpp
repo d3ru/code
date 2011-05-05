@@ -174,7 +174,11 @@ const TDesC* CIoLog::StringifyOpcode(TInt aOpCode)
 		CASE_RETURN_LIT(EIoReadHandleCancelNotifyChange);
 		CASE_RETURN_LIT(EIoDuplicateReaderHandleFromThread);
 		CASE_RETURN_LIT(EIoDuplicateWriterHandleFromThread);
+		CASE_RETURN_LIT(EIoSetIsStdErr);
 		CASE_RETURN_LIT(EIoRead8);
+		CASE_RETURN_LIT(EIoWrite8);
+		CASE_RETURN_LIT(EIoConsoleRequestFile);
+		CASE_RETURN_LIT(EIoConsoleCancelRequestFile);
 		DEFAULT_RETURN_LIT("*** OPCODE UNKNOWN ***");
 		}
 	}

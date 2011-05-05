@@ -20,6 +20,14 @@ __END__
 
 =item *
 
+Added the ability for fshell commands to request files from the PC via muxcons. Fdb now uses this to request map files for any codesegs in the stacktrace. The relevant API is C<RIoConsole::RequestFile()> with muxcons implementing the C<DataRequester> console extension.
+
+=item *
+
+Added the L<request|commands::request> and L<title|commands::title> commands.
+
+=item *
+
 Added support for changing the default C<c:\E<gt>> prompt by setting an environment variable C<FSHELL_PROMPT>. To put a newline between commands you could use:
 
     export FSHELL_PROMPT "^r^n^$PWD>"

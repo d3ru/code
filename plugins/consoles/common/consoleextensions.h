@@ -157,6 +157,21 @@ public:
 	static inline void CancelNotifySizeChanged(CBase* aConsole);
 	};
 
+class DataRequester
+	{
+public:
+	static const TInt KDataRequesterExtension = 0x10286F97;
+
+public:
+	/**
+	Ask the console to supply us with a file of the given name and if supported, upload it.
+	to aLocalPath. It is up to the implementation as to where it gets aFileName from - for
+	example it may infer a particular location based on the filename extension or path
+	*/
+	static inline void RequestFile(CBase* aConsole, const TDesC& aFileName, const TDesC& aLocalPath, TRequestStatus& aStatus);
+	static inline void CancelRequest(CBase* aConsole);
+	};
+
 // BC on this interface is not guaranteed - only for use by things inside /fshell/plugins/consoles
 class MIosrvConsoleHelper
 	{

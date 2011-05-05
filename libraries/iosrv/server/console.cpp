@@ -56,11 +56,46 @@ CIoConsole::~CIoConsole()
 	iConsole.Close();
 	delete iCreationTitle;
 	iServerThread.Close();
+	delete iRequestFileMessageCompleter;
 	}
 
 const TDesC& CIoConsole::Implementation() const
 	{
 	return *iImplementation;
+	}
+
+void CIoConsole::SessionClosed(const CIoSession& aSession)
+	{
+	if (&aSession == iRequestingSession && iRequestFileMessageCompleter)
+		{
+		iRequestFileMessageCompleter->CancelRequest();
+		iRequestingSession = NULL;
+		}
+	}
+
+void CIoConsole::RequestFileL(CIoSession* aRequestingSession, const RMessage2& aMessage)
+	{
+	if (iRequestFileMessageCompleter == NULL)
+		{
+		iRequestFileMessageCompleter = new(ELeave) CRequestFileMessageCompleter(this);
+		}
+	if (iRequestFileMessageCompleter->IsActive())
+		{
+		PanicClient(aMessage, EPanicRequestFileAlreadyPending);
+		return;
+		}
+	iRequestFileMessageCompleter->RequestFileL(const_cast<RMessage2&>(aMessage));
+	iRequestingSession = aRequestingSession;
+	}
+
+void CIoConsole::CancelRequestFile(const RMessage2& aMessage)
+	{
+	if (iRequestFileMessageCompleter)
+		{
+		iRequestFileMessageCompleter->CancelRequest();
+		}
+	iRequestingSession = NULL;
+	aMessage.Complete(KErrNone);
 	}
 
 TBool CIoConsole::IsType(RIoHandle::TType aType) const
@@ -787,6 +822,20 @@ void CIoConsole::TConsoleSetModeRequest::CompleteD(TInt aError)
 	delete this;
 	}
 
+
+//______________________________________________________________________________
+//						TCancelRequestFileRequest
+void CIoConsole::TCancelRequestFileRequest::Request(RIoConsoleProxy aProxy, TRequestStatus& aStatus)
+	{
+	aProxy.CancelRequestFile(aStatus);
+	}
+
+void CIoConsole::TCancelRequestFileRequest::CompleteD(TInt /*aError*/)
+	{
+	// Everything of import should happen as a result of the original request completing
+	delete this;
+	}
+
 //______________________________________________________________________________
 //						CConsoleRequest
 CIoConsole::CConsoleRequest::CConsoleRequest(CIoConsole& aConsole)
@@ -932,7 +981,17 @@ void RIoConsoleProxy::Read8(TDes8& aBuf, TRequestStatus& aStatus)
 
 void RIoConsoleProxy::Write8(const TDesC8& aBuf, TRequestStatus& aStatus)
 	{
-	SendReceive(EBinaryWrite, TIpcArgs(&aBuf), aStatus);;
+	SendReceive(EBinaryWrite, TIpcArgs(&aBuf), aStatus);
+	}
+
+void RIoConsoleProxy::RequestFile(const TDesC& aBinaryName, const TDesC& aLocalName, TRequestStatus& aStatus)
+	{
+	SendReceive(ERequestFile, TIpcArgs(&aBinaryName, &aLocalName), aStatus);
+	}
+
+void RIoConsoleProxy::CancelRequestFile(TRequestStatus& aStatus)
+	{
+	SendReceive(ECancelRequestFile, aStatus);
 	}
 
 //______________________________________________________________________________
@@ -1049,7 +1108,14 @@ CIoConsoleProxySession::~CIoConsoleProxySession()
 	{
 	delete iSizeChangedMessageCompleter;
 	delete iBinaryReadMessageCompleter;
+	delete iDataRequesterMessageCompleter;
 	delete iUnderlyingConsole;
+	}
+
+TInt DataRequesterCancelRequest(TAny* aConsole)
+	{
+	DataRequester::CancelRequest(static_cast<CBase*>(aConsole));
+	return 0;
 	}
 
 void CIoConsoleProxySession::ServiceL(const RMessage2& aMessage)
@@ -1166,9 +1232,31 @@ void CIoConsoleProxySession::ServiceL(const RMessage2& aMessage)
 		if (iBinaryReadMessageCompleter && iBinaryReadMessageCompleter->IsActive())
 			{
 			iBinaryReadMessageCompleter->CancelRead();
+			aMessage.Complete(KErrNone);
 			return;
 			}
 		break; // Otherwise let CConsoleProxySession handle it
+	case RIoConsoleProxy::ERequestFile:
+		{
+		if (iDataRequesterMessageCompleter == NULL)
+			{
+			if (!iConsole) User::Leave(KErrNotReady);
+			iDataRequesterMessageCompleter = new(ELeave) CGenericMessageCompleter();
+			iDataRequesterMessageCompleter->SetCancelCallback(TCallBack(&DataRequesterCancelRequest, iConsole->Console()));
+			}
+		const TDesC* fileName = (const TDesC*)aMessage.Ptr0();
+		const TDesC* localName = (const TDesC*)aMessage.Ptr1();
+		DataRequester::RequestFile(iConsole->Console(), *fileName, *localName, iDataRequesterMessageCompleter->iStatus);
+		iDataRequesterMessageCompleter->SetMessageAndActive(const_cast<RMessage2&>(aMessage));
+		return;
+		}
+	case RIoConsoleProxy::ECancelRequestFile:
+		if (iDataRequesterMessageCompleter)
+			{
+			iDataRequesterMessageCompleter->CancelRequest();
+			}
+		aMessage.Complete(KErrNone);
+		return;
 	default:
 		break;
 		}
@@ -1663,6 +1751,119 @@ void CSizeChangeMessageCompleter::CancelNotify()
 		{
 		iMessage.Complete(KErrCancel);
 		}
+	}
+
+//
+
+CGenericMessageCompleter::CGenericMessageCompleter()
+	: CActive(CActive::EPriorityStandard)
+	{
+	CActiveScheduler::Add(this);
+	}
+
+CGenericMessageCompleter::~CGenericMessageCompleter()
+	{
+	Cancel();
+	}
+
+void CGenericMessageCompleter::SetCancelCallback(TCallBack aCallback, TCancelType aCancelType)
+	{
+	iCancelType = aCancelType;
+	iCancelCallback = aCallback;
+	}
+
+void CGenericMessageCompleter::SetMessageAndActive(RMessagePtr2& aMessage)
+	{
+	ASSERT(iMessage.IsNull());
+	ASSERT(!IsActive());
+	iMessage = aMessage;
+	SetActive();
+	}
+
+void CGenericMessageCompleter::RunL()
+	{
+	if (!iMessage.IsNull())
+		{
+		iMessage.Complete(iStatus.Int());
+		}
+	}
+
+void CGenericMessageCompleter::DoCancel()
+	{
+	iCancelCallback.CallBack();
+	}
+
+void CGenericMessageCompleter::CancelRequest()
+	{
+	//RDebug::Printf("CGenericMessageCompleter::CancelRequest");
+	if (IsActive())
+		{
+		if (iCancelType == ESync)
+			{
+			Cancel();
+			}
+		else
+			{
+			iCancelCallback.CallBack();
+			}
+		}
+	
+	if (!iMessage.IsNull())
+		{
+		iMessage.Complete(KErrCancel);
+		}
+	}
+
+//
+
+CRequestFileMessageCompleter::CRequestFileMessageCompleter(CIoConsole* aConsole)
+	: iConsole(aConsole)
+	{
+	SetCancelCallback(TCallBack(&CancelRequestFile, this), EAsync);
+	}
+
+TInt CRequestFileMessageCompleter::CancelRequestFile(TAny* aSelf)
+	{
+	CRequestFileMessageCompleter* self = static_cast<CRequestFileMessageCompleter*>(aSelf);
+	CIoConsole::TCancelRequestFileRequest* req = new CIoConsole::TCancelRequestFileRequest;
+	if (req)
+		{
+		self->iConsole->NewRequest(req);
+		}
+	// If we've no memory to allocated the cancel request, tough
+	return 0;
+	}
+
+void CRequestFileMessageCompleter::RunL()
+	{
+	delete iLocalName; iLocalName = NULL;
+	delete iFileName; iFileName = NULL;
+	CGenericMessageCompleter::RunL();
+	}
+
+CRequestFileMessageCompleter::~CRequestFileMessageCompleter()
+	{
+	Cancel();
+	delete iLocalName;
+	delete iFileName;
+	}
+
+void CRequestFileMessageCompleter::RequestFileL(RMessagePtr2& aMessage)
+	{
+	ASSERT(iFileName == NULL);
+	ASSERT(iLocalName == NULL);
+	HBufC* fileName = HBufC::NewLC(aMessage.GetDesLengthL(0));
+	TPtr fileNamePtr = fileName->Des();
+	HBufC* localName = HBufC::NewLC(aMessage.GetDesLengthL(1));
+	TPtr localNamePtr = localName->Des();
+	aMessage.ReadL(0, fileNamePtr);
+	aMessage.ReadL(1, localNamePtr);
+	CleanupStack::Pop(2, fileName);
+	iFileName = fileName;
+	iLocalName = localName;
+
+	iConsole->iConsole.RequestFile(*iFileName, *iLocalName, iStatus);
+	SetMessageAndActive(aMessage);
 	}
 
 //

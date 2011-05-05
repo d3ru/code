@@ -26,7 +26,7 @@
 
 _LIT(KDefaultMuxServ, "MuxConsSrv");
 _LIT(KMuxServFmt, "MuxConsSrv-%d");
-const TMuxVersion KCurrentVersion = EVersion1_0;
+const TMuxVersion KCurrentVersion = EVersion1_1;
 
 EXE_BOILER_PLATE(CCmdMuxserver)
 
@@ -106,7 +106,7 @@ CCmdMuxserver::~CCmdMuxserver()
 	}
 
 CCmdMuxserver::CCmdMuxserver()
-	: CCommandBase(EManualComplete), iInputBufFreeSpace((TUint8*)iInputBuf.Ptr(), 0, iInputBuf.MaxLength())
+	: CCommandBase(EManualComplete), iInputBufFreeSpace((TUint8*)iInputBuf.Ptr(), 0, iInputBuf.MaxLength()), iClientVersion(EVersion1_0)
 	{
 	}
 
@@ -565,6 +565,24 @@ void CCmdMuxserver::HandleCommand(TInt aCmd, const TDesC8& aPayload)
 			AppendOutput(err);
 			AppendOutput(iPutFileId);
 			SendOutput();
+			if (iSessionRequestingFile != NULL)
+				{
+				CMuxSession* session = iSessionRequestingFile;
+				iSessionRequestingFile = NULL;
+				session->FileRequestComplete(err);
+				}
+			}
+		break;
+		}
+	case ERequestFileRefused:
+		{
+		TInt err;
+		memcpy(&err, aPayload.Ptr(), 4);
+		if (iSessionRequestingFile != NULL)
+			{
+			CMuxSession* session = iSessionRequestingFile;
+			iSessionRequestingFile = NULL;
+			session->FileRequestComplete(err);
 			}
 		break;
 		}
@@ -578,6 +596,13 @@ void CCmdMuxserver::HandleCommand(TInt aCmd, const TDesC8& aPayload)
 			AppendOutput(KErrNone);
 			AppendOutput(iPutFileId);
 			SendOutput();
+
+			if (iSessionRequestingFile != NULL)
+				{
+				CMuxSession* session = iSessionRequestingFile;
+				iSessionRequestingFile = NULL;
+				session->FileRequestComplete(KErrNone);
+				}
 			break;
 			}
 			
@@ -599,6 +624,12 @@ void CCmdMuxserver::HandleCommand(TInt aCmd, const TDesC8& aPayload)
 			AppendOutput(err);
 			AppendOutput(iPutFileId);
 			SendOutput();
+			if (iSessionRequestingFile != NULL)
+				{
+				CMuxSession* session = iSessionRequestingFile;
+				iSessionRequestingFile = NULL;
+				session->FileRequestComplete(err);
+				}
 			}
 		break;
 		}
@@ -608,6 +639,9 @@ void CCmdMuxserver::HandleCommand(TInt aCmd, const TDesC8& aPayload)
 		SendPing();
 		break;
 		}
+	case ENotifyVersion:
+		memcpy(&iClientVersion, aPayload.Ptr(), 4);
+		break;
 	default:
 		if (aCmd == ELaunchProcess || aCmd <= ECustomCommandBase)
 			{
@@ -809,6 +843,8 @@ void CCmdMuxserver::SessionClosed(CMuxSession* aSession)
 	{
 	if (iDeleting) return;
 
+	if (aSession == iSessionRequestingFile) iSessionRequestingFile = NULL;
+
 	TInt id = aSession->Id();
 	if (id >= 0)
 		{
@@ -846,6 +882,29 @@ void CCmdMuxserver::NestedSessionReadyForData(CMuxSession* aSession)
 		ASSERT(!IsActive());
 		iReadBlockedOnSession = NULL;
 		RunL(); // Doesn't leave.
+		}
+	}
+
+void CCmdMuxserver::RequestFileL(CMuxSession* aSession, const TDesC& aFileName, const TDesC& aLocalName)
+	{
+	if (iClientVersion < EVersion1_1) User::Leave(KErrNotSupported); // Otherwise we'll just hang waiting forever for muxcons.exe to respond
+	if (iSessionRequestingFile || iPutFile.SubSessionHandle()) User::Leave(KErrInUse); // We don't currently support multiple clients asking at once
+	iSessionRequestingFile = aSession;
+	StartOutput(aSession->Id(), ERequestFile);
+	AppendOutput(aFileName.Length());
+	AppendOutput(aLocalName.Length());
+	AppendOutput(TPtrC8((TUint8*)aFileName.Ptr(), aFileName.Size()));
+	AppendOutput(TPtrC8((TUint8*)aLocalName.Ptr(), aLocalName.Size()));
+	SendOutput();
+	}
+
+void CCmdMuxserver::CancelRequestFile(CMuxSession* aSession)
+	{
+	if (aSession == iSessionRequestingFile)
+		{
+		iSessionRequestingFile = NULL;
+		StartOutput(aSession->Id(), ECancelRequestFile);
+		SendOutput();
 		}
 	}
 
@@ -1053,6 +1112,26 @@ void CMuxSession::ServiceL(const RMessage2& aMessage)
 		iCmd.AppendOutput(aMessage.Int2());
 		iCmd.SendOutput();
 		break;
+	case ERequestFile:
+		{
+		if (!iRequestedFileMessage.IsNull()) User::Leave(KErrNotReady);
+
+		LtkUtils::RLtkBuf fileName;
+		LtkUtils::RLtkBuf localName;
+		fileName.CreateLC(aMessage.GetDesLengthL(0));
+		localName.CreateLC(aMessage.GetDesLengthL(1));
+		aMessage.ReadL(0, fileName);
+		aMessage.ReadL(1, localName);
+		iCmd.RequestFileL(this, fileName, localName);
+		CleanupStack::PopAndDestroy(2, &fileName);
+		iRequestedFileMessage = aMessage;
+		async = ETrue;
+		break;
+		}
+	case ECancelRequestFile:
+		iCmd.CancelRequestFile(this);
+		FileRequestComplete(KErrCancel);
+		break;
 	default:
 		break;
 		}
@@ -1141,6 +1220,15 @@ void CMuxSession::Died()
 	if (!iReadKeyMessage.IsNull()) iReadKeyMessage.Complete(KErrDisconnected);
 	if (!iReadDataMessage.IsNull()) iReadDataMessage.Complete(KErrDisconnected);
 	if (!iConsoleSizeChangedMessage.IsNull()) iConsoleSizeChangedMessage.Complete(KErrDisconnected);
+	}
+
+void CMuxSession::FileRequestComplete(TInt aError)
+	{
+	// Might already have been cancelled
+	if (!iRequestedFileMessage.IsNull())
+		{
+		iRequestedFileMessage.Complete(aError);
+		}
 	}
 
 //

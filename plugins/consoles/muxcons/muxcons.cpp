@@ -286,6 +286,22 @@ TInt CMuxCons::Extension_(TUint aExtensionId, TAny*& a0, TAny* a1)
 			}
 		else return KErrExtensionNotSupported;
 		}
+	else if (aExtensionId == DataRequester::KDataRequesterExtension)
+		{
+		void** args = (void**)a0;
+		if (args)
+			{
+			const TDesC* fileName = (const TDesC*)args[0];
+			const TDesC* localName = (const TDesC*)args[1];
+			TRequestStatus& stat = *(TRequestStatus*)args[2];
+			iMux.SendReceive(ERequestFile, TIpcArgs(fileName, localName), stat);
+			}
+		else
+			{
+			iMux.SendReceive(ECancelRequestFile);
+			}
+		return KErrNone;
+		}
 	else
 		{
 		return CConsoleBase::Extension_(aExtensionId, a0, a1);

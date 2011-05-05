@@ -15,6 +15,7 @@
 #include <fshell/ltkutils.h>
 #include <fshell/bsym.h>
 #include <fshell/descriptorutils.h>
+#include <fshell/stringhash.h>
 #include <fshell/iocons_writer.h>
 #include <fshell/line_editor.h>
 #include <fshell/qr3dll.h>
@@ -114,6 +115,9 @@ private:
 	// Other stuff
 	CSymbolics* iSymbols;
 	TBuf<256> iTempNameBuf;
+	TBool iRequestFileSupported;
+	LtkUtils::RStringHash<TInt> iRequestedMapFiles;
+	RIoConsole iConsole;
 
 	// Line editor support
 	TIoConsWriterAdaptor iConsoleAdapter;
@@ -190,6 +194,8 @@ CCmdFdb::~CCmdFdb()
 	delete iSymbols;
 	iMemBuf.Close();
 	delete iZombieNotifier;
+	iConsole.Close();
+	iRequestedMapFiles.Close();
 	/*
 	iLinks.Close();
 	iBreadcrumbs.Close();
@@ -198,8 +204,9 @@ CCmdFdb::~CCmdFdb()
 	}
 
 CCmdFdb::CCmdFdb()
-	: CMemoryAccessCommandBase(EManualComplete), iConsoleAdapter(Stdout()), iZombieNotificationPkg(iZombieNotification)
+	: CMemoryAccessCommandBase(EManualComplete), iRequestFileSupported(ETrue), iConsoleAdapter(Stdout()), iZombieNotificationPkg(iZombieNotification)
 	{
+	// Assume iRequestFileSupported is true until proved otherwise
 	}
 
 const TDesC& CCmdFdb::Name() const
@@ -540,16 +547,57 @@ TPtrC CCmdFdb::LookupSymbol(TUint32 aAddress)
 		if (name.Length()) return name;
 		}
 	// Try getting a codeseg from memaccess
-	TFullName8 codesegname;
-	TInt res = iMemAccess.FindAddressInCodeSegments(codesegname, (TAny*)aAddress, iCurrent->iThread);
+	TFullName8 codesegname8;
+	TInt res = iMemAccess.FindAddressInCodeSegments(codesegname8, (TAny*)aAddress, iCurrent->iThread);
 	if (res >= 0)
 		{
-		iTempNameBuf.Copy(codesegname);
+		iTempNameBuf.Copy(codesegname8);
 		if (iSymbols)
 			{
 			// Try codeseg lookup in CSymbolics (ie in a CMapFile)
 			TParsePtrC parse(iTempNameBuf);
-			TRAPD(err, name.Set(iSymbols->LookupL(parse.NameAndExt(), res)));
+			TPtrC codesegName = parse.NameAndExt();
+			iTempNameBuf.Copy(codesegName);
+			codesegName.Set(iTempNameBuf);
+			TRAPD(err, name.Set(iSymbols->LookupL(codesegName, res)));
+			if (err == KErrNone && name.Length() == 0 && iMapFileDir.Length() && iRequestFileSupported && iRequestedMapFiles.Find(codesegName) == NULL)
+				{
+				TInt consoleErr = KErrNone;
+				if (!iConsole.SubSessionHandle()) consoleErr = iConsole.Open(IoSession(), Stdout());
+				if (!consoleErr)
+					{
+					TInt len = iMapFileDir.Length();
+					TFileName2& mapFile(iMapFileDir);
+					iTempNameBuf.Append(_L(".map"));
+					TRAP_IGNORE(mapFile.AppendComponentL(iTempNameBuf, TFileName2::EFile));
+					if (!mapFile.Exists(Fs()))
+						{
+						// Don't refetch if file already exists
+						TRequestStatus stat;
+						//Printf(_L("(Requesting file %S -> %S from console)\r\n"), &iTempNameBuf, &mapFile);
+						iConsole.RequestFile(iTempNameBuf, mapFile, stat);
+						User::WaitForRequest(stat);
+						if (stat.Int() == KErrNotSupported || stat.Int() == KErrExtensionNotSupported)
+							{
+							iRequestFileSupported = EFalse;
+							iConsole.Close();
+							}
+						else if (stat.Int() != KErrNone)
+							{
+							iRequestedMapFiles.Insert(codesegName, 0);
+							}
+						else
+							{
+							iRequestedMapFiles.Insert(codesegName, 1);
+							// Now retry the lookup
+							TRAP(err, name.Set(iSymbols->LookupL(codesegName, res)));
+							}
+						}
+					// Put the descriptors back the way they were
+					iTempNameBuf.SetLength(iTempNameBuf.Length() - 4);
+					iMapFileDir.SetLength(len);
+					}
+				}
 			if (err) PrintError(err, _L("Failed to lookup symbol"));
 			if (name.Length()) return name;
 			}

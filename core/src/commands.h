@@ -1304,5 +1304,18 @@ private: // From CCommandBase.
 	virtual void DoRunL();
 private:
 	};
+
+class CCmdTitle : public CCommandBase
+	{
+public:
+	static CCommandBase* NewLC();
+	~CCmdTitle();
+private: // From CCommandBase.
+	virtual const TDesC& Name() const;
+	virtual void DoRunL();
+	virtual void ArgumentsL(RCommandArgumentList& aArguments);
+private:
+	HBufC* iTitle;
+	};
 	
 #endif // __COMMANDS_H__

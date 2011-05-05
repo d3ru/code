@@ -56,6 +56,8 @@ public: // For CMuxSession
 	void WriteDataL(TInt aChannelId, const RMessage2& aMessage);
 	void SessionClosed(CMuxSession* aSession);
 	void NestedSessionReadyForData(CMuxSession* aSession);
+	void RequestFileL(CMuxSession* aSession, const TDesC& aFileName, const TDesC& aLocalName);
+	void CancelRequestFile(CMuxSession* aSession);
 
 public: // For CCommandOutputCollector
 	void CommandDied(CCommandOutputCollector* aCollector, TInt aCompletionCode);
@@ -96,6 +98,8 @@ private:
 	RUsbOstComm iOstServer; // Client-server connection to usbostrouter
 	CMuxSession* iReadBlockedOnSession; // If we had to flow off reading because a nested session couldn't process the data, save that here
 	TBool iDeleting; // To avoid triggering stuff from inside our destructor
+	CMuxSession* iSessionRequestingFile;
+	TUint32 iClientVersion; // The version of muxcons.exe as received in a ENotifyVersion packet (defaults to 1.0 as ENotifyVersion introduced in 1.1)
 	};
 
 class CMuxSession;
@@ -135,6 +139,7 @@ public:
 
 	void HandleMessage(TConsoleCommandOpCode aFn, const TDesC8& aData);
 	TBool SendNestedPacket(const TDesC8& aPacket);
+	void FileRequestComplete(TInt aError);
 
 protected:
 	void ServiceL(const RMessage2 &aMessage);
@@ -149,8 +154,8 @@ private:
 	RMessagePtr2 iReadKeyMessage;
 	RMessagePtr2 iReadDataMessage;
 	RMessagePtr2 iConsoleSizeChangedMessage;
+	RMessagePtr2 iRequestedFileMessage;
 	TBuf<100> iKeydataBuf;
-	//RLtkBuf8 iBinaryReadData;
 	RLtkBuf iTitle;
 	TBool iDead;
 	};

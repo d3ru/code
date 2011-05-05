@@ -26,7 +26,7 @@ Specify a .bsym symbol file to use.
 
 ==option filename m mapfiles MAP_FILES
 
-Specify a directory that contains .map files.
+Specify a directory that contains .map files. If present, and if the console supports it, any missing map files will be downloaded from the PC.
 
 ==short-description
 

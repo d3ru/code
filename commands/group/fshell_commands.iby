@@ -396,4 +396,7 @@ FSHELL_EXECUTABLE_FILE(qpluginloader.exe)
 FSHELL_COMMAND_INFO_FILE(fshell,qpluginloader.cif)
 #endif
 
+FSHELL_EXECUTABLE_FILE(fshell_request.exe)
+FSHELL_COMMAND_INFO_FILE(fshell,request.cif)
+
 #endif // __FSHELL_COMMANDS_IBY__

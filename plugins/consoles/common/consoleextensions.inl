@@ -103,3 +103,23 @@ TBool BinaryMode::Read(CBase* aConsole, TDes8& aBuf, TRequestStatus& aStatus)
 	ASSERT(result == KErrNone || result == KErrExtensionNotSupported);
 	return (result == KErrNone);
 	}
+
+void DataRequester::RequestFile(CBase* aConsole, const TDesC& aFileName, const TDesC& aLocalPath, TRequestStatus& aStatus)
+	{
+	TAny* args[3] = { (TAny*)&aFileName, (TAny*)&aLocalPath, (TAny*)&aStatus };
+	TAny* arg1 = &args[0];
+
+	TInt ret = ((CBaseExtensionDummy*)aConsole)->Extension_(KDataRequesterExtension, arg1, NULL);
+	if (ret)
+		{
+		TRequestStatus* stat = &aStatus;
+		User::RequestComplete(stat, ret);
+		}
+	}
+
+
+void DataRequester::CancelRequest(CBase* aConsole)
+	{
+	TAny* nullArg = NULL;
+	((CBaseExtensionDummy*)aConsole)->Extension_(KDataRequesterExtension, nullArg, NULL);
+	}

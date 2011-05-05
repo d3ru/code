@@ -1044,6 +1044,16 @@ EXPORT_C void RIoConsole::ImplementationL(TDes& aDes) const
 	User::LeaveIfError(Implementation(aDes));
 	}
 
+EXPORT_C void RIoConsole::RequestFile(const TDesC& aFileName, const TDesC& aLocalName, TRequestStatus& aStatus)
+	{
+	SendReceive(EIoConsoleRequestFile, TIpcArgs(&aFileName, &aLocalName), aStatus);
+	}
+	
+EXPORT_C void RIoConsole::CancelRequestFile()
+	{
+	SendReceive(EIoConsoleCancelRequestFile);
+	}
+
 //
 // RIoPersistentConsole.
 //

@@ -358,6 +358,7 @@ void CCommandFactory::ConstructL()
 	AddThreadCommandL(CCmdIf::NewLC, CThreadCommand::EUpdateEnvironment); // Similar to while
 	AddThreadCommandL(CCmdElse::NewLC, CThreadCommand::EUpdateEnvironment);
 	AddThreadCommandL(CCmdEndIf::NewLC, CThreadCommand::EUpdateEnvironment);
+	AddThreadCommandL(CCmdTitle::NewLC);
 
 	// Add some DOS-style namings of common commands.
 	AddThreadCommandL(_L("del"), CCmdRm::NewLC, CCommandConstructorBase::EAttAlias);

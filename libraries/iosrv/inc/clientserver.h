@@ -99,6 +99,8 @@ enum TIoOpcodes
 	EIoSetIsStdErr,
 	EIoRead8,
 	EIoWrite8,
+	EIoConsoleRequestFile,
+	EIoConsoleCancelRequestFile,
 	};
 
 class TServerStart

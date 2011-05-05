@@ -241,6 +241,8 @@ public:
 	IMPORT_C void OpenL(RIoSession& aSession, RIoHandle& aHandle);
 	IMPORT_C TInt Implementation(TDes& aDes) const;
 	IMPORT_C void ImplementationL(TDes& aDes) const;
+	IMPORT_C void RequestFile(const TDesC& aBinaryName, const TDesC& aLocalName, TRequestStatus& aStatus);
+	IMPORT_C void CancelRequestFile();
 	};
 	
 class RIoPersistentConsole : public RIoConsole

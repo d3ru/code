@@ -564,4 +564,6 @@ EXPORTS
 	??0TIoHandleSet@@QAE@XZ @ 563 NONAME ; TIoHandleSet::TIoHandleSet(void)
 	?ExtensionVersion@MCommandExtensionsV3@IoUtils@@UBE?AW4TCommandExtensionVersion@2@XZ @ 564 NONAME ; enum IoUtils::TCommandExtensionVersion IoUtils::MCommandExtensionsV3::ExtensionVersion(void) const
 	?Extension@CCommandBase@IoUtils@@QBEPAVMCommandExtensionsV1@2@XZ @ 565 NONAME ; class IoUtils::MCommandExtensionsV1 * IoUtils::CCommandBase::Extension(void) const
+	?RequestFile@RIoConsole@@QAEXABVTDesC16@@0AAVTRequestStatus@@@Z @ 566 NONAME ; void RIoConsole::RequestFile(class TDesC16 const &, class TDesC16 const &, class TRequestStatus &)
+	?CancelRequestFile@RIoConsole@@QAEXXZ @ 567 NONAME ; void RIoConsole::CancelRequestFile(void)
 

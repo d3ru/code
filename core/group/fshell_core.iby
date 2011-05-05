@@ -201,6 +201,7 @@ FSHELL_COMMAND_INFO_FILE(fshell,continue.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,if.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,else.cif)
 FSHELL_COMMAND_INFO_FILE(fshell,endif.cif)
+FSHELL_COMMAND_INFO_FILE(fshell,title.cif)
 
 #ifdef FSHELL_REPLACE_ECONS
 FSHELL_EXECUTABLE_AS_DATA(iocons.dll,iocons.dll)

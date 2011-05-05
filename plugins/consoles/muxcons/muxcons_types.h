@@ -29,6 +29,8 @@ enum TConsoleCommandOpCode
 	EConsoleIsDead = 10,
 	ESetAttributes = 11,
 	EWriteData8 = 12,
+	ERequestFile = 13,
+	ECancelRequestFile = 14,
 
 	// A few opcodes specific to the symbian client-serv parts (muxserver <-> muxcons.dll)
 	EKeypressRequest = 50,
@@ -55,6 +57,8 @@ enum TMuxConsCommand
 	EContinuePutFile = -7,
 	ELaunchProcess = -8,
 	ELaunchNestedMuxcons = -10, // Like ELaunchProcess("muxserver.exe") but adds the special args needed for nested muxservers to work
+	ERequestFileRefused = -11,
+	ENotifyVersion = -12, // For muxserver.exe -> PC, we use the EPing response, but I don't want to modify the EPing sent from muxcons.exe as that code is delicate enough...
 
 	ENestedMuxServerCommandBase = -85,
 	// We only have room in the protocol for 15 nested mux sessions
@@ -74,6 +78,7 @@ enum TMuxConsCommand
 enum TMuxVersion
 	{
 	EVersion1_0 = 0x00010000,
+	EVersion1_1 = 0x00010001, // Supports ENotifyVersion and ERequestFile / DataRequester interface
 	};
 
 #define KPacketHeader (0x4D580000) // 4D58 is 'MX'

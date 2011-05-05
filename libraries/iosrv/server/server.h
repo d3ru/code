@@ -72,6 +72,7 @@ enum TIoPanicReason
 	EPanicSetModeAlreadyPending = 40,
 	EPanicEightBitReadNotInBinaryMode = 41,
 	EPanicEightBitWriteNotInBinaryMode = 42,
+	EPanicRequestFileAlreadyPending = 43,
 	};
 
 void PanicClient(const RMsg& aMessage, TIoPanicReason aReason);

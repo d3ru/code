@@ -6396,3 +6396,37 @@ void CCmdWhoAmI::DoRunL()
 	TFullName name = me.FullName();
 	Printf(_L("This shell is process ID %Ld %S\r\n"), me.Id().Id(), &name);
 	}
+
+//
+// CCmdTitle
+//
+
+CCommandBase* CCmdTitle::NewLC()
+	{
+	CCmdTitle* self = new(ELeave) CCmdTitle();
+	CleanupStack::PushL(self);
+	self->BaseConstructL();
+	return self;
+	}
+
+CCmdTitle::~CCmdTitle()
+	{
+	delete iTitle;
+	}
+
+const TDesC& CCmdTitle::Name() const
+	{
+	_LIT(KName, "title");
+	return KName;
+	}
+
+void CCmdTitle::ArgumentsL(RCommandArgumentList& aArguments)
+	{
+	_LIT(KTitle, "name");
+	aArguments.AppendStringL(iTitle, KTitle);
+	}
+
+void CCmdTitle::DoRunL()
+	{
+	LeaveIfErr(Stdout().SetTitle(*iTitle), _L("Couldn't set title"));
+	}

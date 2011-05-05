@@ -35,6 +35,8 @@ public:
 		ECancelNotifySizeChange,
 		EBinaryRead,
 		EBinaryWrite,
+		ERequestFile,
+		ECancelRequestFile,
 		};
 public:
 	TInt SetLazyConstruct();
@@ -46,16 +48,23 @@ public:
 	void CancelNotifySizeChanged();
 	void Read8(TDes8& aBuf, TRequestStatus& aStatus);
 	void Write8(const TDesC8& aBuf, TRequestStatus& aStatus);
+	void RequestFile(const TDesC& aBinaryName, const TDesC& aLocalName, TRequestStatus& aStatus);
+	void CancelRequestFile(TRequestStatus& aStatus);
 	};
-	
+
+class CRequestFileMessageCompleter;
+
 class CIoConsole : public CIoEndPoint
 	{
 public:
 	static CIoConsole* NewLC(const TDesC& aImplementation, const TDesC& aTitle, const TSize& aSize, const TIoConfig& aConfig, CIoConsole* aUnderlying, TUint aOptions);
 	~CIoConsole();
 	const TDesC& Implementation() const;
+	void RequestFileL(CIoSession* aRequestingSession, const RMessage2& aMessage);
+	void CancelRequestFile(const RMessage2& aMessage);
 public: // From CIoObject.
 	virtual TBool IsType(RIoHandle::TType aType) const;
+	virtual void SessionClosed(const CIoSession& aSession);
 public: // From CIoEndPoint.
 	virtual void HandleReaderDetached(MIoReader& aReader);
 	virtual void HandleWriterDetached(MIoWriter& aWriter);
@@ -279,7 +288,15 @@ private:
 		RIoReadWriteHandle::TMode iMode;
 		};
 	friend class TConsoleSetModeRequest;
-		
+
+	class TCancelRequestFileRequest : public TConsoleRequest
+		{
+	public:
+		virtual void Request(RIoConsoleProxy aProxy, TRequestStatus& aStatus);
+		virtual void CompleteD(TInt aError);
+		};
+	friend class TCancelRequestFileRequest;
+
 	class CConsoleRequest : public CActive
 		{
 	public:
@@ -329,6 +346,7 @@ private:
 	friend class CConsoleRequest;
 	friend class CConsoleReader;
 	friend class TConsoleDetectSizeRequest;
+	friend class CRequestFileMessageCompleter;
 protected:
 	const TIoConfig& iConfig;
 	RIoConsoleProxy iConsole;
@@ -345,6 +363,8 @@ protected:
 	RThread iServerThread;
 	CServerDeathWatcher* iThreadWatcher;
 	CConsoleSizeChangedNotifier* iConsoleSizeChangedNotifier;
+	CRequestFileMessageCompleter* iRequestFileMessageCompleter;
+	CIoSession* iRequestingSession;
 	};
 	
 class CIoConsoleProxyServer : public CConsoleProxyServer
@@ -364,6 +384,7 @@ private:
 
 CConsoleProxyServer* CIoConsoleProxyServerNewL(TAny* aParams);
 
+// this runs in the console thread and converts the TRequestStatus for ConsoleSize::NotifySizeChanged() to an appropriate RMessagePtr2::Complete() call
 class CSizeChangeMessageCompleter : public CActive
 	{
 public:
@@ -380,6 +401,43 @@ protected:
 private:
 	RMessagePtr2 iMessage;
 	CConsoleBase* iActualConsole;
+	};
+
+// Similar to CSizeChangeMessageCompleter but more general. Used for DataRequester::RequestExecutableFile and friends
+class CGenericMessageCompleter : public CActive
+	{
+public:
+	CGenericMessageCompleter();
+	~CGenericMessageCompleter();
+	enum TCancelType { ESync, EAsync };
+	void SetCancelCallback(TCallBack aCallback, TCancelType aCancelType=ESync);
+	void SetMessageAndActive(RMessagePtr2& aMessage);
+	void CancelRequest();
+
+protected:
+	void RunL();
+	void DoCancel();
+
+private:
+	RMessagePtr2 iMessage;
+	TCallBack iCancelCallback;
+	TCancelType iCancelType;
+	};
+
+class CRequestFileMessageCompleter : public CGenericMessageCompleter
+	{
+public:
+	CRequestFileMessageCompleter(CIoConsole* aConsole);
+	~CRequestFileMessageCompleter();
+	void RequestFileL(RMessagePtr2& aMessage);
+
+private:
+	void RunL();
+	static TInt CancelRequestFile(TAny* aConsole);
+	
+	CIoConsole* iConsole;
+	HBufC* iFileName;
+	HBufC* iLocalName;
 	};
 
 class CBinaryReadMessageCompleter : public CActive
@@ -432,6 +490,7 @@ private:
 	TSize iDetectedSize;
 	CSizeChangeMessageCompleter* iSizeChangedMessageCompleter;
 	CBinaryReadMessageCompleter* iBinaryReadMessageCompleter;
+	CGenericMessageCompleter* iDataRequesterMessageCompleter;
 	};
 	
 class CWriteOnlyConsoleProxy : public CConsoleProxy

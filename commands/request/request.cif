@@ -1,0 +1,33 @@
+# request.cif
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name request
+
+==short-description
+
+Request a remote file from the console.
+
+==long-description
+
+For consoles that support it, this command requests that a file from the remote end of the console connection be uploaded to the device-side. Currently the only console that supports this is muxcons, in which case this command allows you to pull files from the PC-side to the device.
+
+==argument string filename
+
+The name of the file being requested. Muxcons interprets any name ending in .exe, .dll or .map to be a release binary in the EPOCROOT tree.
+
+==argument filename local-path optional
+
+Where to put the file in the local file system. If not specified, exes and dlls go to c:\sys\bin (permissions permitting), other files go into the current working directory.
+
+==copyright
+
+Copyright (c) 2011 Accenture. All rights reserved.
