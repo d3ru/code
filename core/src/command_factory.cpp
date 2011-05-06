@@ -416,29 +416,36 @@ void CCommandFactory::AddCommandL(CCommandConstructorBase* aCommandConstructor)
 		// The order of precedence is:
 		//
 		// 1) Local (thread) commands (because if they get overridden, there is no way to access them - external commands can always be specified explicitly using a file extension).
-		// 2) "fshell_" prefixed commands.
-		// 3) EXE/PIPS/script commands.
+		// 2) Script commands
+		// 3) "fshell_" prefixed EXE commands.
+		// 4) Other EXE/PIPS commands.
 
 		ASSERT(aCommandConstructor->Attributes() & CCommandConstructorBase::EAttExternal); // Assert that local commands have a unique name.
 		TInt pos = FindCommandL(aCommandConstructor->CommandName());
 		ASSERT(pos >= 0);
 		CCommandConstructorBase* existingCommand = iCommands[pos];
 		TBool override(EFalse);
-		if (existingCommand->Attributes() & CCommandConstructorBase::EAttExternal) 
+		if (existingCommand->Type() == CCommandConstructorBase::ETypeExe && aCommandConstructor->Type() == CCommandConstructorBase::ETypeExe)
 			{
-			// Existing is not a local command.
-			//TOMSCI TODO the logic below is flawed!!!
-			CExeCommandConstructor* existingExeCommand = static_cast<CExeCommandConstructor*>(existingCommand); // Note, this cast assumes that ALL external commands are sub-classed from CExeCommandConstructor (which at the time of writing is true).
+			// Existing is an exe, check if we need to override because of fshell_ prefix
+			CExeCommandConstructor* exeCommand = static_cast<CExeCommandConstructor*>(aCommandConstructor);
+			CExeCommandConstructor* existingExeCommand = static_cast<CExeCommandConstructor*>(existingCommand);
 			if (existingExeCommand->ExeName().Left(KFshellPrefix().Length()).Compare(KFshellPrefix) != 0)
 				{
 				// Existing is not an "fshell_" prefixed command.
-				if (static_cast<CExeCommandConstructor*>(aCommandConstructor)->ExeName().Left(KFshellPrefix().Length()).Compare(KFshellPrefix) == 0)
+				if (exeCommand->ExeName().Left(KFshellPrefix().Length()).Compare(KFshellPrefix) == 0)
 					{
-					// aCommandConstructor is "fshell_" prefixed - allow it to override.
+					// (3) aCommandConstructor is "fshell_" prefixed - allow it to override.
 					override = ETrue;
 					}
 				}
 			}
+		else if ((existingCommand->Attributes() & CCommandConstructorBase::EAttExternal) != 0 && aCommandConstructor->Type() == CCommandConstructorBase::ETypeScript)
+			{
+			// (2) script overrides any other external command
+			override = ETrue;
+			}
+
 		if (override)
 			{
 			delete existingCommand;

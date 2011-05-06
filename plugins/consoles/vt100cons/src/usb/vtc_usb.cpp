@@ -12,6 +12,7 @@
 
 #include <e32std.h>
 #include <fshell/consoleextensions.h>
+#include <fshell/common.mmh>
 #include "vtc_usb.h"
 #include <usbclassuids.h>
 
@@ -52,8 +53,10 @@ void CUsbConsole::ConstructL(const TDesC& aTitle)
 	TRequestStatus stat;
 	if (portConfig.iPersonality >= 0)
 		{
+#if FSHELL_PLATFORM_S60 > 3 || defined(FSHELL_PLATFORM_FOUNDATION)
 		TInt err = iUsb.SetCtlSessionMode(ETrue);
 		Message(ErrOrDebug(err), _L("Setting USB control returned %d"), err);
+#endif
 		iUsb.TryStart(portConfig.iPersonality, stat);
 		User::WaitForRequest(stat);
 		User::After(500000); // Ugh need to wait for the TryStart to finish. There's probably some other async notification I could wait on but I'm in a hurry to get this working...
