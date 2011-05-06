@@ -1022,7 +1022,8 @@ void CCmdFdb::ProcessLineL(const TDesC& aLine)
 			}
 		else
 			{
-			iSymbols->SetFallbackMapFileDirL(path);
+			iMapFileDir = path;
+			iSymbols->SetFallbackMapFileDirL(iMapFileDir);
 			}
 		}
 	else
