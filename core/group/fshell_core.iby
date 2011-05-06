@@ -102,7 +102,7 @@ patchdata sbrec.dll@KAutoStartFshell 1
 // Do it the eshell way
 FSHELL_DATA_FILE(DATAZ_\fshell_autoexec.bat, autoexec.bat)
 #else
-// If we don't support a recogniser but aren't textshell, we're not a configuration worth worrying about
+// If we don't support a recogniser but aren't textshell/minigui, we're not a configuration worth worrying about
 #endif
 #endif // FSHELL_AUTOSTART
 

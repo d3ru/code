@@ -130,7 +130,16 @@ void CCmdShowDebug::DoRunL()
 	{
 	TInt err = RCloggerDebugRouter::LoadDriver();
 	if (err != KErrAlreadyExists) LeaveIfErr(err, _L("Couldn't load clogger debug router"));
-	LeaveIfErr(iRouter.Open(), _L("Couldn't open debug router"));
+	err = iRouter.Open();
+	if (err == KErrAlreadyExists)
+		{
+		LeaveIfErr(err, _L("Only one instance of showdebug or cloggerserver.exe can be running at the same time"));
+		}
+	else
+		{
+		LeaveIfErr(err, _L("Couldn't open debug router"));
+		}
+
 	LeaveIfErr(iRouter.OpenChunk(iChunk), _L("Couldn't open debug router shared chunk"));
 	LeaveIfErr(iRouter.EnableDebugRouting(RCloggerDebugRouter::EEnableRouting), _L("Couldn't enable routing"));
 	if (iFilter && iProcessName == NULL) LeaveIfErr(KErrArgument, _L("A process must be specified when using --filter"));

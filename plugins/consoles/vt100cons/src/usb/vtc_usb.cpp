@@ -52,6 +52,8 @@ void CUsbConsole::ConstructL(const TDesC& aTitle)
 	TRequestStatus stat;
 	if (portConfig.iPersonality >= 0)
 		{
+		TInt err = iUsb.SetCtlSessionMode(ETrue);
+		Message(ErrOrDebug(err), _L("Setting USB control returned %d"), err);
 		iUsb.TryStart(portConfig.iPersonality, stat);
 		User::WaitForRequest(stat);
 		User::After(500000); // Ugh need to wait for the TryStart to finish. There's probably some other async notification I could wait on but I'm in a hurry to get this working...
@@ -64,7 +66,8 @@ void CUsbConsole::ConstructL(const TDesC& aTitle)
 		{
 		TUsbDeviceState usbState;
 		User::LeaveIfError(iUsb.GetDeviceState(usbState));
-		if (usbState & (EUsbDeviceStateConfigured|EUsbDeviceStatePowered)) // We should only need to check for EUsbDeviceStateConfigured, but some HW doesn't go to configured state if the cable is inserted before USB is started
+		//if (usbState & (EUsbDeviceStateConfigured|EUsbDeviceStatePowered)) // We should only need to check for EUsbDeviceStateConfigured, but some HW doesn't go to configured state if the cable is inserted before USB is started
+		if (usbState & EUsbDeviceStateConfigured)
 			{
 			// Check if we have ACM
 			TInt currentPersonality;

@@ -34,6 +34,9 @@ variant qemu && export ARGS "--console vt100busdevcons --console-title pdd=eseri
 # Bridge - terminal keyboard is broken for some reason, but USB now works
 variant -u 0x85001100 && export ARGS "--console vt100usbcons --console-title port=ACM::1,personality=1"
 
+# If we're running comm.script, we'll assume we're non-gui and need to start the personality
+variant -u 0x2002bf94 && export ARGS "--console vt100usbcons --console-title port=ACM::1,personality=9"
+
 # Add new variants here
 
 

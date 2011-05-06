@@ -111,6 +111,8 @@ const TDesC* ClassName(TUid aClass)
 		CASE_LIT2(0x101FBF22, "ACM");
 		CASE_LIT2(0x101fbf24, "Obex");
 		CASE_LIT2(0x10204bbc, "Mass storage");
+		CASE_LIT2(0x102827b3, "Media Transfer Protocol");
+		CASE_LIT2(0x20013d2f, "RNDIS");
 		default:
 			return &KUnknown;
 		}

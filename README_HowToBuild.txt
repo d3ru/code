@@ -15,6 +15,7 @@ The platforms are (at time of writing):
 
 s60\3rd_edition     For any S60 3rd edition phone. Builds an open signed SIS file. For more info see:
 s60\5th_edition     For any S60 5th edition or later phone, including the N8. Builds an open signed SIS file.
+s60\minigui         Internal Nokia platform. Only useful if you can build ROMs and have access to Nokia internal baselines.
 s60\tb92            Internal Nokia platform. Either you know what it is or you shouldn't be using it.
 ncp                 Internal Nokia platform. Either you know what it is or you shouldn't be using it.
 sf\2                Full GUI build for any ROM build using S^2
