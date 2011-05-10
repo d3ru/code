@@ -74,7 +74,7 @@ void CCmdRequest::OptionsL(RCommandOptionList& /*aOptions*/)
 
 void CCmdRequest::DoRunL()
 	{
-	if (iFileName->Locate('\\') != -1 || iFileName->Locate('//') != -1)
+	if (iFileName->Locate('\\') != -1 || iFileName->Locate('/') != -1)
 		{
 		LeaveIfErr(KErrArgument, _L("filename cannot contain any path information"));
 		}

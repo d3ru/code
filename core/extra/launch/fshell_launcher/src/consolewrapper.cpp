@@ -162,10 +162,7 @@ void CProcessMonitor::Logon(RProcess& aProcess)
 
 void CProcessMonitor::Logoff()
 	{
-	if (iProcess)
-		{
-		iProcess->LogonCancel(iStatus);
-		}
+	Cancel();
 	}
 
 void CProcessMonitor::RunL()
@@ -175,7 +172,7 @@ void CProcessMonitor::RunL()
 
 void CProcessMonitor::DoCancel()
 	{
-	Logoff();
+	iProcess->LogonCancel(iStatus);
 	}
 
 CConsoleWrapper* CConsoleWrapper::NewLC(CFShellLauncherAppView& aView)
