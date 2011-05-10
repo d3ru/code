@@ -19,6 +19,7 @@ uid             FSHELL_UID2_FSHELL_EXE FSHELL_UID_GLINFO
 userinclude     .
 #include <fshell/fsh_system_include.mmh>
 systeminclude   \epoc32\include\osextensions
+systeminclude	\epoc32\include\libc
 
 sourcepath      .
 source          glinfo.cpp
@@ -33,3 +34,6 @@ library         libEGL.lib
 #ifdef FSHELL_OPENVG_SUPPORT
 library         libOpenVG.lib
 #endif
+
+library			libc.lib
+

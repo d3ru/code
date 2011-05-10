@@ -14,6 +14,7 @@
 #include <egl/egl.h>
 #include <vg/openvg.h>
 #include <fshell/common.mmh>
+#include <string.h>
 
 using namespace IoUtils;
 
@@ -26,13 +27,13 @@ private:
 	CCmdGlInfo();
 
 #ifdef FSHELL_EGL_SUPPORT
-	void PrintElgInfoL();
-	void PrintElgQueryString(EGLDisplay aDisplay, EGLint aName, const TDesC8& aSymbol);
+	void PrintEglInfoL();
+	void PrintEglQueryString(EGLDisplay aDisplay, EGLint aName, const TDesC8& aSymbol, TBool aSplit = EFalse);
 #endif // FSHELL_EGL_SUPPORT
 
 #ifdef FSHELL_OPENVG_SUPPORT
 	void PrintOpenVgInfoL();
-	void PrintOpenVgString(VGStringID aName, const TDesC8& aSymbol);
+	void PrintOpenVgString(VGStringID aName, const TDesC8& aSymbol, TBool aSplit = EFalse);
 #endif // FSHELL_OPENVG_SUPPORT
 
 private: // From CCommandBase.
@@ -67,7 +68,7 @@ CCmdGlInfo::CCmdGlInfo()
 
 #ifdef FSHELL_EGL_SUPPORT
 
-void CCmdGlInfo::PrintElgInfoL()
+void CCmdGlInfo::PrintEglInfoL()
 	{
     EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 	EGLint major;
@@ -76,24 +77,62 @@ void CCmdGlInfo::PrintElgInfoL()
 		{
 		LeaveIfErr(KErrGeneral, _L("Couldn't initialize EGL display"));
 		}
-	PrintElgQueryString(dpy, EGL_CLIENT_APIS, _L8("EGL_CLIENT_APIS"));
-	PrintElgQueryString(dpy, EGL_EXTENSIONS, _L8("EGL_EXTENSIONS"));
-	PrintElgQueryString(dpy, EGL_VENDOR, _L8("EGL_VENDOR"));
-	PrintElgQueryString(dpy, EGL_VERSION, _L8("EGL_VERSION"));
+	PrintEglQueryString(dpy, EGL_CLIENT_APIS, _L8("EGL_CLIENT_APIS"), ETrue);
+	PrintEglQueryString(dpy, EGL_EXTENSIONS, _L8("EGL_EXTENSIONS"), ETrue);
+	PrintEglQueryString(dpy, EGL_VENDOR, _L8("EGL_VENDOR"));
+	PrintEglQueryString(dpy, EGL_VERSION, _L8("EGL_VERSION"));
 	if (!eglTerminate(dpy))
 		{
 		LeaveIfErr(KErrGeneral, _L("Couldn't terminate EGL display"));
 		}
 	}
 
-void CCmdGlInfo::PrintElgQueryString(EGLDisplay aDisplay, EGLint aName, const TDesC8& aSymbol)
+void PrintString(const TDesC8& aSymbol, const char* aString, TBool aSplit)
+    {
+    if (aSplit)
+        {
+        Printf(_L8("%S:\r\n"), &aSymbol);
+        TPtrC8 stringPtr((const TUint8*)aString, strlen(aString));
+        TLex8 lex(stringPtr);
+        RArray<TPtrC8> tokens;
+        TInt err = KErrNone;
+        while (!lex.Eos() && !err)
+            {
+            TPtrC8 token = lex.NextToken();
+            if (token.Length())
+                {
+                err = tokens.Append(token);
+                }
+            }
+        if (err)
+            {
+            Printf(_L8("array overflow\r\n"));
+            }
+        else
+            {
+            if (tokens.Count())
+                {
+                for (TInt i=0; i<tokens.Count(); ++i)
+                    {
+                    Printf(_L8("    %S\r\n"), &tokens[i]);
+                    }
+                }
+            }
+        }
+    else
+        {
+        Printf(_L8("%S: %s\r\n"), &aSymbol, aString);
+        }
+    }
+
+void CCmdGlInfo::PrintEglQueryString(EGLDisplay aDisplay, EGLint aName, const TDesC8& aSymbol, TBool aSplit)
 	{
 	const char* string = eglQueryString(aDisplay, aName);
 	if (string == NULL)
 		{
 		string = "Unknown";
 		}
-	Printf(_L8("%S: %s\r\n"), &aSymbol, string);
+	PrintString(aSymbol, string, aSplit);
 	}
 
 #endif // FSHELL_EGL_SUPPORT
@@ -104,18 +143,18 @@ void CCmdGlInfo::PrintOpenVgInfoL()
 	{
 	PrintOpenVgString(VG_VENDOR, _L8("VG_VENDOR"));
 	PrintOpenVgString(VG_RENDERER, _L8("VG_RENDERER"));
-	PrintOpenVgString(VG_EXTENSIONS, _L8("VG_EXTENSIONS"));
+	PrintOpenVgString(VG_EXTENSIONS, _L8("VG_EXTENSIONS"), ETrue);
 	PrintOpenVgString(VG_VERSION, _L8("VG_VERSION"));
 	}
 
-void CCmdGlInfo::PrintOpenVgString(VGStringID aName, const TDesC8& aSymbol)
+void CCmdGlInfo::PrintOpenVgString(VGStringID aName, const TDesC8& aSymbol, TBool aSplit)
 	{
 	const VGubyte* string = vgGetString(aName);
 	if (string == NULL)
 		{
 		string = (const VGubyte*)"Unknown";
 		}
-	Printf(_L8("%S: %s\r\n"), &aSymbol, string);
+	PrintString(aSymbol, reinterpret_cast<const char*>(string), aSplit);
 	}
 
 #endif // FSHELL_OPENVG_SUPPORT
@@ -133,7 +172,7 @@ void CCmdGlInfo::DoRunL()
 #ifdef FSHELL_EGL_SUPPORT
 		case ELibEgl:
 			{
-			PrintElgInfoL();
+			PrintEglInfoL();
 			break;
 			}
 #endif // FSHELL_EGL_SUPPORT
