@@ -28,6 +28,10 @@ Embedded-system Graphics Library.
 
 Open Vector Graphics Library.
 
+==enum-value opengles
+
+OpenGLES Library.
+
 ==copyright
 
 Copyright (c) 2009-2010 Accenture. All rights reserved.

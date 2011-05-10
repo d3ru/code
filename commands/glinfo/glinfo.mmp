@@ -35,5 +35,9 @@ library         libEGL.lib
 library         libOpenVG.lib
 #endif
 
+#ifdef FSHELL_OPENGLES_SUPPORT
+library         libGLES_CM.lib
+#endif
+
 library			libc.lib
 

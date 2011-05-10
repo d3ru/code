@@ -13,6 +13,7 @@
 #include <fshell/ioutils.h>
 #include <egl/egl.h>
 #include <vg/openvg.h>
+#include <gles/gl.h>
 #include <fshell/common.mmh>
 #include <string.h>
 
@@ -36,16 +37,28 @@ private:
 	void PrintOpenVgString(VGStringID aName, const TDesC8& aSymbol, TBool aSplit = EFalse);
 #endif // FSHELL_OPENVG_SUPPORT
 
+#ifdef FSHELL_OPENGLES_SUPPORT
+    void PrintOpenGlesInfoL();
+    void PrintOpenGlesString(EGLint aName, const TDesC8& aSymbol, TBool aSplit = EFalse);
+#endif // FSHELL_OPENGLES_SUPPORT
+
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();
 	virtual void ArgumentsL(RCommandArgumentList& aArguments);
 	virtual void OptionsL(RCommandOptionList& aOptions);
+
+#ifdef FSHELL_EGL_SUPPORT
+    EGLDisplay EglInitializeL();
+    void EglTerminateL(EGLDisplay aDisplay);
+#endif
+
 private:
 	enum
 		{
 		ELibEgl,
-		ELibOpenVg
+		ELibOpenVg,
+		ELibOpenGles
 		} iLibrary;
 	};
 
@@ -68,23 +81,38 @@ CCmdGlInfo::CCmdGlInfo()
 
 #ifdef FSHELL_EGL_SUPPORT
 
+EGLDisplay CCmdGlInfo::EglInitializeL()
+    {
+    EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    EGLint major;
+    EGLint minor;
+    if (!eglInitialize(dpy, &major, &minor))
+        {
+        LeaveIfErr(KErrGeneral, _L("Couldn't initialize EGL display"));
+        }
+    return dpy;
+    }
+
+void CCmdGlInfo::EglTerminateL(EGLDisplay aDisplay)
+    {
+    if (!eglTerminate(aDisplay))
+        {
+        LeaveIfErr(KErrGeneral, _L("Couldn't terminate EGL display"));
+        }
+    }
+
 void CCmdGlInfo::PrintEglInfoL()
 	{
-    EGLDisplay dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-	EGLint major;
-	EGLint minor;
-	if (!eglInitialize(dpy, &major, &minor))
-		{
-		LeaveIfErr(KErrGeneral, _L("Couldn't initialize EGL display"));
-		}
+    EGLDisplay dpy = EglInitializeL();
 	PrintEglQueryString(dpy, EGL_CLIENT_APIS, _L8("EGL_CLIENT_APIS"), ETrue);
-	PrintEglQueryString(dpy, EGL_EXTENSIONS, _L8("EGL_EXTENSIONS"), ETrue);
 	PrintEglQueryString(dpy, EGL_VENDOR, _L8("EGL_VENDOR"));
 	PrintEglQueryString(dpy, EGL_VERSION, _L8("EGL_VERSION"));
+    PrintEglQueryString(dpy, EGL_EXTENSIONS, _L8("EGL_EXTENSIONS"), ETrue);
 	if (!eglTerminate(dpy))
 		{
 		LeaveIfErr(KErrGeneral, _L("Couldn't terminate EGL display"));
 		}
+	EglTerminateL(dpy);
 	}
 
 void PrintString(const TDesC8& aSymbol, const char* aString, TBool aSplit)
@@ -142,9 +170,9 @@ void CCmdGlInfo::PrintEglQueryString(EGLDisplay aDisplay, EGLint aName, const TD
 void CCmdGlInfo::PrintOpenVgInfoL()
 	{
 	PrintOpenVgString(VG_VENDOR, _L8("VG_VENDOR"));
+    PrintOpenVgString(VG_VERSION, _L8("VG_VERSION"));
 	PrintOpenVgString(VG_RENDERER, _L8("VG_RENDERER"));
 	PrintOpenVgString(VG_EXTENSIONS, _L8("VG_EXTENSIONS"), ETrue);
-	PrintOpenVgString(VG_VERSION, _L8("VG_VERSION"));
 	}
 
 void CCmdGlInfo::PrintOpenVgString(VGStringID aName, const TDesC8& aSymbol, TBool aSplit)
@@ -158,6 +186,81 @@ void CCmdGlInfo::PrintOpenVgString(VGStringID aName, const TDesC8& aSymbol, TBoo
 	}
 
 #endif // FSHELL_OPENVG_SUPPORT
+
+#ifdef FSHELL_OPENGLES_SUPPORT
+
+const EGLint KAttribList[] =
+{
+    EGL_RED_SIZE,           8,
+    EGL_GREEN_SIZE,         8,
+    EGL_BLUE_SIZE,          8,
+    EGL_ALPHA_SIZE,         8,
+    EGL_SURFACE_TYPE,       EGL_WINDOW_BIT,
+    EGL_RENDERABLE_TYPE,    EGL_OPENVG_BIT,
+    EGL_NONE
+};
+
+void CCmdGlInfo::PrintOpenGlesInfoL()
+    {
+    // glGetString requires a valid EGL context
+    EGLDisplay dpy = EglInitializeL();
+    EGLint numConfigs = 0;
+    EGLConfig config;
+    if (eglChooseConfig(dpy, KAttribList, &config, 1, &numConfigs) || numConfigs == 0)
+        {
+        eglBindAPI(EGL_OPENGL_ES_API);
+        EGLContext ctx = eglCreateContext(dpy, config, EGL_NO_CONTEXT, NULL);
+        if (eglGetError() == EGL_SUCCESS)
+            {
+            EGLSurface surface = eglCreatePbufferSurface(dpy, config, NULL);
+            if (surface == EGL_NO_SURFACE)
+                {
+                LeaveIfErr(KErrGeneral, _L("Failed to create EGL surface"));
+                }
+            if (eglMakeCurrent(dpy, surface, surface, ctx) == EGL_TRUE)
+                {
+                PrintOpenGlesString(GL_VENDOR, _L8("GL_VENDOR"));
+                PrintOpenGlesString(GL_VERSION, _L8("GL_VERSION"));
+                PrintOpenGlesString(GL_RENDERER, _L8("GL_RENDERER"));
+                PrintOpenGlesString(GL_EXTENSIONS, _L8("GL_EXTENSIONS"), ETrue);
+                }
+            else
+                {
+                LeaveIfErr(KErrGeneral, _L("Failed to bind EGL context"));
+                }
+            eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, ctx);
+            if (eglDestroySurface(dpy, surface) != EGL_TRUE)
+                {
+                LeaveIfErr(KErrGeneral, _L("Failed to destroy EGL surface"));
+                }
+            if (eglDestroyContext(dpy, ctx) != EGL_TRUE)
+                {
+                LeaveIfErr(KErrGeneral, _L("Failed to destroy EGL context"));
+                }
+            }
+        else
+            {
+            LeaveIfErr(KErrGeneral, _L("Failed to create EGL context"));
+            }
+        }
+    else
+        {
+        LeaveIfErr(KErrGeneral, _L("Failed to choose EGL config"));
+        }
+    EglTerminateL(dpy);
+    }
+
+void CCmdGlInfo::PrintOpenGlesString(EGLint aName, const TDesC8& aSymbol, TBool aSplit)
+    {
+    const GLubyte* string = glGetString(aName);
+    if (string == NULL)
+        {
+        string = (const GLubyte*)"Unknown";
+        }
+    PrintString(aSymbol, reinterpret_cast<const char*>(string), aSplit);
+    }
+
+#endif // FSHELL_OPENGLES_SUPPORT
 
 const TDesC& CCmdGlInfo::Name() const
 	{
@@ -183,6 +286,13 @@ void CCmdGlInfo::DoRunL()
 			break;
 			}
 #endif // FSHELL_OPENVG_SUPPORT
+#ifdef FSHELL_OPENGLES_SUPPORT
+        case ELibOpenGles:
+            {
+            PrintOpenGlesInfoL();
+            break;
+            }
+#endif // FSHELL_OPENGLES_SUPPORT
 		default:
 			{
 			User::Leave(KErrNotSupported);
