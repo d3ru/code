@@ -10,12 +10,13 @@
 // Accenture - Initial contribution
 //
 #include <fshell/common.mmh>
-#if defined(FSHELL_PLATFORM_FOUNDATION) || defined(FSHELL_PLATFORM_SYMTB) || FSHELL_PLATFORM_S60 == 5
+#if defined(FSHELL_PLATFORM_FOUNDATION) || FSHELL_PLATFORM_S60 >= 5
 #define FSHELL_USING_PLATFORM_PATHS
 #include <platform_paths.hrh>
-#elif FSHELL_PLATFORM_S60 > 5
-#define FSHELL_USING_PLATFORM_PATHS
-#include <domain/osextensions/platform_paths.hrh>
+//I don't know where this block came from... -Tomsci
+//#elif FSHELL_PLATFORM_S60 > 5
+//#define FSHELL_USING_PLATFORM_PATHS
+//#include <domain/osextensions/platform_paths.hrh>
 #endif
 
 #ifdef FSHELL_USING_PLATFORM_PATHS
