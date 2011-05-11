@@ -15,7 +15,6 @@
 #include <vg/openvg.h>
 #include <gles/gl.h>
 #include <fshell/common.mmh>
-#include <string.h>
 
 using namespace IoUtils;
 
@@ -120,7 +119,7 @@ void PrintString(const TDesC8& aSymbol, const char* aString, TBool aSplit)
     if (aSplit)
         {
         Printf(_L8("%S:\r\n"), &aSymbol);
-        TPtrC8 stringPtr((const TUint8*)aString, strlen(aString));
+        TPtrC8 stringPtr((const TUint8*)aString);
         TLex8 lex(stringPtr);
         RArray<TPtrC8> tokens;
         TInt err = KErrNone;
