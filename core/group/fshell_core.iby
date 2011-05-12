@@ -246,7 +246,8 @@ FSHELL_EXECUTABLE_FILE(fshell_tinteger.exe)
 FSHELL_EXECUTABLE_FILE(tfshellarguments.exe)
 FSHELL_EXECUTABLE_FILE(tenvarguments.exe)
 FSHELL_EXECUTABLE_FILE(tnoncifenvarguments.exe)
-FSHELL_EXECUTABLE_FILE(tpips.exe)
+// Removed - doesn't have correct UID, and isn't used by any of the automated tests anyway
+//FSHELL_EXECUTABLE_FILE(tpips.exe)
 #endif
 
 #endif
