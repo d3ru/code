@@ -1255,7 +1255,7 @@ EXPORT_C TBool RCommandArgumentList::AllSet() const
 	for (TInt i = 0; i < count; ++i)
 		{
 		const TCommandArgument& thisArgument = iArguments[i];
-		if (!thisArgument.IsOptional() && !thisArgument.IsSet() && !(thisArgument.ValueType() == (KValueTypeFileName | KValueTypeFlagMultiple))) // Note, allow multiple file names because "dir\*" might not produces any matches, but we don't want to report that as a syntax error. Instead expect commands to cope with zero file names.
+		if (!thisArgument.IsOptional() && !thisArgument.IsSet())
 			{
 			allSet = EFalse;
 			break;

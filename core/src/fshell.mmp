@@ -84,8 +84,8 @@ source          ciftest.cpp
 // There doesn't seem to be a nice way of turning the platform into a string, like you have $(PLATFORM) in extension makefiles, sigh.
 #if defined(WINSCW)
 #define PLAT platform_WINSCW
-#elif defined(GCCE)
-#define PLAT platform_GCCE
+//#elif defined(GCCE)
+//#define PLAT platform_GCCE
 #elif defined(MARM_ARM4)
 #define PLAT platform_ARM4
 #elif defined(MARM_ARMV5)

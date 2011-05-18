@@ -18,7 +18,11 @@ source $SCRIPT_PATH\errordef.script
 var ARG_COUNT == 0 && $Error # Because myarg isn't optional we shouldn't even get this far if there's no options
 
 var myarg == "abc123" || $Error
-var EXPECTEDMYOPTIONALARG defined && var myoptionalarg == "$EXPECTEDMYOPTIONALARG" || $Error
+
+if var myoptionalarg defined
+	var EXPECTEDMYOPTIONALARG defined || $Error
+	var myoptionalarg == "$EXPECTEDMYOPTIONALARG" || $Error
+endif
 
 exit # Like __END__ in perl this stops the fshell parser tripping over the CIF data
 
@@ -34,5 +38,5 @@ An example argument. Fshell defines the environment variable $myarg based on wha
 
 ==argument string myoptionalarg optional
 
-An optional argument. If specified must equal $MYEXPECTEDOPTIONALARG.
+An optional argument. If specified must equal $EXPECTEDMYOPTIONALARG.
 

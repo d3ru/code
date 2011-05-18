@@ -35,6 +35,9 @@ using LtkUtils::RAllocatorHelper;
 
 _LIT(KOptVerbose, "verbose");
 _LIT(KOptHuman, "human");
+_LIT(KOptKeepGoing, "keep-going");
+_LIT(KOptRecurse, "recurse");
+_LIT(KOptForce, "force");
 
 _LIT(KNewLine, "\r\n");
 _LIT(KTab, "\t");
@@ -278,14 +281,13 @@ void CCmdLs::OptionsL(RCommandOptionList& aOptions)
 	_LIT(KCmdLsOptLong, "long");
 	_LIT(KCmdLsOptHuman, "human");
 	_LIT(KCmdLsOptOnePerLine, "one");
-	_LIT(KCmdLsOptRecurse, "recurse");
 	_LIT(KCmdLsOptNoLocalise, "no-localise");
 
 	aOptions.AppendBoolL(iOptAll, KCmdLsOptAll);
 	aOptions.AppendBoolL(iOptLong, KCmdLsOptLong);
 	aOptions.AppendBoolL(iOptHuman, KCmdLsOptHuman);
 	aOptions.AppendBoolL(iOptOnePerLine, KCmdLsOptOnePerLine);
-	aOptions.AppendBoolL(iOptRecurse, KCmdLsOptRecurse);
+	aOptions.AppendBoolL(iOptRecurse, KOptRecurse);
 	aOptions.AppendBoolL(iOptNoLocalise, KCmdLsOptNoLocalise);
 	}
 
@@ -745,6 +747,9 @@ CCmdRm::~CCmdRm()
 	delete iFileMan;
 	iFileNames.Close();
 	iNonExpandedFilenames.ResetAndDestroy();
+#ifdef FSHELL_LOADER_DELETE_SUPPORT
+	iLoader.Close();
+#endif
 	}
 
 CCmdRm::CCmdRm()
@@ -790,6 +795,15 @@ void CCmdRm::DoRunL()
 				err = DoDelete(fileName);
 				}
 			}
+#ifdef FSHELL_LOADER_DELETE_SUPPORT
+		if (err == KErrInUse && iForce && !fileName.IsDirL(FsL()))
+			{
+			// DLLs/EXEs that are currently being paged cannot be deleted via the fileserver, but they can be if you ask the loader to do it
+			// In actual fact they're moved into \sys\del\ and deleted later if/when unloaded
+			if (iLoader.Handle() == 0) LeaveIfErr(iLoader.Connect(), _L("Couldn't connect to loader"));
+			err = iLoader.Delete(fileName);
+			}
+#endif
 		LeaveIfErr(err, _L("Couldn't delete '%S'"), &fileName);
 		}
 
@@ -816,11 +830,9 @@ TInt CCmdRm::DoDelete(const TDesC& aFileName)
 
 void CCmdRm::OptionsL(RCommandOptionList& aOptions)
 	{
-	_LIT(KCmdRmOptRecurse, "recurse");
-	_LIT(KCmdRmOptForce, "force");
 	_LIT(KCmdRmOptNoexpand, "noexpand");
-	aOptions.AppendBoolL(iRecurse, KCmdRmOptRecurse);
-	aOptions.AppendBoolL(iForce, KCmdRmOptForce);
+	aOptions.AppendBoolL(iRecurse, KOptRecurse);
+	aOptions.AppendBoolL(iForce, KOptForce);
 	aOptions.AppendStringL(iNonExpandedFilenames, KCmdRmOptNoexpand);
 	}
 
@@ -959,12 +971,10 @@ void CCmdCp::DoRunL()
 
 void CCmdCp::OptionsL(RCommandOptionList& aOptions)
 	{
-	_LIT(KCmdCpOptRecurse, "recurse");
 	_LIT(KCmdCpOptOverwrite, "overwrite");
-	_LIT(KCmdCpOptForce, "force");
-	aOptions.AppendBoolL(iRecurse, KCmdCpOptRecurse);
+	aOptions.AppendBoolL(iRecurse, KOptRecurse);
 	aOptions.AppendBoolL(iOverwrite, KCmdCpOptOverwrite);
-	aOptions.AppendBoolL(iForce, KCmdCpOptForce);
+	aOptions.AppendBoolL(iForce, KOptForce);
 	}
 
 void CCmdCp::ArgumentsL(RCommandArgumentList& aArguments)
@@ -1135,8 +1145,7 @@ void CCmdRmDir::DoRunL()
 
 void CCmdRmDir::OptionsL(RCommandOptionList& aOptions)
 	{
-	_LIT(KCmdRmDirOptRecurse, "recurse");
-	aOptions.AppendBoolL(iRecurse, KCmdRmDirOptRecurse);
+	aOptions.AppendBoolL(iRecurse, KOptRecurse);
 	}
 
 void CCmdRmDir::ArgumentsL(RCommandArgumentList& aArguments)
@@ -3645,7 +3654,6 @@ void CCmdSource::ArgumentsL(RCommandArgumentList& aArguments)
 
 void CCmdSource::OptionsL(RCommandOptionList& aOptions)
 	{
-	_LIT(KOptKeepGoing, "keep-going");
 	aOptions.AppendBoolL(iKeepGoing, KOptKeepGoing);
 	}
 
@@ -4099,7 +4107,6 @@ void CCmdRepeat::ArgumentsL(RCommandArgumentList& aArguments)
 
 void CCmdRepeat::OptionsL(RCommandOptionList& aOptions)
 	{
-	_LIT(KOptKeepGoing, "keep-going");
 	_LIT(KOptWait, "wait");
 
 	aOptions.AppendBoolL(iKeepGoing, KOptKeepGoing);
@@ -4214,7 +4221,6 @@ void CCmdDebug::ArgumentsL(RCommandArgumentList& aArguments)
 
 void CCmdDebug::OptionsL(RCommandOptionList& aOptions)
 	{
-	_LIT(KOptKeepGoing, "keep-going");
 	aOptions.AppendBoolL(iKeepGoing, KOptKeepGoing);
 	}
 
@@ -5804,7 +5810,6 @@ void CCmdDebugPort::ArgumentsL(RCommandArgumentList& aArguments)
 
 void CCmdDebugPort::OptionsL(RCommandOptionList& aOptions)
 	{
-	_LIT(KOptForce, "force");
 	aOptions.AppendBoolL(iForce, KOptForce);
 	}
 
@@ -6429,4 +6434,119 @@ void CCmdTitle::ArgumentsL(RCommandArgumentList& aArguments)
 void CCmdTitle::DoRunL()
 	{
 	LeaveIfErr(Stdout().SetTitle(*iTitle), _L("Couldn't set title"));
+	}
+
+//
+// CCmdAttrib
+//
+
+CCommandBase* CCmdAttrib::NewLC()
+	{
+	CCmdAttrib* self = new(ELeave) CCmdAttrib();
+	CleanupStack::PushL(self);
+	self->BaseConstructL();
+	return self;
+	}
+
+CCmdAttrib::CCmdAttrib()
+	: CCommandBase(EReportAllErrors)
+	{
+	}
+
+CCmdAttrib::~CCmdAttrib()
+	{
+	iPaths.Close();
+	iSetAttributes.Close();
+	iRemoveAttributes.Close();
+	}
+
+const TDesC& CCmdAttrib::Name() const
+	{
+	_LIT(KName, "attrib");
+	return KName;
+	}
+
+void CCmdAttrib::ArgumentsL(RCommandArgumentList& aArguments)
+	{
+	_LIT(KPath, "path");
+	aArguments.AppendFileNameL(iPaths, KPath);
+	}
+
+void CCmdAttrib::OptionsL(RCommandOptionList& aOptions)
+	{
+	_LIT(KAdd, "set");
+	aOptions.AppendEnumL(iSetAttributes, KAdd);
+	_LIT(KRemove, "clear");
+	aOptions.AppendEnumL(iRemoveAttributes, KRemove);
+	aOptions.AppendBoolL(iRecurse, KOptRecurse);
+	aOptions.AppendBoolL(iKeepGoing, KOptKeepGoing);
+	}
+
+void CCmdAttrib::GetMask(const RArray<TInt>& aEnums, TUint& aMask)
+	{
+	aMask = 0;
+	for (TInt i = 0; i < aEnums.Count(); i++)
+		{
+		switch ((TAttribute)aEnums[i])
+			{
+			case EReadOnly:
+				aMask |= KEntryAttReadOnly;
+				break;
+			case EHidden:
+				aMask |= KEntryAttHidden;
+				break;
+			case ESystem:
+				aMask |= KEntryAttSystem;
+				break;
+			case EArchive:
+				aMask |= KEntryAttArchive;
+				break;
+			}
+		}
+	}
+
+void CCmdAttrib::DoRunL()
+	{
+	// Figure out masks
+	GetMask(iSetAttributes, iSetMask);
+	GetMask(iRemoveAttributes, iClearMask);
+
+	if (iSetMask & iClearMask) LeaveIfErr(KErrArgument, _L("Can't specify the same attribute in both --set and --clear"));
+	for (TInt i = 0; i < iPaths.Count(); i++)
+		{
+		DoSetAttribL(i);
+		}
+	}
+
+void CCmdAttrib::DoSetAttribL(TInt aIndex)
+	{
+	TFileName2& filename = iPaths[aIndex];
+	filename.SetTypeL(FsL()); // Makes sure it ends in a slash if it's a dir; GetDir needs this...
+	TInt err = FsL().SetAtt(filename, iSetMask, iClearMask);
+	if (err)
+		{
+		PrintError(err, _L("Couldn't set attributes on %S"), &filename);
+		if (iKeepGoing) return;
+		else User::Leave(err);
+		}
+
+	if (iRecurse && filename.IsDirL(FsL()))
+		{
+		CDir* dir = NULL;
+		err = FsL().GetDir(filename, KEntryAttMaskSupported, ESortNone, dir);
+		if (err)
+			{
+			PrintError(err, _L("Couldn't get directory listing for %S"), &filename);
+			if (iKeepGoing) return;
+			else User::Leave(err);
+			}
+		CleanupStack::PushL(dir);
+		for (TInt i = 0; i < dir->Count(); i++)
+			{
+			TFileName2 newPath = filename;
+			newPath.AppendComponentL((*dir)[i]);
+			iPaths.InsertL(newPath, aIndex + 1 + i);
+			}
+		CleanupStack::PopAndDestroy(dir);
+		}
 	}

@@ -1,0 +1,103 @@
+# attrib.cif
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name attrib
+
+==short-description
+
+Change file system attributes.
+
+==long-description
+
+Add or remove attributes from files or directories. For example:
+
+  attrib --set readonly FILE
+  attrib -s r FILE # Equivalent to the above
+  
+  attrib --recurse --set readonly --clear system --clear hidden FOLDER
+
+==argument filename path optional multiple
+
+The file or directory.
+
+==option enum s set multiple
+
+If specified, set this attribute for the given path(s).
+
+==enum-value readonly
+
+==enum-value hidden
+
+==enum-value system
+
+==enum-value archived
+
+==option enum c clear multiple
+
+If specified, clear this attribute for the given path(s). It is an error for an attribute to be specified with both C<--set> and C<--clear>.
+
+==enum-value readonly
+
+==enum-value hidden
+
+==enum-value system
+
+==enum-value archived
+
+==option bool r recurse
+
+Recursively apply attribute changes to directories and their contents.
+
+==option bool k keep-going
+
+If specified, continue if an error is encountered while processing one of the paths.
+
+==copyright
+
+Copyright (c) 2011 Accenture. All rights reserved.
+
+==smoke-test
+
+# Clean up in case a previous test failed halfway through. Need to use the \* syntax because rm -rf can't delete directories containing readonly files
+exists attribtest && rm -rf attribtest\* && rmdir attribtest
+mkdir attribtest
+cd attribtest
+touch is_readonly
+attrib -s readonly is_readonly
+# Check it got the readonly attribute
+ls -l | export -s RESULT
+var RESULT startswith "-r--a" || $Error
+
+touch is_hiddensystem
+attrib -s h -s s is_hiddensystem
+
+ls -1 | export -s RESULT
+var RESULT == "is_readonly^r^n" || $Error # is_hiddensystem shouldn't appear in listing
+ls -1a | export -s RESULT
+var RESULT == "is_hiddensystem^r^nis_readonly^r^n" || $Error # now it should
+
+ls -la is_hiddensystem | export -s RESULT
+var RESULT startswith "--hsa" || $Error
+
+# Check we can set on a dir
+cd ..
+attrib -s r attribtest
+ls -l attribtest* | export -s RESULT # The * ensures we list the dir not the contents (like bash's -d). Don't know if this is defined behaviour though.
+var RESULT startswith "dr--" || $Error
+
+# Now test recursively clearing
+attrib -r -c system -c hidden -c readonly attribtest
+ls -1 attribtest | export -s RESULT
+var RESULT == "is_hiddensystem^r^nis_readonly^r^n" || $Error # should both be visible now
+
+# and clean up
+rm -r attribtest

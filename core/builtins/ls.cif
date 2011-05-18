@@ -56,7 +56,7 @@ archived
 
 =back
 
-For example, C<d--s-> indicates a directory with the system bit set.
+For example, C<d--s-> indicates a directory with the system bit set. Note that system and hidden files/directories will only be shown if the C<--all> option is specified.
 
 ==option bool H human
 

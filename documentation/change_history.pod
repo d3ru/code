@@ -16,6 +16,8 @@ __END__
 
 =head2 Release 005 **NOT YET RELEASED**
 
+=head3 New features
+
 =over 5
 
 =item *
@@ -24,11 +26,15 @@ Added support for Nokia TB92- or MCL-based minigui platform, in \build\s60\minig
 
 =item *
 
+Added new single launcher app instead of the multiple "fshell (USB)", "fshell (BT)" etc icons. The new launcher is located in the RnD tools folder.
+
+=item *
+
 Added the ability for fshell commands to request files from the PC via muxcons. Fdb now uses this to request map files for any codesegs in the stacktrace. The relevant API is C<RIoConsole::RequestFile()> with muxcons implementing the C<DataRequester> console extension.
 
 =item *
 
-Added the L<request|commands::request> and L<title|commands::title> commands.
+Added the L<request|commands::request>, L<title|commands::title> and L<attrib|commands::attrib> commands.
 
 =item *
 
@@ -38,13 +44,15 @@ Added support for changing the default C<c:\E<gt>> prompt by setting an environm
 
 Note the use of C<^$> to prevent C<$PWD> being expanded when export runs rather than when C<$FSHELL_PROMPT> is evaluated.
 
+=back
+
+=head3 Bugfixes
+
+=over 5
+
 =item *
 
 Build fixes for platforms without CONE or apparc. Fixed rare crash when console creation returned an error. Fixed guicons drawing issue when embedded in another control.
-
-=item *
-
-Added new single launcher app instead of the multiple "fshell (USB)", "fshell (BT)" etc icons. The new launcher is located in the RnD tools folder.
 
 =item *
 
@@ -57,6 +65,14 @@ fdb now prints a notification (and automatically attaches if nothing focussed) w
 =item *
 
 Removed compile-time dependancies on usbostcomm.h. As a result the C<FSHELL_OST_SUPPORT> macro is removed, and the RnD fshell SIS no longer requires CODA to be installed to use muxcons.
+
+=item *
+
+C<rm -f> can now delete binaries in \sys\bin that are held open because of demand paging. (Only applies to TCB-capable builds of fshell, when deleting an exe/dll from c:\sys\bin which is bytepair compressed and currently loaded on environments with code paging enabled).
+
+=item *
+
+Filename arguments marked as C<multiple> no longer are assumed to also have the C<optional> attribute.
 
 =back
 

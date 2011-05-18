@@ -16,7 +16,7 @@
 
 Remove one or more files.
 
-==argument filename file_name multiple
+==argument filename file_name optional multiple
 
 The name of the file to be removed. May contain wild characters C<*> and C<?> to specify more than one file.
 
@@ -26,7 +26,7 @@ Also delete files in sub-directories.
 
 ==option bool f force
 
-Force delete the file even if it is read-only (won't allow you to delete a directory containing read-only files).
+Force delete the file even if it is read-only (won't allow you to delete a directory containing read-only files). This option can also delete the file if it is a binary in \sys\bin that is being held open for code paging.
 
 ==option string n noexpand multiple
 

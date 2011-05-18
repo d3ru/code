@@ -20,6 +20,12 @@
 #include <hal.h>
 #include <fshell/ioutils.h>
 #include <fshell/memoryaccesscmd.h>
+#ifdef FSHELL_LOADER_DELETE_SUPPORT
+#ifdef SYMBIAN_ENABLE_SPLIT_HEADERS
+#undef SYMBIAN_ENABLE_SPLIT_HEADERS
+#endif
+#include <e32ldr.h>
+#endif
 
 using namespace IoUtils;
 
@@ -199,6 +205,9 @@ private:
 	TBool iRecurse;
 	TBool iForce;
 	RPointerArray<HBufC> iNonExpandedFilenames; // This is to prevent the normal behaviour of fshell expanding a '*' in iFileNames, in the case where the number of matches would be huge
+#ifdef FSHELL_LOADER_DELETE_SUPPORT
+	RLoader iLoader;
+#endif
 	};
 
 
@@ -1316,6 +1325,39 @@ private: // From CCommandBase.
 	virtual void ArgumentsL(RCommandArgumentList& aArguments);
 private:
 	HBufC* iTitle;
+	};
+
+class CCmdAttrib : public CCommandBase
+	{
+public:
+	static CCommandBase* NewLC();
+	~CCmdAttrib();
+private: // From CCommandBase.
+	virtual const TDesC& Name() const;
+	virtual void DoRunL();
+	virtual void ArgumentsL(RCommandArgumentList& aArguments);
+	virtual void OptionsL(RCommandOptionList& aOptions);
+
+private:
+	CCmdAttrib();
+	void DoSetAttribL(TInt aIndex);
+	static void GetMask(const RArray<TInt>& aEnums, TUint& aMask);
+private:
+	RArray<TFileName2> iPaths;
+	enum TAttribute
+		{
+		EReadOnly,
+		EHidden,
+		ESystem,
+		EArchive,
+		};
+	RArray<TInt> iSetAttributes;
+	RArray<TInt> iRemoveAttributes;
+	TBool iRecurse;
+	TBool iKeepGoing;
+
+	TUint iSetMask;
+	TUint iClearMask;
 	};
 	
 #endif // __COMMANDS_H__

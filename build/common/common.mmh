@@ -103,6 +103,9 @@
 #ifndef FSHELL_NO_HTTP_SUPPORT
 #define FSHELL_HTTP_SUPPORT
 #endif
+#ifndef FSHELL_NO_LOADER_DELETE_SUPPORT
+#define FSHELL_LOADER_DELETE_SUPPORT
+#endif
 
 //
 // PlatSec.
@@ -140,6 +143,7 @@
 #elif defined(FSHELL_OPEN_SIGNED)
 
 // According to https://www.symbiansigned.com/app/page/public/openSignedOnline.do this is the subset we're allowed
+// 'system'
 #define FSHELL_CAP_POWERMGMT
 #define FSHELL_CAP_PROTSERV
 #define FSHELL_CAP_READDEVICEDATA
@@ -147,6 +151,7 @@
 #define FSHELL_CAP_SWEVENT
 #define FSHELL_CAP_TRUSTEDUI
 #define FSHELL_CAP_WRITEDEVICEDATA
+// 'user'
 #define FSHELL_CAP_LOCALSERVICES
 #define FSHELL_CAP_LOCATION
 #define FSHELL_CAP_NETWORKSERVICES

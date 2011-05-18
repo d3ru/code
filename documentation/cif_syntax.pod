@@ -72,6 +72,10 @@ An argument with just the C<multiple> attribute can be specified one or more tim
 
 =item *
 
+Prior to fshell Release 005, C<optional> was incorrectly assumed for any multiple filename arguments. It is now required to state it explicitly if desired. Note that a wildcarded expression that matches no files still counts as having supplied an argument, even though the filename array will be empty.
+
+=item *
+
 Only the final argument is allowed to have the C<last> attribute. It indicates that further arguments are allowed without needing to quote them and will be merged into this argument. C<last> may not be combined with C<multiple>. If a string provided for a C<last> argument naturally (i.e. as a result of normal string quote and escape handling) forms a single argument and consumes the whole of the remainder of the command line, the resulting single argument will be used as is. Otherwise, the string will be used without any quote or escape handling. Here are some examples (using fshell's 'time' command, which takes a single argument that uses the C<last> attribute):
 
       Input command-line            Argument receive by the 'time' command
