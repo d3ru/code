@@ -14,7 +14,7 @@ __END__
 
 =head1 fshell Change History
 
-=head2 Release 005 **NOT YET RELEASED**
+=head2 Release 005
 
 =head3 New features
 
@@ -43,6 +43,10 @@ Added support for changing the default C<c:\E<gt>> prompt by setting an environm
     export FSHELL_PROMPT "^r^n^$PWD>"
 
 Note the use of C<^$> to prevent C<$PWD> being expanded when export runs rather than when C<$FSHELL_PROMPT> is evaluated.
+
+=item *
+
+C<version -v> now displays the Mercurial revision that the code was built from, as per C<hg id>, if available.
 
 =back
 

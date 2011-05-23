@@ -19,7 +19,7 @@ my $localTime = scalar(localtime);
 my $gmTime = scalar(gmtime);
 my $builder = $ENV{USERNAME};
 my $compilerVersion = CompilerVersion();
-
+my $hgId = MercurialId();
 
 print "
 #include <e32base.h>
@@ -41,6 +41,7 @@ extern HBufC* GetVersionInfoL(TBool aVerbose)
 #else
 		buf.AppendL(_L(\"Build configuration:  release\\r\\n\"));
 #endif
+		buf.AppendL(_L(\"Mercurial revision:   $hgId\\r\\n\"));
 		}
 	else
 		{
@@ -97,5 +98,17 @@ sub CompilerVersion {
     }
     close (COMPILER);
   }
+  return $version;
+}
+
+sub MercurialId {
+  my $version = 'Unknown';
+  if (open (HG, "hg id |")) {
+    my $result = <HG>;
+    chomp $result;
+	if (length($result)) {
+      $version = $result;
+    }
+  }	
   return $version;
 }

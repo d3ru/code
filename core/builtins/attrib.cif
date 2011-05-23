@@ -82,7 +82,7 @@ attrib -s h -s s is_hiddensystem
 
 ls -1 | export -s RESULT
 var RESULT == "is_readonly^r^n" || $Error # is_hiddensystem shouldn't appear in listing
-ls -1a | export -s RESULT
+ls -1a | sort | export -s RESULT
 var RESULT == "is_hiddensystem^r^nis_readonly^r^n" || $Error # now it should
 
 ls -la is_hiddensystem | export -s RESULT
@@ -96,7 +96,7 @@ var RESULT startswith "dr--" || $Error
 
 # Now test recursively clearing
 attrib -r -c system -c hidden -c readonly attribtest
-ls -1 attribtest | export -s RESULT
+ls -1 attribtest | sort | export -s RESULT
 var RESULT == "is_hiddensystem^r^nis_readonly^r^n" || $Error # should both be visible now
 
 # and clean up

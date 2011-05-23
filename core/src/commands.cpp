@@ -823,7 +823,7 @@ TInt CCmdRm::DoDelete(const TDesC& aFileName)
 		}
 	else
 		{
-		err = iFileMan->Delete(aFileName);
+		err = Fs().Delete(aFileName); // CFileMan doesn't let you delete hidden or system files
 		}
 	return err;
 	}

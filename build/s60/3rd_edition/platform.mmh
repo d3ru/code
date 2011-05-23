@@ -32,6 +32,11 @@
 
 #define FSHELL_PLATFORM_S60 3
 #define FSHELL_OPEN_SIGNED
+// Uncomment the two macros below, and comment out the FSHELL_OPEN_SIGNED above,
+// to build for RnD or other all-capabilities certificate
+//#define FSHELL_CAP_ALL
+//#define FSHELL_PROTECTED_UIDS
+
 
 #endif // FSHELL_PLATFORM_MMH
 
