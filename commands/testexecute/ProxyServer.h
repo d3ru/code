@@ -20,7 +20,9 @@ class CProxySession;
 class MMessageHandler
 	{
 public:
-	virtual TBool HandleMessageL(CProxySession* aSession, const RMessage2& aMessage)=0;
+	virtual TBool HandleMessageL(TInt aMessageId, const RMessage2& aMessage)=0;
+	virtual void ForwardingMessage(const RMessage2& /*aMessage*/, TInt /*aMessageId*/, const TIpcArgs& /*aArgs*/) {}
+	virtual void CompletingMessage(const RMessage2& /*aMessage*/, TInt /*aMessageId*/, const TIpcArgs& /*aArgs*/, TInt /*aCompletionCode*/) {}
 	};
 
 NONSHARABLE_CLASS(CProxyServer) : public CServer2
@@ -50,6 +52,9 @@ private:
 	RThread iServerThread;
 	MMessageHandler* iHandler;
 	CAsyncCallBack* iShutdownCallback;
+	TInt iMessageId;
+
+	friend class CProxySession;
 	};
 
 class RUnderlyingSession : public RSessionBase
@@ -63,16 +68,16 @@ NONSHARABLE_CLASS(CProxySession) : public CSession2
 	{
 public:
 	void ConstructL(const TDesC& aServerName, const TVersion& aVersion);
-	void ForwardUnhandledMessageL(const RMessage2& aMessage);
-	void ForwardMessageArgsL(const RMessage2& aMessage, const TIpcArgs& aArgs);
+	void ForwardUnhandledMessageL(TInt aMessageId, const RMessage2& aMessage);
+	void ForwardMessageArgsL(TInt aMessageId, const RMessage2& aMessage, const TIpcArgs& aArgs);
+
+	RUnderlyingSession& UnderlyingSession();
+	CProxyServer& Server();
+	const CProxyServer& Server() const;
 
 protected:
 	void ServiceL(const RMessage2 &aMessage);
 	void Disconnect(const RMessage2 &aMessage);
-
-private:
-	CProxyServer& Server();
-	const CProxyServer& Server() const;
 
 private:
 	RUnderlyingSession iSession;

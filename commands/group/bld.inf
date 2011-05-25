@@ -488,3 +488,17 @@ PRJ_EXPORTS
 PRJ_MMPFILES
 ..\qpluginloader\qpluginloader.mmp
 #endif
+
+#ifdef FSHELL_CORE_SUPPORT_PROXYSERVER
+PRJ_EXPORTS
+..\proxyserver\proxyserver.cif           z:\resource\cif\fshell\proxyserver.cif
+PRJ_MMPFILES
+..\proxyserver\proxyserver.mmp
+#endif
+
+#ifdef FSHELL_CORE_SUPPORT_TRACESWITCH
+PRJ_EXPORTS
+..\traceswitch\traceswitch.cif           z:\resource\cif\fshell\traceswitch.cif
+PRJ_MMPFILES
+..\traceswitch\traceswitch.mmp
+#endif

@@ -26,7 +26,7 @@ private:
 	CCmdTestExecute();
 
 private: // From MMessageHandler
-	virtual TBool HandleMessageL(CProxySession* aSession, const RMessage2& aMessage);
+	virtual TBool HandleMessageL(TInt aMessageId, const RMessage2& aMessage);
 
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
@@ -164,7 +164,7 @@ void CCmdTestExecute::DoRunL()
 		}
 	}
 
-TBool CCmdTestExecute::HandleMessageL(CProxySession* /*aSession*/, const RMessage2& aMessage)
+TBool CCmdTestExecute::HandleMessageL(TInt /*aMessageId*/, const RMessage2& aMessage)
 	{
 	switch (aMessage.Function())
 		{

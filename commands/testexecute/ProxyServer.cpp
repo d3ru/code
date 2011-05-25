@@ -24,16 +24,16 @@
 NONSHARABLE_CLASS(CAsyncWaiter) : public CActive
 	{
 public:
-	CAsyncWaiter(RUnderlyingSession& aRealSession, const RMessage2& aOriginalMessage, const TIpcArgs& aArgs);
+	CAsyncWaiter(CProxySession& aSession, TInt aMessageId, const RMessage2& aOriginalMessage, const TIpcArgs& aArgs);
 	~CAsyncWaiter();
-	//void ForwardMessageL();
 
 protected:
 	void RunL();
 	void DoCancel();
 
 private:
-	RUnderlyingSession& iRealSession;
+	CProxySession& iSession;
+	TInt iMessageId;
 	RMessage2 iMsg;
 	TIpcArgs iArgs;
 	};
@@ -50,10 +50,8 @@ CProxyServer* CProxyServer::NewInSeparateThreadL(const TDesC& aServerToReplace, 
 CProxyServer::CProxyServer(const TDesC& aServerToReplace, MMessageHandler* aHandler)
 	: CServer2(0, ESharableSessions), iServerName(aServerToReplace), iHandler(aHandler)
 	{
-	// Name the server after tid and this pointer, should be unique enough
+	// Name the server after tid, should be unique enough
 	iRealServerName.AppendNum(RThread().Id(), EHex);
-	iRealServerName.Append('.');
-	iRealServerName.AppendNum((TInt)this, EHex);
 	}
 
 void CProxyServer::ThreadConstructL()
@@ -81,13 +79,14 @@ void CProxyServer::ConstructL()
 	User::LeaveIfError(iMemAccess.Open());
 	if (iRealServerName.Length() > iServerName.Length()) User::Leave(KErrTooBig); // Mem access doesn't like this
 
-	_LIT(KTempName, "TemporaryReallyLongServerNameThatLeavesUsSpaceToManuever");
-	StartL(KTempName);
-
 	TServerKernelInfoBuf buf;
 	TInt err = iMemAccess.GetObjectInfo(EServer, iServerName, buf);
 	User::LeaveIfError(err);
 	TUint8* realServer = buf().iAddressOfKernelObject;
+
+	_LIT(KTempName, "TemporaryReallyLongServerNameThatLeavesUsSpaceToManuever");
+	StartL(KTempName);
+
 	err = iMemAccess.GetObjectInfo(EServer, KTempName, buf);
 	User::LeaveIfError(err);
 	TUint8* myServer = buf().iAddressOfKernelObject;
@@ -208,15 +207,16 @@ const CProxyServer& CProxySession::Server() const
 void CProxySession::ServiceL(const RMessage2 &aMessage)
 	{
 	MMessageHandler* handler = Server().Handler();
+	TInt messageId = Server().iMessageId++;
 	TBool handled = EFalse;
 	if (handler)
 		{
-		handled = handler->HandleMessageL(this, aMessage);
+		handled = handler->HandleMessageL(messageId, aMessage);
 		}
 
 	if (!handled)
 		{
-		ForwardUnhandledMessageL(aMessage);
+		ForwardUnhandledMessageL(messageId, aMessage);
 		}
 	}
 
@@ -251,7 +251,7 @@ void CleanupArgs(TAny* aArgs)
 	args.iFlags = 0;
 	}
 
-void CProxySession::ForwardUnhandledMessageL(const RMessage2& aMessage)
+void CProxySession::ForwardUnhandledMessageL(TInt aMessageId, const RMessage2& aMessage)
 	{
 	TIpcArgs args;
 	CleanupStack::PushL(TCleanupItem(&CleanupArgs, &args));
@@ -319,13 +319,16 @@ void CProxySession::ForwardUnhandledMessageL(const RMessage2& aMessage)
 				}
 			}
 		}
-	ForwardMessageArgsL(aMessage, args);
+	ForwardMessageArgsL(aMessageId, aMessage, args);
 	CleanupStack::Pop(&args); // ForwardMessageArgs takes ownership
 	}
 
-void CProxySession::ForwardMessageArgsL(const RMessage2& aMessage, const TIpcArgs& aArgs)
+void CProxySession::ForwardMessageArgsL(TInt aMessageId, const RMessage2& aMessage, const TIpcArgs& aArgs)
 	{
-	CAsyncWaiter* waiter = new(ELeave) CAsyncWaiter(iSession, aMessage, aArgs);
+	MMessageHandler* handler = Server().Handler();
+	if (handler) handler->ForwardingMessage(aMessage, aMessageId, aArgs);
+
+	CAsyncWaiter* waiter = new(ELeave) CAsyncWaiter(*this, aMessageId, aMessage, aArgs);
 	// That's all that's needed
 	}
 
@@ -336,14 +339,19 @@ void CProxySession::Disconnect(const RMessage2 &aMessage)
 	CSession2::Disconnect(aMessage);
 	}
 
+RUnderlyingSession& CProxySession::UnderlyingSession()
+	{
+	return iSession;
+	}
+
 // CAsyncWaiter
 
-CAsyncWaiter::CAsyncWaiter(RUnderlyingSession& aRealSession, const RMessage2& aOriginalMessage, const TIpcArgs& aArgs)
-	: CActive(CActive::EPriorityStandard), iRealSession(aRealSession), iMsg(aOriginalMessage), iArgs(aArgs)
+CAsyncWaiter::CAsyncWaiter(CProxySession& aSession, TInt aMessageId, const RMessage2& aOriginalMessage, const TIpcArgs& aArgs)
+	: CActive(CActive::EPriorityStandard), iSession(aSession), iMessageId(aMessageId), iMsg(aOriginalMessage), iArgs(aArgs)
 	{
 	CActiveScheduler::Add(this);
 	LOG(_L("Sending to real server: fn=%d, args=%x,%x,%x,%x flags=%x"), aOriginalMessage.Function(), iArgs.iArgs[0], iArgs.iArgs[1], iArgs.iArgs[2], iArgs.iArgs[3], iArgs.iFlags);
-	iRealSession.SendReceive(aOriginalMessage.Function(), iArgs, iStatus);
+	iSession.UnderlyingSession().SendReceive(aOriginalMessage.Function(), iArgs, iStatus);
 	SetActive();
 	}
 
@@ -380,9 +388,13 @@ void CAsyncWaiter::RunL()
 		}
 
 	LOG(_L("Completing original request function %d with writeErr=%d serverErr=%d"), iMsg.Function(), writeErr, serverErr);
-	if (writeErr) iMsg.Complete(writeErr);
-	else iMsg.Complete(serverErr);
-
+	TInt completeErr = serverErr;
+	if (writeErr) completeErr = writeErr;
+	if (iSession.Server().Handler())
+		{
+		iSession.Server().Handler()->CompletingMessage(iMsg, iMessageId, iArgs, completeErr);
+		}
+	iMsg.Complete(completeErr);
 	delete this; // Our work here is done
 	}
 
@@ -390,44 +402,3 @@ void CAsyncWaiter::DoCancel()
 	{
 	// We never call Cancel on our waiters
 	}
-
-/*
-EXPORT_C TInt ShutdownProxyNotifier()
-	{
-	RDebugNotifier notifier;
-	TInt err = notifier.Connect();
-	if (err == KErrNotFound)
-		{
-		// Oh dear, !Notifier isn't running. Meaning we renamed it then crashed, probably. Try renaming the real one
-		RMemoryAccess::LoadDriver();
-		RMemoryAccess mem;
-		err = mem.Open();
-		if (err) return err;
-		TServerKernelInfoBuf buf;
-		TInt err = mem.GetObjectInfo(EServer, KRealNotifierServerName, buf);
-		if (!err)
-			{
-			TUint8* realServer = buf().iAddressOfKernelObject;
-			mem.InPlaceObjectRename(EServer, realServer, _L8("!Notifier"));
-			}
-		mem.Close();
-		return err;
-		}
-
-	err = notifier.ShutdownProxy();
-	if (err == KErrServerTerminated) err = KErrNone; // It's expected to get KErrServerTerminated, because we deliberately don't complete the message. This way the client is more likely to get the completion once the server has actually gone, and not slightly before
-	notifier.Close();
-
-	return err;
-	}
-
-EXPORT_C TBool NotifierProxyIsRunning()
-	{
-	RDebugNotifier notifier;
-	TInt err = notifier.Connect();
-	if (err) return EFalse; // Not even original notifier is running?!
-	err = notifier.PingProxy();
-	notifier.Close();
-	return err == KErrNone; // The real proxy will return KErrNotSupported in this scenario
-	}
-*/

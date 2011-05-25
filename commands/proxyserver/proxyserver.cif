@@ -1,0 +1,34 @@
+# proxyserver.cif
+#
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+#
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+==name proxyserver
+
+==short-description
+
+Debug command for intercepting and monitoring client-server communications.
+
+==long-description
+
+Intercepts the named server and prints out all the messages being sent to it.
+
+Note that it is expected behaviour that proxyserver will cause numerous PlatSec warnings to be emitted - this is a limitation in the API being used.
+
+==argument string servername
+
+Name of the server to intercept. Must already be running.
+
+==option bool v verbose
+
+If specified, print full thread names and attempt to figure out argument types.
+
+==copyright
+
+Copyright (c) 2011 Accenture. All rights reserved.

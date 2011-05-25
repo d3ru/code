@@ -14,6 +14,16 @@ __END__
 
 =head1 fshell Change History
 
+=head2 Release 006 **Not yet released**
+
+=over 5
+
+=item *
+
+Added L<proxyserver|commands::proxyserver> and L<traceswitch|commands::traceswitch> commands.
+
+=back
+
 =head2 Release 005
 
 =head3 New features

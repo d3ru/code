@@ -399,4 +399,13 @@ FSHELL_COMMAND_INFO_FILE(fshell,qpluginloader.cif)
 FSHELL_EXECUTABLE_FILE(fshell_request.exe)
 FSHELL_COMMAND_INFO_FILE(fshell,request.cif)
 
+#ifdef FSHELL_CORE_SUPPORT_PROXYSERVER
+FSHELL_EXECUTABLE_FILE(fshell_proxyserver.exe)
+FSHELL_COMMAND_INFO_FILE(fshell,proxyserver.cif)
+#endif
+
+#ifdef FSHELL_CORE_SUPPORT_TRACESWITCH
+FSHELL_EXECUTABLE_FILE(fshell_traceswitch.exe)
+FSHELL_COMMAND_INFO_FILE(fshell,traceswitch.cif)
+#endif
 #endif // __FSHELL_COMMANDS_IBY__
