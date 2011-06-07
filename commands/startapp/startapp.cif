@@ -1,0 +1,49 @@
+# opendoc.cif
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name startapp
+
+==short-description
+
+Start an application using AppArc.
+
+==long-description
+
+This command is for starting UI applications only. For fshell commands or non-gui processes, invoke the exe name directly or use the L<start|start> command. If the application is already running this command will have no effect. Uses C<RApaLsSession::StartApp()>.
+
+The command will return once the application has successfully started up (or if an error occurs); it does not wait for the application to exit.
+
+Note that it is not possible to set the RProcess command line arguments using the C<RApaLsSession::StartApp()> API.
+
+==option bool b background
+
+Start the application in the background. The application will not be shown on screen.
+
+==option filename d document
+
+Document to start application with. 
+
+==option int s screen
+
+If specified, start the application on a screen other than the default zero. Probably will only do something sensible on a dual-screen device.
+
+==argument string appname
+
+The name of the application to start. Should be the exe name with or without the ".exe".
+
+==see-also
+
+L<start|start>, L<opendoc|opendoc>
+
+==copyright
+
+Copyright (c) 2011 Accenture. All rights reserved.

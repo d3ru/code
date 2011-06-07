@@ -54,6 +54,7 @@ void CConnectButton::ConstructL(CCoeControl& aParent, const TDesC& aText)
 	CAknButton::ConstructL(0, 0, 0, 0, aText, aText, 0);
 	SetContainerWindowL(aParent);
 	SetSize(KConnectButtonSize);
+	SetFocusing(ETrue);
 	ActivateL();
 	}
 
@@ -77,6 +78,12 @@ void CFShellLauncherAppView::ConstructL(const TRect& aRect)
     CreateWindowL();
     CreateButtonsL();
     CreateScrollBarFrameL();
+/*
+	if (iButtons.Count())
+		{
+		iButtons[0]->SetFocus(ETrue);
+		}
+*/
 	SetRect(aRect);
 	}
 

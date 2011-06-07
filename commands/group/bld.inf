@@ -502,3 +502,10 @@ PRJ_EXPORTS
 PRJ_MMPFILES
 ..\traceswitch\traceswitch.mmp
 #endif
+
+#ifdef FSHELL_CORE_SUPPORT_STARTAPP
+PRJ_EXPORTS
+..\startapp\startapp.cif           z:\resource\cif\fshell\startapp.cif
+PRJ_MMPFILES
+..\startapp\startapp.mmp
+#endif
