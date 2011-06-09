@@ -19,7 +19,11 @@ capability		FSHELL_CAP_MMP_NORMAL
 
 nostrictdef
 
+#ifdef FSHELL_USE_QT_CMAPFILE
+#include <fshell/fsh_qt_include.mmh>
+#else
 #include <fshell/fsh_system_include.mmh>
+#endif
 
 userinclude		..\inc
 
@@ -35,7 +39,11 @@ source			clipboard.cpp
 source			descriptorJuggling.cpp
 source			settings.cpp
 source			bsym.cpp
+#ifdef FSHELL_USE_QT_CMAPFILE
+source			mapfile_qt.cpp
+#else
 source			mapfile.cpp
+#endif
 source			symbolics.cpp
 source			bsymtree.cpp
 #ifdef ARMCC

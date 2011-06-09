@@ -12,6 +12,9 @@
 
 #include <fshell/ioutils.h>
 #include <fshell/common.mmh>
+#ifdef FSHELL_USE_QT_CMAPFILE
+#include <fshell/iocli_qt.h>
+#endif
 #include <fshell/bsym.h>
 
 using namespace IoUtils;
@@ -32,13 +35,17 @@ private: // From CCommandBase.
 	virtual void OptionsL(RCommandOptionList& aOptions);
 private:
 	TFileName2 iFileName;
-	TInt iOffset;
+	TUint iOffset;
 
 	TBuf<256> iResult;
 	CMapFile* iMapFile;
 	};
 
+#ifdef FSHELL_USE_QT_CMAPFILE
+QT_EXE_BOILER_PLATE(CCmdTmapFile)
+#else
 EXE_BOILER_PLATE(CCmdTmapFile)
+#endif
 
 CCommandBase* CCmdTmapFile::NewLC()
 	{
@@ -72,7 +79,7 @@ const TDesC& CCmdTmapFile::Description() const
 void CCmdTmapFile::ArgumentsL(RCommandArgumentList& aArguments)
 	{
 	aArguments.AppendFileNameL(iFileName, _L("filename"), _L("map file to open"));
-	aArguments.AppendIntL(iOffset, _L("offset"), _L("Offset in codesegment"));
+	aArguments.AppendUintL(iOffset, _L("offset"), _L("Offset in codesegment"));
 	}
 
 void CCmdTmapFile::OptionsL(RCommandOptionList& /*aOptions*/)

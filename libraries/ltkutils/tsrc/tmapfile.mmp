@@ -18,13 +18,22 @@ uid				FSHELL_UID2_FSHELL_EXE 0
 capability		FSHELL_CAP_MMP_NORMAL
 
 userinclude		.
+#ifdef FSHELL_USE_QT_CMAPFILE
+#include <fshell/fsh_qt_include.mmh>
+#else
 #include <fshell/fsh_system_include.mmh>
+#endif
 
 sourcepath		.
 source			tmapfile.cpp
+
+// Uncomment below to use local definition of CMapFile
+//sourcepath		../src
+//source			mapfile_qt.cpp bsymtree.cpp
+//library			bafl.lib
 
 library			euser.lib
 library			iocli.lib
 library			ltkutils.lib
 
-epocheapsize 0x1000 0xA00000 // 10MB max heap - large maps like QtCore.dll.map need it
+//epocheapsize 0x1000 0xA00000 // 10MB max heap - large maps like QtCore.dll.map need it
