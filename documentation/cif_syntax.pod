@@ -1,6 +1,6 @@
 # cif_syntax.pod
 #
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010-2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -196,7 +196,7 @@ Note how the C++ enum values C<ELoad, EStore, EDelete> are in the same order as 
 
 Each of the argument and option types mentioned here corresponds to a C++ type that is used in the command's implementation. In summary they are:
 
-    CIF type    CCommandBase type
+    CIF type    C++ type
     --------    -----------------
     bool        TBool
     int         TInt
@@ -210,7 +210,7 @@ Each of the argument and option types mentioned here corresponds to a C++ type t
 
 If the argument/option can take multiple values (by specifying C<multiple> in the CIF), the types are:
 
-    CIF type    CCommandBase type
+    CIF type    C++ type
     --------    -----------------
     bool        RArray<TBool>
     int         RArray<TInt>
@@ -222,7 +222,10 @@ If the argument/option can take multiple values (by specifying C<multiple> in th
     real        RArray<TReal>
     enum        RArray<TInt>
 
+=head3 Important note about TUids
+
+Although it is acceptable (if you wish) to pass a casted TUid instead of a TUint to an AppendUintL() API, the same is not true if multiple values are accepted. In that case your member variable I<must> be of type RArray<TUint> and I<not> of type RArray<TUid>. The same goes for any other type like TUid that is more than just a typedef for TUint or TInt, even if it is still 32 bits and looks like it should be bitwise compatible with TUint or TInt. This is because RArray<TUint> and RArray<TInt> are template specialisations with a different internal structure to an RArray of any other 32-bit datatype. In other words very few things can be safely cast to or from a RArray<TUint>. This is a peculiarity of the OS and not strictly an fshell bug.
+
 =head1 Copyright
 
-Copyright (c) 2008-2010 Accenture. All rights reserved.
-
+Copyright (c) 2008-2011 Accenture. All rights reserved.

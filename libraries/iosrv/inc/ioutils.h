@@ -407,7 +407,7 @@ public:
 	TValue(TUint aValueType, void* aValuePointer, const TDesC& aName, const TDesC& aDescription, const TDesC& aEnvVar = KNullDesC);
 	TValue(TUint aValueType, const TDesC& aEnumValueList, const TDesC& aEnumDescriptionList, void* aValuePointer, const TDesC& aName, const TDesC& aDescription, const TDesC& aEnvVar = KNullDesC);
 	TUint ValueType() const;
-	void SetValue();
+	void SetValueL();
 	void SetValueL(TInt aInt);
 	void SetValueL(TInt64 aInt);
 	void SetValueL(TUint aUint);

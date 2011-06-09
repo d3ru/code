@@ -337,12 +337,14 @@ EXPORT_C TUint TValue::Type() const
 	return iValueType & KPublicFlagsMask;
 	}
 
-void TValue::SetValue()
+void TValue::SetValueL()
 	{
 	__ASSERT_ALWAYS((iValueType & KValueTypeFlagMask) == KValueTypeBool, IoUtils::Panic(EIncorrectCommandOptionType1));
 	if (iValueType & KValueTypeFlagMultiple)
 		{
-		(*(TInt*)iValue)++;
+		// For better or worse, we use an RArray<TBool> rather than eg a simple TInt counter
+		//(*(TInt*)iValue)++;
+		((RArray<TBool>*)iValue)->AppendL(ETrue);
 		}
 	else
 		{
@@ -2352,7 +2354,7 @@ void CCommandBase::SetValueL(TLex& aLex, TValue& aValue)
 			{
 			case KValueTypeBool:
 				{
-				aValue.SetValue();
+				aValue.SetValueL();
 				break;
 				}
 			case KValueTypeInt:
