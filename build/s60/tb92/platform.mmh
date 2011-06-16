@@ -16,6 +16,7 @@
 #include <fshell/platform_generic.mmh>
 #endif
 
+#define FSHELL_PLATFORM_SYMTB 92
 #define FSHELL_PLATFORM_S60 6
 // Comment out the two macros below, and define FSHELL_OPEN_SIGNED instead,
 // to build for open signed.
