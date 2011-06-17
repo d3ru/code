@@ -340,6 +340,7 @@ EXPORT_C void CTextBuffer::AppendHumanReadableSizeL(TInt64 aSize, TAlignment aAl
 	const TInt64 GB = MB * KB;
 	const TInt64 TB = GB * KB;
 	_LIT(KBytes, " B ");
+	_LIT(KBytesUnaligned, " B");
 	_LIT(KKilobytes, " KB");
 	_LIT(KMegabytes, " MB");
 	_LIT(KGigabytes, " GB");
@@ -352,7 +353,7 @@ EXPORT_C void CTextBuffer::AppendHumanReadableSizeL(TInt64 aSize, TAlignment aAl
 	_LIT(KNormalWhole, "%.0f");
 	_LIT(KNormalFrac, "%.2f");
 
-	const TDesC* suff = &KBytes;
+	const TDesC* suff = aAlignment == EUnaligned ? &KBytesUnaligned : &KBytes;
 	TReal n = aSize;
 	TInt64 factor = 1;
 

@@ -29,9 +29,7 @@
 #define FSHELL_LAUNCHER_SUPPORT_SERIAL "port=COMM::1, rate=115200"
 #endif
 
-//#define FSHELL_NO_SAMPLINGPROFILER_SUPPORT
-#define FSHELL_NO_EGL_SUPPORT // The lib exists but not the dll itself...
-#define FSHELL_NO_OPENVG_SUPPORT // ditto
+#define FSHELL_NO_OPENVG_SUPPORT
 
 #if FSHELL_PLATFORM_FOUNDATION >= 3
 #define FSHELL_NO_DOBJECTIX_SUPPORT

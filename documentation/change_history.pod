@@ -22,6 +22,10 @@ __END__
 
 Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch> and L<startapp|commands::startapp> commands.
 
+=item *
+
+Added support for glinfo to display GPU memory info from the eglQueryProfilingDataNOK EGL extension.
+
 =back
 
 =head2 Release 005

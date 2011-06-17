@@ -32,6 +32,10 @@ Open Vector Graphics Library.
 
 OpenGLES Library.
 
+==enum-value memory
+
+Print any memory usage information about the graphics libraries. Currently displays the GPU memory info from the eglQueryProfilingDataNOK EGL extension.
+
 ==copyright
 
 Copyright (c) 2009-2010 Accenture. All rights reserved.

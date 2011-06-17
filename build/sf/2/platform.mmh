@@ -14,6 +14,8 @@
 
 #define FSHELL_PLATFORM_FOUNDATION 2
 
+#define FSHELL_NO_EGL_SUPPORT // The lib exists but not the dll itself...
+
 #ifndef FSHELL_PLATFORM_SHARED_MMH
 #include <fshell/platform_shared.mmh>
 #endif

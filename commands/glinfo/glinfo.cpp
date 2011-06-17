@@ -29,6 +29,7 @@ private:
 #ifdef FSHELL_EGL_SUPPORT
 	void PrintEglInfoL();
 	void PrintEglQueryString(EGLDisplay aDisplay, EGLint aName, const TDesC8& aSymbol, TBool aSplit = EFalse);
+	void PrintEglMemInfoL(EGLDisplay aDisplay);
 #endif // FSHELL_EGL_SUPPORT
 
 #ifdef FSHELL_OPENVG_SUPPORT
@@ -57,8 +58,10 @@ private:
 		{
 		ELibEgl,
 		ELibOpenVg,
-		ELibOpenGles
+		ELibOpenGles,
+		EMemory,
 		} iLibrary;
+	TFullName iTempName;
 	};
 
 
@@ -103,14 +106,14 @@ void CCmdGlInfo::EglTerminateL(EGLDisplay aDisplay)
 void CCmdGlInfo::PrintEglInfoL()
 	{
     EGLDisplay dpy = EglInitializeL();
-	PrintEglQueryString(dpy, EGL_CLIENT_APIS, _L8("EGL_CLIENT_APIS"), ETrue);
-	PrintEglQueryString(dpy, EGL_VENDOR, _L8("EGL_VENDOR"));
-	PrintEglQueryString(dpy, EGL_VERSION, _L8("EGL_VERSION"));
-    PrintEglQueryString(dpy, EGL_EXTENSIONS, _L8("EGL_EXTENSIONS"), ETrue);
-	if (!eglTerminate(dpy))
+	if (iLibrary == ELibEgl)
 		{
-		LeaveIfErr(KErrGeneral, _L("Couldn't terminate EGL display"));
+		PrintEglQueryString(dpy, EGL_CLIENT_APIS, _L8("EGL_CLIENT_APIS"), ETrue);
+		PrintEglQueryString(dpy, EGL_VENDOR, _L8("EGL_VENDOR"));
+		PrintEglQueryString(dpy, EGL_VERSION, _L8("EGL_VERSION"));
+		PrintEglQueryString(dpy, EGL_EXTENSIONS, _L8("EGL_EXTENSIONS"), ETrue);
 		}
+	PrintEglMemInfoL(dpy);
 	EglTerminateL(dpy);
 	}
 
@@ -160,6 +163,76 @@ void CCmdGlInfo::PrintEglQueryString(EGLDisplay aDisplay, EGLint aName, const TD
 		string = "Unknown";
 		}
 	PrintString(aSymbol, string, aSplit);
+	}
+
+
+void CCmdGlInfo::PrintEglMemInfoL(EGLDisplay aDisplay)
+	{
+	EGLBoolean (*eglQueryProfilingDataNOK)(EGLDisplay dpy, EGLint query_bits, EGLint *data, EGLint data_size, EGLint *data_count) = NULL;
+	eglQueryProfilingDataNOK = (EGLBoolean (*)(EGLDisplay, EGLint, EGLint *, EGLint, EGLint *)) eglGetProcAddress("eglQueryProfilingDataNOK");
+	if (!eglQueryProfilingDataNOK)
+		{
+		Printf(_L("(eglQueryProfilingDataNOK EGL extension not supported)\r\n"));
+		return;
+		}
+	EGLint count = 0;
+	eglQueryProfilingDataNOK(aDisplay, EGL_PROF_QUERY_MEMORY_USAGE_BIT_NOK | EGL_PROF_QUERY_GLOBAL_BIT_NOK, NULL, 0, &count);
+	EGLint* data = (EGLint*)User::AllocLC(count * sizeof(EGLint));
+
+	eglQueryProfilingDataNOK(aDisplay, EGL_PROF_QUERY_MEMORY_USAGE_BIT_NOK | EGL_PROF_QUERY_GLOBAL_BIT_NOK, data, count, &count);
+
+	CTextBuffer* buf = CTextBuffer::NewLC(256);
+	for (TInt i = 0; i < count; i++)
+		{
+		switch (data[i])
+			{
+			case EGL_PROF_TOTAL_MEMORY_NOK:
+				buf->AppendFormatL(_L("Total graphics memory: %d ("), (TInt)data[i+1]);
+				buf->AppendHumanReadableSizeL((TInt)data[i+1], EUnaligned);
+				buf->AppendL(_L(")"));
+				i++; // Skip i+1
+				break;
+			case EGL_PROF_USED_MEMORY_NOK:
+				buf->AppendFormatL(_L("Used graphics memory: %d ("), (TInt)data[i+1]);
+				buf->AppendHumanReadableSizeL((TInt)data[i+1], EUnaligned);
+				buf->AppendL(_L(")"));
+				i++; // Skip i+1
+				break;
+			case EGL_PROF_PROCESS_ID_NOK:
+				{
+				TInt64 pid = (TUint64)data[i+1] + (((TInt64)data[i+2])<<32);
+				iTempName.Copy(_L("?"));
+				RProcess proc;
+				TInt err = proc.Open(TProcessId(pid));
+				if (!err)
+					{
+					iTempName = proc.FullName();
+					proc.Close();
+					}
+				buf->AppendFormatL(_L("Process id %Ld: %S"), pid, &iTempName);
+				i += 2;
+				break;
+				}
+			case EGL_PROF_PROCESS_USED_PRIVATE_MEMORY_NOK:
+				buf->AppendFormatL(_L("    Using private graphics memory: %d ("), (TInt)data[i+1]);
+				buf->AppendHumanReadableSizeL((TInt)data[i+1], EUnaligned);
+				buf->AppendL(_L(")"));
+				i++;
+				break;
+			case EGL_PROF_PROCESS_USED_SHARED_MEMORY_NOK:
+				buf->AppendFormatL(_L("    Using shared graphics memory: %d ("), (TInt)data[i+1]);
+				buf->AppendHumanReadableSizeL((TInt)data[i+1], EUnaligned);
+				buf->AppendL(_L(")"));
+				i++;
+				break;
+			default:
+				buf->AppendFormatL(_L("Unknown data %d 0x%08x"), (int)data[i], (int)data[i]);
+				break;
+			}
+		buf->AppendL(_L("\r\n"));
+		}
+	Write(buf->Descriptor());
+	CleanupStack::PopAndDestroy(2, data); // buf, data
 	}
 
 #endif // FSHELL_EGL_SUPPORT
@@ -292,6 +365,11 @@ void CCmdGlInfo::DoRunL()
             break;
             }
 #endif // FSHELL_OPENGLES_SUPPORT
+		case EMemory:
+#ifdef FSHELL_EGL_SUPPORT
+			PrintEglInfoL(); // This is the only thing that currently reports any memory-related info
+#endif
+			break;
 		default:
 			{
 			User::Leave(KErrNotSupported);
