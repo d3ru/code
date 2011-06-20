@@ -458,6 +458,8 @@ public:
 		EControlFindPtrInCodeSegments2,
 		EControlNotifyZombie,
 		EControlCancelNotifyZombie,
+		EControlGetThreads,
+		EControlGetThreadStartTime,
 		ENumRequests,  // Add new commands above this line
         };
 public:
@@ -516,6 +518,9 @@ public:
 	//a NULL owner pointers, hence can't be found using RMemoryAccess::GetObjectAddresses) that were created by a particular process to be found.
 	TInt GetChunkAddresses(TUint aControllingProcessId, TDes8& aAddressBuffer);
 
+	// Return list of all thread IDs
+	TInt GetThreads(TDes8& aBuffer);
+
 	TInt GetProperty(TUid aCategory, TUint aKey, TInt& aValue);
 	TInt GetProperty(TUid aCategory, TUint aKey, TDes8& aValue, TInt& aActualSize);
 	TInt SetProperty(TUid aCategory, TUint aKey, TInt aValue, TBool aDefineIfNotSet=EFalse);
@@ -540,6 +545,7 @@ public:
 	TInt FreeShadowMemory(TLinAddr aAddress, TInt aLen);
 	TInt SetDebugPort(TInt aPort);
 	TUint GetThreadCreatorId(TUint aThreadId);
+	TUint32 GetThreadStartTime(TUint aThreadId);
 
 	TInt EnableHeapTracing(TUint aThreadId, TBool aEnable);
 	TInt DefragRam(TInt aPriority);
@@ -737,6 +743,11 @@ inline TInt RMemoryAccess::GetChunkAddresses(TUint aControllingProcessId, TDes8&
 	return DoControl(EControlGetChunkAddresses, (TAny*)&params, (TAny*)&aAddressBuffer);	
 	}
 	
+inline TInt RMemoryAccess::GetThreads(TDes8& aBuffer)
+	{
+	return DoControl(EControlGetThreads, (TAny*)&aBuffer, NULL);
+	}
+
 inline TInt RMemoryAccess::GetProperty(TUid aCategory, TUint aKey, TInt& aValue)
 	{
 	TProp params;
@@ -1086,6 +1097,12 @@ inline TUint RMemoryAccess::GetThreadCreatorId(TUint aThreadId)
 	return result;
 	}
 
+inline TUint32 RMemoryAccess::GetThreadStartTime(TUint aThreadId)
+	{
+	TUint result = 0;
+	/*TInt err =*/ DoControl(EControlGetThreadStartTime, (TAny*)aThreadId, &result);
+	return result;
+	}
 #endif //__KERNEL_MODE__
 
 #endif //__MemoryAccess_H__

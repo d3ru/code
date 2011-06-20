@@ -1,6 +1,6 @@
 # fdb.cif
 # 
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -27,6 +27,14 @@ Specify a .bsym symbol file to use.
 ==option filename m mapfiles MAP_FILES
 
 Specify a directory that contains .map files. If present, and if the console supports it, any missing map files will be downloaded from the PC.
+
+==option bool d dump-all-stacks
+
+Dump all threads and their stacks, and exit.
+
+==option bool b dump-busy-stacks
+
+Like C<--dump-all-stacks> but only list threads that are active, ie skip those that are sitting blocked in User::WaitForAnyRequest(). This option is useful to track down synchronous deadlocks as it doesn't show threads which cannot be participating in the deadlock. Requires that ROM symbols are available (via C<--symbols> or the C<ROM_SYMBOLS> environment variable) otherwise it is not possible to determine whether a thread is blocked in the active scheduler or just blocked (ie potentially deadlocked). Currently kernel threads will not be filtered even if they are idle.
 
 ==short-description
 
@@ -142,5 +150,5 @@ Exit fdb.
 
 ==copyright
 
-Copyright (c) 2009-2010 Accenture. All rights reserved.
+Copyright (c) 2009-2011 Accenture. All rights reserved.
 

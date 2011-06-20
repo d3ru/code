@@ -720,6 +720,50 @@ TInt DMemoryAccess::DoControl(TInt aFunction, TAny* a1, TAny* a2)
 			}
 		return err;
 		}
+	case RMemoryAccess::EControlGetThreadStartTime:
+		{
+		DDebuggerEventHandler* handler = NULL;
+		TInt err = ((DMemoryAccessFactory*)iDevice)->GetEventHandler(handler);
+		if (err) return err;
+		TUint creator = handler->GetThreadStartTime((TUint)a1);
+		if (creator == 0)
+			{
+			err = KErrNotFound;
+			}
+		else
+			{
+			err = Kern::ThreadRawWrite(iClient, a2, &creator, sizeof(TUint));
+			}
+		return err;
+		}
+	case RMemoryAccess::EControlGetThreads:
+		{
+		NKern::ThreadEnterCS();
+		DObjectCon& threads = *Kern::Containers()[EThread];
+		threads.Wait();
+		TInt count = threads.Count();
+		threads.Signal();
+		TUint* buf = (TUint*)Kern::Alloc(count * sizeof(TUint));
+		if (!buf)
+			{
+			NKern::ThreadLeaveCS();
+			return KErrNoMemory;
+			}
+		threads.Wait();
+		count = Min(count, threads.Count());
+		for (TInt i = 0; i < count; i++)
+			{
+			DThread* thread = (DThread*)threads[i];
+			buf[i] = thread->iId;
+			}
+		threads.Signal();
+
+		TPtrC8 bufPtr((TUint8*)buf, count*sizeof(TUint));
+		TInt err = Kern::ThreadDesWrite(iClient, a1, bufPtr, 0);
+		Kern::Free(buf);
+		NKern::ThreadLeaveCS();
+		return err;
+		}
     default:
         return KErrNotSupported;
         }

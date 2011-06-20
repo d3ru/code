@@ -57,6 +57,8 @@ namespace LtkUtils
 
 	IMPORT_C void FormatSize(TDes16& aBuf, TInt64 aSizeInBytes);
 	IMPORT_C void FormatSize(TDes8& aBuf, TInt64 aSizeInBytes);
+	IMPORT_C void AppendFormatTime(TDes& aBuf, TInt64 aIntervalMicroSeconds);
+
 
 	/* Some cleanup stack helper functions (defined in ltkutils.inl)
 	 */

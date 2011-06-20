@@ -182,4 +182,5 @@ EXPORTS
 	FormatSize___8LtkUtilsR6TDes16x @ 181 NONAME ; LtkUtils::FormatSize_(TDes16 &, long long)
 	Description__CQ28LtkUtils16RAllocatorHelper @ 182 NONAME R3UNUSED ; LtkUtils::RAllocatorHelper::Description(void) const
 	GetSystemDrive__8LtkUtilsv @ 183 NONAME R3UNUSED ; LtkUtils::GetSystemDrive(void)
+	AppendFormatTime__8LtkUtilsR6TDes16x @ 184 NONAME ; LtkUtils::AppendFormatTime(TDes16 &, long long)
 

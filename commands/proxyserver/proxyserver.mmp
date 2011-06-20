@@ -20,7 +20,9 @@ userinclude		../testexecute/
 #include <fshell/fsh_system_include.mmh>
 sourcepath		.
 source			proxyservercmd.cpp
-source			../testexecute/proxyserver.cpp
+
+sourcepath      ../testexecute
+source			proxyserver.cpp
 
 library			euser.lib
 library			iocli.lib

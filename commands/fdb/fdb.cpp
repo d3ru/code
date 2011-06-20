@@ -38,13 +38,17 @@ public:
 private:
 	struct SThreadContext;
 	CCmdFdb();
-	void InstallL();
+	void SetupDebugModeL();
 	void AttachL(TUint aThreadId);
+	void AttachQuietlyL(TUint aThreadId);
 	void Detach(SThreadContext* aContext);
 	void PrintThreadInfo(SThreadContext& aContext);
 	void PrintRegistersL(SThreadContext& aThread);
 	void PrintRegistersL(SThreadContext& aThread, TBool aUserMode);
 	void PrintRegistersLRPC(SThreadContext& aThread, TBool aUserMode);
+	void PrintStackL(TBool aAll);
+	void PrintKernelStackL(TBool aAll);
+	void DumpStacksL();
 	void RefreshL(SThreadContext& aContext);
 	void RefreshIfRunningL(SThreadContext& aContext);
 	TPtrC LookupSymbol(TUint32 aAddress);
@@ -92,6 +96,8 @@ private:
 	TUint iThreadId;
 	TFileName2 iBsymFile;
 	TFileName2 iMapFileDir;
+	TBool iDumpAllStacks;
+	TBool iDumpBusyStacks;
 
 	// Thread context
 	struct SThreadContext
@@ -225,6 +231,8 @@ void CCmdFdb::OptionsL(RCommandOptionList& aOptions)
 	aOptions.AppendBoolL(iAllThreads, _L("all"));
 	aOptions.AppendFileNameL(iBsymFile, _L("symbols"));
 	aOptions.AppendFileNameL(iMapFileDir, _L("mapfiles"));
+	aOptions.AppendBoolL(iDumpAllStacks, _L("dump-all-stacks"));
+	aOptions.AppendBoolL(iDumpBusyStacks, _L("dump-busy-stacks"));
 	}
 
 struct STestData
@@ -279,19 +287,26 @@ void CCmdFdb::DoRunL()
 		return;
 		}
 	
-	TBool install = ETrue;
+	TBool showWelcome = ETrue;
 	// Figure out something sensible to do
-	if (mode != 0 || iThreadId != 0) install = EFalse;
+	if (mode != 0 || iThreadId != 0 || iDumpAllStacks || iDumpBusyStacks) showWelcome = EFalse;
 
 	if (iAllThreads) Printf(_L("Note that because --all-threads was specified, this and all future commands will hang rather than exiting!\r\n"));
 
-	InstallL(); // Always do this, in case user has changed the --all-threads setting
-	if (install)
+	SetupDebugModeL();
+	if (showWelcome)
 		{
 		// This will really mess up evalid, but the toolkit doesn't really use it so I don't feel *too* guilty
 		Printf(_L8("Welcome to fdb (build " __DATE__ " " __TIME__ ").\r\nDebugger hook installed and will stay running until you type 'uninstall'.\r\nYou can exit fdb if required and it will stay running in the background.\r\nType 'help' for command info.\r\n"));
 		}
-	else
+	else if (iDumpAllStacks || iDumpBusyStacks)
+		{
+		DumpStacksL();
+		Complete();
+		return;
+		}
+
+	else if (iThreadId)
 		{
 		AttachL(iThreadId);
 		}
@@ -305,15 +320,29 @@ void CCmdFdb::DoRunL()
 	StartCommandParsingL();
 	}
 
-void CCmdFdb::InstallL()
+void CCmdFdb::SetupDebugModeL()
 	{
-	LeaveIfErr(iMemAccess.SetZombieDebugMode(iAllThreads ? 2 : 1), _L("Couldn't install thread monitor"));
-	const TUint32 KAllThreadsSystem = 1; // Word 2, bit 0
-	TUint32 dbgmask = UserSvr::DebugMask(2);
-	if (dbgmask & KAllThreadsSystem)
+	TInt debugMode = 1; // Zombie crashed threads
+	TBool shouldSetDebugMode = ETrue;
+	if (iDumpBusyStacks || iDumpAllStacks)
 		{
-		Printf(_L("(Clearing KAllThreadsSystem attribute)\r\n"));
-		User::SetDebugMask(dbgmask & ~KAllThreadsSystem, 2);
+		shouldSetDebugMode = EFalse;
+		}
+	else if (iAllThreads)
+		{
+		debugMode = 2;
+		}
+
+	if (shouldSetDebugMode)
+		{
+		LeaveIfErr(iMemAccess.SetZombieDebugMode(debugMode), _L("Couldn't install thread monitor"));
+		const TUint32 KAllThreadsSystem = 1; // Word 2, bit 0
+		TUint32 dbgmask = UserSvr::DebugMask(2);
+		if (dbgmask & KAllThreadsSystem)
+			{
+			Printf(_L("(Clearing KAllThreadsSystem attribute)\r\n"));
+			User::SetDebugMask(dbgmask & ~KAllThreadsSystem, 2);
+			}
 		}
 	}
 
@@ -358,11 +387,19 @@ void CCmdFdb::AttachL(TUint aThreadId)
 			Printf(_L("(Attaching to thread %u)\r\n"), aThreadId);
 			}
 		}
+	AttachQuietlyL(aThreadId);
+	SThreadContext* context = ContextForThread(aThreadId);
+	PrintThreadInfo(*context);
+	// Don't print any more than this - it makes the output too wordy
+	//PrintRegistersL(*context);
+	}
 
+void CCmdFdb::AttachQuietlyL(TUint aThreadId)
+	{
 	SThreadContext* context = ContextForThread(aThreadId);
 	if (context)
 		{
-		PrintWarning(_L("Already attached to thread %u, focussing it instead."), aThreadId);
+		//PrintWarning(_L("Already attached to thread %u, focussing it instead."), aThreadId);
 		iCurrent = context;
 		return;
 		}
@@ -376,10 +413,6 @@ void CCmdFdb::AttachL(TUint aThreadId)
 	iThreads.AppendL(context);
 	CleanupStack::Pop(2, context); // context->iThread, context
 	iCurrent = context;
-
-	PrintThreadInfo(*context);
-	// Don't print any more than this - it makes the output too wordy
-	//PrintRegistersL(*context);
 	}
 
 void CCmdFdb::PrintThreadInfo(SThreadContext& aContext)
@@ -486,6 +519,81 @@ void CCmdFdb::PrintRegistersLRPC(SThreadContext& aThread, TBool aUserMode)
 		Write(LookupSymbol(ptr[14]));
 		Write(KCrLf);
 		}
+	}
+
+void CCmdFdb::PrintStackL(TBool aAll)
+	{
+	SThreadContext& c = CurrentL();
+	TUint32 start = c.iKernelInfo.iUserStackLimit;
+	TUint32 end = c.iKernelInfo.UserStackBase();
+	if (start == 0)
+		{
+		Printf(_L("No user stack for this thread.\r\n"));
+		}
+	else
+		{
+		Printf(_L("User stack:\r\n"));
+		PrintRegistersLRPC(c, ETrue);
+		if ((c.iUserValidRegisters & (1 << 13)) && Rng(start, c.iUserRegisters[13], end)) start = c.iUserRegisters[13];
+		PrintMemL(c.iThread.Id(), start, end, aAll ? EAllData : EJustSymbols);
+		}
+	}
+
+void CCmdFdb::PrintKernelStackL(TBool aAll)
+	{
+	SThreadContext& c = CurrentL();
+	TUint32 start = c.iKernelInfo.iSupervisorStack;
+	TUint32 end = start + c.iKernelInfo.iSupervisorStackSize;
+	if (start == 0)
+		{
+		Printf(_L("Couldn't find kernel stack for this thread (!?).\r\n"));
+		}
+	else
+		{
+		Printf(_L("Kernel stack:\r\n"));
+		PrintRegistersLRPC(c, EFalse);
+		if ((c.iSupervisorValidRegisters & (1 << 13)) && Rng(start, c.iSupervisorRegisters[13], end)) start = c.iSupervisorRegisters[13];
+		PrintMemL(0, start, end, aAll ? EAllData : EJustSymbols); // zero is the null thread, which is a kernel thread thus has the address space we're interested in
+		}
+	}
+
+void CCmdFdb::DumpStacksL()
+	{
+	RLtkBuf8 threadBuf;
+	threadBuf.CreateLC(4096);
+	LeaveIfErr(iMemAccess.GetThreads(threadBuf), _L("Couldn't get threads list"));
+	
+	TUint* buf = (TUint*)threadBuf.Ptr();
+	for (TInt i = 0; i < threadBuf.Size() / sizeof(TInt); i++)
+		{
+		if (buf[i] == 0) continue; // We use 0 to mean something else and the idle thread isn't very interesting!
+		SetErrorReported(EFalse); // Reset this each time through - so we only get one error per thread
+		TRAPD_QUIETLY(err, AttachQuietlyL(buf[i]));
+		if (err)
+			{
+			// Threads might have disappeared by the time we get to them
+			continue;
+			}
+		if (iDumpBusyStacks && (iCurrent->iUserValidRegisters & (1<<14)))
+			{
+			// If we have a user stack, check if it's sitting in User::WaitForAnyRequest and if so ignore it
+			TPtrC r14sym = LookupSymbol(iCurrent->iUserRegisters[14]);
+			_LIT(KWait, "User::WaitForAnyRequest()");
+			if (r14sym.Left(KWait().Length()) == KWait)
+				{
+				Detach(iCurrent);
+				continue;
+				}
+			}
+
+		PrintThreadInfo(*iCurrent);
+		PrintRegistersL(*iCurrent);
+		TRAP_IGNORE(PrintStackL(EFalse));
+		TRAP_IGNORE(PrintKernelStackL(EFalse));
+		Detach(iCurrent);
+		Printf(_L("\r\n"));
+		}
+	CleanupStack::PopAndDestroy(&threadBuf);
 	}
 
 void CCmdFdb::RefreshIfRunningL(SThreadContext& aContext)
@@ -817,36 +925,12 @@ void CCmdFdb::ProcessLineL(const TDesC& aLine)
 	else if (cmd == KStack || ch == 't')
 		{
 		TBool all = lex.NextToken() == _L("all");
-		SThreadContext& c = CurrentL();
-		TUint32 start = c.iKernelInfo.iUserStackLimit;
-		TUint32 end = c.iKernelInfo.UserStackBase();
-		if (start == 0)
-			{
-			Printf(_L("No user stack for this thread.\r\n"));
-			}
-		else
-			{
-			PrintRegistersLRPC(c, ETrue);
-			if ((c.iUserValidRegisters & (1 << 13)) && Rng(start, c.iUserRegisters[13], end)) start = c.iUserRegisters[13];
-			PrintMemL(c.iThread.Id(), start, end, all ? EAllData : EJustSymbols);
-			}
+		PrintStackL(all);
 		}
 	else if (cmd == KKstack || ch == 'k')
 		{
 		TBool all = lex.NextToken() == _L("all");
-		SThreadContext& c = CurrentL();
-		TUint32 start = c.iKernelInfo.iSupervisorStack;
-		TUint32 end = start + c.iKernelInfo.iSupervisorStackSize;
-		if (start == 0)
-			{
-			Printf(_L("Couldn't find kernel stack for this thread (!?).\r\n"));
-			}
-		else
-			{
-			PrintRegistersLRPC(c, EFalse);
-			if ((c.iSupervisorValidRegisters & (1 << 13)) && Rng(start, c.iSupervisorRegisters[13], end)) start = c.iSupervisorRegisters[13];
-			PrintMemL(0, start, end, all ? EAllData : EJustSymbols); // zero is the null thread, which is a kernel thread thus has the address space we're interested in
-			}
+		PrintKernelStackL(all);
 		}
 	else if (cmd == KList || ch == 'l')
 		{
@@ -1073,10 +1157,11 @@ void CCmdFdb::FocusL(TUint aThreadId)
 void CCmdFdb::Detach(SThreadContext* aContext)
 	{
 	TInt err = iMemAccess.ReleaseZombie(aContext->iThread);
-	if (err && aContext->iFlags.IsSet(SThreadContext::ERunning))
+	if (err && err != KErrNotFound)
 		{
 		// Don't complain about driver if the thread wasn't actually zombied
-		PrintError(err, _L("Driver couldn't find zombie thread"));
+		iTempNameBuf = aContext->iThread.FullName();
+		PrintWarning(_L("Driver failed to release zombie thread %S (err=%d)"), &iTempNameBuf, err);
 		}
 
 	TInt arrayPos = iThreads.Find(aContext);
@@ -1226,7 +1311,7 @@ TBool CCmdFdb::IsSymbol(TUint aAddress) const
 		{
 		okRange = Rng(iCurrent->iExeCodeBase, (TLinAddr)aAddress, iCurrent->iExeCodeBase + iCurrent->iExeCodeSize);
 		}
-	return okRange && aAddress != 0xDEDEDEDE && aAddress != 0xAAAAAAAA && aAddress != 0xBBBBBBBB && aAddress != 0xCCCCCCCC; 
+	return okRange && aAddress != 0xDEDEDEDE && aAddress != 0xAAAAAAAA && aAddress != 0xBBBBBBBB && aAddress != 0xCCCCCCCC && aAddress != 0xEEEEEEEE; 
 	}
 
 void CCmdFdb::StartInteractiveViewL(TLinAddr aAddress)
@@ -1652,3 +1737,4 @@ void CCmdFdb::CheckForConditionL(TLex& aLex, RMemoryAccess::TPredicate& aConditi
 		}
 	LeaveIfErr(aCondition.AddCondition(op, reg, (TUint32)val), _L("Couldn't add condition to TPredicate"));
 	}
+

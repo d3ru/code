@@ -73,7 +73,7 @@ private:
 	void TraceChangedChunk(const TChunkInfo& aChunkInfo) const;
 	void TraceDeletedChunk(const TChunkInfo& aChunkInfo) const;
 	void TraceNewSample() const;
-#if FSHELL_PLATFORM_SYMTB >= 92
+#if FSHELL_PLATFORM_SYMTB >= 92 || defined(__SMP__)
 	inline TBool Running()
 		{return iTimer.IsPending();}
 #else

@@ -185,6 +185,68 @@ EXPORT_C void LtkUtils::FormatSize(TDes8& aDes, TInt64 aSize)
 	aDes.Copy(buf);
 	}
 
+void AppendTimeUnit(TInt aValue, const TDesC& aUnit, TDes& aBuf)
+	{
+	if (aValue == 1)
+		{
+		aBuf.AppendFormat(_L("1 %S "), &aUnit);
+		}
+	else
+		{
+		aBuf.AppendFormat(_L("%d %Ss "), aValue, &aUnit);
+		}
+	}
+
+EXPORT_C void LtkUtils::AppendFormatTime(TDes& aBuf, TInt64 aIntervalMicroSeconds)
+	{
+	const TInt ms = 1000;
+	const TInt s = ms * ms;
+	const TInt64 m = s * 60;
+	const TInt64 h = m * 60;
+	const TInt64 d = h * 24;
+
+	TInt64 interval = Abs(aIntervalMicroSeconds);
+	if (aIntervalMicroSeconds < 0) aBuf.Append('-');
+	const TInt numDays = interval / d;
+	if (numDays > 0)
+		{
+		AppendTimeUnit(numDays, _L("day"), aBuf);
+		interval = interval % d;
+		}
+
+	const TInt numHours = interval / h;
+	if (numHours > 0)
+		{
+		AppendTimeUnit(numHours, _L("hour"), aBuf);
+		interval = interval % h;
+		}
+
+	const TInt numMinutes = interval / m;
+	if (numMinutes > 0)
+		{
+		AppendTimeUnit(numMinutes, _L("minute"), aBuf);
+		interval = interval % m;
+		}
+
+	TBuf<16> format(_L("%.2f "));
+	TReal realInterval = interval;
+	if (realInterval >= s)
+		{
+		realInterval /= s;
+		format.Append(_L("s"));
+		}
+	else if (realInterval >= ms)
+		{
+		realInterval /= ms;
+		format.Append(_L("ms"));
+		}
+	else
+		{
+		format.Append(_L("us"));
+		}
+	aBuf.AppendFormat(format, realInterval); 
+	}
+
 
 
 // RLtkBuf follows

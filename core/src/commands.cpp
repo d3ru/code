@@ -3317,67 +3317,6 @@ CCmdUpTime::CCmdUpTime()
 	{
 	}
 
-void AppendTimeUnit(TInt aValue, const TDesC& aUnit, TDes& aBuf)
-	{
-	if (aValue == 1)
-		{
-		aBuf.AppendFormat(_L("1 %S "), &aUnit);
-		}
-	else
-		{
-		aBuf.AppendFormat(_L("%d %Ss "), aValue, &aUnit);
-		}
-	}
-
-void FormatTime(const TUint64& aInterval, TDes& aBuf)
-	{
-	const TInt ms = 1000;
-	const TInt s = ms * ms;
-	const TInt64 m = s * 60;
-	const TInt64 h = m * 60;
-	const TInt64 d = h * 24;
-
-	TInt64 interval = aInterval;
-	const TInt numDays = interval / d;
-	if (numDays > 0)
-		{
-		AppendTimeUnit(numDays, _L("day"), aBuf);
-		interval = interval % d;
-		}
-
-	const TInt numHours = interval / h;
-	if (numHours > 0)
-		{
-		AppendTimeUnit(numHours, _L("hour"), aBuf);
-		interval = interval % h;
-		}
-
-	const TInt numMinutes = interval / m;
-	if (numMinutes > 0)
-		{
-		AppendTimeUnit(numMinutes, _L("minute"), aBuf);
-		interval = interval % m;
-		}
-
-	TBuf<16> format(_L("%.2f "));
-	TReal realInterval = interval;
-	if (realInterval >= s)
-		{
-		realInterval /= s;
-		format.Append(_L("s"));
-		}
-	else if (realInterval >= ms)
-		{
-		realInterval /= ms;
-		format.Append(_L("ms"));
-		}
-	else
-		{
-		format.Append(_L("us"));
-		}
-	aBuf.AppendFormat(format, realInterval); 
-	}
-
 void CCmdUpTime::DoRunL()
 	{
 	TUint64 n = User::NTickCount();
@@ -3386,7 +3325,7 @@ void CCmdUpTime::DoRunL()
 	if (iHuman)
 		{
 		TBuf<256> timeBuf;
-		FormatTime(n, timeBuf);
+		LtkUtils::AppendFormatTime(timeBuf, n);
 		Printf(_L("%S"), &timeBuf);
 		}
 	else
@@ -3785,7 +3724,7 @@ void CCmdStart::DoRunL()
 		TUint32 elapsed = endTime - startTime;
 		elapsed *= NanoTickPeriod();
 		TBuf<50> timeBuf;
-		FormatTime(elapsed, timeBuf);
+		LtkUtils::AppendFormatTime(timeBuf, elapsed);
 		Write(timeBuf);
 		Write(_L("\r\n"));
 		}
@@ -4016,7 +3955,7 @@ void CCmdTime::IterationComplete(TInt aError)
 	if (iHuman)
 		{
 		TBuf<256> timeBuf;
-		FormatTime(difference, timeBuf);
+		LtkUtils::AppendFormatTime(timeBuf, difference);
 		timeBuf.Append(KNewLine);
 		Write(timeBuf);
 		}
@@ -4036,7 +3975,7 @@ void CCmdTime::IterationComplete(TInt aError)
 			{
 			TBuf<256> timeBuf;
 			timeBuf.Append(_L("Average: "));
-			FormatTime(difference, timeBuf);
+			LtkUtils::AppendFormatTime(timeBuf, difference);
 			timeBuf.Append(KNewLine);
 			Write(timeBuf);
 			}

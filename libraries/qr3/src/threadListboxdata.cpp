@@ -16,6 +16,8 @@
 #include <fshell/qr3dll.h>
 #include "QResources3.hrh"
 #include <fshell/heaputils.h>
+#include <fshell/ltkutils.h>
+#include <HAL.h>
 
 CThreadsListBoxData::CThreadsListBoxData(CKernListBoxModel* aModel)
 	: CKernListBoxData(aModel)
@@ -112,6 +114,7 @@ void CThreadsListBoxData::DoInfoForDialogL(RBuf& aTitle, RBuf& inf, TDes* aTemp)
 	_LIT(KThread, "Tid: %d Pid: %d Kern Priority: %d\nPriority: %d (%S)\nProc Priority: %d (%S)");
 	_LIT(KCritical, "\n%S");
 	_LIT(KCreator, "\nCreator thread id: %d (%S)");
+	_LIT(KUptime, "\nAge of thread: ");
 	_LIT(KKern, "\nKernel object address: 0x%08x");
 	_LIT(KStack, "\n\nUser stack size: %S");
 	_LIT(KHeap, "\nAllocator: 0x%08x\nHeap size: %S (%d)\nMin/Max: %S/%S\nUnused: %S Usable: %S");
@@ -152,6 +155,15 @@ void CThreadsListBoxData::DoInfoForDialogL(RBuf& aTitle, RBuf& inf, TDes* aTemp)
 			creator.Close();
 			}
 		inf.AppendFormat(KCreator, creatorTid, aTemp);
+		}
+	TUint32 creationTime = Model().MemAccess().GetThreadStartTime(info.iThreadId);
+	if (creationTime != 0)
+		{
+		TInt tickLen = 0;
+		HAL::Get(HAL::ESystemTickPeriod, tickLen);
+		TInt64 age = TInt64(User::TickCount() - creationTime) * tickLen;
+		inf.AppendFormat(KUptime);
+		LtkUtils::AppendFormatTime(inf, age);
 		}
 
 	User::TCritical crit = User::ENotCritical;

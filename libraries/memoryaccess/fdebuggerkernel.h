@@ -49,6 +49,7 @@ public:
 	HBuf* GetBreakpoints();
 
 	TUint GetCreatorThread(TUint aThreadId); // Returns 0 if not known
+	TUint32 GetThreadStartTime(TUint aThreadId); // Returns 0 if not known
 
 private:
 	DDebuggerEventHandler(TDfcQue* aQue);
@@ -187,6 +188,7 @@ private:
 	 */
 	DMutex* iBreakpointMutex;
 	TDfc iHandleCodesegRemovedDfc;
+	TInt32 iPadding[5]; // Needed for TDfc size change in MCL
 	struct SRemovedCodeseg
 		{
 		DProcess* iProcess;
@@ -201,11 +203,12 @@ private:
 		{
 	public:
 		TCreatorInfo(TUint aThreadId, TUint aCreatorThreadId)
-			: iThreadId(aThreadId), iCreatorThreadId(aCreatorThreadId)
+			: iThreadId(aThreadId), iCreatorThreadId(aCreatorThreadId), iCreationTickCount(0)
 			{}
 
 		TUint iThreadId;
 		TUint iCreatorThreadId;
+		TUint iCreationTickCount;
 		};
 	RArray<TCreatorInfo> iCreatorInfo;
 	};

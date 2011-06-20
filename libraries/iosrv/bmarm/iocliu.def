@@ -564,4 +564,6 @@ EXPORTS
 	__12TIoHandleSet @ 563 NONAME R3UNUSED ; TIoHandleSet::TIoHandleSet(void)
 	ExtensionVersion__CQ27IoUtils20MCommandExtensionsV3 @ 564 NONAME R3UNUSED ; IoUtils::MCommandExtensionsV3::ExtensionVersion(void) const
 	Extension__CQ27IoUtils12CCommandBase @ 565 NONAME R3UNUSED ; IoUtils::CCommandBase::Extension(void) const
+	CancelRequestFile__10RIoConsole @ 566 NONAME R3UNUSED ; RIoConsole::CancelRequestFile(void)
+	RequestFile__10RIoConsoleRC7TDesC16T1R14TRequestStatus @ 567 NONAME ; RIoConsole::RequestFile(TDesC16 const &, TDesC16 const &, TRequestStatus &)
 

@@ -82,9 +82,10 @@ void CCmdRequest::DoRunL()
 		{
 		_LIT(KDll, ".dll");
 		_LIT(KExe, ".exe");
+		_LIT(KLdd, ".ldd");
 		_LIT(KCif, ".cif");
 		TPtrC suff = iFileName->Right(4);
-		if (suff.CompareC(KDll) == 0 || suff.CompareC(KExe) == 0)
+		if (suff.CompareC(KDll) == 0 || suff.CompareC(KExe) == 0 || suff.CompareC(KLdd) == 0)
 			{
 			iLocalName = _L("c:\\sys\\bin\\");
 			iLocalName.Append(*iFileName);

@@ -153,4 +153,5 @@ EXPORTS
 	?FormatSize@LtkUtils@@YAXAAVTDes16@@_J@Z @ 152 NONAME ; void LtkUtils::FormatSize(class TDes16 &, long long)
 	?Description@RAllocatorHelper@LtkUtils@@QBEABVTDesC16@@XZ @ 153 NONAME ; class TDesC16 const & LtkUtils::RAllocatorHelper::Description(void) const
 	?GetSystemDrive@LtkUtils@@YADXZ @ 154 NONAME ; char LtkUtils::GetSystemDrive(void)
+	?AppendFormatTime@LtkUtils@@YAXAAVTDes16@@_J@Z @ 155 NONAME ; void LtkUtils::AppendFormatTime(class TDes16 &, long long)
 

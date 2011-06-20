@@ -264,6 +264,7 @@ TUint DDebuggerEventHandler::DoEvent(TKernelEvent aEvent, TAny* a1, TAny* a2)
 		DThread* creator = (DThread*)a2;
 		BreakpointLock();
 		TCreatorInfo threadInfo(process->iId, creator->iId);
+		threadInfo.iCreationTickCount = Kern::TickCount();
 		TInt err = iCreatorInfo.InsertInUnsignedKeyOrder(threadInfo);
 		if (err)
 			{
@@ -276,6 +277,7 @@ TUint DDebuggerEventHandler::DoEvent(TKernelEvent aEvent, TAny* a1, TAny* a2)
 		DThread* thread = (DThread*)a1;
 		DThread* creator = (DThread*)a2;
 		TCreatorInfo threadInfo(thread->iId, creator->iId);
+		threadInfo.iCreationTickCount = Kern::TickCount();
 
 		BreakpointLock(); // It's not actually breakpoint related but never mind
 		if (thread->Owner() != creator->Owner())
@@ -1652,6 +1654,20 @@ TUint DDebuggerEventHandler::GetCreatorThread(TUint aThreadId)
 	if (found != KErrNotFound)
 		{
 		result = iCreatorInfo[found].iCreatorThreadId;
+		}
+	BreakpointUnlock();
+	return result;
+	}
+
+TUint32 DDebuggerEventHandler::GetThreadStartTime(TUint aThreadId)
+	{
+	TCreatorInfo dummy(aThreadId, 0);
+	TUint32 result = 0;
+	BreakpointLock();
+	TInt found = iCreatorInfo.FindInUnsignedKeyOrder(dummy);
+	if (found != KErrNotFound)
+		{
+		result = iCreatorInfo[found].iCreationTickCount;
 		}
 	BreakpointUnlock();
 	return result;

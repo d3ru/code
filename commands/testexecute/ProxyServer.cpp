@@ -347,8 +347,9 @@ RUnderlyingSession& CProxySession::UnderlyingSession()
 // CAsyncWaiter
 
 CAsyncWaiter::CAsyncWaiter(CProxySession& aSession, TInt aMessageId, const RMessage2& aOriginalMessage, const TIpcArgs& aArgs)
-	: CActive(CActive::EPriorityStandard), iSession(aSession), iMessageId(aMessageId), iMsg(aOriginalMessage), iArgs(aArgs)
+	: CActive(CActive::EPriorityStandard), iSession(aSession), iMessageId(aMessageId), iMsg(aOriginalMessage)
 	{
+	memcpy(&iArgs, &aArgs, sizeof(TIpcArgs)); // Workaround for GCC 2.98 or actually a bug that TIpcArgs doesn't seem to have a copy constructor?
 	CActiveScheduler::Add(this);
 	LOG(_L("Sending to real server: fn=%d, args=%x,%x,%x,%x flags=%x"), aOriginalMessage.Function(), iArgs.iArgs[0], iArgs.iArgs[1], iArgs.iArgs[2], iArgs.iArgs[3], iArgs.iFlags);
 	iSession.UnderlyingSession().SendReceive(aOriginalMessage.Function(), iArgs, iStatus);
