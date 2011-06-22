@@ -24,4 +24,4 @@ prj_mmpfiles
 ..\..\..\libraries\extrabtrace\group\extrabtracek.mmp
 ..\..\..\libraries\clogger\debugRouter\debugRouter.mmp
 ..\..\..\commands\memsampler\memsamplerdd.mmp
-// Not including topsampler, as this file is designed to be run for SMP builds and topsampler doesn't work on SMP
+..\..\..\commands\top\top_sampler.mmp // It doesn't work on SMP but we still build it - it's a stub that returns KErrNotSupported

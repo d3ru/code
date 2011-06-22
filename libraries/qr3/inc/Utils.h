@@ -26,8 +26,6 @@ TPtrC ToString(TThreadPriority aPriority);
 TPtrC ToString(TExitType aType);
 HBufC* ToStringL(SCapabilitySet& aCaps);
 TPtrC ToString(User::TCritical aCritical);
-TPtrC ToStringHal(TInt aHalAttribute);
-void ToStringHalVal(TDes& aDes, TInt aHalAttribute, TInt aHalValue);
 
 void PrettyName(TInt aType, TDes& aName); // aType is a TKernelObjectType
 

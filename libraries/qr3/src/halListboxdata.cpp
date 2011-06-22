@@ -13,7 +13,7 @@
 #include "Utils.h"
 #include <fshell/clogger.h>
 #include <fshell/memoryaccess.h>
-#include <HAL.h>
+#include <fshell/ltkhal.h>
 
 CHalListBoxData::CHalListBoxData(CKernListBoxModel* aModel)
 	: CKernListBoxData(aModel)
@@ -22,41 +22,34 @@ CHalListBoxData::CHalListBoxData(CKernListBoxModel* aModel)
 
 void CHalListBoxData::DoFormatL(TObjectKernelInfo* aInfo, RBuf& name, RBuf& more, TInt& itemId)
 	{
-	SHalInfo& info = *reinterpret_cast<SHalInfo*>(aInfo);
-	name.Copy(ToStringHal(info.iAttribute));
-	ToStringHalVal(more, info.iAttribute, info.iValue);
-	if (info.iProperties & HAL::EEntryDynamic)
-		{
-		more.Append(_L(" (Dynamic)"));
-		}
-	itemId = info.iAttribute;
+	LtkUtils::CHalAttribute& info = *reinterpret_cast<LtkUtils::CHalAttribute*>(aInfo);
+	name.Copy(info.AttributeName());
+	more.Copy(info.DescriptionL());
+	itemId = info.Attribute();
 	}
 
 void CHalListBoxData::DumpToCloggerL(RClogger& clogger, TInt i, TInt /*count*/)
 	{
-	_LIT(KHalDesc,"HAL;Number;Name;Value;ValueHumanReadable;Flags");
+	_LIT(KHalDesc,"HAL;Number;Name;Value;ValueHumanReadable");
 	_LIT(KHalFmt,"HAL;%i;%S;%i;%S;%i");
 
 	if (i == 0) clogger.Log(KHalDesc);
-	SHalInfo& info = *reinterpret_cast<SHalInfo*>(iInfo);
-	TPtrC name = ToStringHal(info.iAttribute);
-	RBuf val;
-	val.CreateL(256);
-	ToStringHalVal(val, info.iAttribute, info.iValue);
-	clogger.Log(KHalFmt, info.iAttribute, &name, info.iValue, &val, info.iProperties);
-	val.Close();
+	LtkUtils::CHalAttribute& info = *reinterpret_cast<LtkUtils::CHalAttribute*>(iInfo);
+	clogger.Log(KHalFmt, info.Attribute(), &info.AttributeName(), info.Value(), &info.DescriptionL());
 	}
 
 void CHalListBoxData::DoInfoForDialogL(RBuf& aTitle, RBuf& inf, TDes* /*aName*/)
 	{
-	SHalInfo& info = *reinterpret_cast<SHalInfo*>(iInfo);
+	LtkUtils::CHalAttribute& info = *reinterpret_cast<LtkUtils::CHalAttribute*>(iInfo);
 	_LIT(KInfo, "HAL info");
 	aTitle.Copy(KInfo);
-	TPtrC name = ToStringHal(info.iAttribute);
-	RBuf val;
-	val.CreateL(256);
-	ToStringHalVal(val, info.iAttribute, info.iValue);
 	_LIT(KHalFmt, "%S\n%S\n\n(Id: %i Val: %i/0x%x)");
-	inf.Format(KHalFmt, &name, &val, info.iAttribute, info.iValue, info.iValue);
-	val.Close();
+	inf.Format(KHalFmt, &info.AttributeName(), &info.DescriptionL(), info.Attribute(), info.Value(), info.Value());
+	}
+
+CHalListBoxData::~CHalListBoxData()
+	{
+	LtkUtils::CHalAttribute* info = reinterpret_cast<LtkUtils::CHalAttribute*>(iInfo);
+	delete info;
+	iInfo = NULL;
 	}

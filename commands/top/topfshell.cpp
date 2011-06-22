@@ -114,6 +114,15 @@ void CCmdTop::DoRunL()
 	TInt err = User::LoadLogicalDevice(KSamplerName);
 	if (err != KErrNone && err != KErrAlreadyExists)
 		{
+		if (err == KErrNotSupported)
+			{
+			enum THalFunctionsNotIn91
+				{
+				EKernelHalSmpSupported = 15,
+				};
+			TBool smpEnabled = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
+			if (smpEnabled) LeaveIfErr(err, _L("top command not supported on SMP builds"));
+			}
 		LeaveIfErr(err, _L("Couldn't load sampler ldd %S"), &KSamplerName);
 		}
 	iReadBuf.CreateL(iRate * 2 * sizeof(TUint32)); // go twice as big as needed just to be safe, allows for AO not getting to run on time

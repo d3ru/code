@@ -31,6 +31,8 @@ public:
 	virtual TInt Create(DLogicalChannelBase*& aChannel);
 	};
 
+#ifndef __SMP__
+
 class DProfile : public DLogicalChannel
 	{
 public:
@@ -74,6 +76,8 @@ private:
 	NTimer iTimer;
 	};
 
+#endif
+
 DECLARE_STANDARD_LDD()
 	{
 	return new DDeviceSampler;
@@ -94,8 +98,12 @@ TInt DDeviceSampler::Install()
 // Install the device driver.
 //
 	{
+#ifdef __SMP__
+	return KErrNotSupported;
+#else
 	TInt r=SetName(&KLddName);
 	return r;
+#endif
 	}
 
 void DDeviceSampler::GetCaps(TDes8& /*aDes*/) const
@@ -110,9 +118,15 @@ TInt DDeviceSampler::Create(DLogicalChannelBase*& aChannel)
 // Create a channel on the device.
 //
 	{
+#ifdef __SMP__
+	return KErrNotSupported;
+#else
 	aChannel=new DProfile;
 	return aChannel?KErrNone:KErrNoMemory;
+#endif
 	}
+
+#ifndef __SMP__
 
 DProfile::DProfile()
 	:	iTimer(Sample,this)
@@ -332,3 +346,5 @@ void DProfile::DoSample()
 	else
 		iReport.iRawBufferErrCounter++;
 	}
+
+#endif // __SMP__

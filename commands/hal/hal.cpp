@@ -80,17 +80,10 @@ void CCmdHal::DoRunL()
 				LeaveIfErr(KErrArgument, _L("Attribute to get not specified"));
 				}
 			LtkUtils::CHalAttribute* attrib = NULL;
-			if (iOptions.IsPresent(&iDeviceNumber))
-				{
-				TRAPL(attrib = LtkUtils::GetHalInfoL(iDeviceNumber, iAttribute), _L("Couldn't get attribute value"));
-				Printf(_L("%S[%d]: %S\r\n"), &attrib->iAttributeName, attrib->iDeviceNumber, attrib->iDescription);
-				}
-			else
-				{
-				TRAPL(attrib = LtkUtils::GetHalInfoL(iAttribute), _L("Couldn't get attribute value"));
-				Printf(_L("%S: %S\r\n"), &attrib->iAttributeName, attrib->iDescription);
-				}
-			delete attrib;
+			TRAPL(attrib = LtkUtils::GetHalInfoL(iDeviceNumber, iAttribute), _L("Couldn't get attribute value"));
+			CleanupStack::PushL(attrib);
+			Printf(_L("%S: %S\r\n"), &attrib->AttributeName(), &attrib->DescriptionL());
+			CleanupStack::PopAndDestroy(attrib);
 			}
 			break;
 		case ESet:
@@ -116,13 +109,14 @@ void CCmdHal::DoRunL()
 		case EList:
 			{
 			RPointerArray<LtkUtils::CHalAttribute> attribs;
+			LtkUtils::CleanupResetAndDestroyPushL(attribs);
 			LtkUtils::GetHalInfoL(attribs);
 			for (TInt i = 0; i < attribs.Count(); ++i)
 				{
 				LtkUtils::CHalAttribute& attrib = *attribs[i];
-				Printf(_L("%4d %S: %S\r\n"), attrib.iAttribute, &attrib.iAttributeName, attrib.iDescription);
+				Printf(_L("%4d %S: %S\r\n"), attrib.Attribute(), &attrib.AttributeName(), &attrib.DescriptionL());
 				}
-			attribs.ResetAndDestroy();
+			CleanupStack::PopAndDestroy(&attribs);
 			}
 			break;
 		case EDumpFile:
@@ -156,8 +150,9 @@ void CCmdHal::DoRunL()
 				attribute &= 0xFFFFFF;
 				TInt value = *p++;
 				LtkUtils::CHalAttribute* attrib = LtkUtils::GetHalInfoForValueL(deviceNumber, attribute, value);
-				Printf(_L("%4d %S[%d]: %S\r\n"), attrib->iAttribute, &attrib->iAttributeName, deviceNumber, attrib->iDescription);
-				delete attrib;
+				CleanupStack::PushL(attrib);
+				Printf(_L("%4d %S[%d]: %S\r\n"), attrib->Attribute(), &attrib->AttributeName(), deviceNumber, &attrib->DescriptionL());
+				CleanupStack::PopAndDestroy(attrib);
 				}
 
 			CleanupStack::PopAndDestroy(2, &file);

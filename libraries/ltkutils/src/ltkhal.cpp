@@ -16,8 +16,8 @@
 #include <HAL.h>
 #include <f32file.h>
 
-LtkUtils::CHalAttribute::CHalAttribute(TInt aAttribute, TInt aDeviceNumber, TInt aValue, TInt aError, const TDesC& aAttributeName, HBufC* aDescription)
-	: iAttribute(aAttribute), iDeviceNumber(aDeviceNumber), iValue(aValue), iError(aError), iAttributeName(aAttributeName), iDescription(aDescription)
+LtkUtils::CHalAttribute::CHalAttribute(TInt aAttribute, TInt aDeviceNumber, TInt aValue, TInt aProperties)
+	: iAttribute(aAttribute), iDeviceNumber(aDeviceNumber), iValue(aValue), iProperties(aProperties), iDescription(NULL)
 	{
 	}
 
@@ -147,6 +147,8 @@ const LtkUtils::SLitC KHalNames[] =
 	DESC("EDisplayMemoryHandle"),
 	DESC("ESerialNumber"),
 	DESC("ECpuProfilingDefaultInterruptBase"),
+	DESC("ENumCpus"),
+	DESC("EDigitiserOrientation"),
 	};
 const TInt KNumHalNames = sizeof(KHalNames) / sizeof(LtkUtils::SLitC);
 
@@ -272,21 +274,20 @@ const TDesC* Stringify(TInt aHalAttribute, TInt aValue)
 
 EXPORT_C void LtkUtils::GetHalInfoL(RPointerArray<CHalAttribute>& aAttributes)
 	{
-	// Use GetAll to find out how many attributes we have
 	aAttributes.ResetAndDestroy();
 	HAL::SEntry* ents = NULL;
 	TInt numEntries = 0;
 	User::LeaveIfError(HAL::GetAll(numEntries, ents));
-	delete ents;
+	CleanupDeletePushL(ents);
 
 	for (TInt i = 0; i < numEntries; i++)
 		{
-		// Now re-get them individually so we can get the error field
-		CHalAttribute* attrib = GetHalInfoL(i);
+		CHalAttribute* attrib = new(ELeave) CHalAttribute(i, 0, ents[i].iValue, ents[i].iProperties);
 		CleanupStack::PushL(attrib);
 		aAttributes.AppendL(attrib);
 		CleanupStack::Pop(attrib);
 		}
+	CleanupStack::PopAndDestroy(ents);
 	}
 
 EXPORT_C LtkUtils::CHalAttribute* LtkUtils::GetHalInfoL(TInt aAttribute)
@@ -296,53 +297,23 @@ EXPORT_C LtkUtils::CHalAttribute* LtkUtils::GetHalInfoL(TInt aAttribute)
 
 EXPORT_C LtkUtils::CHalAttribute* LtkUtils::GetHalInfoL(TInt aDeviceNumber, TInt aAttribute)
 	{
-	TInt val = 0;
-	TInt err = HAL::Get(aDeviceNumber, (HALData::TAttribute)aAttribute, val);
-	CHalAttribute* attrib = NULL;
-	if (err == KErrNone)
+	CHalAttribute* attrib = new(ELeave) CHalAttribute(aAttribute, aDeviceNumber, 0);
+	TInt err = attrib->Update();
+
+	if (err != KErrNone)
 		{
-		attrib = GetHalInfoForValueL(aDeviceNumber, aAttribute, val);
-		}
-	else
-		{
-		const TDesC& attribName = aAttribute >= KNumHalNames ? KNullDesC() : KHalNames[aAttribute];
+		CleanupStack::PushL(attrib);
 		RLtkBuf buf;
 		buf.AppendFormatL(_L("HAL::Get() returned error %d"), err);
-		HBufC* bufc = buf.ToHBuf();
-		CleanupStack::PushL(bufc);
-		attrib = new(ELeave) CHalAttribute(aAttribute, aDeviceNumber, val, err, attribName, bufc);
-		CleanupStack::Pop(bufc);
+		attrib->SetDescription(buf.ToHBuf());
+		CleanupStack::Pop(attrib);
 		}
 	return attrib;
 	}
 
 EXPORT_C LtkUtils::CHalAttribute* LtkUtils::GetHalInfoForValueL(TInt aDeviceNumber, TInt aAttribute, TInt aValue)
 	{
-	const TDesC& attribName = aAttribute >= KNumHalNames ? KNullDesC() : KHalNames[aAttribute];
-	RLtkBuf buf;
-	CleanupClosePushL(buf);
-	const TDesC* string = Stringify(aAttribute, aValue);
-	if (string) buf.AppendL(*string);
-	else
-		{
-		if ((aAttribute == HAL::ESystemDrive || aAttribute == HAL::EClipboardDrive) && aValue == -1)
-			{
-			// Emulator returns -1 for system drive...
-			buf.AppendL(_L("Unknown"));
-			}
-		}
-	if (buf.Length())
-		{
-		buf.AppendFormatL(_L(" (%d/0x%08x)"), aValue, aValue);
-		}
-	else
-		{
-		buf.AppendFormatL(_L("%d (0x%08x)"), aValue, aValue);
-		}
-
-	CHalAttribute* attrib = new(ELeave) CHalAttribute(aAttribute, aDeviceNumber, aValue, KErrNone, attribName, buf.GetHBuf());
-	CleanupStack::Pop(&buf); // attrib now owns its HBufC*
-	return attrib;
+	return new(ELeave) CHalAttribute(aAttribute, aDeviceNumber, aValue);
 	}
 
 EXPORT_C char LtkUtils::GetSystemDrive()
@@ -356,4 +327,84 @@ EXPORT_C char LtkUtils::GetSystemDrive()
 	RFs::DriveToChar(RFs::GetSystemDrive(), systemDrive);
 	return (char)(TUint)systemDrive;
 #endif
+	}
+
+EXPORT_C TInt LtkUtils::CHalAttribute::Attribute() const
+	{
+	return iAttribute;
+	}
+
+EXPORT_C const TDesC& LtkUtils::CHalAttribute::AttributeName() const
+	{
+	if (iAttribute < 0 || iAttribute >= KNumHalNames) return KNullDesC;
+	else return KHalNames[iAttribute];
+	}
+
+EXPORT_C TInt LtkUtils::CHalAttribute::DeviceNumber() const
+	{
+	return iDeviceNumber;
+	}
+
+EXPORT_C TInt LtkUtils::CHalAttribute::Value() const
+	{
+	return iValue;
+	}
+
+EXPORT_C TInt LtkUtils::CHalAttribute::Update()
+	{
+	TInt val;
+	TInt err = HAL::Get(iDeviceNumber, (HALData::TAttribute)iAttribute, val);
+
+	if (err == KErrNone && val != iValue)
+		{
+		delete iDescription;
+		iDescription = NULL;
+		iValue = val;
+		}
+	return err;
+	}
+
+void LtkUtils::CHalAttribute::SetDescription(HBufC* aDescription)
+	{
+	delete iDescription;
+	iDescription = aDescription;
+	}
+
+EXPORT_C const TDesC& LtkUtils::CHalAttribute::DescriptionL()
+	{
+	if (iDescription == NULL)
+		{
+		RLtkBuf buf;
+		CleanupClosePushL(buf);
+
+		if (iDeviceNumber != 0)
+			{
+			buf.AppendFormatL(_L("[Device %d] "), iDeviceNumber);
+			}
+
+		const TDesC* string = Stringify(iAttribute, iValue);
+		if (string) buf.AppendL(*string);
+		else
+			{
+			if ((iAttribute == HAL::ESystemDrive || iAttribute == HAL::EClipboardDrive) && iValue == -1)
+				{
+				// Emulator returns -1 for system drive...
+				buf.AppendL(_L("Unknown"));
+				}
+			}
+		if (buf.Length())
+			{
+			buf.AppendFormatL(_L(" (%d/0x%08x)"), iValue, iValue);
+			}
+		else
+			{
+			buf.AppendFormatL(_L("%d (0x%08x)"), iValue, iValue);
+			}
+
+		if (iProperties & HAL::EEntryDynamic) buf.AppendFormatL(_L(" [Dynamic]"));
+
+		iDescription = buf.ToHBuf();
+		CleanupStack::Pop(&buf);
+		}
+	return *iDescription;
 	}
