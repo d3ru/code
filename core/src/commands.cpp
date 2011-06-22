@@ -6489,3 +6489,87 @@ void CCmdAttrib::DoSetAttribL(TInt aIndex)
 		CleanupStack::PopAndDestroy(dir);
 		}
 	}
+
+#ifdef FSHELL_CORE_SUPPORT_SUBST
+
+//
+// CCmdSubst.
+//
+
+CCommandBase* CCmdSubst::NewLC()
+	{
+	CCmdSubst* self = new(ELeave) CCmdSubst();
+	CleanupStack::PushL(self);
+	self->BaseConstructL();
+	return self;
+	}
+
+CCmdSubst::~CCmdSubst()
+	{
+	delete iDrive;
+	}
+
+CCmdSubst::CCmdSubst()
+	: iPath(TFileName2::EDirectory)
+	{
+	}
+
+const TDesC& CCmdSubst::Name() const
+	{
+	_LIT(KName, "subst");	
+	return KName;
+	}
+
+void CCmdSubst::ArgumentsL(RCommandArgumentList& aArguments)
+	{
+	aArguments.AppendStringL(iDrive, _L("drive"));
+	aArguments.AppendFileNameL(iPath, _L("path"));
+	}
+
+void CCmdSubst::OptionsL(RCommandOptionList& aOptions)
+	{
+	aOptions.AppendBoolL(iDelete, _L("delete"));
+	}
+
+void CCmdSubst::DoRunL()
+	{
+	if (iDelete && iPath.Length()) LeaveIfErr(KErrArgument, _L("Cannot give a path when deleting a subst"));
+
+	if (iDrive == NULL)
+		{
+		if (iDelete) LeaveIfErr(KErrArgument, _L("A drive letter must be specified with --delete"));
+
+		TDriveList driveList;
+		User::LeaveIfError(FsL().DriveList(driveList));
+		for (TInt i = 0; i < driveList.Length(); i++)
+			{
+			if (driveList[i] & KDriveAttSubsted)
+				{
+				LeaveIfErr(FsL().Subst(iPath, i), _L("Couldn't get subst info for %c:"), i+'a');
+				Printf(_L("%c: => %S\r\n"), i+'a', &iPath);
+				}
+			}
+		return;
+		}
+
+	TInt drive = 0;
+	if (iDrive->Length() == 0) LeaveIfErr(KErrArgument, _L("A drive letter of the form 'x:' must be specified"));
+	LeaveIfErr(RFs::CharToDrive((*iDrive)[0], drive), _L("Couldn't parse drive letter %S"), iDrive);
+
+	if (iPath.Length() || iDelete)
+		{
+		LeaveIfErr(FsL().SetSubst(iPath, drive), _L("Couldn't subst %c: to %S"), drive+'a', &iPath);
+		}
+	else
+		{
+		LeaveIfErr(FsL().Subst(iPath, drive), _L("Couldn't get subst info for %c:"), drive+'a');
+		if (iPath.Length() == 0)
+			{
+			LeaveIfErr(KErrNotFound, _L("Drive %c: does not appear to be substed"), drive+'a');
+			}
+		Write(iPath);
+		Write(_L("\r\n"));
+		}
+	}
+
+#endif // FSHELL_CORE_SUPPORT_SUBST

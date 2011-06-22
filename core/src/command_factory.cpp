@@ -360,6 +360,9 @@ void CCommandFactory::ConstructL()
 	AddThreadCommandL(CCmdEndIf::NewLC, CThreadCommand::EUpdateEnvironment);
 	AddThreadCommandL(CCmdTitle::NewLC);
 	AddThreadCommandL(CCmdAttrib::NewLC);
+#ifdef FSHELL_CORE_SUPPORT_SUBST
+	AddThreadCommandL(CCmdSubst::NewLC);
+#endif
 
 	// Add some DOS-style namings of common commands.
 	AddThreadCommandL(_L("del"), CCmdRm::NewLC, CCommandConstructorBase::EAttAlias);
