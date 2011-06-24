@@ -16,6 +16,8 @@ __END__
 
 =head2 Release 006 **Not yet released**
 
+=head3 New features
+
 =over 5
 
 =item *
@@ -25,6 +27,16 @@ Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch>
 =item *
 
 Added support for glinfo to display GPU memory info from the eglQueryProfilingDataNOK EGL extension.
+
+=back
+
+=head3 Bugfixes
+
+=over 5
+
+=item *
+
+Changed fshell's command factory to only treat files in '\resource\cif\fshell' that end with '.cif' as commands. This is to allow other extensions to be used for things like '==include' statements.
 
 =back
 

@@ -38,6 +38,7 @@ const TUid KFshellExeUid = {FSHELL_UID2_FSHELL_EXE};
 const TUint KPipsExeUidValue = 0x20004c45;
 const TUid KPipsExeUid = { KPipsExeUidValue };
 _LIT(KFshellPrefix, "fshell_"); // This	MUST be in lower case.
+_LIT(KCifExtension, ".cif");
 
 
 //
@@ -690,14 +691,21 @@ void CCommandFactory::DoAppendExternalCommandL(const TEntry& aEntry, TInt aUid)
 			}
 		case 0:
 			{
-			commandConstructor = CExeCommandConstructor::NewLC(*nameBuf, KNullDesC);
-			commandConstructor->SetAttributes(CCommandConstructorBase::EAttExternal);
+			if (aEntry.iName.Right(KCifExtension().Length()).CompareF(KCifExtension) == 0)
+				{
+				// Only treat files with a '.cif' extension as commands (some things use '.cif-include' files).
+				commandConstructor = CExeCommandConstructor::NewLC(*nameBuf, KNullDesC);
+				commandConstructor->SetAttributes(CCommandConstructorBase::EAttExternal);
+				}
 			break;
 			}
 		}
 
-	AddCommandL(commandConstructor);
-	CleanupStack::Pop(commandConstructor);
+	if (commandConstructor)
+		{
+		AddCommandL(commandConstructor);
+		CleanupStack::Pop(commandConstructor);
+		}
 	CleanupStack::PopAndDestroy(nameBuf);
 	}
 
