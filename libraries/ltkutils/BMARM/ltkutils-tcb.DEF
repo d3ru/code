@@ -169,4 +169,10 @@ EXPORTS
 	Description__CQ28LtkUtils16RAllocatorHelper @ 168 NONAME R3UNUSED ; LtkUtils::RAllocatorHelper::Description(void) const
 	GetSystemDrive__8LtkUtilsv @ 169 NONAME R3UNUSED ; LtkUtils::GetSystemDrive(void)
 	AppendFormatTime__8LtkUtilsR6TDes16x @ 170 NONAME ; LtkUtils::AppendFormatTime(TDes16 &, long long)
+	AttributeName__CQ28LtkUtils13CHalAttribute @ 171 NONAME R3UNUSED ; LtkUtils::CHalAttribute::AttributeName(void) const
+	Attribute__CQ28LtkUtils13CHalAttribute @ 172 NONAME R3UNUSED ; LtkUtils::CHalAttribute::Attribute(void) const
+	DescriptionL__Q28LtkUtils13CHalAttribute @ 173 NONAME R3UNUSED ; LtkUtils::CHalAttribute::DescriptionL(void)
+	DeviceNumber__CQ28LtkUtils13CHalAttribute @ 174 NONAME R3UNUSED ; LtkUtils::CHalAttribute::DeviceNumber(void) const
+	Update__Q28LtkUtils13CHalAttribute @ 175 NONAME R3UNUSED ; LtkUtils::CHalAttribute::Update(void)
+	Value__CQ28LtkUtils13CHalAttribute @ 176 NONAME R3UNUSED ; LtkUtils::CHalAttribute::Value(void) const
 

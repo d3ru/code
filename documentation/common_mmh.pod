@@ -254,6 +254,10 @@ For building Qt stuff with RVCT, RVCT 2.2 build 686 or later is required.
 
 The RLoader::Delete() API is available in e32ldr.h or e32ldr_private.h
 
+=item FSHELL_SMP_SUPPORT
+
+(Experimental) Used to indicate that SIS files created by this platform should include armv5smp binaries. All the appropriate SMP binaries can be build by using the bld.inf located in \fshell\build\common\drivers\bld.inf.
+
 =back
 
 A couple of further macros follow - these are specifically for platforms that provide an custom implementation of the relevant command rather than using fshell's built-in version.

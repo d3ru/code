@@ -272,8 +272,8 @@
 #define FSHELL_CORE_SUPPORT_LOCALDRIVE
 #endif
 
-#if defined(FSHELL_MEMORY_ACCESS_SUPPORT) && !defined(SMP)
-// Topsampler not updated to work on SMP
+#if defined(FSHELL_MEMORY_ACCESS_SUPPORT)
+// Topsampler not updated to work on SMP, but we still build it so that we always have symmetry between what's in armv5 and armv5smp
 #define FSHELL_CORE_SUPPORT_TOP
 #endif
 
@@ -406,6 +406,7 @@
 
 #ifdef FSHELL_CAP_DISKADMIN
 #define FSHELL_CORE_SUPPORT_FSCK
+#define FSHELL_CORE_SUPPORT_SUBST
 #endif
 
 #if defined(FSHELL_TRACE_SUPPORT) && defined(FSHELL_CAP_ALL)

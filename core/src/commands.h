@@ -1359,5 +1359,27 @@ private:
 	TUint iSetMask;
 	TUint iClearMask;
 	};
-	
+
+#ifdef FSHELL_CORE_SUPPORT_SUBST
+
+class CCmdSubst : public CCommandBase
+	{
+public:
+	static CCommandBase* NewLC();
+	~CCmdSubst();
+private:
+	CCmdSubst();
+private: // From CCommandBase.
+	virtual const TDesC& Name() const;
+	virtual void DoRunL();
+	virtual void ArgumentsL(RCommandArgumentList& aArguments);
+	virtual void OptionsL(RCommandOptionList& aOptions);
+private:
+	HBufC* iDrive;
+	TFileName2 iPath;
+	TBool iDelete;
+	};
+
+#endif // FSHELL_CORE_SUPPORT_SUBST
+
 #endif // __COMMANDS_H__

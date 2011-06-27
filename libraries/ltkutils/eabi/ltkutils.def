@@ -220,4 +220,10 @@ EXPORTS
 	_ZNK8LtkUtils16RAllocatorHelper11DescriptionEv @ 219 NONAME
 	_ZN8LtkUtils14GetSystemDriveEv @ 220 NONAME
 	_ZN8LtkUtils16AppendFormatTimeER6TDes16x @ 221 NONAME
+	_ZN8LtkUtils13CHalAttribute12DescriptionLEv @ 222 NONAME
+	_ZN8LtkUtils13CHalAttribute6UpdateEv @ 223 NONAME
+	_ZNK8LtkUtils13CHalAttribute12DeviceNumberEv @ 224 NONAME
+	_ZNK8LtkUtils13CHalAttribute13AttributeNameEv @ 225 NONAME
+	_ZNK8LtkUtils13CHalAttribute5ValueEv @ 226 NONAME
+	_ZNK8LtkUtils13CHalAttribute9AttributeEv @ 227 NONAME
 

@@ -41,10 +41,21 @@
 #define FSHELL_RENAMED_EXECUTABLE_FILE(fileNameFrom, fileNameTo) FSHELL_EXECUTABLE_FILE_ABI(fileNameTo, ABI_FOR(urel\ ## fileNameFrom))
 #define FSHELL_RENAMED_DEBUG_EXECUTABLE_FILE(fileNameFrom, fileNameTo) FSHELL_EXECUTABLE_FILE_ABI(fileNameTo, ABI_FOR(udeb\ ## fileNameFrom))
 #define FSHELL_EXECUTABLE_AS_DATA(fileNameFrom, fileNameTo) FSHELL_RENAMED_EXECUTABLE_FILE(fileNameFrom, fileNameTo)
-#define FSHELL_KERNEL_EXTENSION(fileName) FSHELL_EXECUTABLE_FILE(fileName)
-#define FSHELL_DEBUG_KERNEL_EXTENSION(fileName) FSHELL_DEBUG_EXECUTABLE_FILE(fileName)
+
+#ifdef FSHELL_SMP_SUPPORT
+// devcap(119) should hopefully return the number of CPUs
+#define FSHELL_SMP_EXECUTABLE(fileName, debugness) IF (devcap(119) > 1) FSHELL_EXECUTABLE_FILE_ABI(fileName, \epoc32\release\armv5smp\ ## debugness ## \ ## fileName) ELSE FSHELL_EXECUTABLE_FILE_ABI(fileName, \epoc32\release\armv5\ ## debugness ## \ ## fileName) ENDIF
+#define FSHELL_DEVICE_DRIVER(fileName) FSHELL_SMP_EXECUTABLE(fileName, urel)
+#define FSHELL_DEBUG_DEVICE_DRIVER(fileName) FSHELL_SMP_EXECUTABLE(fileName, udeb)
+#define FSHELL_KERNEL_EXTENSION(fileName) FSHELL_SMP_EXECUTABLE(fileName, urel)
+#define FSHELL_DEBUG_KERNEL_EXTENSION(fileName) FSHELL_SMP_EXECUTABLE(fileName, udeb)
+#else
 #define FSHELL_DEVICE_DRIVER(fileName) FSHELL_EXECUTABLE_FILE(fileName)
 #define FSHELL_DEBUG_DEVICE_DRIVER(fileName) FSHELL_DEBUG_EXECUTABLE_FILE(fileName)
+#define FSHELL_KERNEL_EXTENSION(fileName) FSHELL_EXECUTABLE_FILE(fileName)
+#define FSHELL_DEBUG_KERNEL_EXTENSION(fileName) FSHELL_DEBUG_EXECUTABLE_FILE(fileName)
+#endif
+
 #define FSHELL_ECOM_PLUGIN(dllName, resourceName) FSHELL_EXECUTABLE_FILE_ABI(dllName, ABI_FOR(urel\ ## dllName)) STRINGIFY(\epoc32\data\z\resource\plugins\##resourceName) - STRINGIFY(!:\resource\plugins\##resourceName)
 #define FSHELL_DEBUG_ECOM_PLUGIN(dllName, resourceName) FSHELL_EXECUTABLE_FILE_ABI(dllName, ABI_FOR(udeb\ ## dllName)) STRINGIFY(\epoc32\data\z\resource\plugins\##resourceName) - STRINGIFY(!:\resource\plugins\##resourceName)
 #define FSHELL_COMMAND_INFO_FILE(owner, fileName) STRINGIFY(\epoc32\data\z\resource\cif\##owner##\##fileName) - STRINGIFY(!:\resource\cif\##owner##\##fileName)

@@ -14,6 +14,7 @@
 #include <fshell/memoryaccess.h>
 #include "QResources3.hrh"
 #include <HAL.h>
+#include <fshell/ltkhal.h>
 #include <fshell/common.mmh>
 #include <fshell/clogger.h>
 
@@ -1006,29 +1007,22 @@ void CKernListBoxModel::RefreshDataL(TInt aIndex)
 	else if (iCurrentList == EListHal)
 		{
 		// HAL isn't actually a kernel container type but from the PoV of this app it is treated similarly
-		//HAL::SEntry* entry = new(ELeave) HAL::SEntry;
 		if (aIndex == -1)
 			{
-			HAL::SEntry* ents = NULL;
-			TInt numEntries = 0;
-			User::LeaveIfError(HAL::GetAll(numEntries, ents));
-			CleanupDeletePushL(ents);
-			for (TInt i = 0; i < numEntries; i++)
+			RPointerArray<CHalAttribute> attribs;
+			LtkUtils::CleanupResetAndDestroyPushL(attribs);
+			LtkUtils::GetHalInfoL(attribs);
+			for (TInt i = 0; i < attribs.Count(); i++)
 				{
-				SHalInfo* entry = new(ELeave) SHalInfo;
-				entry->iProperties = ents[i].iProperties;
-				entry->iValue = ents[i].iValue;
-				entry->iAttribute = i;
-				CleanupDeletePushL(entry);
-				model.NewKernDataL(iCurrentList, reinterpret_cast<TObjectKernelInfo*>(entry));
-				CleanupStack::Pop(entry);
+				model.NewKernDataL(iCurrentList, reinterpret_cast<TObjectKernelInfo*>(attribs[i]));
+				attribs[i] = NULL;
 				}
-			CleanupStack::PopAndDestroy(ents);
+			CleanupStack::PopAndDestroy(&attribs);
 			}
 		else
 			{
-			SHalInfo* entry = reinterpret_cast<SHalInfo*>(data->iInfo);
-			/*TInt err =*/ HAL::Get((HAL::TAttribute)entry->iAttribute, entry->iValue); // Nothing needs to be done if this fails
+			LtkUtils::CHalAttribute* entry = reinterpret_cast<LtkUtils::CHalAttribute*>(data->iInfo);
+			/*TInt err =*/ entry->Update(); // Nothing needs to be done if this fails
 			}
 		}
 	else if (iCurrentList == EListWindowGroups)

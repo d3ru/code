@@ -178,6 +178,7 @@ NONSHARABLE_CLASS(CHalListBoxData) : public CKernListBoxData
 	{
 public:
 	CHalListBoxData(CKernListBoxModel* aModel);
+	~CHalListBoxData();
 	virtual void DoFormatL(TObjectKernelInfo* aInfo, RBuf& name, RBuf& more, TInt& itemId);
 	virtual void DumpToCloggerL(RClogger& aClogger, TInt i, TInt count);
 	virtual void DoInfoForDialogL(RBuf& aTitle, RBuf& aText, TDes* aTemp);
@@ -243,12 +244,7 @@ public:
 	TInt iHandle;
 	};
 
-struct SHalInfo
-	{
-	TInt iProperties;
-	TInt iValue;
-	TInt iAttribute;
-	};
+// struct SHalInfo replaced by use of LtkUtils::CHalAttribute
 
 struct SWgInfo
 	{

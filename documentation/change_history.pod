@@ -22,7 +22,7 @@ __END__
 
 =item *
 
-Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch> and L<startapp|commands::startapp> commands.
+Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch>, L<subst|commands::subst> and L<startapp|commands::startapp> commands.
 
 =item *
 

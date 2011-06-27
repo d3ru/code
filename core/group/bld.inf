@@ -109,6 +109,10 @@ FSHELL_ROM_INCLUDE(fshell_core.iby)
 ..\builtins\reboot.cif              z:\resource\cif\fshell\reboot.cif
 #endif
 
+#ifdef FSHELL_CORE_SUPPORT_SUBST
+..\builtins\subst.cif             z:\resource\cif\fshell\subst.cif
+#endif
+
 .\autostart.script                     z:\system\console\scripts\autostart.script
 .\comm.script                          z:\system\console\scripts\comm.script
 .\start-stdio.script                   z:\system\console\scripts\start-stdio.script

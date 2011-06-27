@@ -183,4 +183,11 @@ EXPORTS
 	?Description@RAllocatorHelper@LtkUtils@@QBEABVTDesC16@@XZ @ 182 NONAME ; class TDesC16 const & LtkUtils::RAllocatorHelper::Description(void) const
 	?GetSystemDrive@LtkUtils@@YADXZ @ 183 NONAME ; char LtkUtils::GetSystemDrive(void)
 	?AppendFormatTime@LtkUtils@@YAXAAVTDes16@@_J@Z @ 184 NONAME ; void LtkUtils::AppendFormatTime(class TDes16 &, long long)
+	?Value@CHalAttribute@LtkUtils@@QBEHXZ @ 185 NONAME ; int LtkUtils::CHalAttribute::Value(void) const
+	?DescriptionL@CHalAttribute@LtkUtils@@QAEABVTDesC16@@XZ @ 186 NONAME ; class TDesC16 const & LtkUtils::CHalAttribute::DescriptionL(void)
+	?AttributeName@CHalAttribute@LtkUtils@@QBEABVTDesC16@@XZ @ 187 NONAME ; class TDesC16 const & LtkUtils::CHalAttribute::AttributeName(void) const
+	?Attribute@CHalAttribute@LtkUtils@@QBEHXZ @ 188 NONAME ; int LtkUtils::CHalAttribute::Attribute(void) const
+	??0CHalAttribute@LtkUtils@@QAE@HHHH@Z @ 189 NONAME ; LtkUtils::CHalAttribute::CHalAttribute(int, int, int, int)
+	?DeviceNumber@CHalAttribute@LtkUtils@@QBEHXZ @ 190 NONAME ; int LtkUtils::CHalAttribute::DeviceNumber(void) const
+	?Update@CHalAttribute@LtkUtils@@QAEHXZ @ 191 NONAME ; int LtkUtils::CHalAttribute::Update(void)
 
