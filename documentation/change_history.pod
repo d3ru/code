@@ -468,6 +468,10 @@ Test releases with build fixes.
 
 Prerelease to the SF staging server.
 
+=head2 Earlier versions
+
+I<Information about older non-public fshell releases is available L<here|old_change_history>.>
+
 =head1 Copyright
 
 Copyright (c) 2010 - 2011 Accenture. All rights reserved.

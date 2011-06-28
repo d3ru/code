@@ -4,6 +4,7 @@ css         documentation-style.css
 
 pod .\index.pod                                                    fshell\index.html
 pod .\change_history.pod                                           fshell\change_history.html
+pod .\old_change_history.pod                                       fshell\old_change_history.html
 pod .\getting_started.pod                                          fshell\getting_started.html
 
 index fshell\core ..\core\docs\index.pod

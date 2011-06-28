@@ -1,0 +1,3213 @@
+# change_history.pod
+#
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+#
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+__END__
+
+=head1 Fshell historical change history
+
+I<For those interested in the history, this is the original change history for fshell from before it was publicly released. The release numbers are internal and bear no resemblance to those in the later 'real' change history L<here|change_history>. Equally certain things may no longer be accurate, eg many macros and file locations were changed for the public release. References to unpublished non-fshell tools have been removed.>
+
+=head2 Release 065
+
+=over 5
+
+=item *
+
+I<Separated fshell from the toolkit source tree. Much updating of macros and deleting of files>
+
+=item *
+
+Added support for tracking Window Group ids/names to F<btrace_parser.dll> based on the btrace output of F<dlogev.dll>. This is used to support matching text from window groups that don't necessarily exist at the start. It is also now possible to identify window groups by owning thread - useful in the situation where the window group in question is un-named.
+
+=item *
+
+Changed C<CLineEditor> to automatically persist its history if it goes idle for more than 10 seconds, and to merge histories if multiple clients are using the same file at once. This means for example that fshell remembers the history of both instances if you launch one fshell instance from inside another. The order can get slightly shuffled though, as the merge algorithm isn't very clever.
+
+=item *
+
+Changed C<FSHELL_AUTOSTART> (if defined) to cause a script named F<autostart.script> to be run during boot. Previously it ran F<comm.script>. The default implementation of F<autostart.script> simply calls F<comm.script>, however alternative implementations can be picked up from (say) a memory card.
+
+=item *
+
+Changed the default rcons port from 3000 to 8086, to get around firewall restrictions (and/or in use ports) on some laptops.
+
+=item *
+
+Made winsockprt a slightly better-behaved citizen regarding win32 API calls.
+
+=item *
+
+Added L<usb|commands::usb> command, and text options to trace command (eg C<trace --enable kusb>).
+
+=item *
+
+Reworked iocons so that fshell will correctly share consoles between legacy exes that use CConsoleBase that call into other legacy exes.
+
+=item *
+
+Changed C<CClientBase> (the base class for the client side of client / server fshell commands) to log onto the server process before interacting with it. This allows the server unexpectedly dying to be detected and reported. Previously the server dying would probably have gone unnoticed, save for the fact that its state had been reset.
+
+=item *
+
+Added smoketests for basic fshell functionality.
+
+=item *
+
+Made some behavioural changes to C<RIoReadWriteHandle::SetMode>. Firstly, when the mode of a read handle is changed when the corresponding read object is in the foreground, the new mode is now immediately passed down to the console implementation. Previously, it wasn't passed down to the console until the next 'foreground changed' event was received and the client made a read request. This meant that a) if the client was already in the foreground the console may never received the mode change, and b) there was a period of time between the client gaining the foreground and the client making a read request in which the console would be in the wrong mode.
+
+Also, changed the VT100 consoles (via F<vt100.dll>) to only allow basic writes to the console when its in binary mode. Requests to set the cursor position, etc. are now ignored. Also, the cursor tracker object (a nasty hack to work around our inability to figure out how to get an accurate cursor position out of the terminal via escape sequences) is now not updated when the console is in binary mode. This allows xmodem and ymodem to avoid clearing the whole console after a binary mode transfer.
+
+The upshot of these changes is that the mode of the foreground read object should dictate the mode of the console. The mode of write objects only affects whether iosrv expands C<EKeyEnter> into C<\r\n> - they have no affect on the console. The rationale for this is that the foreground reader is the thing that effectively 'owns' the console, and if it is in binary mode, then nothing else in the system should be messing with it. Actually, there is still one remaining problem. Background writers can still do basic writes to the console even when the foreground reader is in binary mode. To prevent this, we should probably pass the mode of the write object down into the console for each write request. The console could then ignore writes from clients that are in the wrong mode.
+
+=item *
+
+Changed the behaviour of C<KValueTypeFlagLast> to make C<KValueTypeFlagRaw> redundant. Previously, 'last raw' was used in situation where a command would be passing a string on to another command. Previously, 'last' always removed quotes and escaping when slurping the remainder of a command-line into a single string. 'last raw' was needed to prevent this de-quoting and de-escaping.
+
+There were a few problems with the original behaviour. Firstly, with commands using 'last', any quotes that were necessary for the sub-command to see had to be escaped. For exmple, the following command would fail:
+
+  c:\>mkdir 'test dir'
+  c:\>time ls 'test dir'
+  Error: Couldn't parse command line : KErrArgument (-6)
+
+This failed because the parsing of C<time>'s command line resulting in the quotes around C<test dir> being removed. That meant that C<ls> received C<test dir> as its command-line, which it treated as a pair of arguments (C<test> and C<dir>) rather than the single argument (C<test dir>) the user probably intended. To work around this, it was previously necessary to run something like:
+
+  c:\>time ls ^'test dir^'
+
+On the face of it, this is exactly the situation that 'raw' was added to cope with. However, if C<time> were to use 'last raw', it wouldn't be able to handle quotes or escapes that are used protect its command-line from fshell's parser. For example:
+
+  c:\>time 'echo foo && echo bar'
+
+In this case, the majority of the command-line is quoted to prevent fshell from seeing the C<&&> and processing C<echo bar> as a separate pipe-line. However, if 'raw' had been used, then C<time> would try to run a command with the name C<'echo foo && echo bar'> - clearly not what was intended.
+
+So, we had the situation where 'last' used alone didn't save the user from having to use additional quotes or escapes and 'last raw' couldn't cope with strings that contained fshell operators. After much discussion (between JoeB and TomS) we decided to drop 'raw' altogether and change the behaviour of 'last' to cope with all the situations we could think of.
+
+As a result, 'last' can no longer be used with 'multiple' (something only fshell did, and then (seemingly) only to allow users to pass options to scripts without having to escape them). The purpose of 'last' is to coalesce multiple arguments (or options) at the end of a command-line into a single string. If the normal de-quoting and de-escaping that C<CCommandBase> performs produces in a single string and consumes the entire remainder of the command-line, then that string is used - this handles the 'command-line that contains fshell operators' case. Otherwise, the entire remainder of the command-line is used as is (i.e. with B<no> de-quoting or de-escaping) - this saves the user from double escaping in most situations.
+
+=item *
+
+Changed iosrv to support consoles with separate stdout and stderr channels, via the C<ConsoleStdErr> extension.
+
+=back
+
+=head2 Release 064
+
+=over 5
+
+=item *
+
+Fixed bug in fshell whereby C<fshell -e exit> would cause a panic.
+
+=item *
+
+Changed C<CBtraceReader> to empty the btrace buffer when it is constructed. This avoids clients seeing old data and also prevents previous buffer overruns from causing the reader to throw KErrOverflowed.
+
+=item *
+
+Fixed a bug in F<vt100serial.dll> and F<vt100busdevcons.dll> that left certain comms parameters uninitialised. This caused C<KErrNotSupported> errors on certain reference hardware.
+
+=item *
+
+Worked around (to some extent) defective serial driver behaviour on certain platforms which complete all pending requests with KErrAbort each time the device goes to sleep. For the time being, this is worked around by simply retrying the request rather than actually aborting. However, that has the consequence that serial terminals lock up each time the device goes to sleep and only become unlocked when something (like a physical key press) causes the device to wake up. Far from ideal, so hopefully this change can be removed when the drivers are fixed.
+
+=item *
+
+Added thead name to the verbose output of L<listapps|commands::listapps>.
+
+=item *
+
+Fixed bug in VT100 console's UTF-8 handling that broke C<ymodem send>.
+
+=item *
+
+Fixed issue with symbol lookup from ROFS BSYM files (make sure you have latest version of makbsym) and off-by-one error in offset calculations.
+
+=item *
+
+Fixed multiple crash bugs in fed when deleting large amounts of text.
+
+=item *
+
+Changed capabilities of fshell ecom command to ensure it is able to see all plugins. Fshell dump command now supports multiple inputs. Added --rdebug option to L<tee|commands::tee>. Added --force option to L<debugport|commands::debugport>.
+
+=item *
+
+Changed semantics of fshell cp command to be in line with with POSIX cp, rather than sticking to the CFileMan semantics. See the cp L<documentation|commands::cp> for details.
+
+=item *
+
+Added L<ffstrace|commands::ffstrace> command, a cut-down version of fstracer that uses btrace and integrates with fshell. A corresponding btrace-aware fileserver plugin is also added (ffstraceplugin.fxt).
+
+=item *
+
+Extended btrace_parser.dll to automatically reassemble multipart btrace frames, if C<CBtraceReader::SetMultipartReassemblyL(TInt aMaxTrackedFragments)> is called. If enabled, multipart frames are cached, and not dispatched to observers until all the fragments have been seen. At that point HandleBtraceFrameL is called on the observers with a 'frame' representing the first multipart frame but with the iData set to the entire data. There is no support (yet) for automatically expiring fragments after a certain time if the final fragment is not seen. It would probably be a good idea to add this behaviour to make the parser more robust against consuming excessive memory. If a corrupted multipart frame is detected (out of order, the wrong size) then the entire fragment is dropped. aMaxTrackedFragments specifies the maximum number of multipart frames that the reader will track concurrently. Resetting the reader will clear any partially-reassembled fragments.
+
+=item *
+
+To work with the TB9.2 and later header file reorganisation, all occurences of C<systeminclude \epoc32\include> in MMP files have been replaced with an include of ltk_system_include.mmh. Because it was introduced part way through TB9.2, platforms which have the new header locations must define C<LTK_HEADER_RELOCATION> in their platform.mmh.
+
+=item *
+
+Fixed a bug in fshell that caused it to report the wrong script line number if a background command threw an error.
+
+=item *
+
+Added UTF-8 parsing support to C<LtkUtils::RLtkBuf16>. The simplest handling is via C<void RLtkBuf16::CopyFromUtf8L(const TDesC8& aUtf8EncodedText)>. Streaming is supported (without the client needing a state machine to track the conversion process) via repeated calls to C<void RLtkBuf16::AppendUtf8L(const TDesC8& aUtf8EncodedText)> followed by a call to C<FinalizeUtf8()> once all the data has been read. See F<descriptorutils.h> for more details.
+
+A further convenience function C<HBufC16* LtkUtils::DecodeUtf8L(const TDesC8& aUtf8EncodedText)> is provided if use of RLtkBuf is not desired.
+
+=item *
+
+Changed fshell to use the new UTF-8 decoding functionality in F<ltkutils-tcb.dll>.
+
+=item *
+
+Added new ROM build macro C<-DFSHELL_AUTOSTART> which, if enabled, uses the sbrec recogniser to autorun "fshell comm.script" at startup.
+
+=item *
+
+Added L<localdrive|commands::localdrive> and L<reboot|commands::reboot> commands.
+
+=item *
+
+Extended fshell tab auto-completion to complete environment variables and (where a CIF is available) command options in addition to command names and filenames. Eg:
+
+    Input:    kill --<tab>
+    Response: --reason  --terminate  --panic  --thread  --match  --all
+
+Note that (while possible in principle) fshell does not yet tab complete enum arguments or otherwise intelligently tab complete based on the argument/option types.
+
+=item *
+
+Added new ioutils.h macros C<TRAP_QUIETLY>, C<TRAPD_QUIETLY> and C<TRAP_IGNORE_QUIETLY>. These behave similarly to the standard C<TRAP> macros, but supress the printing of error messages from C<CCommandBase::PrintError> (and associated functions/macros such as C<IoUtils::PrintError>, C<LeaveIfErr>, C<StaticLeaveIfErr>, C<TRAPL> etc), if they occur inside the trap harness. The CCommandBase EErrorReported flag is not set if an error is supressed in this way.
+
+=item *
+
+Changed the behaviour of C<CCommandBase> to allow options and arguments to be overridden if they have the same long name. This is to allow commands implemented as a sub-class of some other command (e.g. ymodem, which is derived from xmodem) to replace things that are different but other wise inherit options and arguments from the super class. When defining options and arguments using a CIF, this can be achieved using the C<==include> directive (see F<ymodem.cif> for an example).
+
+=item *
+
+Changed F<vt100serial.dll> to break large writes to the serial driver up into at most 2 KB writes. This was necessary to stop the USB driver on the Nokia E90 from failing with KErrNoMemory, presumably because it can't handle writes above a certain size. Note, this code already performs these writes in a retry loop if KErrNoMemory is received to work around a problem with the loopback CSY that returns that error when its internal buffer is full (rather than delaying completing the request until it has enough spare buffer, which would be a more sensible behaviour). Previously this was causing commands like "fdb --help --pod" (which causes the whole CIF to be written to the serial port in a single write) to hang indefinitely.
+
+=item *
+
+Added basic CSS to the toolkit HTML documentation.
+
+=item *
+
+Removed all occurences of C<RHackHeap> and similar from the toolkit. Replaced them with a new class C<RAllocatorHelper> which understands the new hybrid allocator, and abstracts away poking around inside RHeap. At same time removed getheap from platforms that are going to get the new hybrid heap.
+
+=item *
+
+Added howto_use_japanese_characters.
+
+=back
+
+=head2 Release 063
+
+=over 5
+
+=item *
+
+Added C<CCommandBase::UsingCif>. This is used by C<CClientBase> to support both sub-classes that use CIFs and also those that haven't yet been migrated to CIFs.
+
+=item *
+
+Added support for C<==include filename> CIF tag. Allows one CIF to include another one. Intended to be used by commands that are implemented as class hierarchies to avoid duplicating documentation for options and arguments that are added by base classes.
+
+=item *
+
+Simplified some of the implementation of L<fzip|commands::fzip> and rationalized its verbose output. This command now only handles single files when used in 'gzip' mode (previously it would potentially generate multiple archive files). Also migrated it to using a CIF.
+
+=item *
+
+Added the following APIs:
+
+  TFileName2::IsFile
+  TFileName2::IsDir
+  TFileName2::SetTypeL
+
+=item *
+
+Fixed long standing memory leaks in the L<rm|commands::rm> and L<infoprint|commands::infoprint> commands, and in CCommandBase and CVtcConsoleBase.
+
+=item *
+
+Added L<hash|commands::hash> command, for calculating cryptographic hashes.
+
+=item *
+
+Fixed some C<ESyncCallsDisallowed*> panics in fshell that were caused by local commands (commands that run in fshell's main thread) using synchronous interfaces to write to the console. All local commands have now been turned into thread commands that use suitable resource locking. Support for local commands has now been removed from fshell and F<iocli.dll>.
+
+=item *
+
+Fixed problem with handling of btrace data that meant that the thread-idle btrace parser output was unreliable.
+
+=item *
+
+Fixed memoryaccess/sudo problem with shadowing memory when using the Flexible Memory Model.
+
+=item *
+
+Updated sysinfo to display kernel config flags such as platsec enforcement and crazy scheduler/SMP status. Also migrated it to using a CIF file and fixed the --machine-uid option, which had a space in.
+
+=item *
+
+Changed the default line separator in iosrv (for when the ELine read mode is set on an RIoReadHandle) from CRLF to LF, so that input with LF and CRLF endings are both picked up. Removed the explicit calls to SetLineEndingL from the grep and rdebug commands (so they use the new default LF). Don't think it's worth worrying about CR line endings. This is chiefly so that kerninfo (which uses LF line endings) piped into grep works correctly.
+
+=item *
+
+Added rendezvous checks to C<CClientBase> so that server commands that fail to initialise can be detected.
+
+=item *
+
+Removed last remaining support for DLL commands from fshell.
+
+=item *
+
+Updated createsrc FshellToolkitCmd template to produce a CIF file. Added separate template "FshellCmd" for commands that don't need to be integrated into the toolkit build system - these don't produce a CIF file or expect common.mmh to be updated with a UID.
+
+=item *
+
+Added a new descriptor class C<SLitC> and associated macro C<DESC(x)> to ltkutils.dll. This is useful when you want static fully const arrays of descriptors, which isn't possible with the built-in TLitC without declaring all the elements separately, or declaring the array as C strings and constructing TPtrCs when needed. Usage:
+
+    const SLitC KData[] = 
+        {
+        DESC("A string"),
+        DESC("Another string"),
+        };
+		
+    const TDesC& item1 = KData[1]; // Like TLitC, automatic casts usually do the trick
+
+You can treat the array items the same as TLitCs - ie most of the time they behave as descriptors but sometimes you may need to use operator() to force the cast. An 8-bit variant C<SLitC8>/C<DESC8()> is also provided.
+
+=item *
+
+Added a new API C<LtkUtils::GetHalInfoL> to standardise the human-readable descriptions of HAL attribute names and values. Migrated the hal and sysinfo commands to use it (kerninfo needs doing too but is more complicated to change). Also created a CIF for hal.
+
+=item *
+
+Added the SPCRE regular expression library to the toolkit. On platforms where C<LTK_SPCRE_SUPPORT> is defined, L<grep|commands::grep> now supports full regexes.
+
+=item *
+
+Added I<startup> command on platforms that support Dynamic Startup Configurations. (As controlled by macro C<LTK_DYNAMICSTARTUP_SUPPORT>).
+
+=item *
+
+Added hardware breakpoint support to L<fdb|commands::fdb>, on platforms that support it (currently ARM11xx and ARM11 MPCore, as indicated by the platform.mmh macro C<LTK_ARM11XX_SUPPORT>). These have the benefit of being per-thread so they are guaranteed not to affect any other part of the system. Hardware breakpoints work on ARM and Thumb code and in SMP environments. Also added support for conditional breakpoints (eg "break euser.dll User::Leave(int) r0==-4").
+
+=item *
+
+Fixed KERN-EXEC 0 panic in vt100busdevcons, and tweaked the parameter parsing to be more flexible. Added L<which|commands::which> fshell command and fixed some potential heap corruptions in fshell. Added L<tee|commands::tee> command. Added --all option to L<kill|commands::kill> command. Added L<error|commands::error> command so that scripts can abort themselves.
+
+=item *
+
+Fixed a memory leak in the F<btrace_parser.dll> that could cause clients to run out of memory. This was caused by the C<CBtraceContext> class leaking C<TThread> objects because of missing C<EAmTraceSubCategoryThreadKilled>-type btrace frames.
+
+=item *
+
+Added UTF-8 support to some of the parts of iosrv that deal in wide-to-narrow descriptor conversions: the shell '>' operator; the tee command; the VT100 consoles (for output only).
+
+=item *
+
+Improvements to undertaker command. Fixed a bunch of thread commands that could potentially leak process-owned handles if they were killed.
+
+=item *
+
+Added a script comm.script to \system\console\scripts to automatically detect what hardware is being used and to set up an fshell serial connection over the console and COMM port config appropriate for that hardware. Currently it understands what ports to use on H4, H6, Navi and Beagleboard. Added rombuild macro C<FSHELL_AUTOEXEC> which if specified includes an eshell autoexec.bat file that runs comm.script whenever eshell is launched.
+
+=item *
+
+fshell now searches for scripts in \system\console\scripts on all drives, if no path is supplied (and the script is not found in the current working directory). Acceptable syntax is:
+
+	fshell Z:\system\console\scripts\comm.script
+	fshell comm.script
+	fshell comm
+
+=item *
+
+Worked around long-standing problem whereby the iosrv process was being renamed incorrectly when using fshell with econseik.
+
+=item *
+
+Updated clogger's rdebug router to be SMP safe.
+
+=back
+
+=head2 Release 062
+
+=over 5
+
+=item *
+
+Added another VT100 console that uses RBusDevComm to communicate directly to a serial UART. This console is between vt100cons and vt100debugport in terms of dependancies and functionality - slightly more dependancies than the debugport version because it requires a UART driver, but still less than vt100cons because it doesn't require all of C32.
+
+=item *
+
+Added "fshell (Serial)" launcher icon and corresponding C<LTK_FSHELL_SUPPORT_SERIAL_ICON> macro.
+
+=item *
+
+Changed fshell to rendezvous later. Instead of completing right at the start of its E32Main, it now defers until C<CShell::DoRunL()> just before it starts parsing commands. This is after most of the console initialisation has taken place.
+
+=item *
+
+Added new platform "sf-beagletshell" which is for running textshell-only SF^2 builds on beagle board.
+
+=back
+
+=head2 Release 061
+
+=over 5
+
+=item *
+
+Removed C<LTK_TEXTSHELL_ONLY> configuration macro, replaced with C<!LTK_WSERV_SUPPORT> or a more appropriate macro such as C<LTK_BASE_ROM>. The other C<LTK_NO_XXX> macros that were previously assumed with C<LTK_TEXTSHELL_ONLY> now must be explicitly defined in the platform.mmh.
+
+=item *
+
+Added 'rate' option to L<vt100cons|vt100cons::Serial variant> configuration to specify the baud rate of the serial port. This is required for QEMU support (where it should be set to C<rate=115200>).
+
+=back
+
+=head2 Release 060
+
+=over 5
+
+=item *
+
+Fixed a number of bugs in iosrv and the VT100 support which makes everything much more robust with respect to the order in which you: insert or remove the USB cable; change USB personalities in the USB selection dialog; exit fshell; open or close the console from the PC side. Previously if you got the order wrong it could hang the console or the entire device - now whatever you do, the iosrv should behave appropriately.
+
+=item *
+
+Added support for "Command Info Files" (CIFs). These can be used to define the interface and documentation for fshell commands that are implemented using C<CCommandBase>. Where previously details of arguments and options etc. were specified in C++ source code, the majority of this information can now be defined in a CIF, which is a plain text file. The format of CIFs is similar to POD (Perl's documentation source format), but with an additional set of key-words that relate to the specifics of command interfaces.
+
+=item *
+
+Changed the majority of fshell's built-in commands to use CIFs.
+
+=item *
+
+Added basic breakpoint support to L<fdb|commands::fdb>. BSYM parsing in LtkUtils now supports v2.1 format.
+
+=item *
+
+Added new descriptor class C<RLtkBuf> to LtkUtils. This is like RBuf but provides a few extra useful functions, such as leaving versions of Append and AppendFormat, as well as a function C<ToHBuf> to return the underlying HBufC. It is compatible with TDes and most uses of RBuf. There is an 8-bit version C<RLtkBuf8>, which additionally allows wide-to-narrow conversion to UTF-8 without needing to link against charconv. (There is also a function C<LtkUtils::Utf8L> that returns an HBufC8* for places where an RLtkBuf8 is not convenient.)
+
+=item *
+
+Added L<glinfo|commands::glinfo> command - displays information about the currently installed graphics libraries.
+
+=item *
+
+Added new console L<vt100debugport|vt100cons::Debugport variant>, for use on textshell-only ROMs which don't even have RComm support. It uses the serial keyboard driver via the text windowserver for input, and RDebug::Print for output. Only use this console if you can't use the standard serial vt100cons.dll.
+
+=item *
+
+Added beagleboard support to the sf platform (and fixed many bugs in baserom and support for C<LTK_TEXTSHELL_ONLY>).
+
+=item *
+
+Fixed long-standing hang in clogger and (separate issue) corruption of rdebug buffer when killing cloggerconfig --rdebug.
+
+=item *
+
+Toolkit internal stuff: removed support for C<LTK_FSHELL_SUPPORT_DLL_COMMANDS> (Fshell still technically supports them but nothing is built as a DLL any more); The value of C<LTK_FSHELL_SUPPORT_USB_ICON> is no longer ignored; platform.mmh macros reworked so that newer platforms need to define less and older platforms more.
+
+=back
+
+=head2 Release 059
+
+=over 5
+
+=item *
+
+Fixed support for Symbian Foundation platform. Tools build and run on SF 2.0d baselines
+
+=item *
+
+Added L<fdb|commands::fdb> command, a simple post-mortem thread debugger.
+
+=item *
+
+Added FshellToolkitCmd template to createsrc.
+
+=item *
+
+Fixed incorrect cursor positioning when using fshell's F8 autocomplete of lines that were longer that the screen width.
+
+=item *
+
+Negative numbers are now supported as fshell arguments (so "debugport -2" now works as expected). If there is a short option for that digit then that takes precedence, therefore commands shouldn't use digits as short options if they want to be able to accept negative integer arguments.
+
+=item *
+
+Added L<hal|commands::hal> and L<rom|commands::rom> commands.
+
+=item *
+
+Added C<CMemoryAccessCommandBase> class to iocli.dll, for fshell commands that use memoryaccess and particularly for those that can also build (albeit with reduced functionality) when LTK_MEMORY_ACCESS_SUPPORT is not defined. Updated most of the relevant commands to use it.
+
+=item *
+
+Added option to L<btrace|commands::btrace> command to modify the text trace mode (useful if you're btracing RDebug::Print and still want it to appear on the debug port).
+
+=item *
+
+Added a C<-M|--matchify> option to ps and kerninfo. This is like C<--match> except it doesn't require preceding/trailing asterisks, instead you uses the regex-like ^ and $ for matching against the beginning or end of the string if it is really required. Note that the default escape character in fshell is also '^' so this must be single-quoted or double-escaped. Eg C<ps -M ^^fsh> or C<ps -M '^fsh'>.
+
+=item *
+
+Added support for POD (see "perldoc perlpod") formatting to C<IoUtils::CTextFormatter>. This is now used by the C<CCommandBase> help text generation code. As such, implementations of C<CCommandBase::Description> can now return a descriptor that contains POD directives. Both POD commands (e.g. "=over 5") and POD interior sequences (e.g. "BE<lt>this is boldE<gt>") are supported.
+
+=item *
+
+Added support for formatting of C<CCommandBase> enum options and arguments. New overloads of C<AppendEnumL> are now available that take an extra descriptor argument. This must contain a comma separated quoted list of enum value descriptions. If the new overloads are used, this information will be used to render help output like this:
+
+     <operation>  The required operation to perform. Supported values are:
+
+          start  Request that all backup aware modules release their file
+                 handles and prepare for a backup.
+          stop   Request that all backup aware modules reclaim their file
+                 handles.
+
+The old overloads are still available, which produce help output like this:
+
+     <operation>  The required operation to perform. [start, stop]
+
+If the enum value names are self explanatory, latter form is preferable. If not, the new form can now be used rather than describing each value in the main description with limited formatting.
+
+=item *
+
+Updated the tool-kit's commands that use C<CCommandBase::AppendEnumL> to use the new overloads (described above) where appropriate.
+
+=item *
+
+Added .bsym and .map parsing to ltkutils. This allows fdb to lookup symbols on the fly.
+
+=item *
+
+Changed vt100 colour scheme handling to fix ugly grey background when viewing fshell command help.
+
+=item *
+
+Added Tool-Kit Highlights and Consoles documentation pages. Also removed rcons and vt100cons from the top level index. These are now only accessible through the new Consoles page.
+
+=item *
+
+Added C<--binary> option to the L<echo|commands::echo> command.
+
+=item *
+
+Changed L<vt100cons|vt100cons> (and variants) to support automatic detection of the terminal emulator screen's size. This functionality is enabled by default, but can be disabled by adding the following to F<\system\console\vt100.ini>:
+
+  console_size_detect false
+
+Note, TeraTerm has a bug relating to the way it keeps track of cursor positions. It was necessary to work around this bug for the above functionality to work. See C<LTK_VT100_WORK_AROUND_TERATERM_CURSOR_BUG> for details.
+
+=item *
+
+Added L<pointer|commands::pointer> command.
+
+=item *
+
+Added support for setting the time and date from a TInt64 to L<date|commands::date>. Also added options for displaying the time as a TInt64.
+
+=item *
+
+Added message queue, semaphore, mutex and timer listings to L<kerninfo|commands::kerninfo>.
+
+=item *
+
+Changed C<CCommandBase> to display the command help output a page at a time, as though it had been piped through L<more|commands::more>. This is hopefully a more useful default behaviour and also prevents help attributes from being removed.
+
+=item *
+
+Fixed a bug in F<win32cons> that prevented things like the cursor position and console size being read in certain circumstances.
+
+=item *
+
+Changed F<iosrv's> default configuration (which can be modified via F<\system\console\iosrv.ini>) to automatically detect the console's size by default. This particularly useful when using <econs.dll> (the text window server's console implementation), which lies about its size. Note however that this setting has no effect when using L<vt100cons|vt100cons>. See above for details of how to turn on auto size detection in that. Future tool-kit releases will hopefully rationalise these two configuration options into one.
+
+=item *
+
+Changed fshell so that PIPS executables launched via F<pipsrun.exe> (an executable that glues the PIPS and fshell notions of standard I/O together) get killed if the user presss ctrl-C. Previously, only F<pipsrun.exe> was killed and the actual PIPS executable was left running.
+
+=item *
+
+L<chkdeps|commands::chkdeps> will now check that DLL versions match. Changed the L<load|commands::load> command to support specifying a version without specifying uids.
+
+=item *
+
+Added L<lbs|commands::lbs> to the tool-kit build.
+
+=back
+
+=head2 Release 058
+
+=over 5
+
+=item *
+
+Added L<icc|commands::icc>, L<rsocket|commands::rsocket>, L<tfinfo|commands::tfinfo> and L<genbmp|commands::genbmp> commands.
+
+=item *
+
+Added a USB console implementation, C<vt100usbcons>. This is identical to the vt100 serial console except that it waits for USB enumeration before opening the serial connection.
+
+=item *
+
+Changed the C<fshell (USB)> app launcher icon to use the new USB console.
+
+=item *
+
+Made improvements to the error reporting in VT100 console base class. If we already have a fully constructed underlying console then the error is printed to that. A dialog is displayed only if we don't have an underlying console, or if the underlying console is lazy and had not been constructed. A new console custom interface has been added to support this, C<LazyConsole::IsLazy> and C<LazyConsole::IsConstructed>.
+
+=item *
+
+Added L<ecom|commands::ecom> fshell tool for querying available ECOM plugins and testing loading them.
+
+=item *
+
+Housekeeping: Cleaned up load.exe and renamed it fshell_load.exe; Fixed up documentation build warnings.
+
+=item *
+
+Changed default behaviour of L<sudo|commands::sudo> to modify the in-memory kernel attributes of the process rather than modifying the exe binary on disk. This means sudo is now in many cases usable under WINSCW. Added a --disk option for when you need the old behaviour. Sudoing exes in the core (XIP) image is now supported.
+
+=item *
+
+L<Patchdata|commands::patchdata> now supports viewing and modifying DLLs in the core (XIP) image.
+
+=item *
+
+Implemented some VT220 escapes in the VT100 console. This means that Home, End, Page Up, Page Down, Delete and F1-F12 are all now working in fshell over TeraTerm. Older versions of Teraterm shipped with an incorrect keyboard mapping which is *not* fixed when you upgrade into the same directory as the old one. If the keys still don't work, you need to do a clean install to get the right config.
+
+=item *
+
+Fixed a bug in iosrv that caused it to KERN-EXE 44 panic (EBadMessageHandle) if a client was killed with a stdin change notification pending. The server wasn't completing this message at the point the kernel destroyed the client's session, and so when the C<CIoReadObject> was destroyed later this message handle was invalid.
+
+=item *
+
+Added support for contact photos to L<fcontacts|commands::fcontacts>. Also made the interface to this command more consistent with C<CNTMODEL> nomenclature by changing the C<-s> | C<--surname> option to C<-l> | C<--last-name>.
+
+=item *
+
+Added support for getting and setting secure time and UTC offset to L<date|commands::date>.
+
+=item *
+
+Added L<nitz|commands::nitz> command.
+
+=back
+
+=head2 Release 057
+
+I<[Nothing fshell-related]>
+
+=back
+
+=head2 Release 056
+
+=over 5
+
+=item *
+
+Added support to L<clogger's|clogger> client library for logging calls to be made C (as opposed to C++) code. See C<Clogger_Slog> in F<clogger.h>.
+
+=item *
+
+Added support for multiple command line enumerations of a particular type to C<CCommandBase>. See new overloads of C<RCommandArgumentList::AppendEnumL> and C<RCommandOptionList::AppendEnumL>. Note, be sure to pass an actual RArray<TInt>& into these, not an RArray<TSomeEnum>&. Internally, CCommandBase casts whatever you pass in to an RArray<TInt> and this is a specialized template with a different memory layout to the general version.
+
+=item *
+
+Added support for console attributes to L<echo|echo>. Also added support for reading the text to be echoed from stdin.
+
+=item *
+
+Added console attribute support to guicons. Also changed guicons to bring itself into the foreground when a new console is created.
+
+=back
+
+=head2 Release 055
+
+=over 5
+
+=item *
+
+Fixed a bug clogger's flogger stub that caused attempts to copy construct C<RFileLogger> objects to panic. This was because the original C<RFileLogger>'s descriptor member data was being overwritten with C<RClogger> member data. However, on copy construct of C<RFileLogger> (something F<HTTP> does), the C<TDes16> '=' operator was being exectuted, which resulted in a panic because the size of the descriptor was invalid. The fix was to allocate an C<RClogger> object on the heap (much like the CDU variant does), thereby ensuring the the C<TDesC16> and C<TDes16> member data of C<RFileLogger> remains intact.
+
+=item *
+
+Added C<LTK_CLOGGER_REPLACE_FLOGGER> and C<LTK_CLOGGER_REPLACE_CDU> macro to allow L<clogger|clogger> to be more easily configured to replace flogger and CDU.
+
+=back
+
+=head2 Release 054
+
+=over 5
+
+=item *
+
+Fixed a couple of typographical errors.
+
+=back
+
+=head2 Release 053
+
+=over 5
+
+=item *
+
+Fixed breakages introduced to cenrep command.
+
+=item *
+
+Refactored btrace_parser slightly. Entailed removing the CBtraceFlusher::SetObserver API. While technically a BC break nothing outside of the DLL used this interface. CBtraceFlusher::FlushL now injects a sync frame into the btrace buffer (like CBtraceReader::SynchronizeL) so that it knows when to stop flushing - otherwise a constant stream of data into the buffer (such as when profiling) can cause FlushL to spin forever. SynchronizeL function simplified to use the underlying flush's sync frame.
+
+=item *
+
+Improved the performance of GuiCons, particularly when running on hardware with a wide screen (e.g. Nokia E90).
+
+=item *
+
+Fixed a bug in GuiCons that could result in fshell unexpectedly exiting.
+
+=item *
+
+Changed CCommandBase::PrintWarning to add a print a new line to the console if "\r\n" wasn't explicitly specified.
+
+=item *
+
+Added C<--reset> option to L<btrace|btrace>. Previously it wasn't possible to remove all primary or secondary filters. Also improved the readability of the tool's output, and amplified its verbose output.
+
+=item *
+
+Changed F<iosrv.exe> and F<iocli.dll> so that persistent console users can change between console mode and non-console mode.
+
+=item *
+
+Added L<heaptrace|commands::heaptrace> fshell command to enable RHeap allocation tracing.
+
+=item *
+
+Fixed a set of bugs in various fshell commands that take command lines are arguments (e.g. L<time|time>, L<repeat|repeat>, etc.). Previously the single representing the command line was not de-quoted or escaped. This made it impossible to do things like C<time 'this.exe && that.exe'>. Quotes and escapes are now handled for this strings (which use KValueTypeFlagLast) like any other.
+
+=item *
+
+Reorganised the way F<iosrv> stores its handles. Rather than having multiple C<CObjectCon> objects, it now has just one. This allows clients to find objects by any of the C<RIoHandle::TType> types. Previously some of these (C<EReadWriteObject>, C<EEndPoint> and C<EPersistentConsole>) were disallowed because they potentially spanned multiple containers. Updated the interface to L<ioinfo|commands::ioinfo> accordingly.
+
+=item *
+
+Changed F<iosrv> to handle read objects changing between being attached to consoles and pipes. Since the arrival of persistent consoles, clients of F<iosrv> can no longer be sure of what kind of end point they're attached to. This is significant because only console end points support the notion of reading key presses (i.e. things with a key code _and_ a modifier code). If a client that was once attached to a console issues a C<RIoConsoleReadHandle::WaitForKey> request and the end point changes to something other than a console, this request is now completed with C<KErrNotSupported> (previously it was not completed regardless of what the user did). Clients should treat this as a non-fatal error, enquire whether their read handle is attached to a console and if not retry the read using the more general (and always supported) C<RIoReadHandle::Read>. Note, fshell and the server command base classes in F<iocli.dll> have been updated to behave this way.
+
+=item *
+
+Added L<reattach|reattach> and L<disown|disown> fshell commands.
+
+=item *
+
+Replaced C<RIoConsoleReadHandle::SetConsoleMode> and C<RIoConsoleReadHandle::SetConsoleModeL> with C<RIoReadWriteHandle::SetMode> and C<RIoReadWriteHandle::SetModeL>. Also removed the equivalent methods in C<RIoWriteHandle>. The upshot is that both read and write handles can be set into text or binary mode. Note, the mode of read handles that are attached to consoles has an impact on the mode of the console. When a given read handle that's attached to a console gains foreground, it will attempt to set the mode of the console to match its mode. If it is in binary mode and the console fails to set into binary mode (for example, because it doesn't support the associated extension interface), the next read on the handle with report the error. Conversely, if a given read handle (that's attached to a console) is in text mode, and the console fails to set into text mode the error is ignored. This is because all consoles are expected to implicitly be in text mode and a given console implementation not supporting the extension interface for changing into binary mode should not be an error that clients see. The net result of this change is that things that need binary mode (e.g. L<ymodem|ymodem>) can set their handles into that mode, but they don't need to explicitly set them back again. The console will automatically be returned to text mode when a text mode read handle regains the foreground. This means the L<ymodem|ymodem> exiting abnormally shouldn't leave the console in an unusable state.
+
+It was necessary to support binary mode on read handles because iosrv now expands C<EKeyEnter> key codes to C<\r\n> when the read handle is in text mode and the client has issued an C<RIoReadHandle::Read> request (as opposed to C<RIoConsoleReadHandle::WaitForKey>) - this ensures that line mode reads will be completed even in the underlying end point changes from a console to a pipe. To ensure that this expansion only occurrs in text mode (and hence doesn't mess up thinks like L<ymodem|ymodem> that rely on binary mode), the notion of text/binary mode needed to be available for both read and write handles (previously only write handles supported this).
+
+=item *
+
+Fixed a bug when closing a tab in guicons caused the wrong softkeys to be displayed if the newly displayed tabs console was already closed.
+
+=item *
+
+Fixed a regression in f<iosrv> that caused L<more|more> to hang its pipe-line when it exited via a 'q' key press from the user.
+
+=item *
+
+Changed C<TFileName2::Exists> and C<TFileName2::IsDirL> to handle the special case of root directories. Note, F32 doesn't allow a C<TEntry> to be retrieved for root directories and so C<RFs::Drive> is used instead.
+
+=item *
+
+Fixed C<KERN-EXE 44> (C<EBadMessageHandle>) panic in F<iosrv>. This was due to the server now running consoles in a separate thread, but not handling that fact that clients could close their I/O handles whilst an asynchronous request towards a console thread was still pending. C<CIoConsole> now picks up notifications from C<CIoEndPoint> when clients detach and does the necessary cleanup.
+
+=item *
+
+Fixed a bug in F<btrace_parser.h> where it was forward declaring a couple of things as classes rather than structs as they should have been. This was causing linkage problems.
+
+=item *
+
+Added C<KValueTypeFlagRaw> to F<ioutils.dll>. This must be used in conjunction with C<KValueTypeFlagLast> and causes the remainder of the command-line to be put into the associated string argument without any further processing. This means that escape characters and quotes are preserved. Useful for commands that need to pass arguments on to other commands. Used by the server command base classes.
+
+=item *
+
+Rationalised the L<swi|commands::swi> command line syntax, and added a --match option. It now takes an operation as the first paramater, one of 'list' (the default), 'install' or 'uninstall'.
+
+=item *
+
+Added a new library to read and write INI files to F<ltkutils.dll>. It supports INI definition files (IDF) which specify the recognised options in an INI file, together with their type, name, description and default values. This allows the contents of an INI file to be verified when it is loaded.
+
+The principal interface to the new library is class C<CIniFile> in namespace C<LtkUtils>. Is can create a new INI file from an IDF file, or load an existing one. The class <CIniReader> does not perform any validation of a file and is not recommended for normal use.
+
+The existing F<iosrv.ini> and F<rcons.ini> have been migrated to use the new library, and a new F<guicons.ini> has been created to persist guicon's settings.
+
+=item *
+
+Updated the logging allocator to better support being loaded dynamically into processes that can't be shut down - it no longer relies on being loaded right at the start and will walk the existing heap to output btrace alloc traces for existing cells. This allows a PC tool to correctly figure out what allocations were outstanding at any given time. Also added compatibility with built-in BTrace::EHeap log format (although this will be changed shortly because it doesn't uniquely identify the heap). Also added options to scribble free memory and defer the free operation. Scribbling the memory takes care of clients who read from the cell after freeing it. While a cell is on the deferred list, every heap operation checks that nothing has written to the cell after the client freed it. In this way some types of heap corruption (writing to a cell after freeing it) can be detected earlier. Combined with the stack traces outputted to BTrace the culprit can often be identified. It is however very slow because it is effectively walking part of the free list and comparing all the memory in it, every time you alloc. For this reason (and for the memory implications) the deferred list is limited to 100 cells, and only the first 16 bytes of the cell are checked.
+
+=item *
+
+Fixed spinlock's --priority option.
+
+=item *
+
+Toolkit sis files now put a timestamp in the build number, as well as the CBR version in the major version number. This is mainly useful while debugging.
+
+=item *
+
+Changed the L<clogger|clogger> server's maximum heap size from 1 to 4 MB. Also changed the flogger stub to cope with a null heading pointer being passed into C<RFileLogger::HexDump> (HTTP does this).
+
+=item *
+
+Changed the tool-kit to export .iby (and related files) using a new pair of macros (C<LTK_ROM_INCLUDE> and C<LTK_ROM_INCLUDE2>). This is to allow platforms to change the default export location from F<\epoc32\rom>.
+
+=item *
+
+Added support for console attributes to F<iosrv> to allow things like console colours to be controlled (see C<RIoConsoleWriteHandle::SetAttributes> (in F<iocli.h>) and C<ConsoleAttributes> (in F<consoleextensions.h>)). Added corresponding support to the VT100 consoles and also support for a shared configuration file, F<\system\console\vt100.ini>. Here's an example configuration file:
+
+  #!iniedit -i \resource\vt100.idf
+  support_attributes yes
+  foreground_color yellow
+  background_color blue
+
+If C<support_attributes> is set to C<no>, any attempts to change the consoles attributes by higher level code will be completed with KErrNotSupported. This should result in everything behaving as it did before. If C<support_attributes> is set to C<yes> then high level requests will be processed. If L<clear|clear> is issued (or the attribute C<ConsoleAttributes::ENone> is specified), all attributes will be reset and the console's the foreground and background colors will be automatically set to the values specified in F<vt100.ini>.
+
+=item *
+
+Changed C<IoUtils::CTextBuffer> and C<IoUtils::CTextFormatter> to allow console attributes to be specified along with the text. Also, added C<IoUtils::CTextBuffer::Write> (both synchronous and asynchronous versions) to take care of writing the buffer to a console in blocks, setting the attributes for each.
+
+=item *
+
+Changed C<CCommandBase> to use the C<ConsoleAttributes::EBold> attribute for the headings of help output.
+
+=item *
+
+Added C<paste|paste> command.
+
+=item *
+
+Added <--overwrite> option to L<ymodem|ymodem> and L<xmodem|xmodem>. Also increased the number of sync retries from 3 to 5.
+
+=item *
+
+Added L<ramdefrag|commands::ramdefrag> command to fshell. Platforms that support RAM defrag have a new macro LTK_RAMDEFRAG_SUPPORT in their platform.mmh.
+
+=item *
+
+Added debugport command to fshell.
+
+=item *
+
+Fixed a bug in the clogger server that caused it to blow up if a cenrep value had a length of 1.
+
+=item *
+
+Added '--disable-all' and '--enable-all' options to L<cloggerconfig|commands::cloggerconfig>.
+
+=item *
+
+Refactored L<ls|commands::ls> so that it should be less prone to running out of memory with large directories.
+
+=item *
+
+Changed the way GuiCons draws its 5-way navigation controls so that scrolling doesn't mess it up. The 5-way nav is now removed before scrolling, and only put back after the GuiCons thread has gone idle and then half a second has passed.
+
+=back
+
+=head2 Release 052
+
+=over 5
+
+=item *
+
+Changed L<time|commands::time>, L<start|commands::start> and L<sudo|commands::sudo> to not require the arguments of commands being launched to be enclosed in quotes. Anything after the executable (or command) name is assumed to be an argument of that executable (or command).
+
+=item *
+
+Moved the functionality in F<rendezvous> into L<start|commands::start> (and removed F<rendezvous>). To get the equivalent behaviour, run C<start --rendezvous ...>.
+
+=item *
+
+Changed the F<iocli.dll> API for defining C<CCommandBase> command-line arguments and options (C<RCommandArgumentList> and C<RCommandOptionList>) to be (more) type safe and (hopefully) intuitive. This change breaks BC in F<iocli.dll>. Updated all the code in the tool-kit that uses these APIs.
+
+=item *
+
+The bluetooth serial port used by "fshell (BT)" is now named "Bluetooth Serial Console". This fixes connection problems with certain devices.
+
+=item *
+
+Fixed bug in snake when pressing direction keys in quick succession; added support for using numeric keypad.
+
+=item *
+
+Enhanced the interface to C<btraceout>.
+
+=item *
+
+Things that use line editors (such as fshell) now support DOS-style F8 line completion. Because VT100 does not support F8, F4 can be used instead.
+
+=item *
+
+Added tabs to Guicons app to support multiple consoles. 
+
+=item *
+
+Added commands to guicons - menu shortcuts to paste a snippet of text into the foreground console. Additional commands may be added to the menus by putting a file in \system\console\commands on any drive. The file's name should be of the format "123-Some_command.txt" where the number at the start is the order the command will appear in the menu (smaller numbers appear nearer the top). Underscores are replaced with spaces in the menu, and the number and extension is not shown. So the example given would appear as "Options->Commands->Some Command". The file should contain the text to be pasted in. The file cannot contain any newlines.
+
+=item *
+
+Added options to launch TCP, Bluetooth or serial consoles from Guicons.
+
+=item *
+
+Added a new console implementation called C<defcons> that is used by C<iosrv> if no console is specified. This console's job is to find a suitable default console to load. On target it trys consoles in the following:
+
+	guicons
+	econseik
+	econs
+	nullcons
+
+On the emulator is has special cases for C<-dnogui> (in which case C<nullcons> is loaded) and C<-dtextshell> (in which case C<econs> is loaded). The net result is that on target we now prefer C<guicons> to C<econs>, and fall back to C<nullcons> as a last resort. On the emulator, we will find a suitable console regardless of whether we're running in text or GUI mode (previously we only worked "out of the box" in text mode).
+
+=item *
+
+Extensive change to F<btrace_parser.dll> to change from using nano-kernel thread addresses as thread identifiers to using a new class called C<TBtraceThreadId> (which is effectively a C<TUint> wrapper). It is therefore necessary for C<CBtraceContext> to keep details about the thread in its data structures longer than before. Previously C<CBtraceContext> would discard thread details when it sees a corresponding C<BTrace::EThreadDestroy> frame, but now it holds onto them until it sees a corresponding C<EAmTraceSubCategoryThread*> frame. However, after the thread has been destroyed inside the kernel, the kernel is free to re-use the address that the nano-kernel thread previously was held at. That means that clients of F<btrace_parser.dll> can no longer safely use nano-kernel thread addresses as a unique identifier. To fix this, threads are now referred to by C<TBtraceThreadId> (and processes by C<TBtraceProcessId>), which is guaranteed to be unique in all circumstances. This constitues a BC break in C<btrace_parser.dll>.
+
+=item *
+
+Added the following interfaces to F<iocli.dll>:
+
+	HBufC* Stringify::WidenLC(const TDesC8& aDes);
+	HBufC8* Stringify::NarrowLC(const TDesC& aDes);
+	HBufC* Stringify::EscapeLC(const TDesC& aDes, const TChar& aEscapeChar);
+	HBufC8* Stringify::EscapeLC(const TDesC8& aDes, const TChar& aEscapeChar);
+
+The whole of the C<Stringify> class should probably be moved into F<ltkutils.dll>.
+
+=item *
+
+Added --recurse option to L<ls|commands::ls>. Refactored ls slightly to support this. In --long or --one modes the output is no longer buffered, the information about each entry is printed to stdout immediately rather than in one go at the end of the command. This is so that the recurse option starts giving feedback sooner (and also potentially to help prevent it running out of memory while recursing a large directory tree).
+
+=item *
+
+Removed redundant v1 API of C<CVtConsoleInputController> from F<vt100.dll> as everything in the tool-kit has now been migrated to the v2 API.
+
+=item *
+
+Changed the VT100 C<ClearScreen> implementation to reset the terminal (using "\x1bc") as well as clearing its contents. This should allow it to restore the terminal to a usable state if, say, cat'ing a binary file caused it to get messed up.
+
+=item *
+
+Fixed a bug in fshell's L<clear|commands::clear> command - previously it explicitly set the console into binary mode. When using a VT100 console variant, this caused ANSI escape sequences to be ignored. The original intent of this code was to allow L<clear|clear> to return the console to normal mode, so that if, say, L<ymodem|commands::ymodem> (which uses binary mode) abnormally aborted, the console could be reset.
+
+=item *
+
+Moved all consoles hosted by the IO server into their own threads. This gives the advantage that a console implementation that has a long running C<Create> (such as vt100tcpcons or vt100btcons) will not cuase the whole IO server to become locked up. It also means that a crash in a console implementation will not cause the whole IO server to crash.
+
+=item *
+
+Added a library C<consoleproxy> which provides a client-server interface for the C<CConsoleBase> API. It is used by the IO server for communicating with its new console subthreads, and also used by Guicons to communicate between the console client and the UI app.
+
+=item *
+
+Added the concept of underlying consoles that a console implementation can output text to during construction, and lazy construction of consoles. When a new C<fshell> process is created, it creates a new default console (using C<defcons>) which is lazy, and so will only be created when soome data is written to of read from the console. When a C<--console> flag is given to an C<fshell> process, ir creates the specified console implementation setting the existing C<defcons> as the underlying console. This has the upshot that a console such as C<vt100tcpcons> can output text to the underlying console indicating the IP address which it is istening for incoming connections on. This causes a console to be displayed on the screen (typically Guicons on device) to that the user can see the IP address. It avoids the need for using dialogs to achieve the same, which have proven problemmatic.
+
+=item *
+
+Made use the the underlying console in C<vt100tcpcons> to display the IP address and port number that it is listening on, and to indicate when a connection is established and with whom. Any errors will also be displayed in the underlying console.
+
+=item *
+
+Made use of the underlying console in C<vt100btcons> to indicate that the device is waiting for an incoming Bluetooth connection, and to display the name of the device that connects.
+
+=item *
+
+Wrote some documentation for C<pcons>.
+
+=item *
+
+Fixed some bugs in C<CCommandBase> relating to support for real argument types.
+
+=item *
+
+Added L<screenmode|commands::screenmode> fshell command.
+
+=back
+
+=head2 Release 051
+
+=over 5
+
+=item *
+
+Added C<guicons>, a console implementation that runs inside a UI application.
+
+=item *
+
+Added L<pcons|commands::pcons>, a persistent console implementation. This allows an fshell (or another toolkit application) to have a persistent console, that you can connect to from any other console, enabling fshell to maintain state as remote console connections come and go.
+
+=item *
+
+Added L<ioinfo|commands::ioinfo> fshell command, which provides information on IO objects within the IO server.
+
+=item *
+
+Added L<btraceout|commands::btraceout> command, which dumps its stdin to a btrace frame.
+
+=item *
+
+Changed the way fshell identifies job numbers. Previously this was done using indices into the array that fshell uses to store pending jobs. However, if a job completes after the user has run L<jobs|commands::jobs>, these indicies may change. To avoid this problem jobs are now identified via a unique job id that will not change or be reused (until a 32 bit overflow occurs).
+
+=item *
+
+Changed various F<btrace_parser> classes to derive from a new C<CRefCountedObject> base class. B<THIS CONSTITUES A BINARY COMPATIBILITY BREAK in F<btrace_parser.dll>.>
+
+=item *
+
+Added some new panics to CCommandBase when checking arguments. It is now not possible to follow an optional argument with a non-optional one. Also, it is not possible to follow a "multiple" argument (i.e. one that uses KValueTypeFlagMultiple) with anything.
+
+=item *
+
+Added support in CCommandBase for options and arguments that can be specified via environment variables. See the new "aEnvVar" argument overloads in RCommandOptionList and RCommandArgumentList. Environment variables only have an effect if the corresponding option or argument is not explicitly specified. The help output is also affected by these overloads, which means you don't need to mention the environment variables manually (and risk them drifting out of sync).
+
+=item *
+
+Fixed bug in the LeaveIfErr macro to caused code passed in to be executed more than once.
+
+=item *
+
+Added C<EOnlyReportFirstError> flag to C<CCommandBase>. If this is set, only the first call to C<PrintError> or C<PrintErrorList> will be printed to the console. Subsequent calls will be silently ignored.
+
+=item *
+
+Made C<CCommandBase::GetHelpTextL>, C<CCommandBase::ParseCommandLine>, C<CCommandBase::ParseCommandLineL>, C<CCommandBase::PrintErrorList> and C<CCommandBase::PrintWarningList> virtual. These are intended to allow sub-classes to customising help text rendering, command line parsing and error reporting. B<THIS CONSTITUES A BINARY COMPATIBILITY BREAK in F<iocli.dll>.>
+
+=item *
+
+Added C<EDisallowSyncCalls> flag to C<CCommandBase>. This causes synchronous I/O read and write interfaces to panic and also for help text (C<--help>) to be written asynchronously. This behaviour is used by fshell's local command (i.e. commands that run in its main thread) to avoid deadlocks if they're used in pipe-lines. This change also has the side effect that commands which don't set the flag (pretty much everything other than local commands) write their help output synchronously. That means that even if C<--help> was specified, the command will be completed in the context of any of the C<CCommandBase::RunCommand> overloads.
+
+=item *
+
+Added C<StaticLeaveIfErr> and C<CommandLeaveIfErr> macros to F<ioutils.h>. C<LeaveIfErr> now assumes its running in C<CCommandBase> (or sub-class) context. C<StaticLeaveIfErr> uses C<CCommandBase::Static> context, and C<CommandLeaveIfErr> uses a context supplied as the first parameter (which is expected to be a C<CCommandBase> derived reference). Also added equivalent C<STRAPL> and C<CTRAPL> macros that use C<StaticLeaveIfErr> and C<CommandLeaveIfErr> respectively to report error context from code that leaves.
+
+=item *
+
+Changed fshell to delay scanning the file system to find external commands until a full command list is actually needed (e.g. for tab completion or help). This works around performance problems on hardware that is slow to do the scan.
+
+=item *
+
+Refactored L<chkdeps|commands::chkdeps> so that it only reports each dependency once.
+
+=item *
+
+Assigned F<btrace_parser.dll> a UID3.
+
+=item *
+
+Added a lock to C<IoUtils::CEnvironment> to allow it to be used between threads.
+
+=item *
+
+Changed L<source|commands::source> into a thread command (it previously ran in the context of fshell's main thread).
+
+=item * 
+
+Added configuration macros to support building textshell-only fshell-based roms. (LTK_TEXTSHELL_ONLY and friends, see common.mmh). BMARM (ARM4/ARMI/THUMB) GCC 2.9-psion-98r2 builds are now supported across the toolkit. Added Psion 5MX to platforms list.
+
+=item *
+
+Added Hexdump, clipboard, rez and RStringHash APIs to Ltkutils.dll
+
+=item *
+
+Fixed USER-EXEC 3 panic on GCCE fshell builds if a non-existant command is typed.
+
+=item *
+
+Added L<btservices|commands::btservices> fshell command.
+
+=back
+
+=head2 Release 050
+
+=over 5
+
+=item *
+
+Added L<fcalendar|commands::fcalendar> fshell command.
+
+=item *
+
+Worked around a GCCE defect that caused USER-EXEC 3 panics from C<CCommandBase::LeaveIfError>. This function is now a macro named C<LeaveIfErr>.
+
+=item *
+
+Changed L<version|commands::version> to correctly pick up the version of GCC if the tool-kit was built using GCC. Also added build configuration (udeb or urel) to the verbose output.
+
+=item *
+
+Fixed long standing bug in fshell where a command-line with the output of one command piped into another command that doesn't exist caused fshell to KERN-EXEC 3.
+
+=item *
+
+Changed L<dialog|commands::dialog> to support C<DIALOG_IMPL> environment variable.
+
+=item *
+
+Added L<console|commands::console> command.
+
+=item *
+
+Changed C<CCommandBase> to assert that each command is only completed once. This change also means that sub-classes can call C<CCommandBase::Complete> without being in C<EManualComplete> mode because auto-completion will only occur upon return from C<DoRunL> if the command hasn't already been completed. Previously this situation would have caused a double completion overwriting the previous error code.
+
+=item *
+
+Fixed regression in L<vt100cons|vt100cons> (and all related console implementations) that caused escape key presses to be ignored until another key is pressed.
+
+=item *
+
+Changed the panic category for panics from F<iocli.dll> to C<iocli> (was previously C<constools_cmdbase>).
+
+=item *
+
+Changed fshell to only report errors if the error code is negative. This is necessary because some commands (e.g. L<dialog|commands::dialog>) now return positive numbers in non-error situations.
+
+=item *
+
+Changed L<var|commands::var>, L<compare|commands::compare> and L<exists|commands::exists> to use positive return values rather than leaving with a negative value to indicate the "not" case.
+
+=item *
+
+Fixed bug in fshell whereby it wasn't possible to redirect command output to files with quoted file names.
+
+=item *
+
+Improved fshell's error reporting. It now should (by default) only report a given error once. More details will be reported if an environment variable named C<FSHELL_VERBOSE> is defined.
+
+=item *
+
+Added support for an I<enumeration> value type for fshell command arguments and options. These values only accept one of a given set of strings, and minimal matching is supported. For example, if an  enumeration supports C<send> and C<receive>, you can use C<s> and C<r> instead. If it accepts C<start> and C<stop>, C<sta> or C<sto> would be accepted.
+
+The following commands have been migrated to use the new type:
+
+=over
+
+=item *
+
+L<sms|commands::sms>
+
+=item *
+
+L<backup|commands::backup>
+
+=item *
+
+L<driver|commands::driver>
+
+=item *
+
+L<fcontacts|commands::fcontacts>
+
+=item *
+
+L<kerninfo|commands::kerninfo>
+
+=item *
+
+L<pubsub|commands::pubsub>
+
+=item *
+
+L<rconn|commands::rconn>
+
+=item *
+
+L<restore|commands::restore>
+
+=item *
+
+L<wslog|commands::wslog> (replacing previous C<-e>, C<-d> and C<-m> options)
+
+=item *
+
+L<xmodem|commands::xmodem>
+
+=item *
+
+L<ymodem|commands::ymodem>
+
+=back
+
+=item *
+
+Added support for reading from STDIN in a number of commands:
+
+=over
+
+=item *
+
+L<sms|commands::sms> (if no argument given)
+
+=item *
+
+L<dialog|commands::dialog> (if no argument given)
+
+=item *
+
+L<infoprint|commands::infoprint> (if no argument given)
+
+=back
+
+=item *
+
+Changed some commands option syntax for more consistency with other commands:
+
+=over
+
+=item *
+
+L<clipboard|commands::clipboard>s C<--pipe> option changed to C<--stdin>.
+
+=item *
+
+L<wget|commands::wget>s C<--iapId> options changed to C<--iap>.
+
+=back
+
+=item *
+
+Fixed L<ls|commands::ls>s C<-a> option. Previously it has the opposite effect to expected.
+
+=item *
+
+Improvements to L<sms|commands::sms>. Now supports a C<--match> option when receiving SMSs to limit what numbers SMSs are accepted from.
+
+=item *
+
+Improvements to L<play|commands::play>. New option C<--max-volume> to display the maximum allowed volume level. Also added a verbose option.
+
+=item *
+
+Added C<qotd>.
+
+=item *
+
+Added L<find|commands::find> command for searching the file system.
+
+=item *
+
+Threads in top's listing no longer jump around when their activity hasn't changed.
+
+=item *
+
+Added support for specifying a filename as an argument to L<more|commands::more>.
+
+=item *
+
+Change to behaviour of L<cat|commands::cat>: it will now fail if a file is opened exclusively by another process. A C<--force> option has been added to get the old bahviour, which will always be able to read a file at the risk of the data read being corrupted. Also added a C<--binary> option to disable character set conversion.
+
+=item *
+
+Added leaving versions of all of IO servers client side APIs.
+
+=item *
+
+Fixed a bug which caused fshell to crash with C<KERN-EXEC 3> when running C<source> commands under certain circumstances.
+
+=item *
+
+Improvements to L<grabscreen|commands::grabscreen>:
+
+=over
+
+=item *
+
+Added support for piping to STDOUT.
+
+=item *
+
+New format support: png, gif, bmp
+
+=item *
+
+Support for quality setting in jpeg images.
+
+=item *
+
+Support for greyscale output (in png and jpeg only).
+
+=back
+
+=back
+
+=head2 Release 049
+
+=over 5
+
+=item *
+
+Added support for GCCE builds.
+
+=item *
+
+Added "jit" command (in WINS only) to control (and enquire the state of) the kernel's Just In Time debugger flag.
+
+=item *
+
+Fixed a bug in L<xmodem|commands::xmodem> and L<ymodem|commands::ymodem> that prevented the first download over a TCP hosted connection via HyperTerminal from succeeding.
+
+=item *
+
+Changed L<focus|commands::focus> to allow the foreground window group to be changed. Previously this command only reported on which window group is in the foreground.
+
+=item *
+
+Added C<--count> option to L<help|commands::help>.
+
+=item *
+
+Changed L<time|commands::time> so that it always outputs the time taken to execute a command at the beginning of a new line (assuming its attached to a console).
+
+=item *
+
+Renamed L<shutapp's|commands::shutapp> C<-n> (C<--name>) option to C<-m> (C<--match>) to be consistent with other fshell commands.
+
+=item *
+
+Fixed regression in fshell that could cause KERN-EXEC 0 panics which attempting to launch "fshell_" prefixed executables.
+
+=item *
+
+Added L<ping|commands::ping> fshell command.
+
+=back
+
+=head2 Release 048
+
+=over 5
+
+=item *
+
+Updated L<pubsub|commands::pubsub> to support listing all defined P&S keys.
+
+=item *
+
+Major re-organisation of fshell's command instantiation code. This had previously been incrementally evolved for quite some time and the arrival of .DLL commands highlighted the need for some refactoring. There is now a single array that stores information about all commands known to fshell (internal commands as well as .dlls with a UID2 of 0x102864C8, .exes with a UID2 of 0x102835BE (fshell native exes) or 0x20004c45 (PIPS exes)). This array is populated when fshell starts up and updates whenever F<\sys\bin> on any drive changes. The following precedence order is used (first, favoured):
+
+  Internal commands
+  Commands prefixed with "fshell_"
+  DLL commands
+  EXE commands
+
+=item *
+
+Fixed crash bug in fed relating to line-wrapping.
+
+=item *
+
+Fixed bug in fshell's command line completion code where by it would only complete command names if they were at the beginning of the command line.
+
+=item *
+
+Added C<console_size_detect> keyword to fshell's F<iosrv> configuration file (F<\system\console\iosrv.ini>) parser. It is common for console implementations to not report their size accurately, which plays havock with full screen commands like L<fed|commands::fed> and even L<more|commands::more>. Previously this was worked around explicitly using the C<console_size_adjustment> keyword, but that configuration was console specific. The new C<console_size_detect> keyword allows the correct size to be detected for any console implementation (at the cost of a bit of speed, once when the console object is created inside F<iosrv.exe>).
+
+=item *
+
+Added C<implicit> keyword support to the TCP variant of L<vt100cons|vt100cons> to force no use of the C<RConnection> API. Useful when using this console implementation on the emulator via L<winsockprt|winsockprt>) via a command like:
+
+  \epoc32\release\winscw\udeb\fshell -- --console vt100tcpcons --console-title port=8080,protocol=9000,implicit=1
+
+Without the C<implicit> option, the emulator may hang when attempting to establish a connection - something that's unnecessary when using L<winsockprt|winsockprt>.
+
+=back
+
+=head2 Release 047
+
+=over 5
+
+=item *
+
+Added TCP/IP variant of L<vt100cons|vt100cons>. This allows a remote console session to be established via either an in-bound (i.e. the handset listens, or behaves like a server) or out-bound (i.e. the handset actively connects, or behaves like a client) TCP connection to a handset.
+
+=item *
+
+Refactored the existing VT100 console implementations to improve their flow control. Previously the consoles attempted to read whatever was available at the transport layer even if the C<CConsoleBase> client wasn't keep up. Any excess data was buffered, which could result in excessive memory usage and OOM was not gracefully handled. In the new scheme reads towards the transport are only made when there is a pending C<CConsoleBase::Read> request.
+
+=item *
+
+Changed the L<xmodem|commands::xmodem> and L<ymodem|commands::ymodem> tools to support Telnet binary mode. This is expected by HyperTerminal when it runs in TCP mode and is needed to allow this to work with the TCP variant of L<vt100cons|vt100cons>.
+
+=item *
+
+Fixed bug in fshell's C<-e> option whereby failure to parse the command line would result in an unhandled leave. Improved command-line argument parsing to detect mismatched quotes and missing arguments.
+
+=item *
+
+Added L<rconn|commands::rconn>.
+
+=item *
+
+L<chkdeps|commands::chkdeps> now checks if required exports are missing from linked DLLs.
+
+=item *
+
+Additions to fed, including find, go to line, tab support, and copy and paste.
+
+=item *
+
+Added TRAPL macro to ioutils.h. It is a macro that does a TRAP followed by a CCommandBase::LeaveIfError call. Where you'd use CCommandBase::LeaveIfError to call a int-returning function and leave with an message on error, TRAPL allows a similar error message pattern for functions that leave rather than returning an error.
+
+=item *
+
+Added L<wslog|commands::wslog> command, to toggle window server logging.
+
+=item *
+
+Added ltkutils.dll, as a convenient place for functionality shared across the toolkit.
+
+=item *
+
+Changed fshell's she-bang recognizer (F<sbrec.dll>) to say that it is C<ECertain> about its recognition of files that start with C<#!>. Previously it used C<EProbable>, but on some platforms that was trumped by the text viewer.
+
+=item *
+
+Changed fshell's launch icon to use SGV format (on non-UIQ platforms). Also added icons for launching fshell using the TCP and Bluetooth variants of L<vt100cons|vt100cons>.
+
+=item *
+
+Added L<dialog|commands::dialog> fshell command.
+
+=item *
+
+Added C<ltkbm>, to generate a manifest of the contents to the tool-kit's SIS file.
+
+=item *
+
+Snake!
+
+=item *
+
+Multiple clients can now connect to memory access even on platforms that don't support Kern::DynamicDfcQCreate.
+
+=item *
+
+Moved string escape sequence handling of things like C<\n> and C<\t> from L<echo|commands::echo> into C<CCommandBase>. This means that all commands get these sequences handled, not just echo. It also means that such sequences don't need to be double escaped (and existing scripts that do this will now be broken).
+
+=item *
+
+Changed the default escape character from C</> to C<^>. Note, the obvious choice of C<\> can't be used because this is the file path delimiter on Symbian.
+
+=item *
+
+Improved the performance of fshell's lexer, which improves its script parsing performance by about 65% on ARM.
+
+=item *
+
+Added L<variant|commands::variant> fshell command, for comparing machine uids.
+
+=back
+
+=head2 Release 046
+
+=over 5
+
+=item *
+
+Added 'top' fshell command for displaying CPU usage.
+
+=item *
+
+Clogger's "Rotate to external media" option correctly chooses removable card over large internal storage (issue on N9x that has both card and multi-GB internal mem). If you call SetEnabled (eg via cloggerconfig) with a non-existant tag, the tag will now be created and set to that value, rather than silently doing nothing.
+
+=item *
+
+Added CleanupUtils::CleanupResetAndDestroyPushL to QR3Dll.h. Also removed dependancy on wserv headers from same.
+
+=item *
+
+Reorganised the tool-kit's F<.iby> files to allow them to be used by both C<BUILDROM> and C<MAKESIS>. This removed the need for each platform to have a separate F<.pkg> file maintained. Instead, a suitable F<.pkg> file is generated when needed (using C<ltkbs>). See F<\common\build\ltk_rombuild_defs.iby> and F<\common\build\ltk_makesis_defs.iby> for details of the pre-processor macro magic that allows all this to work.
+
+=item *
+
+chkdeps now checks for insufficient capabilities of dependant DLLs, if you run it on an EXE.
+
+=item *
+
+rcons now scrolls the console window to the bottom when you type into it, if needed.
+
+=item *
+
+Changed C<CCommandBase::FsL> to call C<RFs::SetSessionPath> passing in the current process working directory (C<PWD>) environment variable.
+
+=item *
+
+Changed fshell to explicitly support the running of PIPS based executables. When fshell sees a process it is about to launch has a UID2 of 0x20004c45 (the UID used by the makmake target C<stdexe>), it instead launches an executable named F<pipsrun.exe>, passing the orignal executable name and arguments as process parameters. This is responsible for launching the PIPS process (using C<popen3>) and gluing its standard I/O (implemented in terms of RPipe) to iosrv style pipes. The end result is that the executables that use PIPS can share fshell's console, take part in pipe-lines and also inherit environment variables.
+
+=item *
+
+Changed CTextBuffer::AppendL to add an overload that does not perform format string conversion. The formatting versions are now called AppendFormatL and AppendFormatListL, in line with how TDes16 does it. (As part of this a couple of bugs relating to use of '%' characters in CTextBuffer/CTextFormatter were fixed).
+
+=item *
+
+Added 'fcontacts' fshell command, to query the contacts database.
+
+=item *
+
+Updated L<sms|commands::sms> to listen for SMSs that start with #!fshell or #!perl and execute them.
+
+=item *
+
+Added F<Win32Cons.dll>, a console implementation that uses a Windows native console for input and output. When the emulator is launched from a command line, it will share the same console (on Windows XP and later only). It also allows you to pipe data out of the emulator process into a Win32 file or another Win32 process. Integrated this into the build chain so that the steps which launch the emulator to generate POD documentation have their output in the main build log.
+
+=item *
+
+Added an F<fshell.bat> script, which launches fshell using F<Win32Cons.dll> so that the fshell prompt appears in the same command window.
+
+=item *
+
+Fixed bug in fshell that caused it to panic if a command line (or script file) contained a C<#> at the end.
+
+=item *
+
+Added console-based text editor, 'fed'.
+
+=back
+
+=head2 Release 045
+
+=over 5
+
+=item *
+
+Fixed bug in F<lineeditor.dll> that caused text insertion into lines at the bottom of the console (resulting in the console scrolling vertically) to fail to position the cursor correctly.
+
+=item *
+
+Changed F<iosrv> so that there is no limitation on the number of asynchronous operations that may be performed using a single session. Previously, only one read, read key and write could be performed per session, regardless of whether separate handles were being used.
+
+=item *
+
+Changed F<iosrv> to check the type of server side objects being used in response to client requests. This should make it impossible for malicious clients to crash the server by sending malformed requests.
+
+=item *
+
+Added a lock to fshell's C<CCommandFactory> class to allow it to be safely shared between threads. Note, considered doing the same for C<CEnvironment>, but decided against because this allocates memory and care would need to be taken to ensure memory is always allocated from the same heap.
+
+=item *
+
+Changed fshell's C<CLocalCommand::CmndKill> implementation to explicitly delete the command object in question and complete (rather than doing nothing). This makes it possible to kill local commands via CTRL-C.
+
+=item *
+
+Added C<--stdin> option to L<export|commands::export> to allow environment variables to be set according to the output of other commands. The effect is somewhat similar to back-ticks in a shell like Bash.
+
+=item *
+
+Significant reorganisation of the tool-kit's build scripts to arrange for all .dll and .exe UID3 values to be centrally defined. The motivation for doing this was to allow them all to be changed into the non-protected range, thereby allowing the tool-kit to be installed using a self-signed SIS file. [Note, self-signed SIS files can only be used with UIDs in the non-protected range.] The two UID ranges are now defined in F<\common\build>. Note, F<uids_nonprotected.mmh> are not currently officially allocated UIDS - they are actually just the protected UIDs (which are allocated) with the top nibble set to 0xE (rather than 0x1). As such, they are in the test UID range, and so may overlap with other test UIDs.
+
+In addition, .dll and .exe PlatSec capabilities are now also (mostly) centrally defined. Each platform now has a file called F<\platforms\<<platform>>\platsec.mmh>. This contains the following definitions:
+
+=over 5
+
+=item * NORMAL_CAPABILITIES
+
+Intended for use in .mmp files. Used by the majority of .dlls and .exes. 
+
+=item * MAX_CAPABILITIES
+
+Intended for use in .mmp files. Used by executables that benefit from having as many capabilities as possible (e.g. fshell).
+
+=item * CAP_ALL
+
+Defined if the platform can use all capabilities. This is used to decide whether to build things like device drivers (that need all capabilities in order to be used).
+
+=item * CAP_Xxx
+
+Defined for each of the capabilities that are available on this platform. These are used to decide whether to build particular tools in their respective bld.inf files.
+
+=back
+
+Note, some .mmp files still declare capabilities in the traditional way. This is done when the module concerned has all or nothing needs with regards to capabilites. When this is done, the associated F<bld.inf> file should also contain a corresponding set of #ifdef guards using the above C<CAP_Xxx> macros to prevent it from being built if the necessary capabilities are not available.
+
+=item *
+
+Added L<swi|commands::swi> command enabling applications (sis, jar, jad files) to be installed, uninstalled, queried.
+
+=item *
+
+Improved and extended F<cloggercolour.pl>, the script for colouring clogger logs. Support for inserting delta timestamps is also added.
+
+=item *
+
+Fixed the F<gt_only> platform, allowing the toolkit to be build against a C<gt_only_baseline>.
+
+=item *
+
+Memory access - added 2 new functions InPlaceThreadRename and GetBinaryPropertyKernelLocation, both extremely specialised and not recommended for general use. Also reordered IPC functions to be compatible with legacy memoryaccess, and added process environment parameters to TProcessKernelInfo.
+
+=item *
+
+Fixed incorrect KErrAccessDenied reported when using rm -f to delete a read-only file. Added option to set heap and stack sizes, and process priority, to sudo.
+
+=item *
+
+Added the various exports from (textshell) F<econs.dll> to F<iocons.dll> to allow replacing of F<econs.dll> with F<iocons.dll> in text shell environments.
+
+=item *
+
+Added special support for PIPS to F<iocons.dll> to allow PIPS clients to share fshell's console and take part in pipe-lines that it creates. Normally, when F<iocons> calls C<RIo(Read|Write)Handle::Open(RIoSession&)>, F<iosrv> looks to see if it hand any read or write objects that belong to the calling thread. Note, when fshell creates a new process it creates a set of read and write objects inside iosrv, and assigns them as being owned by the main thread of the new process. However, in the case of PIPS, the main thread of the process that fshell creates isn't the one that opens the console. This is done from the context of the sdioserver.exe process. To cater for this, iocons now has a special behaviour when its running in the context of sdioserver.exe. Somewhat devious means are used to find the thread id of the client of the StdioServer, and this is used to open a set of handles on F<iosrv>. If fshell created the process the handles should be created without error, in which case the PIPS process will be able to share fshell's console (or take part in a pipe-line that it created). If not, then the old behaviour of creating a new console will proceed.
+
+=back
+
+=head2 Release 044
+
+=over 5
+
+=item *
+
+Added C<--handle-count> (C<-n>) option to L<ps|commands::ps>.
+
+=item *
+
+Renamed C<objowner> command to L<objinfo|commands::objinfo> and extended its functionality to allow the name and type of objects referred to by a particular thread or process to be listed.
+
+=item *
+
+Added C<RMemoryAccess::GetThreadHandles> and C<RMemoryAccess::GetProcessHandles> APIs to the memory access driver (to support the above L<objinfo|commands::objinfo> functionality).
+
+=item *
+
+Updated howto_memory_leak_debug to bring it up to date with fshell command interface changes (primarily L<shutapp|commands::shutapp>).
+
+=item *
+
+Added "Understanding Ownership of Kernel Objects" section to howto_analyze_memory.
+
+=item *
+
+Removed empty RMemoryAccess::Close implementation that was responsible for clients leaking handles to the driver. Because this was inline, clients will need to rebuilt before this change takes effect.
+
+=item *
+
+Changed clogger to use the nanokernel tick count rather than the fast counter. Fixes overflow issue on emulator as well as potential future issues on device. Fixed --volume command in L<play|commands::play>, fixed memory leak in L<pubsub|commands::pubsub>.
+
+=item *
+
+Added L<swi|commands::swi> command to allow software installs to be done from a command line.
+
+=back
+
+=head2 Release 043
+
+=over 5
+
+=item *
+
+Added C<RIoReadHandle::IsForeground> to allow command to enquire whether they currently have foreground position in terms of their STDIN.
+
+=item *
+
+Changed L<undertaker|commands::undertaker> to only print a message about the kind of thread exit it is waiting for if it is in the foreground. This is primarily to avoid unnecessary console output when the command is run from scripts.
+
+=item *
+
+Added C<objowner>, a command for displaying the threads and process that own handles to a particular kernel object.
+
+=item *
+
+Added C<--only-dead> and <--addresses> options to L<ps|commands::ps>. The latter can be usefully passed into C<objowner>.
+
+=item *
+
+Added L<version|commands::version> command.
+
+=item *
+
+Added internal fshell aliases for C<dir> (which translates to C<ls -l>), C<del> (which translates to C<rd>), C<md> (which translates to C<mkdir>), C<rd> (which translatest to C<rmdir>) and things like C<c:> (which translates to C<cd c:\>). Hopefully this will make life easier for people coming to fshell from DOS type command interpreters.
+
+=item *
+
+Changed fshell to not explicitly bring the STDIN read handles of commands that it launches into the foreground. Commands now simply inherit the foreground status of fshell's STDIN handle. This is significant if you reclaim the foreground from an instance of fshell that is running a script (using C<ctrl-z>). Previously when the fshell instance running the script launched its next command, it would claim the foreground back of you iterrupting any text you may have been typing at the time.
+
+=item *
+
+Changed L<cd|commands::cd> so that when it is called to change to the root of a drive, it checks that the drive is physically present. Previously validity checks were only done when changing to a directory other than the root.
+
+=item *
+
+Added C<--only-free> (-C<-f>) option to L<meminfo|commands::meminfo>, to allow just the amount of free RAM to be printed (which can be useful from scripts).
+
+=item *
+
+Fixed a bug in F<btrace_parser.dll> that was responsible for scripts occasionally failing with a C<btrace_parser 10> (EBtpPanicNegativeTickInterval) panic. This was caused by C<CBtraceReader> being started before the command had injected its input event, which left a window of time where btrace data could satisfy the output conditions B<before> the input event was injected. 
+
+=back
+
+=head2 Release 042
+
+=over 5
+
+=item *
+
+Added --match option to L<kerninfo|kerninfo>, tidied up the output view.
+
+=item *
+
+Changed fshell to escape double quote characters (and escape characters) in variables that it expands within double quotes. This makes it possible, for example, to defined variables in terms of other variables that themselves include double quote characters. E.g.:
+
+  c:\>export T /"world/"
+  c:\>export T "hello $T"
+  c:\>env
+  ?=0
+  PWD=c:\
+  T=hello "world"
+
+Previously the double quotes in the initial definition of C<$T> were not escaped, resulting in them prematurely terminating the string in the second definition and hence for the export command line to fail to parse.
+
+=item *
+
+Fixed clogger debugrouter so that new rdebuggers will load their tags even if the default enable mask is zero.
+
+=item *
+
+Added warning to cloggerconfig when trying to enable tags that don't exist.
+
+=back
+
+=head2 Release 041
+
+=over 5
+
+=item *
+
+Reinstated missing documentation from 040 release.
+
+=back
+
+=head2 Release 040
+
+=over 5
+
+=item *
+
+Added L<focus|commands::focus>, L<activeview|commands::activeview> and L<switchview|commands::switchview> commands.
+
+=item *
+
+Changed fshell to report an error message detailing the script line at which the error occurred.
+
+=item *
+
+Changed fshell's F<iocli.dll> to return any errors found when parsing command lines. Previously the command's help was displayed but KErrNone was always returned, which failed to abort script processing.
+
+=back
+
+=head2 Release 039
+
+=over 5
+
+=item *
+
+Added C<SCRIPT_LINE> environment variable to fshell which is updated to reflect the script line that is currently being executed (if there is one). This can be used by child processes in conjunction with C<SCRIPT_PATH> and C<SCRIPT_NAME>.
+
+=back
+
+=head2 Release 038
+
+=over 5
+
+=item *
+
+Added C<--timestamp2> option L<btrace|commands::btrace> to allow timestamp2 to be manually enabled.
+
+=back
+
+=head2 Release 037
+
+=over 5
+
+=item *
+
+Kerninfo now shows DProcess* for processes in DumpToClogger listing, updated kerninfo's server info to list the owning thread.
+
+=item *
+
+CKeyCapturer in qr3.dll now can specify priority to capture the key at, as well as capturing up&down events
+
+=item *
+
+Fixed crash bug in clogger in buffer overflow conditions.
+
+=item *
+
+Added L<readmem|commands::readmem>, L<load|commands::load> and L<e32header|commands::e32header> commands.
+
+=item *
+
+Fixed a bug in fshell's CParser that caused command-lines containing multiple background segments (e.g. "sleep 2& && sleep 1& && sleep 1") to be unreliably handling, potentially resulting in a panic.
+
+=item *
+
+Fixed bug in btrace_parser.dll's CBtraceCpuUsage class that prevented more than one pending notification for being handled reliably.
+
+=item *
+
+Fixed bug in fshell that caused it to return "handled" errors. In fshell scripts, errors can be handled using its C<&&>, C<||> and C<&|> operators. However, if this was done, previously any error would still be returned by the fshell instance (or L<source|commands::source> command) running the scripts, even though the error may have been fully dealt it. This change means that errors from commands that are followed by one of the previously listed operators are "swallowed" and not returned.
+
+=back
+
+=head2 Release 036
+
+=over 5
+
+=item *
+
+Added L<debug|commands::debug> command to fshell to help with debugging scripts.
+
+=item *
+
+Fixed bug in fshell's line completer that caused it to throw away your command line if it contains double quotes.
+
+=item *
+
+Changed L<shutapp|commands::shutapp> to require a new C<--all> option to shutdown all applications. Previously it would attempt to shut down all application if it receive no arguments, which on reflection seems like a rather dangerous default behaviour.
+
+=item *
+
+Changed L<repeat|commands::repeat> command to define an environment variabled called C<REPEAT_COUNT> on each iteration. This can, for example, be used to produce unique file names.
+
+=item *
+
+Changed fshell's C<CCommandBase> to disregard unmatched wild file name specifications from a syntax point of view. Previously "rm -rf dir\*" would return KErrArgument (and display the command's help) if "dir\*" didn't have any matches. The command is now allowed to proceed, and is expected to handle the fact that there may be zero file names.
+
+=item *
+
+=back
+
+=head2 Release 035
+
+=over 5
+
+=item *
+
+Improved error handling in L<ymodem|commands::ymodem>. Prevously this command had a tendency to leave with KErrAlreadyExists or KErrNotFound, but fail to successfully abort the remote end of the session, resulting in rubbish being written to the console. It now detects and properly reports various file name related errors.
+
+=item *
+
+Fixed bug in F<btrace_parser.dll> where it would sometimes fail to complete C<CBtraceContext::NotifyThreadSeenL> requests. This happened when the thread in question belonged to a process whose name changed during its lifetime and the caller was using the new process name to refer to the thread. Note, this commonly happens for applications because the application framework changes the app's process name to match its caption. The problem comes when the process name is updated B<after> the thread name. Since C<CBtraceContext::NotifyThreadSeenL> uses the full name (i.e. <process_name>[<uid>]<instance_id>::<thread_name>), changes in process names can affect whether a given C<CBtraceContext::NotifyThreadSeenL> should be completed. This class now iterates through the threads belonging to a process whose name has been changed to see if any C<CBtraceContext::NotifyThreadSeenL> requests can now be completed. The net result is that clients can now safely refer to the renamed process and thread names ("steady state names", if you like) without fear of failing to "see" them due to process or thread name changes.
+
+=item *
+
+Changed fshell to explicitly ignore regular (i.e. not CTRL-C, CTRL-Z, etc) keyboard input when there's a foreground job pending. This is to avoid problems associated with fshell implicitly gaining keyboard focus from the foreground job whilst it is still pending. This can happen, for example, with command lines like "C<sleep& && echo hello>". When the echo command completes it will give keyboard focus back to fshell. However, the job does not complete because of the background sleep command. Until the job is explicitly stopped and killed, fshell will receive any keyboard input the user enters. Previously this causes it to panic. Now it is safely ingored.
+
+=item *
+
+Changed fshell to take a copy of command names to ensure that the data is still available after the command has been started, for example to print along with panic information (previously a garbage name was displayed in panic outout). This became necessary since the introduction of variable expansion because the lifetime of the expanded command-line is shorter than that of the resulting commands.
+
+=item *
+
+Added C<--format>, C<--rect> and C<--screen> options to L<grabscreen|commands::grabscreen>.
+
+=item *
+
+Added L<compare|commands::compare>, L<time|commands::time> and L<repeat|commands::repeat> commands.
+
+=item *
+
+Fshell commands: Added --remove-cap option to sudo; Patchdata tool now increments the DLL version when patching,  updated its docs with some health warnings; Cloggerconfig automatically sets EBufferLog when --follow option is used; previously it was necessary to do this manually
+
+=item *
+
+Updated memoryaccess to include all the changes in toms-memoryaccess; migrated all tools to use the one version; deleted memoryaccess-toms.
+
+=item *
+
+Improved handling of clogger's rdebug logging: Thread tag names now strip off the uid and nonce for readability. See CCloggerServer::ThreadPrettyName for full algorithm; threads which cannot be opened are logged as [Thread-xx] rather than [RDebug::Print] or [Kern::Printf]; Default tag changed from [**Everything else**] to [DefaultForNewTags], [RDebug::Print] and [Kern::Printf] tags eliminated as they weren't very useful once all rdebug started using thread for tag; Fixed some test failures; Updated cenrep handling so old format cenrep files still give the updated behaviour described here
+
+=item *
+
+Added rombuild macros CLOGGER_EARLY_DEBUG and CLOGGER_RDEBUG_BUFSIZE. The first captures rdebug from the moment the clogger kernel extension is loaded, the second configures the rdebug buffer size. Also updated clogger docs.
+
+=back
+
+=head2 Release 034
+
+I<[Nothing fshell-related]>
+
+=head2 Release 033
+
+=over 5
+
+=item *
+
+Changed fshell's command line completer to double quote file names that contain either space characters and/or single quotes. Previously it would single quote file names that contained space characters, leaving file names that contained single quotes unquoted and hence invalid.
+
+=item *
+
+Added L<start|commands::start> fshell command.
+
+=item *
+
+Changed fshell to not set is child error environment variable (C<$?>) to zero before starting to process a new command. This allows the new command to see any error that the previous command produced. The child error environment variable is also now initialised in the C<CEnvironment> constructor, thereby ensuring that is is always defined.
+
+=back
+
+=head2 Release 032
+
+=head3 fshell
+
+=over 5
+
+=item *
+
+Added support to patchdata command for changing the value of a patchable constant.
+
+=item *
+
+Added spinlock fshell command, which eats CPU time. Added KErrPermissionDenied to list of errors that fshell can display the name of. Added '--overwrite' option to cp command.
+
+=item *
+
+Fixed trace fshell tool typo so correct code is used on EKA2.
+
+=item *
+
+Added L<sysinfo|commands::sysinfo> fshell command for displaying the values of various HAL attributes.
+
+=item *
+
+Changed C<CCommandBase> to panic sub-classes that attempt to define more than one option of the same name (debug builds only).
+
+=item *
+
+Changed fshell to update its child error variable ($?) for each section of a pipe-line that its processing. This allows subsequent pipe sections to make use of this variable, for example:
+
+  my_command || echo "my_command failed: $?"
+
+Previously $? wasn't updated until the whole pipe-line completed making it only available to following lines in a script.
+
+=item *
+
+Added C<RChildProcess> class to F<iocli.dll> to make it easier for fshell commands to create child processes that share I/O handles (and hence console and file redirections).
+
+=item *
+
+Changed L<sudo|commands::sudo> to use C<RChildProcess>.
+
+=item *
+
+Fixed a couple of leave safety bugs in fshell's C<CProcessCommand> class.
+
+=item *
+
+Added support for setting the date in fshell's C<date> command.
+
+=back
+
+=head3 clogger
+
+=over 5
+
+=item *
+
+Fixed cloggerconfig's '--follow' option so it didn't drop data under heavy load. Also added a '--rdebug' option to redirect rdebug and print to console (equivalent to -g 8 -f). Added '--backup' and '--restore' options to save clogger settings to memory card. Commented out BT support from clogger. Leave safety fix to clogger client library.
+
+=back
+
+=head2 Release 031
+
+=over 5
+
+=item *
+
+Changed L<backup|commands::backup> and L<restore|commands::restore> to sleep for 5 seconds after starting to give P&S clients enough time to handle the start request.
+
+=item *
+
+Fixed bug in C<iocli.dll> that caused C<CTextFormatter::TabulateL> to leave with KErrNoMemory when the associated write handle was not attached to a console. The width (in characters) of the output is now assumed to be 80 in this situation (rather than KMaxTInt, as it was previously).
+
+=item *
+
+Fixed regression (introduced in release 030) in C<TFileName2::PrependL> and C<TFileName2::AppendL> that could cause trailing slashes to not correctly match whether the object is a file or directory (note, F32 insists that directories have a trailing slash).
+
+=item *
+
+Changed behaviour of C<TFileName2>. Upon construction it now collapses double slashes ("\\") to a single slash. This is primarily to allow scripts to used C<$SCRIPT_NAME> without having to care whether it has a trailing slash or not.
+
+=item *
+
+Changed C<$SCRIPT_PATH> to always have a trailing slash. This was necessary because paths that contain just a drive letter need a trailing slash to be valid.
+
+=item *
+
+A few minor changes to fix compiler warnings.
+
+=back
+
+=head2 Release 030
+
+=head3 fshell
+
+=over 5
+
+=item *
+
+Added support for environment variable expansion. This allows command lines and scripts to contain things like C<$MYVAR>, where "MYVAR" has previously been defined using L<export|commands::export>.
+
+=item *
+
+Changed CCommandBase to use the environment defined escape character ('ESCAPE') and also to handle single and double quoted text in the same way as Bash does from an escape point of view. Specifically, escapes are ignored in single quoted text and obeyed everywhere else.
+
+=item *
+
+Changed the behaviour of CEnvironment::IsInt. This now returns true if all the characters in the variable value are digits. Previously integers where handled as a special type. This is no longer the case - all variables are now stored as descriptors and converted to integers if need be in CEnvironment::GetAsIntL. This was done to avoid code that uses environment variable from being forced to handle integer variables differently to string variables.
+
+=item *
+
+Added L<source|commands::source> command to allow fshell scripts to be run in the context of an existing fshell instance. One use for this is to allow environment variables to be defined in a single script that is then shared by numerous other scripts.
+
+=item *
+
+Added C<==> and C<!=> operator to L<var|commands::var>. Note, the name of the environment variable is now the first argument to the command, to improve readability (it used to be the second argument).
+
+=item *
+
+Fixed bug in C<TFileName2::SetTypeL> - this method now removes trailing slashes (if present, and wouldn't leave a bare drive letter) if the type is set to C<EFile>. Previously trailing slashes were only altered when setting type to C<EDirectory>. Note, this method now always carries out trailing slash checks, even if C<iType> matches C<aType> because the presence of C<TFileName2::SetL> means there's no way of knowing if the trailing slashes are in a valid state.
+
+=item *
+
+Added two new environment variables to fshell when it is run in script mode. C<SCRIPT_PATH> defines the absolute path (with no trailing slash) to the directory in which the script being run is located. C<SCRIPT_NAME> defines the file name of the script being run.
+
+=item *
+
+Changed L<echo|commands::echo> to respect fshell's C<ESCAPE> environment variable which is used to defined the character to be used to escape other characters.
+
+=item *
+
+Improved L<cenrep|commands::cenrep> command's handling of data/string values. 16-bit and 8-bit ASCII is recognised, anything else is shown as a hexdump.
+
+=back
+
+=head3 misc
+
+=over 5
+
+=item *
+
+Fixed regression with clogger server startup code (returned KErrServerTerminated instead of KErrNone)
+
+=back
+
+=head2 Release 029
+
+=over 5
+
+=item *
+
+Fixed log rotate bug in clogger if system time was repeatedly reset and CopyRotatedLogToExternalMedia wasn't specified. Fixed "Clogger 665" panic that could occur when RDebug redirection was switched on.
+
+=item *
+
+Fshell tool fuser now no longer aborts if it can't open a thread.
+
+=item *
+
+Changed fshell so that it now explicitly reclaims control of the console after handling a "CTRL-C". Previously it relied on the kill of the foreground job to result in the foreground console reader detaching from the console. In the case of a second fshell instance running a script, this won't happen because only the second fshell instance will be killed, not any processes it may have created - and one of them may be the foreground console reader. By explicitly reclaiming foreground console readership, the user can at least interact with the fshell prompt once more and can if they like go and manually kill any zombie processes.
+
+=item *
+
+Changed the behaviour of killing an fshell instance that is running a script. Previously, whatever command was running at the point the kill ("CTRL-C") was received was killed, but the script continued executing after this. Now, all further execution of the script is aborted.
+
+=item *
+
+Changed the behaviour of error handling of fshell scripts. Previously errors returned by commands didn't cause the script to abort. Now, the script will abort unless the command that returned the error is followed by an "||" or "&&" conditional (thereby implying that the error was handled).
+
+=item *
+
+Changed the name of the "shutapps" command to L<shutapp|commands::shutapp>. Is was done because the plural name seemed inappropriate in the usual case of shutting down just one application.
+
+=item *
+
+Added support for shutting applications down by window group name to L<shutapp|commands::shutapp>. Note, shutting down by window group identifier is now an option (C<-i>) rather than an argument.
+
+=item *
+
+Changed L<shutapp|commands::shutapp> to wait for the application thread(s) to exit before exiting itself to ease scripting.
+
+=item *
+
+Added support for killing processes and threads by name to L<kill|kill>.
+
+=item *
+
+Fixed bug in iosrv that prevented reads from a read handle that is attached to a console from ever completing. This was a regression introduced in release 026.
+
+=item *
+
+Added L<chkdrift|commands::chkdrift> command for checking nano kernel ticks and the fast counter for drift.
+
+=item *
+
+Added C<--keep-going> option to fshell so that when running a script and a command returns an error, processing of the script continues. Ordinarily unless the error is handled by a "&&" or and "||", fshell will abort (returning the error).
+
+=item *
+
+Added the following new fshell commands; L<tickle|commands::tickle>, L<ticks|commands::ticks>, L<uptime|commands::uptime>, L<var|commands::var>, L<patchdata|commands::patchdata>, L<backup|commands::backup>, L<restore|commands::restore>.
+
+=item *
+
+Added new "&|" condition operator to fshell.
+
+=item *
+
+Added "nullcons.dll" - a null console implementation. Useful for running fshell disconnected from a console (e.g. "fshell --console nullcons") for automation purposes.
+
+=item *
+
+Added support for removing environment variables to L<export|commands::export>.
+
+=item *
+
+Fixed memory leak in CEnvironment::RemoveL.
+
+=item *
+
+Added C<--win32-err> option to fshell. This causes fshell to exit using the Win32 ExitProcess API in the event of an error when run on the emulator. This is useful if (for example) fshell is invoked from a makefile and you want make to be aware of errors that fshell reports. It used to be the default behaviour of fshell, but that proved to be painful when running scripts under the emulator for other purposes as the ProcessExit call would cause the whole emulator to shut down (potentially in the middle of a debugger session).
+
+=item *
+
+Fixed a bug in fshell's line editor that prevented "CTRL-C" from clearing the current line if the line was wrapped over more than one console line.
+
+=item *
+
+Fixed a bug in TConsoleLine::Replace where problems occurred if the new text caused the console to scroll. This function no longer stored the line start position on the stack. Instead it always uses iStartPos, which is updated if the console scrolls up.
+
+=item *
+
+Fixed a bug in rcons.exe where it would allows its clients to set cursor positions outside of the valid range.
+
+=item *
+
+Changed fshell to allow process commands to override local and thread commands.
+
+=item *
+
+Changed L<rcons.dll|rcons> to construct its fallback console using C<Console::NewL> if no fallback console implementation is specified in its configuration file. Previously it used to load F<econs.dll> in this situation, but that doesn't work reliably on the emulator because if the graphical window server is being used F<econseik.dll> must be used. By calling C<Console::NewL>, the logic over which console to load on the emulator is left to F<euser.dll>.
+
+=back
+
+=head2 Release 028
+
+=over 5
+
+=item *
+
+Updated kerninfo command to allow passing in thread IDs and process IDs (rather than the array index for that thread). Merged changes from memoryaccess to memoryaccess-toms in preparation to having a single unified version of memaccess.
+
+=item *
+
+Updated fshell kill command to use MemoryAccess to kill individual threads, if available.
+
+=item *
+
+Updated missing options in cloggerconfig, changed RClogger::Rotate so it returns the path to the external disk copy if ECopyRotatedToExternalMedia is enabled
+
+=item *
+
+Added fshell commands 'clipboard' to get and set the clipboard contents, and 'setcritical' to set the TCritical attribute of a thread.
+
+=back
+
+=head2 Release 027
+
+=over 5
+
+=item *
+
+Added --wipe option to cloggerconfig to empty the log file without doing a rotate, and --num-buffers and --buffer-size to set RAM buffer options.
+
+=item *
+
+Added setpriority fshell tool, this lets you set the priority of a thread directly to a kernel priority. Also supports monitoring thread creation using the __DEBUGGER_SUPPORT__ APIs to on-the-fly re-prioritise threads matching a given wildcard.
+
+=item *
+
+Updated toms-memoryacccess to allow multiple clients (when run on v9.3 or later), and to support setpriority. Fixed platsec check bug so PowerMgmt capability really is required.
+
+=item *
+
+Fixed display issue with kerninfo that prevented long descriptions from being displayed.
+
+=item *
+
+Added process flags to kerninfo listing.
+
+=item *
+
+Added kerninfo to appropriate IBY and PKG files.
+
+=item *
+
+Added --exclude-dead option to ps so you can exclude threads/processes that aren't running any more.
+
+=item *
+
+Updated clogger debug router to differentiate kernel thread logging in the same way as RDebug (ie to log using [tid] rather than [Kern::Printf]).
+
+=item *
+
+Added volume option to play fshell command.
+
+=item *
+
+Added F<vt100btcons.dll>, a console implementation that accepts an incoming bluetooth serial connection to the phone.
+
+=item *
+
+Added a F<btincomingserial.dll>, a general purpose DLL that can be used to accept incoming bluetooth serial connections. It is used by F<vt100btcons.dll>.
+
+=item *
+
+Added support for binary (raw) mode in VT100 consoles; this allows binary file transfer using ymodem and the like to work properly, unhindered by VT100 input translation. Also added corresponding support to RIoConsoleReadHandle and iocons.
+
+=item *
+
+Changed CTextFormatter to only format according to the width of the console if the specified write handle is actually attached to a console. This avoids unnecessary truncation of lines in a pipe-line.
+
+=item *
+
+Changed CTextFormatter::TabulateL to always terminate each line with a "\r\n" rather than relying on the console to do wrapping. This ensures that piped output preserves line separations.
+
+=item *
+
+Changed L<memsampler|commands::memsampler>'s device driver to produce BTrace frames to indicate the start of each new sample period. This information is ignored by memsampler's live view, but is stored in its file output an used by dmemsampler (the PC decoder script). dmemsampler now uses it to collapse all chunk changes within a single sample period into a single low. It also uses the first column to show a sample identifier, which makes it possible to determine periods of time where there was no chunk activity. See "perldoc dmemsampler" for more details.
+
+=item *
+
+Added "--size" option to L<chunkinfo|commands::chunkinfo> to add current chunk size information to the summary list.
+
+=item *
+
+Fixed a bug in L<ps|commands::ps> that prevented it from displaying process information from a process id argument.
+
+=item *
+
+Changed L<chunkinfo|commands::chunkinfo> and L<svrinfo|commands::svrinfo> to unload the Memory Access driver after they've finished with it.
+
+=item *
+
+Changed L<xmodem|commands::xmodem> and L<ymodem|commands::ymodem> to follow the protocol specification more accurately with regard to sending of NAK characters when problems are detected.
+
+=item *
+
+Refactored L<rm|commands::rm>, L<cp|commands::cp>, L<mv|commands::mv> and L<rmdir|commands::rmdir> to use CFileMan directly (rather that via CFileManWrapper), and also to perform the operations synchronously (thereby simplifying the code). Also reverted a set of changes that were introduced in the previous release to leave early based on the presence of files (or lack there of). These checks broke the ability of these tools to hand file specifications that contain wild characters. Also fixed the recursive operation of these tools by ensuring that directory names are properly specified (by ending in a slash character).
+
+=back
+
+=head2 Release 026
+
+=over 5
+
+=item *
+
+Added vertical and horizontal scrolling support to L<memsampler|commands::memsampler>.
+
+=item *
+
+New L<xmodem|commands::xmodem> and L<ymodem|commands::ymodem> commands are now operational. Note, L<ymodem|commands::ymodem> is the more useful of the two because it:
+
+=over 5
+
+=item *
+
+Doesn't add 0x1a characters to the end of transferred files.
+
+=item *
+
+Allows the sender to specify file names.
+
+=item *
+
+Allows multiple files to be transferred.
+
+=back
+
+L<xmodem|commands::xmodem> is probably only useful for communicating with systems that don't support YMODEM.
+
+=item *
+
+Changed a bunch of CCommandBase methods to be public rather than protected.
+
+=item *
+
+Moved Stringify::Error into iocli.dll so that its available to all commands.
+
+=item *
+
+Added new virtual function to CCommandBase: void HandleLeave(TInt aError). This is now called if either RunL or DoRunL leaves. The default implementation prints an error message if no other errors have been reported. **NOTE** This is a BC breaking change - new virtual function and new member data to CCommandBase.
+
+=item *
+
+Changed built-in commands to leave early if the file they're operating on doesn't exist when it should, or already exists when it shouldn't.
+
+=item *
+
+Added the following APIs to CCommandBase:
+
+  IMPORT_C void LeaveIfFileExists(const TDesC& aFileName);
+  IMPORT_C void LeaveUnlessFileExists(const TDesC& aFileName);
+  IMPORT_C void LeaveIfError(TInt aErr, TRefByValue<const TDesC> aErrMsg, ...);
+
+The behaviour of LeaveIfError is that if aErr < 0, it will PrintError(aErr, aErrMsg, ...) and then Leave.
+
+=item *
+
+Added the following APIs to TFileName2:
+
+  IMPORT_C TBool Exists(RFs& aFs) const;
+  IMPORT_C TBool IsReadOnlyL(RFs& aFs) const;
+  IMPORT_C TBool IsHiddenL(RFs& aFs) const;
+  IMPORT_C TBool IsSystemL(RFs& aFs) const;
+  IMPORT_C TBool IsDirL(RFs& aFs) const;
+  IMPORT_C TBool IsArchiveL(RFs& aFs) const;
+
+=item *
+
+Added "fshell commands" as a top level documentation entry (to make it more visible).
+
+=item *
+
+Added RIoWriteHandle::SetMode to allow clients of iosrv to control whether line endings are "fixed" (i.e. CR -> CRLF) when writing to a console.
+
+=item *
+
+Added hex dump logs to iosrv.
+
+=item *
+
+Fixed bugs in iosrv relating to using RIoReadHandle::Read to read key events from a console. Previously if there were buffered keys at the point a read request was made a single character was written to the client regardless of its read mode. Now, the buffered characters are copied into the read buffer and the client's request is only completed if the completion criteria (according to read mode) has been met.
+
+=item *
+
+Fixed bug in iosrv whereby a RIoReadHandle::ReadCancel potentially left chunk in the read buffer.
+
+=item *
+
+Added better error reporting to the basic file operation commands (cd, cp, mv, etc).
+
+=item *
+
+Added --define option to pubsub, to allow properties to be defined if they don't already exist. Also added multimediaDD capability to play.exe.
+
+=item *
+
+Added kerninfo fshell command, which displays the same info as QResources's list view, via refactoring of some code into qr3.dll.
+
+=back
+
+=head2 Release 025
+
+I<[Nothing fshell-related]>
+
+=head2 Release 024
+
+=over 5
+
+=item *
+
+Gave cat AllFiles capability, to allow you to cat files from private directories.
+
+=item *
+
+Added sudo fshell command to allow launching of commands with elevated priviledges. Also updated argument handling of rendezvous, and added -f option to rm.
+
+=back
+
+=head2 Release 023
+
+=over 5
+
+=item *
+
+Fixed incorrect UI context in some fshell resource files.
+
+=item *
+
+Added support for 4 character application name (C<NAME> tag in the resource files) to L<createsrc|createsrc>.
+
+=back
+
+=head2 Release 022
+
+=over 5
+
+=item *
+
+Changed L<tcpcsy|tcpcsy> to silently ignore with zero length reads and writes. Also improved logging.
+
+=back
+
+=head2 Release 021
+
+=over 5
+
+=item *
+
+Fixed log rotate issue in clogger when logs directory name wasn't lower case.
+
+=item *
+
+Updated some fshell tools documentation.
+
+=back
+
+=head2 Release 020
+
+I<[Nothing fshell-related]>
+
+=head2 Release 019
+
+=over 5
+
+=item *
+
+Added new L<tcpcsy|tcpcsy> module.
+
+=item *
+
+Changed L<winsockprt|winsockprt> logging to use CDU.
+
+=item *
+
+Fixed bug in L<winsockprt|winsockprt> where server socket (i.e. passively connected sockets) couldn't receive data (and fixed the test code to test for this situation).
+
+=item *
+
+Fixed bug in L<vt100cons|vt100cons> where the destructor when run on a partially constructed object would attempt to dereference a null pointer.
+
+=back
+
+=head2 Release 018
+
+I<[Nothing fshell-related]>
+
+=head2 Release 017
+
+=over 5
+
+=item *
+
+Added C<play> fshell command, to play back audio files using the MMF.
+
+=back
+
+=head2 Release 016
+
+=over 5
+
+=item *
+
+Changed iosrv's console end-point implementation to automatically change single character line endings (either "\n" or "\r") to "\r\n". This is to cater for certain console implementations that require "\r\n" line endings (namely HyperTerminal).
+
+=item *
+
+Removed equivalent functionality from CCommandBase::Printf.
+
+=item *
+
+Changed iosrv's line ending code to only change single "\n", and not change single "\r" characters. This is to allow commands like 'meminfo' to easily update the console.
+
+=item *
+
+Added 'Alloc size' (the sum of all allocated cell sizes - may be smaller than 'Heap size' if the chunk has a large minimum size), and 'Alloc count' (the number of allocated cells) to the output of 'ps'.
+
+=item *
+
+Added '--chunks' option to 'ps'.
+
+=item *
+
+Changed 'ps' so that it only assumes chunks contain RHeap objects if the first word, which will be RHeap's vtable pointer, matches that of the RHeap belonging to the 'ps' thread.
+
+=item *
+
+Added 'chunkinfo' command.
+
+=item *
+
+Added 'get object info by name' interface to MemoryAccess. Also changed the driver to always safely copy the client's parameters before attempting to access them.
+
+=item *
+
+Added 'GetObjectAddresses' and 'GetChunkAddresses' interfaces to RMemoryAcccess. Note, these can be used to safely access all the items in a particular kernel container at a point in time without holding the (potentially deadlock inducing) corresponding container mutex.
+
+=item *
+
+Changed the MemoryAccess driver so that it no longer soft resets the system if it is not tickled.
+
+=item *
+
+Fixed bug in CTextFormatter::TabulateL that causes a bad array index panic if the data to be tabulated doesn't contain any tab characters.
+
+=item *
+
+Changed the implementation of CTextBuffer::AppendL to automatically allocate a larger scratch buffer if AppendFormatList overflows.
+
+=item *
+
+Changed 'chunkinfo' to clear the screen in between each update.
+
+=item *
+
+Fixed bug in 'ps' where chunk output would only be displayed if '--threads' was specified.
+
+=item *
+
+Added info about 'chunkinfo' to memory analysis HowTo.
+
+=item *
+
+Added (as yet not debugged, and so currently disabled) 'xmodem' command.
+
+=item *
+
+Added 'svrinfo' command.
+
+=item *
+
+Added platform specific 'Getting Started' documentation.
+
+=item *
+
+Added change history documentation.
+
+=back
+
+=head2 Release 015
+
+=over 5
+
+=item *
+
+(FShell) Fixed 'legacy' way of setting port info in --console-title.
+
+=item *
+
+Added --follow option to cloggerconfig.
+
+=item *
+
+Worked around problem in vt100cons where writes of large amount of data could get truncated. This was due to loopback.csy completing writes with KErrNoMemory if it's buffer is full. Ideally the loopback.csy should asynchronously delay completing the write request until it has enough buffer to accommodate it, but in the meantime vt100cons has been changed to synchronous wait 20ms and then retry the write.
+
+=item *
+
+Fixed fshell's character deletion code. It was previously relying on "\x08" both moving the cursor left and removing the character before the cursor. This doesn't happen when VT100 consoles are used. Changed to do "\x08 \x08" to delete left.
+
+=item *
+
+Added a means of capturing raw btrace data gathered by 'memsampler' to a file for post-processing (see option '--file').
+
+=item *
+
+Added '--no-live-view' option to 'memsampler' to allow file (or debug) output to be gathered in the background.
+
+=item *
+
+Added support for horizontal tabs to vt100cons's cursor position tracker. Previously a horizontal tab (0x09) caused the tracker to reset, which would cause fshell to move the cursor to erroneously move the cursor to the top of the screen.
+
+=item *
+
+Added documentation for 'vt100cons'.
+
+=item *
+
+Removed .exe build of 'kill' as it is currently also a built-in command and apparently the name 'kill.exe' clashes with something in 'e32tests'.
+
+=item *
+
+Fixed warning in fshell's documentation build.
+
+=item *
+
+Added support for cursor hiding to vt100cons. Note, HyperTerminal seems to ignore this escape sequence, but it works fine with TeraTerm.
+
+=item *
+
+Reinstated Tom's vt100cons compiler warning fix.
+
+=item *
+
+Added 'dmemsampler' - a script for turning raw 'memsampler' data into CSV data.
+
+=item *
+
+Enhanced 'leak' to allow leak increment amount and rate to be specified
+
+=item *
+
+ps - tidied up cleanup stack usage and leaked handles
+
+=item *
+
+clogger - rdebug is now tracked per-thread
+
+=item *
+
+chkdeps - reduced stack usage, and raised its stack size, to cope with checking complex dependancies.
+
+=back
+
+=head2 Release 014
+
+=over 5
+
+=item *
+
+Fixed long standing bug in fshell's line editor where it allowed the cursor to be moved beyond the end of the line.
+
+=item *
+
+Added support for navigating between words (using 'alt|f', alt|<right_arrow>, etc.) in fshell's line editor.
+
+=item *
+
+Add support for the 'alt' key (via modifiers) to rcons. ** Note, this change is not backwards compatible in the over-the-wire data format. ** The new rcons.exe must be used in conjunction with the new rcons.dll.
+
+=item *
+
+Fixed bug in iosrv relating to reading from a handle attached to a console. Previously each keycode was being copied to the client via a TPckgC<TUint>. This was a problem because a) the client buffer is 16 bits wide, whereas a TPckgC is 8 bits wide (which caused the client's buffer length to be set to 4 (i.e. sizeof<TUint>), and b) because each key code should only occupy a single Unicode character (i.e. 16 bits). Changed to copy via a single character TPtrC created over the key code.
+
+=item *
+
+Gave 'rcomm' 'all -tcb' capabilities.
+
+=item *
+
+Changed vt100cons to track the cursor position itself, rather than fetch this information from the terminal via "\x1b[6n". This is because it seems different VT100 emulators (e.g. HyperTerminal and TeraTerm) handle this escape sequence in different ways. In fact HyperTerminal doesn't appear to consistently handle it in the same way (it appear to write varying amounts of (seemingly) junk bytes at the end of the response).
+
+=item *
+
+Added means of specifying pdd, ldd and csy as well as port name to vt100cons via its title string.
+
+=back
+
+=head2 Release 013
+
+=over 5
+
+=item *
+
+Arranged for 'memsampler' command (which depends on btrace) to not be built for 9.1.
+
+=item *
+
+Fixed cleanupstack inbalance in btrace2's DumpL.
+
+=item *
+
+VT100 console chunks data so that output > 256 chars isn't truncated.
+
+=item *
+
+New fshell tool: chkdeps.
+
+=item *
+
+Modified CCommandBase to handle the wrong kind of line endings.
+
+=item *
+
+Fixed bug in cloggerconfig's --set-rotate command.
+
+=back
+
+=head2 Release 012
+
+=over 5
+
+=item *
+
+More changes to get automated build working; turn off just in time debugging in fshell_blddocs.mk when launching the emulator; if the emulator panics, JIT debugging will cause the build to hang indefinitely with the panic dialog on screen.
+
+=item *
+
+vt100cons up and running with swmodem.
+
+=item *
+
+New tool: BTServices
+
+=item *
+
+Fixed clogger's habit of adding '3/4' characters to its debug on post-9.1 platforms.
+
+=item *
+
+Fixed Rotate to External Media option in Clogger.
+
+=back
+
+=head2 Release 011
+
+=over 5
+
+=item *
+
+Fixed bug in fshell where commands started in the background (using '&') couldn't be brought into the foreground and get keyboard entry (the keyboard entry was sent to fshell, which panic'd because it wasn't expecting it).
+
+=item *
+
+Added support for EChunkOwner to BTrace parser.
+
+=item *
+
+Added L<grabscreen|commands::grabscreen> command.
+
+=item *
+
+Added L<memsampler|commands::memsampler> command.
+
+=item *
+
+Changed CCommandBase to allow Complete to be called more than once without resulting in a panic.
+
+=item *
+
+Added CTextBuffer::Zero and CTextFormatter::Zero to allow the buffer to be emptied without being freed.
+
+=item *
+
+Changed various commands to use CTextFormatter::Zero rather than CTextFormatter::Reset to avoid thrashing the heap.
+
+=item *
+
+Added support for left and right column alignment to CTextBuffer::AppendHumanReadableSizeL.
+
+=item *
+
+Added mode support to CTextFormatter::TabulateL. EWrapLastColumn is the default, which was the original behaviour. Also now supported is ETruncateLongestColumn.
+
+=item *
+
+Added support for arguments that have the KValueTypeFlagMultiple flag set to be specified as a comma separated list, e.g. 'btrace -f0,1,2'.
+
+=item *
+
+Added '--console-title' and '--console-size' support to CCommandBase. Note, '--console-size' uses a multiple unsigned integer argument where the first is taken as being the width and the second, the height. E.g.: 'mycommand --console-size 80,24'. *NOTE* BC is broken in CCommandBase due to this change. It didn't seem worth using the spare member variables while all known CCommandBase derived are within the fshell tree.
+
+=item *
+
+Changed rcons so that errors in creating the fallback console due to the console size being too big (or small) result in a retry using KConsFullScreen.
+
+=item *
+
+Changed CCommandBase so that derived classes can use the iosrv handle member variables from their destructors. Previously, these were initially created as automatic variables and pushed onto the cleanup stack. This meant that by the time the derived class destructor was called, the cleanup stack had already closed the handles. This resulted in the iosrv panic'ing the client with bad handle.
+
+=item *
+
+Changed 'meminfo' so it overwrites when in automatic update mode.
+
+=item *
+
+Added memory analysis howto document (and updated a few others).
+
+=back
+
+=head2 Release 010
+
+=over 5
+
+=item *
+
+Removed all PRJ_PLATFORMS sections from all bld.inf files except the top level platform bld.inf's. This is so that the build works properly when just doing an 'abld build' from the platform group directory, so that the Build System can perform succesful automated builds of the toolkit. Previously, the 'basedefault' keyword in several bld.inf's caused the build chain to try to build the toolkit for ARM4, ARM4T and other unsupported platforms, causing the build to fail.
+
+=item *
+
+Updated the documentation for exportall in internal\scripts.
+
+=item *
+
+Added 'AsConsole' template for createsrc, for basic console apps contains an active scheduler loop.
+
+=back
+
+=head2 Release 009
+
+=over 5
+
+=item *
+
+Fixed bug in iosrv that caused clients to occasionally fail to connect (with KErrNotFound). In _DEBUG builds this was due to the server having a zero length shutdown timer. This caused a race between the client that started the server connecting and the timer active object running. The timer is now 2 seconds in both debug and release builds.
+
+=item *
+
+Changed fshell in WINS builds to forcibly exit using the WIN32 ExitProcess API when a script returns an error. This was done primarily to cause 'make' to report documentation build failures that result from running 'genpod.script'.
+
+=item *
+
+Changed 'ltkbd' to only print chatty output in verbose mode.
+
+=item *
+
+Tidied up documentation .inf files.
+
+=back
+
+=head2 Release 008
+
+=over 5
+
+=item *
+
+Reorganised the fshell documentation build system. The motiviation for doing that was to allow the Tool-Kit to be built in an automated way. Previously fshell made this difficult because it needed a build to be performed before "abld build --what" would function correctly. The automated build runs "abld build -what" before doing the build so it can delete any target that already exist, and check that all targets are generated by the build. fshell's behaviour resulted from running the emulator to generate a script that generates POD for all the built-in commands. "abld build -what" (and "abld clean" for that matter) didn't work until WINSCW UDEB has been built and the "genpod.script" script had been generated. The reorganisation results in "abld build -what" working even if no build has been performed. Rather than getting fshell to generate the "genpod.script", a new perl script called "gengenpod" now does this. It determines the list of commands that need POD to be generated by looking in \epoc32\documentation\fshell_commands\inf_files, which is populated by exports from BLD.INF. This directory is also used by "ltkbi" to generate an index HTML page for the fshell commands. This is now linked to from the top level fshell.html file (rather than being manually maintained within fshell.pod). A benefit of this structure is that certain commands can now be easily not built for a given platform, and the documentation is automatically updated accordingly. This is currently used to prevent "btrace2" from being built in 9.1 platforms that don't support btrace.
+
+=item *
+
+Removed the now redundant '-p' option from 'help'.
+
+=item *
+
+Removed hardwired text from "ltkbi" (the HTML index generation tool) to make it more general. The text is now read from a file.
+
+=item *
+
+Added "--include-links" option to "ltkbi". This causes "--what" (and "--clean") to list (or delete) the files that are referred to by the index. This allows "--what" to be supported even if the documentation being referred to hasn't yet been generated.
+
+=item *
+
+Added means of specifying the documentation root directory to "ltkbd".
+
+=item *
+
+Added __FIND_PROCESS_COMMANDS_IN_EMULATOR__ around experimental code that finds process commands by delving directly into the WIN32 file system. This code is currently disabled because it maked the first time fshell is started very slow. It might be worth considering running it asynchronously in the background.
+
+=item *
+
+Fixed bug in "exportall" script that caused it to fail to print a newline character after the last file when run with the "--what" option.
+
+=item *
+
+Fixed bugs in "export_templates.mk" - it assumed EPOCROOT doesn't end in a backslash, but in fact it _must_ end in a backslash (otherwise it wouldn't be possible to support "EPOCROOT=\").
+
+=item *
+
+Fixed POD warning in "exportall" and "ltku.pm".
+
+=item *
+
+Added support for escaped single quote characters (i.e. "\'") to the command line parser in iocli.dll.
+
+=item *
+
+Fixed RLS warnings in fshell.
+
+=item *
+
+Backed out change that added btrace.mmp to the platform BLD.INF files (this is now controlled using the LTK_9_1_SUPPORT macro).
+
+=item *
+
+Added first cut of a VT100 console implementation.
+
+=item *
+
+Changed 'dump' to be able to read from STDIN.
+
+=item *
+
+Added C-style escape character support to 'echo'.
+
+=item *
+
+Changed 'echo' to not add '\r\n' to the end of everything it echos.
+
+=item *
+
+Fixed bug in iosrv where it would attempt to complete messages belonging to sessions that had already been deleted. Now, CIoSession holds a set of RMessage[2] objects (one for each async request) and everything else holds pointers to these. Then ~CIoSession checks to see if any of its requests are pending and if they are, cancels them before completing the destruction.
+
+=item *
+
+Hacked CTextFormatter::WrapL to cope with text that already contains line breaks.
+
+=item *
+
+Added 'rcomm' command that allows stdio to be routed to or from a comm port.
+
+=item *
+
+Added 'driver' command to allow logical and physical device driver to be loaded, unloaded and found.
+
+=item *
+
+Made some iosrv logging improvements.
+
+=item *
+
+Changed fshell to cope with being attached to a pipe rather than a console.
+
+=item *
+
+Added 'fsck' command.
+
+=item *
+
+Added '-H' option to 'ps' for human readable sizes.
+
+=item *
+
+Refactored 'ps' slightly to improve readability of the code.
+
+=item *
+
+Added support for explicitly specifying the required alignment of human readable sizes.
+
+=item *
+
+Fixed 'ps' build when LTK_MEMORY_ACCESS_SUPPORT is not defined.
+
+=item *
+
+Fixed bug in 'ps' command that prevented heap sizes ('-a') from being printed if '-s' (stack) wasn't specified.
+
+=item *
+
+Fixed bug in CEnvironment that prevented more than one environment variable from being supported.
+
+=item *
+
+Added 'date' command.
+
+=item *
+
+Changed fshell to check the exit type of commands to see if they panic'd, and if they did to display the panic category and reason (rather than reporting the reason as an unknown error code).
+
+=item *
+
+Changed fshell to store the exit reason integer of the last job in the environment variable $? (rather than printing it to the console).
+
+=item *
+
+Fixed a bug in CEnvironment that caused RVar::Close to crash if an integer variable is used.
+
+=item *
+
+Added drvinfo command.
+
+=item *
+
+Removed dependency on ESTOR from CEnvironment.
+
+=item *
+
+Removed ESTOR dependency from CLineHistory.
+
+=item *
+
+Added '--console <console_implementation>' option to CCommandBase and corresponding support in iosrv. This allows the default console for a given command to be explicitly overridden with a different implementation.
+
+=item *
+
+Added means of aborting btrace when using the -F option (to follow the buffer contents).
+
+=item *
+
+Removed the code in btrace that disables the btrace buffer while it is being dumped - seems unnecessary and potentially results in lost traces. Note, utrace doesn't do this.
+
+=item *
+
+Added verbose flag to btrace.
+
+=item *
+
+Added timeout option to rendezvous and fixed its documentation.
+
+=item *
+
+Fixed up some build and release issues with INF and IBY files.
+
+=back
+
+=head2 Release 007
+
+=over 5
+
+=item *
+
+Refactored debugrouter to be a kext and have a debug port (for capturing debug from before the user-side server has had a chance to initialise the LDD). Added patchable constants; uses NKern::Lock to avoid disabling interrupts or dropping log statements.
+
+=item *
+
+Added RClogger implementation that logs to memory instead of to the server.
+
+=item *
+
+Added ability to programmatically disable CLogger file writer.
+
+=item *
+
+Creating logs dir after cloggerserver has started now works.
+
+=item *
+
+Added icons to fshell.
+
+=item *
+
+Added crashdumparea support to clogger debugrouter, clogger copyright notices.
+
+=item *
+
+Added 'mrouter' command to find the status of the mRouter connection.
+
+=item *
+
+Gave iocons.dll all capabilities to allow it to be loaded by anything.
+
+=item *
+
+Changed iocons.dll's implementation to not use a cleanup stack to allow it to be used by threads that don't have one.
+
+=item *
+
+Ported 'winsockprt' from 7.0 to 9.x and added it to the tool-kit. This is an ESock protocol module that allows the emulator to use the host PC's network connection via the Microsoft WinSock2 library.
+
+=item *
+
+Changed winsockprt to support a new pair of protocols (defined in winsockprt.h) to allow it to sit along side the real TCP/IP stack. Clients that know they always want to use winsockprt rather than the real stack can use a protocol type of KProtocolWinsockTcp instead of KProtocolInetTcp (or UDP equivalents). Alternatively clients can continue to use KProtocolInetTcp, but then "wsp enable" must be run to disable the real stack if winsockprt is to be used for transport.
+
+=item *
+
+Added 'protocol' keyword to rcons.ini. This it to allow rcons.dll to be configured to use a non-standard TCP implementation (e.g. KProtocolWinsockTcp (9000) defined in \epoc32\include\winsockprt.h).
+
+=item *
+
+Added 'interactive_config' keyword to rcons.dll's configuration file ('rcons.ini'). This allows interactive configuration to be disabled on products whose default console implementation is too restrictive to make it possible (e.g. devices with no keyboard).
+
+=item *
+
+Added 'connection_type' keyword to rcons.ini to allow implicit connections to be used even if the RConnection API is supported.
+
+=item *
+
+Added 30 second time-out to the first interactive question asked by the configuration editor. The will cause rcons.dll to use the fallback console if the user doesn't (or isn't able to) respond within 30 seconds. This is to try to catch the situation where 'interactive_config' hasn't been used to disable the config editor, but it should have been.
+
+=item *
+
+Changed rcons's TConfigEditor to use return codes rather than leaves because consoles are sometimes used by things that don't have a trap harness.
+
+=item *
+
+Fixed bug that prevented errors in background commands being reported.
+
+=item *
+
+Added native fshell 'btrace' command. Functionally identical to the one released in Symbian OS, but also supports automatic flushing of the btrace buffer when it reaches a certain percentage of fullness.
+
+=item *
+
+Added support for 'rdebug' command to write what it reads on STDIN. Useful for (among other things) filling the btrace buffer.
+
+=item *
+
+Fixed some build problems; Buffered logging in Clogger now works properly again.
+
+=item *
+
+Added TlsLog functions to RClogger.
+
+=item *
+
+Changed non-logmask functions to log with 0x80000000 rather than EAllEnabled.
+
+=item *
+
+Added trim trailing newlines option.
+
+=item *
+
+Adding rotate option to cloggerconfig
+
+=item *
+
+Added createsrc script and template code.
+
+=item *
+
+Fix to LTKBD so that it generates documentation from .pod files too (with no #!perl).
+
+=back
+
+=head2 Release 006
+
+=over 5
+
+=item *
+
+Publishing new baserom script; also a fix to ltkbd so that POD links work better; updates rcons.pod in line with this fix, to that fshell links work in there.
+
+=item *
+
+Added new fshell commands to documentation.
+
+=item *
+
+Added a new phase to the documentation build that generates empty .html files to allow the real build phase to resolve links. See the documentation in "ltkbd" for more details.
+
+=item *
+
+Various fixes to get build working better. Should now build from any source directory, and with any EPOCROOT (not just '\').
+
+=item *
+
+Added support for background commands run from within fshell scripts. Previously '&' within a script was ignored.
+
+=item *
+
+Added 'rdebug' fshell command to allow text to be logged via RDebug::Print.
+
+=back
+
+=head2 Release 005
+
+=over 5
+
+=item *
+
+Fixed CLogger bluetooth logging.
+
+=item *
+
+Changed fshell TCommandOption and TCommandArgument to store const TPtrC, to allow use of _L in OptionsL function.
+
+=item *
+
+Changed fshell CCommandBase::RunL to handle DisplayHelpL failing.
+
+=item *
+
+Added cenrep command to fshell.
+
+=item *
+
+Added thread killing support to "kill".
+
+=item *
+
+Fixed bug in iosrv/fshell that caused an endless loop to be entered if CConsoleBase::ReadKey returned an error.
+
+=item *
+
+Fixed bug in the way fshell wires up IO handles to form pipe-lines. Previously RIoPipe objects were created in the main loop. This had the consequence that when it came to wiring up STDOUT of a command, the pipe object didn't exist. To work around this, the wiring of STDOUT was deferred until the next iteration of the loop. However, this broke redirections of STDERR because they occurred before STDOUT was wired up (while it was still wired to the shell's STDOUT). The fix results in the RIoPipe objects being constructed up front, which allows STDOUT to be always plumbed in before handling STDERR.
+
+=item *
+
+Fix bug in iosrv that caused RIoFile reads to never be completed. The code now checks whether the end of the file has been reached, and completed with KErrEof if it has.
+
+=item *
+
+Added "-e" option to "echo" to send echoed output to STDERR.
+
+=item *
+
+Changed "cat" to read from STDIN if no file names are specified.
+
+=item *
+
+Changed "more" to use new iocli interface to capture all keys. Previously it assumed that no other commands would "steal" foreground from it, which isn't the case if fshell is running a script.
+
+=item *
+
+Added RIoConsoleReadHandle::CaptureAllKeys and RIoConsoleReadHandle::CancelCaptureAllKeys.
+
+=item *
+
+Changed signature of RIoConsoleReadHandle::CancelCaptureKey to be explicit about which captured key should be cancelled, rather that expecting clients to keep track of iosrv's container indicies.
+
+=item *
+
+Fixed bug in CIoConsole that resulted in it failing to re-queue its read request towards the console if a catpured key is processed. Previously this bug was masked by the fact that fshell (previously the only capture keys user) would always make a read request after processing a captured key, which resulted in iosrv's read being re-queued. When "more" started using captured keys and exited as a result, there was nothing to cause a re-queue as so it seemed as though the shell had hung.
+
+=item *
+
+Added quotes around object names in the iosrv log to aid readability.
+
+=item *
+
+Changed "more" to handle lines that wrap (i.e. those that are longer than the console width).
+
+=item *
+
+Fixed help formatter to do best effort if there isn't enough console width to tablulate options and arguments nicely.
+
+=item *
+
+Stopped "ps" by default producing KErrPermissionDenied warnings for (what I think are) unnamed threads.
+
+=item *
+
+Added an executable ("fshell_inst.exe") that eclipses econs.dll with iocons.dll at installation time to avoid users to need to do the copy manually. There's also an equivalent for un-installation ("fshell_uinst.exe"), however although this appears to work when run manually, I have so far been anable to persuade the app installer to run it when the tool-kit is un-installed.
+
+=item *
+
+Added "exists" command to test whether particular files or directories exist.
+
+=item *
+
+Added "-e" ("--exec") option to fshell to allow it to run one liner scripts.
+
+=item *
+
+Changed fshell's parser to support semicolons as command delimiters to allow more than one command to be specified in a single line (without using conditionals like "&&" and "||").
+
+=item *
+
+Added "infoprint" command.
+
+=item *
+
+Fixed bug in "sort" that caused it to abort if identical lines are present in the input.
+
+=item *
+
+Implemented --force option for cenrep command, to allow overwriting of repository settings regardless of platsec considerations. This is implemented by manually modifying the repository file in a similar way to how centrepconv does it.
+
+=item *
+
+Added a 8-bit overload to CCommandBase::Printf, and an API to query the presence of options in a similar way to RCommandArgumentList::IsPresent.
+
+=item *
+
+Re-froze the WINS def file for iocli.
+
+=item *
+
+Added pubsub and cloggerconfig tools.
+
+=item *
+
+Updated clogger docs.
+
+=item *
+
+Neatened cenrep output.
+
+=back
+
+=head2 Release 004
+
+The first externally distributed build of the tool-kit.
