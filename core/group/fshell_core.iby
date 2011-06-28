@@ -76,6 +76,10 @@ FSHELL_DATA_FILE(ZRESOURCE\Apps\fshell_launch_serial_loc.rsc, Resource\Apps\fshe
 
 FSHELL_DATA_FILE(ZSYSTEM\console\scripts\comm.script, system\console\scripts\comm.script)
 
+#ifdef FSHELL_CORE_SUPPORT_USB
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\start-usb.script, system\console\scripts\start-usb.script)
+#endif
+
 #ifdef FSHELL_CORE_SUPPORT_STDIOSERVER
 FSHELL_EXECUTABLE_FILE(fshell_stdioserver.exe)
 FSHELL_DATA_FILE(ZSYSTEM\console\scripts\start-stdio.script, system\console\scripts\start-stdio.script)

@@ -2277,8 +2277,17 @@ const TDesC& CCmdExists::Name() const
 
 void CCmdExists::DoRunL()
 	{
-	TUint att;
-	Complete(!(FsL().Att(iFileName, att) == KErrNone));
+	if (iFileName.HasWildDriveLetter())
+		{
+		TFindFile find(FsL());
+		iFileName[0] = 'y';
+		Complete(!(find.FindByDir(iFileName, KNullDesC) == KErrNone));
+		}
+	else
+		{
+		TUint att;
+		Complete(!(FsL().Att(iFileName, att) == KErrNone));
+		}
 	}
 
 void CCmdExists::ArgumentsL(RCommandArgumentList& aArguments)

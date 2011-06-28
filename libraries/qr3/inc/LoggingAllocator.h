@@ -83,6 +83,7 @@ private:
 	void CheckDeferredFrees();
 	void Destroy();
 	virtual ~RLoggingAllocator(); // Made this virtual to shut up GCCE (even GCC 4 complains about this)
+	TBool IsSymbol(TUint aAddress) const;
 
 public:
 	RAllocator* iA; // The original allocator
@@ -98,6 +99,8 @@ private:
 	RArray<SDeferredFreeCell> iDeferredFrees;
 	TUint iPid;
 	RAllocatorHelper iHelper;
+	TLinAddr iExeCodeBase;
+	TInt iExeCodeSize;
 	};
 
 inline TInt RLoggingAllocator::Install_WeakLink(TUint aFlags)

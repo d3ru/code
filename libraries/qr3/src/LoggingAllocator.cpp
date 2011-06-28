@@ -52,6 +52,18 @@ RLoggingAllocator::RLoggingAllocator(TUint aFlags)
 	{
 	if (iFlags & EDeferFree) iFlags |= EScribbleFrees; // The only reason (currently) why you defer them is to do the check, which requires them to be scribbled
 	iPid = RProcess().Id(); // Cache this to save a few exec calls
+	TProcessMemoryInfo info;
+	TInt err = RProcess().GetMemoryInfo(info);
+	if (!err)
+		{
+		iExeCodeBase = info.iCodeBase;
+		iExeCodeSize = info.iCodeSize;
+		}
+	else
+		{
+		iExeCodeBase = 0;
+		iExeCodeSize = 0;
+		}
 	}
 
 void RLoggingAllocator::Free(TAny* aPtr)
@@ -118,7 +130,7 @@ void RLoggingAllocator::DoTraceAllocEvent(RAllocator* aAllocator, TAny* aCellPtr
 			{
 			while (((TUint32)sp < (TUint32)stackInfo.iBase) && (buf.Size() <= (buf.MaxSize() - 4)))
 				{
-				if ((*sp >= 0x70000000) && (*sp <= 0x8fffffff)) // Is this a valid ROM or RAM address? Note, the address ranges are for the 2GB EKA2 memory map.
+				if (IsSymbol(*sp))
 					{
 					buf.Append(TPtrC8((TUint8*)sp, 4));
 					}
@@ -163,7 +175,7 @@ void RLoggingAllocator::DoTraceAllocEvent(RAllocator* aAllocator, TAny* aCellPtr
 		while (((TUint32)sp < (TUint32)stackInfo.iBase) && ptr != end)
 			{
 			TUint addr = *sp;
-			if ((addr >= 0x70000000) && (addr <= 0x8fffffff)) // Is this a valid ROM or RAM address? Note, the address ranges are for the 2GB EKA2 memory map.
+			if (IsSymbol(addr))
 				{
 				*(ptr++) = addr;
 				}
@@ -188,6 +200,18 @@ void RLoggingAllocator::DoTraceAllocEvent(RAllocator* aAllocator, TAny* aCellPtr
 		iBreakOnAllocCount = *&iBreakOnAllocCount; // Something to break on
 		}
 #endif
+	}
+
+// Copied from CCmdFdb::IsSymbol()
+TBool RLoggingAllocator::IsSymbol(TUint aAddress) const
+	{
+	// Ranges probably not perfect, seem to be roughly ok though
+	TBool okRange = Rng(0x70000000u, aAddress, 0xA0000000u) || Rng(0xC0000000u, aAddress, 0xFC000000u);
+	if (iExeCodeBase && !okRange)
+		{
+		okRange = Rng(iExeCodeBase, (TLinAddr)aAddress, iExeCodeBase + iExeCodeSize);
+		}
+	return okRange && aAddress != 0xDEDEDEDE && aAddress != 0xAAAAAAAA && aAddress != 0xBBBBBBBB && aAddress != 0xCCCCCCCC && aAddress != 0xEEEEEEEE; 
 	}
 
 EXPORT_C void RLoggingAllocator::StaticTraceAlloc(RAllocator* aAllocator, TAny* aCellPtr, TInt aRequestedSize)

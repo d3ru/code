@@ -28,19 +28,20 @@ Searches the file system for files or directories matching the given conditions.
 
 ...to find the path to fshell.exe
 
-==argument filename search-base optional
+==argument filename search-path optional
 
-The directory to base the search in. Defaults to C<.> if not specified.
+The directory to base the search in, defaults to C<.> if not specified. If C<--path> is specified this argument should be the path to search for (potentially with wildcards).
 
 ==option string n name
 
 Include files whose name (excluding path) matches the given pattern (according to C<TDesC::MatchF>).
 
-==option string p path
+==option bool p path
 
-Search for files whose path (including filename) matches the given pattern (according to C<TDesC::MatchF>). If the path starts with a wildcarded drive (ie "?:\") then all drives are searched in standard search order (Y: through A: then Z:), and the C<search-base> argument is ignored. Wildcards are only allowed in the drive letter and in the name (if given). Specifying a name on the end of the path is equivalent to using the C<--name> option.
+Search for files whose path (including filename) matches the pattern given by the C<search-path> argument (according to C<TDesC::MatchF>). If the path starts with a wildcarded drive (ie "?:\") then all drives are searched in standard search order (Y: through A: then Z:). Wildcards are only allowed in the drive letter and in the name (if given). If the C<--name> option is also specified, the two are concatenated. Ie the following are equivalent:
 
-Currently paths starting "?:\" are the only ones supported; any other C<--path> argument will be ignored.
+  find --path ?:\dir\myfile.txt
+  find --path ?:\dir --name myfile.txt
 
 ==option bool 1 one
 
@@ -53,4 +54,8 @@ Copyright (c) 2009-2011 Accenture. All rights reserved.
 ==smoke-test
 
 find -1 --path ?:\resource\cif\fshell\find.* | export -s RESULT
+var RESULT endswith \resource\cif\fshell\find.cif || $Error
+
+# Check that --path and --name work together
+find -1 --path ?:\resource\cif\fshell --name find.* | export -s RESULT
 var RESULT endswith \resource\cif\fshell\find.cif || $Error

@@ -82,9 +82,10 @@ PRJ_MMPFILES
 #endif
 
 #ifdef FSHELL_TRACE_SUPPORT
-// Btrace.cif needs to exported if any kind of tracing supported
+// Btrace.cif needs to exported if any kind of tracing supported, because other trace CIF files include it
 PRJ_EXPORTS
 ..\btrace\btrace.cif             z:\resource\cif\fshell\btrace.cif
+..\btrace\start-trace.script     z:\system\console\scripts\start-trace.script
 #endif
 #ifdef FSHELL_CORE_SUPPORT_BTRACE
 PRJ_MMPFILES

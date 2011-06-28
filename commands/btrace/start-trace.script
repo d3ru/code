@@ -1,0 +1,71 @@
+#!fshell
+# start-trace.script
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+export QUIETLY ">/dev/null" # BTrace command is rather wordy by default
+export OnByDefault "0,1,2,3,9,15"
+export All "0,1,2,3,9,14,15"
+export TraceCmd "btrace"
+
+# Check if we're using atrace
+exists ?:\resource\cif\fshell\atrace.cif && export TraceCmd "atrace"
+
+$TraceCmd --reset $QUIETLY
+
+if 'var Usecase not-defined || var Usecase == all'
+	$TraceCmd -m1 -f $All $QUIETLY
+	uprofiler start
+else if var Usecase == heap
+	# EHeap is 14
+	$TraceCmd -m1 -f $OnByDefault -f 14 $QUIETLY
+else if var Usecase == profiling
+	$TraceCmd -m1 -f $OnByDefault $QUIETLY
+	# uprofiler will take care of enabling category 18 (EProfiling)
+	uprofiler start
+else
+	error -6 "Usecase not recognised!"
+endif
+
+exit
+
+==name start-trace
+
+==short-description
+
+Shortcut to setup the appropriate btrace categories for a particular tracing use-case.
+
+==long-description
+
+The categories listed below will be enabled regardless, as they are worth having whatever you're doing:
+
+  0 ERDebugPrintf
+  1 EKernPrintf
+  2 EPlatsecPrintf
+  3 EThreadIdentification
+  9 ECodeSegs
+ 15 EMetaTrace
+
+==argument enum Usecase optional
+
+The usecase to setup. If not specified, defaults to "all".
+
+==enum-value heap
+
+Heap tracing. Logging Allocator or similar must be configured.
+
+==enum-value profiling
+
+CPU profiling. Not supported on SMP builds.
+
+==enum-value all
+
+Enable all of the above.

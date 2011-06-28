@@ -301,12 +301,16 @@ void CConsoleWrapper::OpenEndpointL(TConnectionType aConnectionType)
 	DEBUG_PRINTF("CConsoleWrapper::OpenEndpointL 0x%08x type %d", this, aConnectionType);
 	CloseEndpoint();
 	const TDesC* args = NULL;
+	TBool needsUnderlying = ETrue;
 	switch (aConnectionType)
 		{
 		case EConnectionUsb:
 #ifdef FSHELL_LAUNCHER_SUPPORT_USB
 			_LIT(KArgsUsb, "--console vt100usbcons --console-title '" EXPAND(LCONS, FSHELL_LAUNCHER_SUPPORT_USB) L"'");
 			args = &KArgsUsb();
+			// Was considering using start-usb.script to make this option more user-friendly, but it doesn't integrate quite well enough yet
+			//_LIT(KArgsUsb, "start-usb --verbose '" EXPAND(LCONS, FSHELL_LAUNCHER_SUPPORT_USB) L"'");
+			//needsUnderlying = EFalse; // Indicating we're not doing a direct --console in args and thus don't need to use --underlying-console
 #endif
 			break;
 		case EConnectionTcp:
@@ -328,9 +332,17 @@ void CConsoleWrapper::OpenEndpointL(TConnectionType aConnectionType)
 #endif
 			break;
 		}
-	_LIT(KArgsFormat, "--underlying-console guicons:servername=%S %S");
+	_LIT(KUnderlyingArgsFormat, "--underlying-console guicons:servername=%S %S");
+	_LIT(KDirectArgsFormat, "--console guicons --console-title servername=%S %S");
 	TBuf<256> argsBuf;
-	argsBuf.Format(KArgsFormat, &KServerName, args);
+	if (needsUnderlying)
+		{
+		argsBuf.Format(KUnderlyingArgsFormat, &KServerName, args);
+		}
+	else
+		{
+		argsBuf.Format(KDirectArgsFormat, &KServerName, args);
+		}
 	DEBUG_PRINT(_L("CConsoleWrapper::ConnectL args \"%S\""), &argsBuf);
 	TRAPD(err, iProcess.Create(KProcess, argsBuf));
 	if (KErrNone == err)

@@ -20,6 +20,10 @@ Tests if a particular file or directory exists.
 
 Returns KErrNone if it does, or either KErrNotFound or KErrPathNotFound otherwise. Intended to be used in conjunction with fshell's C<&&> and C<||> operators.
 
+A wildcarded drive letter may be used (ie C<?>), to test if the file exists on any drive. For example:
+
+    exists ?:\data\somefile.txt && echo "Found on some drive somewhere!"
+
 ==argument filename file_name
 
 The name of the file or directory of interest.

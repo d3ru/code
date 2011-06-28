@@ -646,4 +646,5 @@ EXPORTS
 	_ZNK7IoUtils12CCommandBase9ExtensionEv @ 645 NONAME
 	_ZN10RIoConsole11RequestFileERK7TDesC16S2_R14TRequestStatus @ 646 NONAME
 	_ZN10RIoConsole17CancelRequestFileEv @ 647 NONAME
+	_ZNK7IoUtils10TFileName218HasWildDriveLetterEv @ 648 NONAME
 

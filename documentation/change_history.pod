@@ -16,7 +16,7 @@ __END__
 
 =head2 Release 006 **Not yet released**
 
-=head3 New features
+=head3 New functionality
 
 =over 5
 
@@ -28,6 +28,10 @@ Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch>
 
 Added support for glinfo to display GPU memory info from the eglQueryProfilingDataNOK EGL extension.
 
+=item *
+
+Added start-trace and start-usb scripts.
+
 =back
 
 =head3 Bugfixes
@@ -37,6 +41,14 @@ Added support for glinfo to display GPU memory info from the eglQueryProfilingDa
 =item *
 
 Changed fshell's command factory to only treat files in '\resource\cif\fshell' that end with '.cif' as commands. This is to allow other extensions to be used for things like '==include' statements.
+
+=item *
+
+Rejigged L<find|commands::find> command syntax slightly. Should still be compatible with all existing scripts.
+
+=item *
+
+Improved logging allocator's heuristics for recognising symbol addresses, so it is consistant with fdb's approach.
 
 =back
 

@@ -61,7 +61,9 @@ EXPORT_C TFileName2::TFileName2(const TDesC& aName, TType aType)
 
 EXPORT_C TBool TFileName2::IsAbsolute() const
 	{
-	return ((Length() >= 3) && TChar((*this)[0]).IsAlpha() && ((*this)[1] == ':') && ((*this)[2] == '\\'));
+	// We now consider a drive-wildcarded path like ?:\dir\file to count as absolute
+	// Previously attempting to MakeAbsolute such a path would result in the nonsense path c:\?:\dir\file so this isn't too dramatic a behavioural change
+	return ((Length() >= 3) && (TChar((*this)[0]).IsAlpha() || (*this)[0] == '?') && ((*this)[1] == ':') && ((*this)[2] == '\\'));
 	}
 
 EXPORT_C TBool TFileName2::IsDriveLetter() const
@@ -95,7 +97,13 @@ EXPORT_C TBool TFileName2::IsDir() const
 
 EXPORT_C TBool TFileName2::HasDriveLetter() const
 	{
-	return ((Length() >= 2) && TChar((*this)[0]).IsAlpha() && ((*this)[1] == ':'));
+	//return ((Length() >= 2) && TChar((*this)[0]).IsAlpha() && ((*this)[1] == ':'));
+	return IsAbsolute(); // Basically the same thing right? Since x:somename isn't a valid fshell or Symbian path anyway... -TomS
+	}
+
+EXPORT_C TBool TFileName2::HasWildDriveLetter() const
+	{
+	return IsAbsolute() && (*this)[0] == '?';
 	}
 
 EXPORT_C TBool TFileName2::HasLeadingSlash() const

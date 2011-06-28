@@ -30,7 +30,7 @@ private: // From CCommandBase.
 private:
 	TFileName2 iSearchBase;
 	HBufC* iName;
-	HBufC* iPath;
+	TBool iSearchByPath;
 	TBool iOne;
 	TFileName2 iTempName;
 	RPointerArray<HBufC> iSearchDirs;
@@ -48,7 +48,6 @@ CCommandBase* CCmdFind::NewLC()
 CCmdFind::~CCmdFind()
 	{
 	delete iName;
-	delete iPath;
 	iSearchDirs.ResetAndDestroy();
 	}
 
@@ -64,8 +63,8 @@ const TDesC& CCmdFind::Name() const
 
 void CCmdFind::ArgumentsL(RCommandArgumentList& aArguments)
 	{
-	_LIT(KArgSearchBase, "search-base");
-	aArguments.AppendFileNameL(iSearchBase, KArgSearchBase);
+	_LIT(KArgSearchPath, "search-path");
+	aArguments.AppendFileNameL(iSearchBase, KArgSearchPath);
 	}
 
 void CCmdFind::OptionsL(RCommandOptionList& aOptions)
@@ -75,7 +74,7 @@ void CCmdFind::OptionsL(RCommandOptionList& aOptions)
 	_LIT(KOptPath, "path");
 	aOptions.AppendStringL(iName, KOptName);
 	aOptions.AppendBoolL(iOne, KOptOne);
-	aOptions.AppendStringL(iPath, KOptPath);
+	aOptions.AppendBoolL(iSearchByPath, KOptPath);
 	
 	//aOptions.AppendBoolL(iPrint, TChar('p'), _L("print"), _L("Print the paths of files that match the given conditions, one per line. This is the default if no other options are specified."));
 	}
@@ -87,17 +86,16 @@ EXE_BOILER_PLATE(CCmdFind)
 void CCmdFind::DoRunL()
 	{
 	RFs& fs = FsL();
-	iSearchBase.SetIsDirectoryL();
-	if (!iName && !iPath)
+	if (!iName && !iSearchByPath)
 		{
 		LeaveIfErr(KErrArgument, _L("You must specify a name or path to match against"));
 		}
 
-	if (iPath && iPath->Left(3) == _L("?:\\"))
+	if (iSearchByPath)
 		{
-		if (iSearchBase.Length()) LeaveIfErr(KErrArgument, _L("Cannot specify a wildcarded drive root in --path as well as a search-base argument"));
-		TPtr path = iPath->Des();
+		TFileName2& path(iSearchBase);
 		path[0] = 'y';
+		if (iName) path.AppendComponentL(*iName, TFileName2::EFile);
 		TFindFile find(FsL());
 		CDir* matches = NULL;
 		TInt err = find.FindWildByDir(path, KNullDesC, matches);
@@ -120,6 +118,7 @@ void CCmdFind::DoRunL()
 		}
 	else
 		{
+		iSearchBase.SetIsDirectoryL();
 		iSearchDirs.AppendL(iSearchBase.AllocLC());
 		CleanupStack::Pop();
 		}

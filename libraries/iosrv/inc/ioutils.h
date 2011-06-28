@@ -158,6 +158,7 @@ public:
 	IMPORT_C TBool IsFile() const;
 	IMPORT_C TBool IsDir() const;
 	IMPORT_C TBool HasDriveLetter() const;
+	IMPORT_C TBool HasWildDriveLetter() const;
 	IMPORT_C TBool HasLeadingSlash() const;
 	IMPORT_C TBool HasTrailingSlash() const;
 	IMPORT_C TPtrC Drive() const;

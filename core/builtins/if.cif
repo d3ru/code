@@ -37,6 +37,12 @@ One or more C<else> statements are allowed, as are multiple statements in each b
         error $ERR "Unrecognised error!"
     endif
 
+Multiple statements are allowed in an if condition by using the && and || pipeline operators - note however that the condition must be quoted in this case, to make sure the pipeline is associated with the condition not the command itself:
+
+    if 'var ERR == -5 || var ERR == -47'
+        echo "Not supported"
+    endif
+
 As with the L<while|while> command, the C<if>, C<else> and C<endif> statements cannot be backgrounded, redirected or participate in pipelines. In other words they must appear on a line by themselves (although comments and whitespace are permitted on that line).
 
 Nested if and while blocks are permitted providing there are the correct number of endif/endwhile statements. Modifications to the environment within the if or else statements are visible outside the block. In other words there is no scoping associated with the block.
@@ -45,7 +51,7 @@ The C<if> command is only for use in scripts - behaviour is undefined if you typ
 
 ==argument string condition last
 
-Execute the following statements if the given condition evaluates to 0 (KErrNone).
+Execute the following statements if the given condition statement evaluates to 0 (KErrNone).
 
 ==see-also
 

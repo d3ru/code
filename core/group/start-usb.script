@@ -1,0 +1,53 @@
+#!fshell
+# start-usb.script
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+var port not-defined && export port ACM::1
+var debug not-defined && export debug 0
+
+export ERR -1
+export CMD "fshell --console vt100usbcons --console-title port=$port,debug=$debug"
+while "var ERR != -21 && var ERR != 0"
+	# We want to stop listening if ERR is zero, as that's what we'll get if the user explicitly typed exit
+	# If we didn't stop in this case, we'd immediately reconnect if the user typed exit
+	if var verbose defined
+		$CMD &| export ERR $?
+		#echo "fshell returned error $ERR"
+	else
+		fshell --console nullcons --exec "$CMD" &| export ERR $?
+	endif
+	sleep 1
+endwhile
+
+exit
+
+==name start-usb
+
+==short-description
+
+Continuously listen on USB port for fshell connections.
+
+==long-description
+
+This script attempts to start an fshell session on the given USB port, using vt100usbcons. When the session terminates it waits for the USB cable to be reinserted (if necessary) and attempts to reconnect. If the connection failed because something else had the port open, or because the user explicitly terminated it by typing "exit", the script aborts.
+
+==argument string port optional
+
+Name of port. If not specified, defaults to ACM::1.
+
+==option bool v verbose
+
+If specified, print console connection status.
+
+==option bool d debug
+
+If specified, pass the C<debug=1> option to vt100usbcons.
