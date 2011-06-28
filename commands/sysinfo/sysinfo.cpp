@@ -45,15 +45,9 @@ CCmdSysInfo::CCmdSysInfo()
 void CCmdSysInfo::PrintHalL(HALData::TAttribute aHalAttribute)
 	{
 	LtkUtils::CHalAttribute* attrib = LtkUtils::GetHalInfoL(aHalAttribute);
-	if (attrib->iError)
-		{
-		PrintWarning(_L("Unable to read %S: %S (%d)"), &attrib->iAttributeName, Stringify::Error(attrib->iError), attrib->iError);
-		}
-	else
-		{
-		Printf(_L("%S: %S\r\n"), &attrib->iAttributeName, attrib->iDescription);
-		}
-	delete attrib;
+	CleanupStack::PushL(attrib);
+	Printf(_L("%S: %S\r\n"), &attrib->AttributeName(), &attrib->DescriptionL());
+	CleanupStack::PopAndDestroy(attrib);
 	}
 
 void CCmdSysInfo::PrintWlanL()
