@@ -59,7 +59,14 @@ EXPORT_C void LtkUtils::W32CrackL()
 	CleanupClosePushL(buf);
 	User::LeaveIfError(file.Read(buf));
 	TPtrC16 wptr((TUint16*)buf.Ptr(), buf.Size()/2);
-	buf.Insert(2, TPtrC8((TUint8*)KLogEv().Ptr(), KLogEv().Size())); // +2 to get past the BOM
+	
+	// Usually there's a BOM, but not always
+	TInt lenBOM = 0;
+	if ((buf[0] == 0xff && buf[1] == 0xfe) || (buf[0] == 0xfe && buf[1] == 0xff))
+		{
+		lenBOM = 2;
+		}	
+	buf.Insert(lenBOM, TPtrC8((TUint8*)KLogEv().Ptr(), KLogEv().Size())); // +2 to get past the BOM
 	TInt err = KErrNone;
 	err = fs.MkDirAll(KCWsIniFile); // mkdir c:\system\data\ in case it is not exist
 	if((err != KErrNone) && (err != KErrAlreadyExists))
