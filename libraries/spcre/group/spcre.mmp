@@ -55,3 +55,5 @@ source				tregexarg.cpp
 library				euser.lib
 library				libpcre.lib
 library				ltkutils.lib
+
+featurevariant

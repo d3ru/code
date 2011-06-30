@@ -68,3 +68,5 @@ library         estlib.lib
 // Warning:  #1134-D: literal treated as "long long"
 // Warning: C2874W: othercase may be used before being set
 option ARMCC --diag_suppress 1134,2874,546
+
+featurevariant
