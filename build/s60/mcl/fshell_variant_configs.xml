@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<build xmlns="http://symbian.com/xml/build"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://symbian.com/xml/build build/2_0.xsd">
+
+	<group name="fshell_variant_configs">
+		<groupRef ref="armv5" mod="fshellminigui"/>
+	</group>
+	
+   	<var name="fshellminigui" type="product">
+		<set name='FEATUREVARIANTNAME' value='.fshellminigui'/> 
+		<set name='VARIANT_HRH' value='$(EPOCROOT)/epoc32/include/feature_settings.hrh'/>
+		<set name='FEATURELISTFILES' value='$(EPOCROOT)/epoc32/include/variant/featurelists/fshellminigui.txt'/> 
+		<prepend name='SYSTEMINCLUDE' value='$(EPOCROOT)/epoc32/include/fshellminigui'/> 
+	</var>
+
+</build>

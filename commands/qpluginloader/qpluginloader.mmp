@@ -12,6 +12,10 @@
 
 #include <fshell/common.mmh>
 
+#ifndef FSHELL_QT_SUPPORT
+targettype none
+#else
+
 target			qpluginloader.exe
 targettype		exe
 uid				FSHELL_UID2_FSHELL_EXE FSHELL_UID_QPLUGINLOADER
@@ -24,3 +28,5 @@ source			qpluginloader.cpp
 
 library			euser.lib
 library			iocli.lib
+
+#endif

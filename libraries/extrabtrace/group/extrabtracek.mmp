@@ -48,3 +48,5 @@ end
 library			ekern.lib
 
 capability		all
+
+featurevariant

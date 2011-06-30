@@ -12,6 +12,10 @@
 
 #include <fshell/common.mmh>
 
+#ifndef FSHELL_CORE_SUPPORT_BTRACE
+targettype none
+#else
+
 target          fshell_btrace.exe
 targettype      exe
 uid             FSHELL_UID2_FSHELL_EXE FSHELL_UID_BTRACE
@@ -30,3 +34,5 @@ library         efsrv.lib
 library         ltkutils.lib
 
 macro           EXE_BUILD
+
+#endif

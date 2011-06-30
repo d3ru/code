@@ -160,7 +160,7 @@ __NAKED__ void Dsb()
 	// Data Sync Barrier
 	// From the various definitions of ARM_DSBxx in cpudefs.h
 #if defined(FSHELL_ARM11XX_SUPPORT)
-	asm("mcr p15, 0, r0, c7, c10, 4 ")
+	asm("mcr p15, 0, r0, c7, c10, 4 ");
 #elif defined(FSHELL_ARM_MEM_MAPPED_DEBUG)
 	asm("nop"); // Shut up complaints about branches to non-code symbols
 	asm(".word %a0" : : "i" ((TInt)(0xf57ff04f)));

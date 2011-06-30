@@ -12,6 +12,10 @@
 
 #include <fshell/common.mmh>
 
+#ifndef FSHELL_CORE_SUPPORT_SWI
+targettype none
+#else
+
 target			swi.exe
 targettype		exe
 uid             FSHELL_UID2_FSHELL_EXE FSHELL_UID_SWI
@@ -36,3 +40,5 @@ library		sisregistryclient.lib
 #endif
 
 macro		EXE_BUILD
+
+#endif

@@ -19,7 +19,6 @@ namespace LtkUtils
 	NONSHARABLE_CLASS(CHalAttribute) : public CBase
 		{
 	public:
-		IMPORT_C CHalAttribute(TInt aAttribute, TInt aDeviceNumber, TInt aValue, TInt aProperties=0);
 		IMPORT_C ~CHalAttribute();
 		IMPORT_C TInt Attribute() const;
 		IMPORT_C const TDesC& AttributeName() const;
@@ -30,6 +29,7 @@ namespace LtkUtils
 		IMPORT_C const TDesC& DescriptionL();
 
 		// Internal use
+		CHalAttribute(TInt aAttribute, TInt aDeviceNumber, TInt aValue, TInt aProperties=0);
 		void SetDescription(HBufC* aDescription);
 	private:
 		TInt iAttribute;

@@ -41,3 +41,5 @@ systeminclude	\epoc32\include
 // Should be ok with what platformpaths gives us
 #define FSHELL_LBS_SYSTEMINCLUDE
 #endif
+
+FEATUREVARIANT // We say that all fshell things support being built as a feature variant, because that's how our configuration system integrates

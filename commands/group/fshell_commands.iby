@@ -14,12 +14,6 @@
 
 #include <fsh_config.iby>
 
-#if defined(FSHELL_ROMBUILD) && defined(FSHELL_CORE_SUPPORT_SWI)
-// Note, we only want to include Software Install dependencies when building a
-// ROM. When building a SIS, these should already be present in the target handset.
-#include <swi.iby>
-#endif
-
 FSHELL_EXECUTABLE_FILE(fshell_cat.exe)
 FSHELL_COMMAND_INFO_FILE(fshell,cat.cif)
 

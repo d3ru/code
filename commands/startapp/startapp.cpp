@@ -14,6 +14,7 @@
 #include <fshell/common.mmh>
 #include <apgcli.h>
 #include <apacmdln.h>
+#include <fshell/loggingallocator.h> //TOMSCI DEBUG
 
 using namespace IoUtils;
 
@@ -49,11 +50,12 @@ CCommandBase* CCmdStartApp::NewLC()
 
 CCmdStartApp::~CCmdStartApp()
 	{
-	delete iAppName;
+	//TOMSCI TEMP FOR TESTING	delete iAppName;
 	}
 
 CCmdStartApp::CCmdStartApp()
 	{
+	RLoggingAllocator::Install_WeakLink();
 	}
 
 const TDesC& CCmdStartApp::Name() const

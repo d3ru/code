@@ -12,6 +12,10 @@
 
 #include <fshell/common.mmh>
 
+#ifndef FSHELL_QT_SUPPORT
+targettype none
+#else
+
 target          iocli_qt.dll
 targettype      dll
 uid				0x100000af FSHELL_UID_IOCLI_QT
@@ -28,3 +32,5 @@ library			euser.lib
 library			iocli.lib
 
 nostrictdef
+
+#endif

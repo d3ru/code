@@ -16,7 +16,7 @@ The fshell build system uses a number of macros to control what should be built 
 
 Any code wishing to use the fshell conditional system should C<< #include <fshell/common.mmh> >> and use the macros below and/or the ones defined in common.mmh to decide how to behave. Below follows the complete list of things that the platform.mmh can define. This isn't the complete list of all the macros that can be I<used>, for that see common.mmh directly. common.mmh can be included anywhere that the preprocessor is used - eg in source code, MMP files, RSS files or bld.infs.
 
-The macros that have a [NO_] in are assumed to be supported unless the [NO_] variant is defined. Eg in your MMP file you would check for btrace support with C<#ifdef FSHELL_BTRACE_SUPPORT> and to say a platform didn't support it you'd add C<#define FSHELL_NO_BTRACE_SUPPORT> to the platform.mmh. Unless the platform.mmh says otherwise, common.mmh would define C<FSHELL_BTRACE_SUPPORT>. Everything in fshell that uses btrace checks for C<FSHELL_SUPPORT_BTRACE> in either the bld.inf (in the case of a command that shouldn't be built at all if btrace isn't available) or in its MMP and/or source code (for a command that can still offer some functionality when btrace isn't available).
+The macros that have a [NO_] in are assumed to be supported unless the [NO_] variant is defined. Eg in your MMP file you would check for btrace support with C<#ifdef FSHELL_BTRACE_SUPPORT> and to say a platform didn't support it you'd add C<#define FSHELL_NO_BTRACE_SUPPORT> to the platform.mmh. Unless the platform.mmh says otherwise, common.mmh would define C<FSHELL_BTRACE_SUPPORT>. Everything in fshell that uses btrace checks for C<FSHELL_BTRACE_SUPPORT> in either the bld.inf (in the case of a command that shouldn't be built at all if btrace isn't available) or in its MMP and/or source code (for a command that can still offer some functionality when btrace isn't available).
 
 =head2 Supported platform.mmh macros
 
@@ -52,7 +52,7 @@ Symbian Foundation platform (value of this is n, where n is Symbian^n). Currentl
 
 =item FSHELL_PLATFORM_SYMTB
 
-Symbian Timebox release (value can be 92 or 101).
+Symbian Timebox release. This platform macro is deprecated.
 
 =item FSHELL_9_1_SUPPORT
 
@@ -257,6 +257,10 @@ The RLoader::Delete() API is available in e32ldr.h or e32ldr_private.h
 =item FSHELL_SMP_SUPPORT
 
 (Experimental) Used to indicate that SIS files created by this platform should include armv5smp binaries. All the appropriate SMP binaries can be build by using the bld.inf located in \fshell\build\common\drivers\bld.inf.
+
+=item FSHELL_VARIANT_NAME
+
+The name of the fshell variant being defined. Should only ever be defined in platform_<variant>.mmh files such as \fshell\build\s60\mcl\platform_minigui.mmh. The value of this macro must match the FEATUREVARIANTNAME defined in the appropriate fshell_variant_configs.xml file.
 
 =back
 

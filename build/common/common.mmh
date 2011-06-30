@@ -422,7 +422,7 @@
 #define FSHELL_CORE_SUPPORT_LAUNCHER
 #endif
 
-#ifndef FSHELL_CORE_SUPPORT_LAUNCHER
+#if !defined(FSHELL_CORE_SUPPORT_LAUNCHER) && defined(FSHELL_GUI_SUPPORT)
 // Fall back to the old icons
 
 #ifdef FSHELL_LAUNCHER_SUPPORT_LOCAL

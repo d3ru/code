@@ -13,11 +13,12 @@ Open Signing of SIS files is described here: http://developer.symbian.org/wiki/F
 
 The platforms are (at time of writing):
 
-s60\3rd_edition     For any S60 3rd edition phone. Builds an open signed SIS file. For more info see:
-s60\5th_edition     For any S60 5th edition or later phone, including the N8. Builds an open signed SIS file.
+s60\3rd_edition     For any S60 3rd edition phone. Builds an open signed SIS file.
+s60\5th_edition     In theory, for 5th edition phones. In practice, probably broken.
 s60\minigui         Internal Nokia platform. Only useful if you can build ROMs and have access to Nokia internal baselines.
-s60\tb92            Internal Nokia platform. Either you know what it is or you shouldn't be using it.
-ncp                 Internal Nokia platform. Either you know what it is or you shouldn't be using it.
+s60\tb92            "               "               "               "               "               "
+s60\mcl             "               "               "               "               "               "
+ncp                 "               "               "               "               "               "
 sf\2                Full GUI build for any ROM build using S^2
 sf\3                Full GUI build for any ROM build using S^3 or later, including beagle board and QEMU
 sf\3tshell          Textshell-only build for S^3 or later, supports QEMU and beagleboard

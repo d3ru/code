@@ -1,0 +1,39 @@
+// fshell_platform.iby
+// 
+// Copyright (c) 2011 Accenture. All rights reserved.
+// This component and the accompanying materials are made available
+// under the terms of the "Eclipse Public License v1.0"
+// which accompanies this distribution, and is available
+// at the URL "http://www.eclipse.org/legal/epl-v10.html".
+// 
+// Initial Contributors:
+// Accenture - Initial contribution
+//
+#ifndef FSHELL_PLATFORM_IBY
+#define FSHELL_PLATFORM_IBY
+
+#ifdef FSHELL_MAKESIS
+
+;Unique Vendor Name
+:"Accenture"
+
+;localised vendor names 
+%{"Accenture"}
+
+#ifdef FSHELL_OPEN_SIGNED
+HASH{"fshell (S60 Open Signed)"},(FSHELL_UID_SIS),FSHELL_VERSION,FSHELL_MINOR_VERSION,FSHELL_TIMESTAMP,TYPE=SA
+#else
+HASH{"fshell (S60)"},(FSHELL_UID_SIS),FSHELL_VERSION,FSHELL_MINOR_VERSION,FSHELL_TIMESTAMP,TYPE=SA
+#endif
+
+[0x101F7961], 0, 0, 0, {"Series60ProductID"}
+[0x102032BE], 0, 0, 0, {"Series60ProductID"}
+[0x102752AE], 0, 0, 0, {"Series60ProductID"}
+[0x1028315F], 0, 0, 0, {"Series60ProductID"}
+
+#endif // FSHELL_MAKESIS
+
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\vt100btcons_preamble.script, system\console\scripts\vt100btcons_preamble)
+
+#endif // FSHELL_PLATFORM_IBY
+

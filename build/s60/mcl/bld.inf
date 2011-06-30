@@ -1,0 +1,40 @@
+// bld.inf
+// 
+// Copyright (c) 2011 Accenture. All rights reserved.
+// This component and the accompanying materials are made available
+// under the terms of the "Eclipse Public License v1.0"
+// which accompanies this distribution, and is available
+// at the URL "http://www.eclipse.org/legal/epl-v10.html".
+// 
+// Initial Contributors:
+// Accenture - Initial contribution
+//
+#include "platform.mmh"
+#include "../../common/common.mmh"
+
+PRJ_PLATFORMS
+WINSCW
+ARMV5
+ARMV5SMP
+
+PRJ_EXPORTS
+.\platform.mmh                  \epoc32\include\fshell\platform.mmh
+
+// Support for minigui variant
+.\fshell_variant_configs.xml    \epoc32\sbs_config\fshell_variant_configs.xml
+.\minigui_featurelist.txt       \epoc32\include\variant\featurelists\fshellminigui.txt
+.\platform_minigui.mmh          \epoc32\include\fshellminigui\fshell\platform.mmh
+
+FSHELL_ROM_INCLUDE2(platform.mmh, fshell/platform.mmh)
+FSHELL_ROM_INCLUDE2(platform_minigui.mmh, fshell/platform_minigui.mmh)
+FSHELL_ROM_INCLUDE2(../fshell_platform.iby, fshell_platform.iby)
+
+FSHELL_ROM_INCLUDE(fshell.oby)
+FSHELL_ROM_INCLUDE(fshellminigui.oby)
+
+..\vt100btcons_preamble.script z:\system\console\scripts\vt100btcons_preamble.script
+
+#include "../../common/bld.inf"
+
+PRJ_MMPFILES
+gnumakefile    ..\..\common\fsh_buildsis.mk

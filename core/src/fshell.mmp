@@ -90,6 +90,8 @@ source          ciftest.cpp
 #define PLAT platform_ARM4
 #elif defined(MARM_ARMV5)
 #define PLAT platform_ARMV5
+#elif defined(__MARM_ARMV5__) // Some weird S60 tool defines the wrong macro when doing custom parsing of the mmp, sigh...
+#define PLAT platform_ARMV5
 #else
 #error "Platform not understood in fshell.mmp!"
 #endif

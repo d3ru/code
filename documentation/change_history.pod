@@ -22,6 +22,21 @@ __END__
 
 =item *
 
+Added mcl platform located at \fshell\build\s60\mcl. This platform supports building fshell for full gui and minigui at the same time. To build, do:
+
+    M:\fshell\build\s60\mcl>sbs -c armv5_urel
+    M:\fshell\build\s60\mcl>sbs -c armv5_urel.fshellminigui
+
+Then to build a full gui rom with fshell included do:
+
+    imaker <device> core BLDROBY=\epoc32\rom\include\fshell.oby
+
+Or for a minigui:
+
+    imaker <device> mingui BLDROBY=\epoc32\rom\include\fshellminigui.oby
+
+=item *
+
 Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch>, L<subst|commands::subst> and L<startapp|commands::startapp> commands.
 
 =item *
