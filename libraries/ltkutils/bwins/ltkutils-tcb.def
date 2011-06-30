@@ -158,7 +158,7 @@ EXPORTS
 	?DescriptionL@CHalAttribute@LtkUtils@@QAEABVTDesC16@@XZ @ 157 NONAME ; class TDesC16 const & LtkUtils::CHalAttribute::DescriptionL(void)
 	?AttributeName@CHalAttribute@LtkUtils@@QBEABVTDesC16@@XZ @ 158 NONAME ; class TDesC16 const & LtkUtils::CHalAttribute::AttributeName(void) const
 	?Attribute@CHalAttribute@LtkUtils@@QBEHXZ @ 159 NONAME ; int LtkUtils::CHalAttribute::Attribute(void) const
-	??0CHalAttribute@LtkUtils@@QAE@HHHH@Z @ 160 NONAME ; LtkUtils::CHalAttribute::CHalAttribute(int, int, int, int)
+	??0CHalAttribute@LtkUtils@@QAE@HHHH@Z @ 160 NONAME ABSENT ; LtkUtils::CHalAttribute::CHalAttribute(int, int, int, int)
 	?DeviceNumber@CHalAttribute@LtkUtils@@QBEHXZ @ 161 NONAME ; int LtkUtils::CHalAttribute::DeviceNumber(void) const
 	?Update@CHalAttribute@LtkUtils@@QAEHXZ @ 162 NONAME ; int LtkUtils::CHalAttribute::Update(void)
 
