@@ -840,8 +840,14 @@ EXPORT_C TInt CCommandInfoFile::GetSmokeTestStartingLineNumber() const
 	return iSmokeTestLineNumber;
 	}
 
+EXPORT_C const RCommandArgumentList& CCommandInfoFile::Arguments() const
+	{
+	return iArguments;
+	}
+
 EXPORT_C const RCommandArgumentList& CCommandInfoFile::Arguments()
 	{
+	// This fn was mistakenly marked non-const, would be BC break to remove
 	return iArguments;
 	}
 
@@ -884,6 +890,13 @@ EXPORT_C void CCommandInfoFile::AssignL(RCommandArgumentList& aArguments, RComma
 	{
 	CombineL(iArguments, aArguments, _L("Argument"), iFileName);
 	CombineL(iOptions, aOptions, _L("Option"), iFileName);
+	}
+
+void IoUtils::CombineListsL(const RCommandArgumentList& aTemplateArguments, const RCommandOptionList& aTemplateOptions, RCommandArgumentList& aArguments, RCommandOptionList& aOptions)
+	{
+	// Assume arsgs have already been validated, therefore not a problem we no longer have the cif name
+	CombineL(aTemplateArguments, aArguments, _L("Argument"), KNullDesC);
+	CombineL(aTemplateOptions, aOptions, _L("Option"), KNullDesC);
 	}
 
 EXPORT_C TInt CCommandInfoFile::NumSubCommands() const

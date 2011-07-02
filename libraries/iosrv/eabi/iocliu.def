@@ -647,4 +647,11 @@ EXPORTS
 	_ZN10RIoConsole11RequestFileERK7TDesC16S2_R14TRequestStatus @ 646 NONAME
 	_ZN10RIoConsole17CancelRequestFileEv @ 647 NONAME
 	_ZNK7IoUtils10TFileName218HasWildDriveLetterEv @ 648 NONAME
+	_ZN7IoUtils12ROptArgCache4CopyERKNS_18RCommandOptionListERKNS_20RCommandArgumentListE @ 649 NONAME
+	_ZN7IoUtils12ROptArgCache5CloseEv @ 650 NONAME
+	_ZN7IoUtils12ROptArgCacheC1Ev @ 651 NONAME
+	_ZN7IoUtils12ROptArgCacheC2Ev @ 652 NONAME
+	_ZNK7IoUtils12ROptArgCache11ConstructedEv @ 653 NONAME
+	_ZNK7IoUtils16CCommandInfoFile9ArgumentsEv @ 654 NONAME
+	_ZN7IoUtils12CCommandBase12SetTemplatesERKNS_18RCommandOptionListERKNS_20RCommandArgumentListE @ 655 NONAME
 

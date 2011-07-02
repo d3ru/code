@@ -76,7 +76,7 @@ const TDesC& CCmdHelp::Name() const
 
 void CCmdHelp::DoRunL()
 	{
-	if (iOptions.IsPresent(&iCount))
+	if (iCount)
 		{
 		const TInt count = gShell->CommandFactory().CountUniqueCommandsL();
 		Complete(_L("%d\r\n"), count);

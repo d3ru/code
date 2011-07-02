@@ -65,6 +65,10 @@ Rejigged L<find|commands::find> command syntax slightly. Should still be compati
 
 Improved logging allocator's heuristics for recognising symbol addresses, so it is consistant with fdb's approach.
 
+=item *
+
+Performance improvements when executing scripts with a lot of command invokations in them, for example scripts with tight loops and a lot of variable manipulation. The arguments and options syntax for built-in commands is now cached so that the CIF file doesn't need to be reloaded and parsed every time. Such scripts now run over twice as fast with much less stress on the file server. This is implemented by storing the RCommandOptionList and RCommandArgumentList from the CIF file in the CThreadCommandConstructor (via the new ROptArgCache class).
+
 =back
 
 =head2 Release 005

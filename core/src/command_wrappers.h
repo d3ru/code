@@ -95,10 +95,10 @@ public:
 		ESharedHeap = 0x00000002, // Any command that accesses gShell must have this set
 		};
 public:
-	static CThreadCommand* NewL(const TDesC& aName, TCommandConstructor aCommandConstructor, TUint aFlags, MTaskRunner* aTaskRunner);
+	static CThreadCommand* NewL(const TDesC& aName, TCommandConstructor aCommandConstructor, TUint aFlags, MTaskRunner* aTaskRunner, ROptArgCache* aArgCache);
 	~CThreadCommand();
 private:
-	CThreadCommand(TCommandConstructor aCommandConstructor, TUint aFlags, MTaskRunner* aTaskRunner);
+	CThreadCommand(TCommandConstructor aCommandConstructor, TUint aFlags, MTaskRunner* aTaskRunner, ROptArgCache* aArgCache);
 	void ConstructL(const TDesC& aName);
 	void RunL();
 	void DoCancel();
@@ -122,6 +122,7 @@ private:
 	CEnvironment* iSuppliedEnv;
 	HBufC* iCommandLine;
 	MConditionalBlock* iCurrentBlock;
+	ROptArgCache* iArgCache;
 	};
 
 

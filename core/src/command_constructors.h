@@ -1,6 +1,6 @@
 // command_constructors.h
 // 
-// Copyright (c) 2008 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2008 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -22,6 +22,7 @@ class MTaskRunner;
 
 namespace LtkUtils { class RLtkBuf16; }
 using LtkUtils::RLtkBuf16;
+using IoUtils::ROptArgCache;
 
 class CCommandConstructorBase : public CBase
 	{
@@ -66,6 +67,7 @@ class CThreadCommandConstructor : public CCommandConstructorBase
 public:
 	static CThreadCommandConstructor* NewLC(TCommandConstructor aConstructor, TUint aFlags, MTaskRunner* aTaskRunner);
 	static CThreadCommandConstructor* NewLC(const TDesC& aCommandName, TCommandConstructor aConstructor, TUint aFlags, MTaskRunner* aTaskRunner);
+	~CThreadCommandConstructor();
 private:
 	CThreadCommandConstructor(TUint aFlags, TCommandConstructor aConstructor, MTaskRunner* aTaskRunner);
 private: // From CCommandConstructorBase.
@@ -75,6 +77,7 @@ private:
 	TUint iFlags;
 	TCommandConstructor iConstructor;
 	MTaskRunner* iTaskRunner;
+	ROptArgCache iArgCache; // Avoid parsing the CIF file every time this command is run
 	};
 
 class CExeCommandConstructor : public CCommandConstructorBase

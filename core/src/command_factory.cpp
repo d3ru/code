@@ -768,3 +768,31 @@ TInt CCommandFactory::RunError(TInt)
 	WatchFileSystem();
 	return KErrNone;
 	}
+
+void CCommandFactory::SetCacheFromCifL(ROptArgCache& aCache, const CCommandInfoFile& aCif)
+	{
+	// Only reason this function is defined in CCommandFactory is so we can use its lock and check that
+	// we allocate the cache in the correct heap
+	WaitLC();
+
+	if (aCache.Constructed())
+		{
+		// Nothing to do
+		CleanupStack::PopAndDestroy(); // WaitLC
+		return;
+		}
+
+	RAllocator* allocator = NULL;
+	if (&User::Allocator() != iFactoryAllocator)
+		{
+		allocator = User::SwitchAllocator(iFactoryAllocator);
+		// Note can't use cleanup stack while allocator is switched!
+		}
+
+	TInt err = aCache.Copy(aCif.Options(), aCif.Arguments());
+	if (err) aCache.Close();
+
+	if (allocator) User::SwitchAllocator(allocator);
+	User::LeaveIfError(err);
+	CleanupStack::PopAndDestroy(); // WaitLC
+	}

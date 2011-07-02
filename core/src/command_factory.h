@@ -1,6 +1,6 @@
 // command_factory.h
 // 
-// Copyright (c) 2006 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -22,7 +22,6 @@ class CThreadPool;
 
 class RFs;
 class MCommand;
-class CCommandSet;
 
 class CCommandFactory : public CActive
 	{
@@ -33,6 +32,7 @@ public:
 	void ListCommandsL(RArray<TPtrC>& aList);
 	TInt CountUniqueCommandsL();
 	void GetCommandInfoL(const TDesC& aCommand, RLtkBuf16& aDescriptionBuf);
+	void SetCacheFromCifL(ROptArgCache& aCache, const CCommandInfoFile& aCif);
 private:
 	CCommandFactory(RFs& aFs);
 	void ConstructL();

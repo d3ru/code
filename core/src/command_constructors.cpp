@@ -1,6 +1,6 @@
 // command_constructors.cpp
 // 
-// Copyright (c) 2008 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2008 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -91,13 +91,18 @@ CThreadCommandConstructor::CThreadCommandConstructor(TUint aFlags, TCommandConst
 
 MCommand* CThreadCommandConstructor::ConstructCommandL()
 	{
-	return CThreadCommand::NewL(CommandName(), iConstructor, iFlags, iTaskRunner);
+	return CThreadCommand::NewL(CommandName(), iConstructor, iFlags, iTaskRunner, &iArgCache);
 	}
 
 void CThreadCommandConstructor::AppendDescriptionL(RLtkBuf16& aBuf) const
 	{
 	aBuf.AppendFormatL(_L("built-in command '%S'"), &CommandName());
 	if (Attributes() & EAttAlias) aBuf.AppendFormatL(_L(" (alias)")); // In this case we don't record what it's aliased to, unfortunately
+	}
+
+CThreadCommandConstructor::~CThreadCommandConstructor()
+	{
+	iArgCache.Close();
 	}
 
 //

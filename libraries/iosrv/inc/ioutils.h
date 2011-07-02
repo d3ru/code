@@ -502,6 +502,7 @@ public:
 	IMPORT_C const TCommandOption& operator[](TInt aIndex) const;
 	TInt FindShort(TChar aShortName) const;
 	TInt Find(const TDesC& aLongName) const;
+	TInt Append(const TCommandOption& aOption);
 private:
 	void Validate(const TCommandOption& aOption);
 private:
@@ -572,6 +573,7 @@ public:
 	IMPORT_C const TCommandArgument& operator[](TInt aIndex) const;
 	IMPORT_C TBool AllSet() const;
 	TInt Find(const TDesC& aName) const;
+	TInt Append(const TCommandArgument& aArgument);
 private:
 	void Validate(const TCommandArgument& aArgument);
 private:
@@ -594,7 +596,8 @@ public:
 	IMPORT_C const TDesC& Copyright() const;
 	IMPORT_C const TDesC& SmokeTest() const;
 	IMPORT_C TInt GetSmokeTestStartingLineNumber() const;
-	IMPORT_C const RCommandArgumentList& Arguments();
+	IMPORT_C const RCommandArgumentList& Arguments() const;
+	IMPORT_C const RCommandArgumentList& Arguments(); // Bug - was always supposed to be const
 	IMPORT_C const RCommandOptionList& Options() const;
 	IMPORT_C void AssignL(RCommandArgumentList& aArguments, RCommandOptionList& aOptions) const;
 	IMPORT_C TInt NumSubCommands() const;
@@ -629,6 +632,25 @@ private:
 	CCommandInfoFile* iCurrentChild;
 	TBool iProcessInclude;
 	};
+
+// Used by fshell.exe to cache options and argument lists. BC not guaranteed.
+class ROptArgCache
+	{
+public:
+	IMPORT_C ROptArgCache();
+	IMPORT_C void Close();
+	IMPORT_C TBool Constructed() const;
+	IMPORT_C TInt Copy(const RCommandOptionList& aOptions, const RCommandArgumentList& aArguments);
+
+public:
+	RCommandArgumentList iArguments;
+	RCommandOptionList iOptions;
+private:
+	TBool iConstructed;
+	RBuf iStringCache;
+	};
+
+void CombineListsL(const RCommandArgumentList& aTemplateArguments, const RCommandOptionList& aTemplateOptions, RCommandArgumentList& aArguments, RCommandOptionList& aOptions);
 
 
 class Stringify
@@ -706,6 +728,7 @@ public:
 	IMPORT_C void RunCommandL();
 	IMPORT_C void RunCommandL(const TDesC* aCommandLine, CEnvironment* aEnv);
 	void RunCommand(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, const TDesC* aCommandLine, CEnvironment* aEnv, MCommandBaseObserver* aObserver);
+	IMPORT_C TInt SetTemplates(const RCommandOptionList& aOptionsTemplate, const RCommandArgumentList& aArgumentsTemplate);
 	IMPORT_C TUint Flags() const;
 	IMPORT_C void SetFlags(TUint aFlags);
 	IMPORT_C const RFs& Fs() const;
@@ -754,6 +777,7 @@ public:
 	IMPORT_C void PageL(const CTextBuffer& aText);
 	IMPORT_C void PageL(RIoReadHandle& aInput);
 	IMPORT_C TBool UsingCif() const;
+	IMPORT_C const CCommandInfoFile* Cif() const;
 	IMPORT_C MCommandExtensionsV1* Extension() const;
 
 public:
@@ -793,7 +817,6 @@ private:
 		};
 protected:
 	IMPORT_C void SetCif(const CCommandInfoFile& aCif);
-	IMPORT_C const CCommandInfoFile* Cif() const;
 private:
 	void RunCommandL(RIoSession& aIoSession, RIoReadHandle& aStdin, RIoWriteHandle& aStdout, RIoWriteHandle& aStderr, const TDesC* aCommandLine, CEnvironment* aEnv, MCommandBaseObserver* aObserver);
 	void RunL(const TDesC& aCommandLine);
@@ -815,7 +838,6 @@ private:
 	void DoParseCommandLineL(const TDesC& aCommandLine);
 	TBool CifReadRequired() const;
 	void ReadCifL();
-	void DoReadCifL();
 private:
 	friend class CCommandCompleter;
 	void CompleteCallback(TInt aError);
@@ -850,7 +872,15 @@ private:
 	CKeypressWatcher* iKeypressWatcher;
 	TUint iConsoleCreateFlags;
 	HBufC* iUnderlyingConsoleName;
-	void* iSpare1;
+	struct SExt
+		{
+		SExt() : iOptionsTemplate(NULL), iArgumentsTemplate(NULL) {}
+
+		const RCommandOptionList* iOptionsTemplate;
+		const RCommandArgumentList* iArgumentsTemplate;
+		};
+	SExt* iExt;
+	// Run out of spare members, add additional things to SExt instead
 	};
 
 

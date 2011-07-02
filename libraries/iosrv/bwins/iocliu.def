@@ -520,7 +520,7 @@ EXPORTS
 	?AppendEnumL@RCommandOptionList@IoUtils@@QAEXAAV?$RArray@H@@ABVTDesC16@@1@Z @ 519 NONAME ; void IoUtils::RCommandOptionList::AppendEnumL(class RArray<int> &, class TDesC16 const &, class TDesC16 const &)
 	?TypeDescription@CBranchCommandBase@IoUtils@@MAEABVTDesC16@@XZ @ 520 NONAME ; class TDesC16 const & IoUtils::CBranchCommandBase::TypeDescription(void)
 	?Copyright@CCommandInfoFile@IoUtils@@QBEABVTDesC16@@XZ @ 521 NONAME ; class TDesC16 const & IoUtils::CCommandInfoFile::Copyright(void) const
-	?Cif@CCommandBase@IoUtils@@IBEPBVCCommandInfoFile@2@XZ @ 522 NONAME ; class IoUtils::CCommandInfoFile const * IoUtils::CCommandBase::Cif(void) const
+	?Cif@CCommandBase@IoUtils@@QBEPBVCCommandInfoFile@2@XZ @ 522 NONAME ; class IoUtils::CCommandInfoFile const * IoUtils::CCommandBase::Cif(void) const
 	??ARCommandArgumentList@IoUtils@@QBEABVTCommandArgument@1@H@Z @ 523 NONAME ; class IoUtils::TCommandArgument const & IoUtils::RCommandArgumentList::operator[](int) const
 	?Count@RCommandArgumentList@IoUtils@@QBEHXZ @ 524 NONAME ; int IoUtils::RCommandArgumentList::Count(void) const
 	?SetCif@CCommandBase@IoUtils@@IAEXABVCCommandInfoFile@2@@Z @ 525 NONAME ; void IoUtils::CCommandBase::SetCif(class IoUtils::CCommandInfoFile const &)
@@ -567,4 +567,10 @@ EXPORTS
 	?RequestFile@RIoConsole@@QAEXABVTDesC16@@0AAVTRequestStatus@@@Z @ 566 NONAME ; void RIoConsole::RequestFile(class TDesC16 const &, class TDesC16 const &, class TRequestStatus &)
 	?CancelRequestFile@RIoConsole@@QAEXXZ @ 567 NONAME ; void RIoConsole::CancelRequestFile(void)
 	?HasWildDriveLetter@TFileName2@IoUtils@@QBEHXZ @ 568 NONAME ; int IoUtils::TFileName2::HasWildDriveLetter(void) const
+	?Constructed@ROptArgCache@IoUtils@@QBEHXZ @ 569 NONAME ; int IoUtils::ROptArgCache::Constructed(void) const
+	??0ROptArgCache@IoUtils@@QAE@XZ @ 570 NONAME ; IoUtils::ROptArgCache::ROptArgCache(void)
+	?Copy@ROptArgCache@IoUtils@@QAEHABVRCommandOptionList@2@ABVRCommandArgumentList@2@@Z @ 571 NONAME ; int IoUtils::ROptArgCache::Copy(class IoUtils::RCommandOptionList const &, class IoUtils::RCommandArgumentList const &)
+	?Close@ROptArgCache@IoUtils@@QAEXXZ @ 572 NONAME ; void IoUtils::ROptArgCache::Close(void)
+	?SetTemplates@CCommandBase@IoUtils@@QAEHABVRCommandOptionList@2@ABVRCommandArgumentList@2@@Z @ 573 NONAME ; int IoUtils::CCommandBase::SetTemplates(class IoUtils::RCommandOptionList const &, class IoUtils::RCommandArgumentList const &)
+	?Arguments@CCommandInfoFile@IoUtils@@QBEABVRCommandArgumentList@2@XZ @ 574 NONAME ; class IoUtils::RCommandArgumentList const & IoUtils::CCommandInfoFile::Arguments(void) const
 

@@ -14,6 +14,8 @@
 #include "command_wrappers.h"
 #include "worker_thread.h"
 #include "parser.h" // For MControlStatement
+#include "fshell.h" // For gShell->CommandFactory()
+#include "command_factory.h"
 
 //
 // CCommandWrapperBase.
@@ -106,9 +108,9 @@ void CCommandWrapperBase::DoCancel()
 // CThreadCommand.
 //
 
-CThreadCommand* CThreadCommand::NewL(const TDesC& aName, TCommandConstructor aCommandConstructor, TUint aFlags, MTaskRunner* aTaskRunner)
+CThreadCommand* CThreadCommand::NewL(const TDesC& aName, TCommandConstructor aCommandConstructor, TUint aFlags, MTaskRunner* aTaskRunner, ROptArgCache* aArgCache)
 	{
-	CThreadCommand* self = new(ELeave) CThreadCommand(aCommandConstructor, aFlags, aTaskRunner);
+	CThreadCommand* self = new(ELeave) CThreadCommand(aCommandConstructor, aFlags, aTaskRunner, aArgCache);
 	CleanupStack::PushL(self);
 	self->ConstructL(aName);
 	CleanupStack::Pop(self);
@@ -122,8 +124,8 @@ CThreadCommand::~CThreadCommand()
 	iThread.Close();
 	}
 
-CThreadCommand::CThreadCommand(TCommandConstructor aCommandConstructor, TUint aFlags, MTaskRunner* aTaskRunner)
-	: iFlags(aFlags), iCommandConstructor(aCommandConstructor), iTaskRunner(aTaskRunner)
+CThreadCommand::CThreadCommand(TCommandConstructor aCommandConstructor, TUint aFlags, MTaskRunner* aTaskRunner, ROptArgCache* aArgCache)
+	: iFlags(aFlags), iCommandConstructor(aCommandConstructor), iTaskRunner(aTaskRunner), iArgCache(aArgCache)
 	{
 	CActiveScheduler::Add(this);
 	iThread.SetHandle(0); // By default RThread refers to the current thread. This results in fshell's thread exiting if this object gets killed before it has managed to open a real thread handle.
@@ -169,6 +171,11 @@ void CThreadCommand::DoCommandThreadStartL(TAny* aSelf)
 			}
 		}
 	RThread::Rendezvous(KErrNone);
+	const TBool hadCache = self->iArgCache && self->iArgCache->Constructed();
+	if (hadCache)
+		{
+		command->SetTemplates(self->iArgCache->iOptions, self->iArgCache->iArguments);
+		}
 	TRAPD(err, command->RunCommandL(self->iCommandLine, env));
 	if (block && err == KRequestPending)
 		{
@@ -181,6 +188,11 @@ void CThreadCommand::DoCommandThreadStartL(TAny* aSelf)
 		}
 	else
 		{
+		if (!hadCache && self->iArgCache != NULL && command->Cif() != NULL)
+			{
+			// Remember the parsed arguments for next time the command is run
+			gShell->CommandFactory().SetCacheFromCifL(*self->iArgCache, *command->Cif());
+			}
 		CleanupStack::PopAndDestroy(2, env); // command, env
 		}
 	}

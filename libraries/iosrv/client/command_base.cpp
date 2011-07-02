@@ -939,6 +939,11 @@ EXPORT_C TPtrC RCommandOptionList::AsString(void* aValuePointer) const
 	return KNullDesC();
 	}
 
+TInt RCommandOptionList::Append(const TCommandOption& aOption)
+	{
+	return iOptions.Append(aOption);
+	}
+
 
 //
 // TCommandArgument.
@@ -1291,6 +1296,97 @@ EXPORT_C TPtrC RCommandArgumentList::AsString(void* aValuePointer) const
 	return KNullDesC();
 	}
 
+TInt RCommandArgumentList::Append(const TCommandArgument& aArgument)
+	{
+	return iArguments.Append(aArgument);
+	}
+
+
+//
+// ROptArgCache.
+//
+
+EXPORT_C ROptArgCache::ROptArgCache()
+	: iConstructed(EFalse)
+	{
+	}
+
+EXPORT_C void ROptArgCache::Close()
+	{
+	iOptions.Close();
+	iArguments.Close();
+	iStringCache.Close();
+	iConstructed = EFalse;
+	}
+
+EXPORT_C TBool ROptArgCache::Constructed() const
+	{
+	return iConstructed;
+	}
+
+EXPORT_C TInt ROptArgCache::Copy(const RCommandOptionList& aOptions, const RCommandArgumentList& aArguments)
+	{
+	if (iConstructed) return KErrNotReady;
+
+	// Hmm can't see a way of doing this without prescanning the args to figure out string cache size
+	// iStringCache is necessary because RCommandXyzList only store TPtrCs into the original CIF, and we need to outlive the CCommandInfoFile object
+	TInt stringSize = 0;
+	for (TInt i = 0; i < aOptions.Count(); i++)
+		{
+		const TCommandOption& val = aOptions[i];
+		TPtrC enumVals(val.Type() == KValueTypeEnum ? val.EnumValueList() : KNullDesC());
+		stringSize += val.Name().Length() + val.EnvVar().Length() + enumVals.Length();
+		}
+	for (TInt i = 0; i < aArguments.Count(); i++)
+		{
+		const TCommandArgument& val = aArguments[i];
+		TPtrC enumVals(val.Type() == KValueTypeEnum ? val.EnumValueList() : KNullDesC());
+		stringSize += val.Name().Length() + val.EnvVar().Length() + enumVals.Length();
+		}
+
+	TInt err = iStringCache.Create(stringSize);
+	if (err) return err;
+
+	for (TInt i = 0; i < aOptions.Count(); i++)
+		{
+		const TCommandOption& val = aOptions[i];
+		iStringCache.Append(val.Name());
+		TPtrC name = iStringCache.Right(val.Name().Length());
+		iStringCache.Append(val.EnvVar());
+		TPtrC envVar = iStringCache.Right(val.EnvVar().Length());
+		TPtrC enumVals(val.Type() == KValueTypeEnum ? val.EnumValueList() : KNullDesC());
+		iStringCache.Append(enumVals);
+		enumVals.Set(iStringCache.Right(enumVals.Length()));
+		TUint flags = val.Type();
+		if (val.AcceptsMultiple()) flags |= KValueTypeFlagMultiple;
+
+		TCommandOption newOpt(NULL, flags, enumVals, KNullDesC, val.ShortName(), name, KNullDesC, envVar);
+		err = iOptions.Append(newOpt);
+		if (err) return err;
+		}
+	for (TInt i = 0; i < aArguments.Count(); i++)
+		{
+		const TCommandArgument& val = aArguments[i];
+		iStringCache.Append(val.Name());
+		TPtrC name = iStringCache.Right(val.Name().Length());
+		iStringCache.Append(val.EnvVar());
+		TPtrC envVar = iStringCache.Right(val.EnvVar().Length());
+		TPtrC enumVals(val.Type() == KValueTypeEnum ? val.EnumValueList() : KNullDesC());
+		iStringCache.Append(enumVals);
+		enumVals.Set(iStringCache.Right(enumVals.Length()));
+		TUint flags = val.Type();
+		if (val.AcceptsMultiple()) flags |= KValueTypeFlagMultiple;
+		if (val.IsOptional()) flags |= KValueTypeFlagOptional;
+		if (val.IsLast()) flags |= KValueTypeFlagLast;
+
+		TCommandArgument newArg(NULL, flags, name, KNullDesC, enumVals, KNullDesC, envVar);
+		err = iArguments.Append(newArg);
+		if (err) return err;
+		}
+
+	iConstructed = ETrue;
+	return KErrNone;
+	}
 
 //
 // CCommandBase.
@@ -1746,6 +1842,7 @@ EXPORT_C CCommandBase::~CCommandBase()
 		{
 		delete iCif;
 		}
+	delete iExt;
 	if (iDeleted)
 		{
 		*iDeleted = ETrue;
@@ -2598,7 +2695,8 @@ EXPORT_C TInt CCommandBase::ParseCommandLine(const TDesC& aCommandLine)
 void CCommandBase::DoParseCommandLineL(const TDesC& aCommandLine)
 	{
 	// Read the CIF if required.
-	if (CifReadRequired())
+	const TBool haveTemplate = iExt && iExt->iArgumentsTemplate;
+	if (!haveTemplate && CifReadRequired())
 		{
 		ReadCifL();
 		}
@@ -2615,6 +2713,11 @@ void CCommandBase::DoParseCommandLineL(const TDesC& aCommandLine)
 			iFlags |= ECifReadFailed;
 			User::Leave(err);
 			}
+		__ASSERT_ALWAYS(ValueTypesInitializedL(iArguments, iOptions), Panic(EIncompleteArgumentOrOptionInitialization));
+		}
+	else if (haveTemplate)
+		{
+		IoUtils::CombineListsL(*iExt->iArgumentsTemplate, *iExt->iOptionsTemplate, iArguments, iOptions);
 		__ASSERT_ALWAYS(ValueTypesInitializedL(iArguments, iOptions), Panic(EIncompleteArgumentOrOptionInitialization));
 		}
 
@@ -2665,16 +2768,9 @@ TBool CCommandBase::CifReadRequired() const
 
 void CCommandBase::ReadCifL()
 	{
-	TRAPD(err, DoReadCifL());
-	if (err)
-		{
-		iFlags |= ECifReadFailed;
-		}
-	}
-
-void CCommandBase::DoReadCifL()
-	{
+	iFlags |= ECifReadFailed; // So that if we leave, this flag will be set
 	iCif = CCommandInfoFile::NewL(FsL(), Env(), Name());
+	iFlags &= ~(ECifReadFailed);
 	iFlags |= EOwnsCif;
 	}
 
@@ -2802,23 +2898,34 @@ void AppendSubCommandL(TInt aIndent, CTextBuffer& aBuffer, const CCommandInfoFil
 
 EXPORT_C const CTextBuffer* CCommandBase::GetHelpTextL()
 	{
+	const RCommandArgumentList* arguments = &iArguments;
+	const RCommandOptionList* options = &iOptions;
+	const TBool usingTemplate = iExt && iExt->iArgumentsTemplate;
+	if (usingTemplate && iCif == NULL && CifReadRequired())
+		{
+		// We cached the args, but now we need to actually read the CIF because the cache doesn't include the help descriptions and such like
+		ReadCifL(); 
+		arguments = &iCif->Arguments();
+		options = &iCif->Options();
+		}
+
 	CTextBuffer* buffer = CTextBuffer::NewLC(0x100);
 
 	AppendHeadingL(_L("SYNTAX"), *buffer);
 	buffer->AppendFormatL(_L("    %S"), &Name());
 
-	const TInt numOptions = iOptions.Count();
+	const TInt numOptions = options->Count();
 	if (numOptions > 0)
 		{
 		buffer->AppendL(_L(" [options]"));
 		}
 
-	const TInt numArguments = iArguments.Count();
+	const TInt numArguments = arguments->Count();
 	if (numArguments > 0)
 		{
 		for (TInt i = 0; i < numArguments; ++i)
 			{
-			const TCommandArgument& thisArgument = iArguments[i];
+			const TCommandArgument& thisArgument = (*arguments)[i];
 			TBool isOptional = thisArgument.IsOptional();
 			if (isOptional)
 				{
@@ -2852,7 +2959,7 @@ EXPORT_C const CTextBuffer* CCommandBase::GetHelpTextL()
 		buffer->AppendL(_L("=over 5\r\n\r\n"));
 		for (TInt i = 0; i < numOptions; ++i)
 			{
-			const TCommandOption& thisOption = iOptions[i];
+			const TCommandOption& thisOption = (*options)[i];
 			TChar shortName(thisOption.ShortName());
 			if (shortName)
 				{
@@ -2946,7 +3053,7 @@ EXPORT_C const CTextBuffer* CCommandBase::GetHelpTextL()
 		for (TInt i = 0; i < numArguments; ++i)
 			{
 			buffer->AppendL(_L("=item "));
-			const TCommandArgument& thisArgument = iArguments[i];
+			const TCommandArgument& thisArgument = (*arguments)[i];
 			TBool isOptional = thisArgument.IsOptional();
 			if (isOptional)
 				{
@@ -3997,4 +4104,16 @@ EXPORT_C void MCommandExtensionsV2::CtrlCPressed()
 EXPORT_C TCommandExtensionVersion MCommandExtensionsV3::ExtensionVersion() const
 	{
 	return ECommandExtensionV3;
+	}
+
+EXPORT_C TInt CCommandBase::SetTemplates(const RCommandOptionList& aOptionsTemplate, const RCommandArgumentList& aArgumentsTemplate)
+	{
+	if (!iExt)
+		{
+		iExt = new SExt;
+		if (!iExt) return KErrNoMemory;
+		}
+	iExt->iOptionsTemplate = &aOptionsTemplate;
+	iExt->iArgumentsTemplate = &aArgumentsTemplate;
+	return KErrNone;
 	}
