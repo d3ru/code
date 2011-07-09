@@ -113,6 +113,10 @@ FSHELL_ROM_INCLUDE(fshell_core.iby)
 ..\builtins\subst.cif             z:\resource\cif\fshell\subst.cif
 #endif
 
+#ifdef FSHELL_CORE_SUPPORT_MEMMAP
+..\builtins\memmap.cif             z:\resource\cif\fshell\memmap.cif
+#endif
+
 .\autostart.script                     z:\system\console\scripts\autostart.script
 .\comm.script                          z:\system\console\scripts\comm.script
 .\start-stdio.script                   z:\system\console\scripts\start-stdio.script

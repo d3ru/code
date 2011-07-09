@@ -37,7 +37,7 @@ Or for a minigui:
 
 =item *
 
-Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch>, L<subst|commands::subst> and L<startapp|commands::startapp> commands.
+Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch>, L<subst|commands::subst>, L<startapp|commands::startapp> and L<memmap|commands::memmap> commands.
 
 =item *
 
@@ -68,6 +68,14 @@ Improved logging allocator's heuristics for recognising symbol addresses, so it 
 =item *
 
 Performance improvements when executing scripts with a lot of command invokations in them, for example scripts with tight loops and a lot of variable manipulation. The arguments and options syntax for built-in commands is now cached so that the CIF file doesn't need to be reloaded and parsed every time. Such scripts now run over twice as fast with much less stress on the file server. This is implemented by storing the RCommandOptionList and RCommandArgumentList from the CIF file in the CThreadCommandConstructor (via the new ROptArgCache class).
+
+=item *
+
+Changed C<match --count> to return just an integer (rather than "Count = 2") so as to be more useful in scripts.
+
+=item *
+
+Added C<--match> option to L<chunkinfo|commands::chunkinfo>. Also added C<--verbose> option so that detailed information can be obtained without needing to use the C<chunk_address> argument.
 
 =back
 

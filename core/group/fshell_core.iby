@@ -210,6 +210,9 @@ FSHELL_COMMAND_INFO_FILE(fshell,attrib.cif)
 #ifdef FSHELL_CORE_SUPPORT_SUBST
 FSHELL_COMMAND_INFO_FILE(fshell,subst.cif)
 #endif
+#ifdef FSHELL_CORE_SUPPORT_MEMMAP
+FSHELL_COMMAND_INFO_FILE(fshell,memmap.cif)
+#endif
 
 #ifdef FSHELL_REPLACE_ECONS
 FSHELL_EXECUTABLE_AS_DATA(iocons.dll,iocons.dll)

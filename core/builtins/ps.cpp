@@ -553,7 +553,7 @@ void CCmdPs::PrintSizeL(const TDesC& aCaption, TInt aSize)
 
 #ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 
-void ReleaseCodesegMutex(TAny* aMemAccess)
+static void ReleaseCodesegMutex(TAny* aMemAccess)
 	{
 	static_cast<RMemoryAccess*>(aMemAccess)->ReleaseCodeSegMutex();
 	}

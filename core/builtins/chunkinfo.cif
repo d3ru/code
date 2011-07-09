@@ -1,6 +1,6 @@
 # chunkinfo.cif
 # 
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -18,15 +18,15 @@ Print information about memory chunks.
 
 ==long-description
 
-If no arguments are given, lists the address and name of each DChunk object currently present in the kernel. The chunk list includes local and anonymous chunks. If a chunk address is specified, more detailed information about the specific chunk is printed. If the chunk appears to contain a heap (according to the criteria of C<LtkUtils::RAllocatorHelper>), then the detailed info includes heap statistics as well.
+If no arguments are given, lists the address and name of each DChunk object currently present in the kernel. The chunk list includes local and anonymous chunks. If the C<--verbose> option or a chunk address is specified, more detailed information is printed. If the chunk appears to contain a heap (according to the criteria of C<LtkUtils::RAllocatorHelper>), then the detailed info includes heap statistics as well.
 
 ==argument uint chunk_address optional
 
-The address of the C<DChunk> object to display information about. If not specified, lists a summary of all chunks. Note chunk addresses can be found either by running C<chunkinfo> with no arguments, or by using C<ps --chunks> (note though that L<ps|ps> only finds globally named chunks).
+Address of a C<DChunk> object to display information about. Note chunk addresses can be found either by running C<chunkinfo> with no arguments, or by using C<ps --chunks> (note though that L<ps|ps> only finds globally named chunks). Implies C<--verbose>. To get the same information about a chunk that you only know the name of, use C<chunkinfo --match NAME --verbose>.
 
 ==option uint r rate
 
-The rate (in milliseconds) at which to update the information.  If not specified (or specified as zero) the current information will be displayed and the tool will exit.
+The rate (in milliseconds) at which to update the information. If not specified (or specified as zero) the current information will be displayed and the tool will exit. Only takes effect if a C<chunk_address> is given, otherwise you'll need to use the L<memsampler|memsampler> command.
 
 ==option bool H human
 
@@ -34,19 +34,31 @@ Display sizes in human readable form.
 
 ==option string o owning-process
 
-If specified, limits the chunk summary list to just those chunks belonging to the named process. Note, the process name may contain C<?> and C<*> wild characters. Note also that global chunks don't have an explicit owner. If you want to find all the chunks that were created by a particular process, then use C<--controlling-process> instead.
+If specified, limits the chunk summary list to just those chunks belonging to the named process. Note, the process name may contain C<?> and C<*> wild characters. Note also that global chunks don't have an explicit owner. If you want to find all the chunks that were created by a particular process, then use C<--controlling-process> instead. Generally this option isn't very useful and C<--match> is probably what you should use.
 
 ==option uint c controlling-process
 
 If specified, limits the chunk summary list to just those chunks that were created by the specified process identifier. Note, this option will find global and local chunks that were created by the process.
 
+==option string m match
+
+Display only those chunks whose full names match the specified match pattern (wildcards may be used).
+
 ==option bool s size
 
-Include current chunk size in the chunk summary list.
+Include current chunk size in the chunk summary list. Has no effect if C<--verbose> is specified (because verbose listings already have this info).
+
+==option bool v verbose
+
+Display verbose information about the matching chunks.
+
+==see-also
+
+L<kerninfo|kerninfo>, L<memsampler|memsampler>, L<ps|ps>, L<memmap|memmap>
 
 ==copyright
 
-Copyright (c) 2006-2010 Accenture. All rights reserved.
+Copyright (c) 2006-2011 Accenture. All rights reserved.
 
 ==smoke-test
 
@@ -54,3 +66,8 @@ Copyright (c) 2006-2010 Accenture. All rights reserved.
 chunkinfo 1 $Silent &| var ? == "-1" || $Error
 
 chunkinfo $Quiet
+
+chunkinfo -m *chunkinfo*::^$HEAP | match -c * | export -s RESULT
+var RESULT == 1 || $Error
+chunkinfo -m *chunkinfo*::^$HEAP --owning-process fshell* | match -c * | export -s RESULT
+var RESULT == 1 || $Error

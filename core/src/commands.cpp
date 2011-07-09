@@ -39,6 +39,7 @@ _LIT(KOptKeepGoing, "keep-going");
 _LIT(KOptRecurse, "recurse");
 _LIT(KOptForce, "force");
 
+_LIT(KMatch, "match");
 _LIT(KNewLine, "\r\n");
 _LIT(KTab, "\t");
 _LIT(KRepeatCount, "REPEAT_COUNT");
@@ -1178,8 +1179,7 @@ CCmdMatch::CCmdMatch()
 
 const TDesC& CCmdMatch::Name() const
 	{
-	_LIT(KCmdMatchName, "match");
-	return KCmdMatchName;
+	return KMatch;
 	}
 
 void CCmdMatch::DoRunL()
@@ -1223,7 +1223,7 @@ void CCmdMatch::DoRunL()
 
 	if (iCount)
 		{
-		Printf(_L("Count = %d"), count);
+		Printf(_L("%d"), count);
 		}
 	}
 
@@ -2768,6 +2768,7 @@ CCmdChunkInfo::~CCmdChunkInfo()
 	delete iOwningProcess;
 	delete iBuf;
 	delete iFormatter;
+	delete iMatch;
 	}
 
 CCmdChunkInfo::CCmdChunkInfo()
@@ -2799,11 +2800,7 @@ void CCmdChunkInfo::ListChunksL()
 		}
 		while (err == KErrOverflow);
 
-	if (err)
-		{
-		PrintError(err, _L("Unable to read chunk addresses."));
-		User::Leave(err);
-		}
+	LeaveIfErr(err, _L("Unable to read chunk addresses."));
 
 	const TInt numAddresses = addressesBuf->Length() / sizeof(TUint32*);
 	if (numAddresses == 0)
@@ -2816,56 +2813,33 @@ void CCmdChunkInfo::ListChunksL()
 		TInt offset = 0;
 		while (offset < numAddresses)
 			{
-			TPckg<TChunkKernelInfo> chunkInfoPckg(iChunkInfo);
-			TUint32* ptr = p + offset++;
-			err = iMemAccess.GetObjectInfo(EChunk, (TUint8*)(*ptr), chunkInfoPckg);
-			if (err == KErrNone)
-				{
-				iFullName.Copy(iChunkInfo.iFullName);
-				if (iIncludeSize)
-					{
-					iBuf->AppendFormatL(_L("0x%08x\t"), *ptr);
-					if (iHumanReadable)
-						{
-						iBuf->AppendHumanReadableSizeL(iChunkInfo.iSize, EUnaligned);
-						iBuf->AppendFormatL(KTab);
-						}
-					else
-						{
-						iBuf->AppendFormatL(_L("%d\t"), iChunkInfo.iSize);
-						}
-					iBuf->AppendFormatL(_L("\'%S\'\r\n"), &iFullName);
-					}
-				else
-					{
-					iBuf->AppendFormatL(_L("0x%08x\t\'%S\'\r\n"), *ptr, &iFullName);
-					}
-				}
-			else if (err != KErrNotFound)
-				{
-				// Only abort on something other than KErrNotFound. KErrNotFound could legitimately
-				// happen if the chunk in question has been deleted since we called RMemoryAccess::GetObjectAddresses.
-				PrintError(err, _L("Unable to read chunk at 0x%08x, aborting."), ptr);
-				User::Leave(err);
-				}
+			PrintChunkInfoL(p[offset++]);
 			}
 		}
 
 	CleanupStack::PopAndDestroy(addressesBuf);
 	}
 
-void CCmdChunkInfo::PrintChunkInfoL()
+void CCmdChunkInfo::PrintChunkInfoL(TUint aAddress)
 	{
 	TPckg<TChunkKernelInfo> chunkInfoPckg(iChunkInfo);
-	TInt err = iMemAccess.GetObjectInfo(EChunk, (TUint8*)iAddress, chunkInfoPckg);
-	if (err)
+	TInt err = iMemAccess.GetObjectInfo(EChunk, (TUint8*)aAddress, chunkInfoPckg);
+	if (err && (err != KErrNotFound || aAddress == iAddress))
 		{
-		PrintError(err, _L("Unable to get info for chunk 0x%08x"), iAddress);
-		User::Leave(err);
+		// Only abort on something other than KErrNotFound. KErrNotFound could legitimately
+		// happen if the chunk in question has been deleted since we called RMemoryAccess::GetObjectAddresses.
+		// However if aAddress is the iAddress the user specified on the command line, we *should* signal the error
+		LeaveIfErr(err, _L("Unable to get info for chunk 0x%08x"), aAddress);
 		}
-	else
+	
+	iFullName.Copy(iChunkInfo.iFullName);
+	if (iMatch && iFullName.MatchF(*iMatch) == KErrNotFound)
 		{
-		iFullName.Copy(iChunkInfo.iFullName);
+		return;
+		}
+
+	if (iVerbose)
+		{
 		iBuf->AppendFormatL(_L("Name:\t\'%S\'\r\n"), &iFullName);
 		iBuf->AppendFormatL(_L("Base:\t0x%08x\r\n"), iChunkInfo.iBase);
 		PrintSizeL(_L("Max size:\t"), iChunkInfo.iMaxSize);
@@ -2924,6 +2898,28 @@ void CCmdChunkInfo::PrintChunkInfoL()
 			{
 			PrintWarning(_L("Unable to read RHeap info: %d"), err);
 			}
+		iBuf->AppendL(_L("\r\n"));
+		}
+	else
+		{
+		if (iIncludeSize)
+			{
+			iBuf->AppendFormatL(_L("0x%08x\t"), aAddress);
+			if (iHumanReadable)
+				{
+				iBuf->AppendHumanReadableSizeL(iChunkInfo.iSize, EUnaligned);
+				iBuf->AppendFormatL(KTab);
+				}
+			else
+				{
+				iBuf->AppendFormatL(_L("%d\t"), iChunkInfo.iSize);
+				}
+			iBuf->AppendFormatL(_L("\'%S\'\r\n"), &iFullName);
+			}
+		else
+			{
+			iBuf->AppendFormatL(_L("0x%08x\t\'%S\'\r\n"), aAddress, &iFullName);
+			}
 		}
 	}
 
@@ -2959,9 +2955,10 @@ void CCmdChunkInfo::DoPrintL()
 		}
 	else
 		{
-		PrintChunkInfoL();
+		PrintChunkInfoL(iAddress);
 		}
 
+	if (iBuf->Descriptor().Right(2) == _L("\r\n")) iBuf->Delete(iBuf->Descriptor().Length()-2, 2);
 	iFormatter->TabulateL(0, 2, iBuf->Descriptor(), ETruncateLongestColumn);
 	Write(iFormatter->Descriptor());
 	}
@@ -2979,6 +2976,8 @@ void CCmdChunkInfo::DoRunL()
 		stdout.SetCursorHeight(0);
 		stdout.ClearScreen();
 		}
+
+	if (iAddress) iVerbose = ETrue; // address argument implies verbose
 
 	DoPrintL();
 
@@ -3009,7 +3008,8 @@ void CCmdChunkInfo::OptionsL(RCommandOptionList& aOptions)
 	aOptions.AppendStringL(iOwningProcess, KCmdChunkInfoOptOwningProcess);
 	aOptions.AppendUintL(iControllingProcess, KCmdChunkInfoOptControllingProcess);
 	aOptions.AppendBoolL(iIncludeSize, KCmdChunkInfoOptSize);
-
+	aOptions.AppendBoolL(iVerbose, KOptVerbose);
+	aOptions.AppendStringL(iMatch, KMatch);
 	}
 
 void CCmdChunkInfo::ArgumentsL(RCommandArgumentList& aArguments)
@@ -4771,9 +4771,8 @@ void CCmdObjInfo::OptionsL(RCommandOptionList& aOptions)
 	_LIT(KCmdOptProcessId, "process-id");
 	_LIT(KCmdOptThreadId, "thread-id");
 	_LIT(KCmdOptAll, "all");
-	_LIT(KCmdOptMatch, "match");
 
-	aOptions.AppendStringL(iMatch, KCmdOptMatch);
+	aOptions.AppendStringL(iMatch, KMatch);
 	aOptions.AppendBoolL(iReferencers, KCmdOptReferencers);
 	aOptions.AppendUintL(iProcessId, KCmdOptProcessId);
 	aOptions.AppendUintL(iThreadId, KCmdOptThreadId);
@@ -5530,7 +5529,6 @@ void CCmdIoInfo::ArgumentsL(RCommandArgumentList& aArguments)
 
 void CCmdIoInfo::OptionsL(RCommandOptionList& aOptions)
 	{
-	_LIT(KMatch, "match");
 	aOptions.AppendStringL(iMatchString, KMatch);
 	}
 

@@ -123,7 +123,8 @@ private:
 	TInt GetObjectInfoByName(TObjectType aObjectType, const TDesC8& aObjectName, TDes8* aKernelInfoBuf);
 	TInt GetObjectInfoByHandle(TObjectType aObjectType, TInt aThreadId, TInt aObjectHandle, TDes8* aKernelInfoBuf);
 	TInt GetObjectAddresses(TObjectType aObjectType, const TDesC8& aOwningProcess, TDes8* aKernelInfoBuf);
-	TInt GetChunkAddresses(TUint aControllingProcessId, TDes8* aKernelInfoBuf);
+	TInt GetChunksControlledBy(TUint aControllingProcessId, TDes8* aKernelInfoBuf);
+	TInt GetAllChunksInProcess(TUint aProcessId, void* aKernelInfoBuf);
 	TInt AcquireCodeSegMutex();
 	TInt AcquireCodeSegMutexAndFilterCodesegsForProcess(TUint aProcessId);
 	TInt ReleaseCodeSegMutex();
@@ -255,6 +256,30 @@ void DMemoryAccessFactory::GetCaps(TDes8& /*aDes*/) const
     aDes.FillZ(aDes.MaxLength());
     aDes.Copy((TUint8*)&b,Min(aDes.MaxLength(),sizeof(b)));
 */    } 
+
+DThread* ProcessFirstThread(DProcess* aProcess)
+	{
+	// System must be locked
+	if (!aProcess) return NULL;
+	SDblQueLink* threadLink = aProcess->iThreadQ.First();
+	if (threadLink != NULL && threadLink != &aProcess->iThreadQ.iA)
+		{
+		return _LOFF(threadLink,DThread,iProcessLink);
+		}
+	return NULL;
+	}
+
+DThread* OpenProcessFirstThread(DProcess* aProcess)
+	{
+	NKern::LockSystem();
+	DThread* result = ProcessFirstThread(aProcess);
+	if (result && result->Open() != KErrNone)
+		{
+		result = NULL;
+		}
+	NKern::UnlockSystem();
+	return result;
+	}
 
 
 // class DMemoryAccess Implementation
@@ -628,7 +653,17 @@ TInt DMemoryAccess::DoControl(TInt aFunction, TAny* a1, TAny* a2)
 		TInt err = Kern::ThreadDesRead(iClient,a1,params,0);
 		if (err == KErrNone)
 			{
-			err = GetChunkAddresses(params().iControllingProcessId,(TDes8*)a2);
+			err = GetChunksControlledBy(params().iProcessId,(TDes8*)a2);
+			}
+		return err;
+		}
+    case RMemoryAccess::EControlGetAllChunksInProcess:
+		{
+		TGetChunkAddressesParamsBuf params;
+		TInt err = Kern::ThreadDesRead(iClient,a1,params,0);
+		if (err == KErrNone)
+			{
+			err = GetAllChunksInProcess(params().iProcessId,a2);
 			}
 		return err;
 		}
@@ -1378,7 +1413,7 @@ TInt DMemoryAccess::GetObjectAddresses(TObjectType aObjectType, const TDesC8& aO
 	return err;
 	}
 
-TInt DMemoryAccess::GetChunkAddresses(TUint aControllingProcessId, TDes8* aKernelInfoBuf)
+TInt DMemoryAccess::GetChunksControlledBy(TUint aControllingProcessId, TDes8* aKernelInfoBuf)
 	{
 	DObjectCon* const * cons = Kern::Containers();
 	DObjectCon& container = *cons[EChunk];
@@ -1423,6 +1458,84 @@ TInt DMemoryAccess::GetChunkAddresses(TUint aControllingProcessId, TDes8* aKerne
 	
 	container.Signal();
 	iLocks[EChunk] = alreadyHeld;
+	return err;
+	}
+
+
+TInt DMemoryAccess::GetAllChunksInProcess(TUint aProcessId, void* aKernelInfoBuf)
+	{
+	NKern::ThreadEnterCS();
+	DObjectCon& container = *Kern::Containers()[EProcess];
+	container.Wait();
+	DProcess* proc = Kern::ProcessFromId(aProcessId);
+	TInt err = KErrNotFound;
+	if (proc) err = proc->Open();
+	container.Signal();
+	if (err)
+		{
+		NKern::ThreadLeaveCS();
+		return err;
+		}
+
+	DThread* firstThread = OpenProcessFirstThread(proc);
+	if (!firstThread)
+		{
+		proc->Close(NULL);
+		NKern::ThreadLeaveCS();
+		return KErrNotFound;
+		}
+
+	TInt c = proc->iHandles.Count();
+	HBuf8* buf = HBuf::New(c * (sizeof(DObject*) + sizeof(TLinAddr)));
+	if (buf)
+		{
+		void** ptr = (void**)buf->Ptr();
+		NKern::LockSystem();
+		c = Min(proc->iHandles.Count(), c); // In case it's changed
+		for (TInt i = 0; i < c; i++)
+			{
+			DObject* obj = proc->iHandles[i];
+			if (!obj || obj->Open() != KErrNone) continue;
+			if (obj->iContainerID - 1 == EChunk)
+				{
+				DChunk* chunk = (DChunk*)obj;
+				*ptr++ = obj;
+				*ptr++ = 0; // Fill in next time round when we're not holding the system lock...
+				}
+			else
+				{
+				obj->Close(NULL);
+				}
+			}
+		NKern::UnlockSystem();
+		c = (ptr - (void**)buf->Ptr()) / 2; // c is now the number of chunks
+		ptr = (void**)buf->Ptr();
+		buf->SetLength(c * (sizeof(DObject*) + sizeof(TLinAddr)));
+
+		// Now we're not holding the system lock we can call Kern::ChunkUserBase()
+		for (TInt i = 0; i < c; i++)
+			{
+			DChunk* chunk = (DChunk*)(ptr[i*2]);
+#ifdef FSHELL_FLEXIBLEMM_AWARE
+			TUint8* base = Kern::ChunkUserBase(chunk, firstThread);
+			
+#else
+			TUint8* base = chunk->Base();
+#endif
+			*(TLinAddr*)(ptr + i*2 + 1) = (TLinAddr)base;
+			chunk->Close(NULL);
+			}
+
+		err = Kern::ThreadDesWrite(iClient, aKernelInfoBuf, *buf, 0);
+		delete buf;
+		}
+	else
+		{
+		err = KErrNoMemory;
+		}
+
+	firstThread->Close(NULL);
+	NKern::ThreadLeaveCS();
 	return err;
 	}
 
@@ -1491,7 +1604,7 @@ TInt DMemoryAccess::GetNextCodeSegInfo(TDes8* aCodeSegInfoBuf)
 			}
 		else
 			{	
-			//Get the code seg info
+			//Get the code seg info	
 			(*localInfoBuf)().iRunAddress = currentCodeseg->iRunAddress;
 			(*localInfoBuf)().iSize = currentCodeseg->iSize;
 			if (currentCodeseg->iFileName)
@@ -1549,21 +1662,29 @@ TInt DMemoryAccess::ObjectDie(TObjectKillParamsBuf& aObjectKillParamsBuf)
 		//Use the address of the kernel object ...
 		DProcess* process = (DProcess*)aObjectKillParamsBuf().iObjectPtr;
 		//... unless the client has supplied an object ID
+		NKern::ThreadEnterCS();
 		if (aObjectKillParamsBuf().iObjectId!=0)
 			{
 			DObjectCon& container = *cons[EProcess];
 			container.Wait();
-			NKern::ThreadEnterCS();
 			process = Kern::ProcessFromId(aObjectKillParamsBuf().iObjectId);
-		    NKern::ThreadLeaveCS();
 			container.Signal();
 			}
 		if (process==NULL)
+			{
 			err=KErrNotFound;
+			}
 		else
 			{
-			Kern::ThreadKill(process->FirstThread(), aObjectKillParamsBuf().iType, aObjectKillParamsBuf().iReason, aObjectKillParamsBuf().iCategory);
+			DThread* thread = OpenProcessFirstThread(process);
+			if (!thread) err = KErrNotFound;
+			else
+				{
+				Kern::ThreadKill(thread, aObjectKillParamsBuf().iType, aObjectKillParamsBuf().iReason, aObjectKillParamsBuf().iCategory);
+				thread->Close(NULL);
+				}
 			}
+	    NKern::ThreadLeaveCS();
 		break;
 		}
 	default:
@@ -1653,7 +1774,9 @@ TInt DMemoryAccess::GetProcessInfo(DProcess* aProcess, TDes8* aProcessInfoBuf)
 			}
 		memcpy(localInfo.iEnvironmentData, aProcess->iEnvironmentData, sizeof(TInt)*KNumEnvironmentSlots);
 		localInfo.iFirstThreadId = 0;
-		if (aProcess->FirstThread()) localInfo.iFirstThreadId = aProcess->FirstThread()->iId;
+		NKern::LockSystem();
+		if (ProcessFirstThread(aProcess)) localInfo.iFirstThreadId = ProcessFirstThread(aProcess)->iId;
+		NKern::UnlockSystem();
 
 		//Copy the local info buffer into the client's address space
 		// Kern::Printf("DMemoryAccess::GetProcessInfo writing back");
@@ -1700,7 +1823,12 @@ TInt DMemoryAccess::GetChunkInfo(DChunk* aChunk, TDes8* aChunkInfoBuf)
 			if (localInfo.iFullName.Left(KKern().Length()) != KKern && proc && proc->Open() == KErrNone)
 				{
 				// Probably shouldn't call ChunkUserBase for a non-user-owned chunk
-				localInfo.iBase = Kern::ChunkUserBase(aChunk, proc->FirstThread());
+				DThread* first = OpenProcessFirstThread(proc);
+				if (first)
+					{
+					localInfo.iBase = Kern::ChunkUserBase(aChunk, first);
+					first->Close(NULL);
+					}
 				proc->Close(NULL);
 				}
 			}

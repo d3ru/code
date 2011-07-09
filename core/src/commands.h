@@ -632,7 +632,7 @@ private:
 	CCmdChunkInfo();
 	void DoPrintL();
 	void ListChunksL();
-	void PrintChunkInfoL();
+	void PrintChunkInfoL(TUint aAddress);
 	void PrintSizeL(const TDesC& aCaption, TInt aSize);
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
@@ -646,6 +646,8 @@ private:
 	TBool iIncludeSize;
 	HBufC* iOwningProcess;
 	TUint iControllingProcess;
+	HBufC* iMatch;
+	TBool iVerbose;
 	TName iName;
 	TFullName iFullName;
 	CTextFormatter* iFormatter;

@@ -106,7 +106,7 @@ typedef TPckgBuf<TGetObjectAddressesParams> TGetObjectAddressesParamsBuf;
 class TGetChunkAddressesParams
 	{
 public:
-	TUint iControllingProcessId;
+	TUint iProcessId;
 	};
 typedef TPckgBuf<TGetChunkAddressesParams> TGetChunkAddressesParamsBuf;
 
@@ -460,6 +460,7 @@ public:
 		EControlCancelNotifyZombie,
 		EControlGetThreads,
 		EControlGetThreadStartTime,
+		EControlGetAllChunksInProcess,
 		ENumRequests,  // Add new commands above this line
         };
 public:
@@ -517,6 +518,9 @@ public:
 	//Returns KErrOverflow if the buffer isn't big enough to hold all the addresses. Note, this interface allows global chunks (which have
 	//a NULL owner pointers, hence can't be found using RMemoryAccess::GetObjectAddresses) that were created by a particular process to be found.
 	TInt GetChunkAddresses(TUint aControllingProcessId, TDes8& aAddressBuffer);
+
+	// Like the above but returns everything mapped into the process (not just things created by it). aBuffer is packed array of (DChunk*, chunk_mapped_base_addr) pairs
+	TInt GetAllChunksInProcess(TUint aProcessId, TDes8& aBuffer);
 
 	// Return list of all thread IDs
 	TInt GetThreads(TDes8& aBuffer);
@@ -739,8 +743,15 @@ inline TInt RMemoryAccess::GetObjectAddresses(TObjectType aObjType, const TDesC&
 inline TInt RMemoryAccess::GetChunkAddresses(TUint aControllingProcessId, TDes8& aAddressBuffer)
 	{
 	TGetChunkAddressesParamsBuf params;
-	params().iControllingProcessId=aControllingProcessId;
+	params().iProcessId=aControllingProcessId;
 	return DoControl(EControlGetChunkAddresses, (TAny*)&params, (TAny*)&aAddressBuffer);	
+	}
+
+inline TInt RMemoryAccess::GetAllChunksInProcess(TUint aProcessId, TDes8& aBuffer)
+	{
+	TGetChunkAddressesParamsBuf params;
+	params().iProcessId=aProcessId;
+	return DoControl(EControlGetAllChunksInProcess, (TAny*)&params, (TAny*)&aBuffer);
 	}
 	
 inline TInt RMemoryAccess::GetThreads(TDes8& aBuffer)

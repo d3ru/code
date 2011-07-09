@@ -63,7 +63,7 @@ objinfo 1234 $Silent || $Error # This should spit out a warning but should not e
 
 # Depending on whether CIF cacheing has avoided the need to open objinfo's RFs handle, there will be either 1 or 2 sessions opened. The second session is to iosrv, presumably.
 objinfo --match *objinfo_00 | match --count *ESession* | export -s RESULT
-var RESULT == "Count = 2" || var RESULT == "Count = 1" || $Error
+var RESULT == 2 || var RESULT == 1 || $Error
 
 ==copyright
 

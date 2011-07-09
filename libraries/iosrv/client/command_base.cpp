@@ -2898,15 +2898,18 @@ void AppendSubCommandL(TInt aIndent, CTextBuffer& aBuffer, const CCommandInfoFil
 
 EXPORT_C const CTextBuffer* CCommandBase::GetHelpTextL()
 	{
-	const RCommandArgumentList* arguments = &iArguments;
-	const RCommandOptionList* options = &iOptions;
 	const TBool usingTemplate = iExt && iExt->iArgumentsTemplate;
 	if (usingTemplate && iCif == NULL && CifReadRequired())
 		{
 		// We cached the args, but now we need to actually read the CIF because the cache doesn't include the help descriptions and such like
 		ReadCifL(); 
-		arguments = &iCif->Arguments();
-		options = &iCif->Options();
+		// Have to close and re-load these, unfortunately, otherwise we hit all kinds of asserts and it's easier to just do this
+		// Since we know the CIF must have validated in order for the cache to have been created, we can be fairly sure AssignL isn't going to leave
+		iArguments.Close();
+		iOptions.Close();
+		ArgumentsL(iArguments);
+		OptionsL(iOptions);
+		iCif->AssignL(iArguments, iOptions);
 		}
 
 	CTextBuffer* buffer = CTextBuffer::NewLC(0x100);
@@ -2914,18 +2917,18 @@ EXPORT_C const CTextBuffer* CCommandBase::GetHelpTextL()
 	AppendHeadingL(_L("SYNTAX"), *buffer);
 	buffer->AppendFormatL(_L("    %S"), &Name());
 
-	const TInt numOptions = options->Count();
+	const TInt numOptions = iOptions.Count();
 	if (numOptions > 0)
 		{
 		buffer->AppendL(_L(" [options]"));
 		}
 
-	const TInt numArguments = arguments->Count();
+	const TInt numArguments = iArguments.Count();
 	if (numArguments > 0)
 		{
 		for (TInt i = 0; i < numArguments; ++i)
 			{
-			const TCommandArgument& thisArgument = (*arguments)[i];
+			const TCommandArgument& thisArgument = iArguments[i];
 			TBool isOptional = thisArgument.IsOptional();
 			if (isOptional)
 				{
@@ -2959,7 +2962,7 @@ EXPORT_C const CTextBuffer* CCommandBase::GetHelpTextL()
 		buffer->AppendL(_L("=over 5\r\n\r\n"));
 		for (TInt i = 0; i < numOptions; ++i)
 			{
-			const TCommandOption& thisOption = (*options)[i];
+			const TCommandOption& thisOption = iOptions[i];
 			TChar shortName(thisOption.ShortName());
 			if (shortName)
 				{
@@ -3053,7 +3056,7 @@ EXPORT_C const CTextBuffer* CCommandBase::GetHelpTextL()
 		for (TInt i = 0; i < numArguments; ++i)
 			{
 			buffer->AppendL(_L("=item "));
-			const TCommandArgument& thisArgument = (*arguments)[i];
+			const TCommandArgument& thisArgument = iArguments[i];
 			TBool isOptional = thisArgument.IsOptional();
 			if (isOptional)
 				{

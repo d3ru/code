@@ -28,6 +28,9 @@
 #include "while.h"
 #include "if_command.h"
 #include "worker_thread.h"
+#ifdef FSHELL_CORE_SUPPORT_MEMMAP
+#include "memmap.h"
+#endif
 
 //
 // Constants.
@@ -363,6 +366,9 @@ void CCommandFactory::ConstructL()
 	AddThreadCommandL(CCmdAttrib::NewLC);
 #ifdef FSHELL_CORE_SUPPORT_SUBST
 	AddThreadCommandL(CCmdSubst::NewLC);
+#endif
+#ifdef FSHELL_CORE_SUPPORT_MEMMAP
+	AddThreadCommandL(CCmdMemmap::NewLC);
 #endif
 
 	// Add some DOS-style namings of common commands.
