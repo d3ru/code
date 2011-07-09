@@ -92,7 +92,7 @@ sub update_copyright($$)
 			{
 			# Reached the end of initial comment
 			my $filecopyrightnotice = $notice;
-			if ($copyrightyear ne "2010") { $copyrightyear = "$copyrightyear - 2010"; }
+			if ($copyrightyear ne "2011") { $copyrightyear = "$copyrightyear - 2011"; }
 			$filecopyrightnotice =~ s/\/\//$commentstart/g; # Change '//' to '#' if needed
 			$filecopyrightnotice =~ s/http:$commentstart/http:\/\//g; # I don't know why putting a ^ before the above pattern doesn't work, my brain is hurting
 			$filecopyrightnotice =~ s/COPYRIGHTYEAR/$copyrightyear/;
