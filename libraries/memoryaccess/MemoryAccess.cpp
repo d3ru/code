@@ -1498,7 +1498,6 @@ TInt DMemoryAccess::GetAllChunksInProcess(TUint aProcessId, void* aKernelInfoBuf
 			if (!obj || obj->Open() != KErrNone) continue;
 			if (obj->iContainerID - 1 == EChunk)
 				{
-				DChunk* chunk = (DChunk*)obj;
 				*ptr++ = obj;
 				*ptr++ = 0; // Fill in next time round when we're not holding the system lock...
 				}

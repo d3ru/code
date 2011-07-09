@@ -41,6 +41,10 @@ Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch>
 
 =item *
 
+Added makbsym tool to \fshell\tools\makbsym. This is a tool to create BSYM files that can be used by (eg) fdb. It is a native desktop tool written in Qt and must be built separately or downloaded from https://sourceforge.net/projects/fshell/files/windows/makbsym.exe .
+
+=item *
+
 Added support for glinfo to display GPU memory info from the eglQueryProfilingDataNOK EGL extension.
 
 =item *
