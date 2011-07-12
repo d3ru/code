@@ -10,6 +10,7 @@
 // Accenture - Initial contribution
 //
 
+#include <e32rom.h>
 #include <fshell/ltkutils.h>
 #include "memmap.h"
 
@@ -23,6 +24,7 @@ enum TMemAreaType
 	EChunkArea,
 	ECodesegArea,
 	EStackArea,
+	ERomArea,
 	};
 
 class TMemArea
@@ -82,8 +84,12 @@ void CCmdMemmap::DoRunL()
 
 	LoadMemoryAccessL();
 	iAddressesBuf.CreateL(1024);
-
-	if (iArguments.IsPresent(&iPid))
+	if (!iMatch && iPid == 0)
+		{
+		// No arguments or specifying a pid of zero means get info for kernel (including user threads' kernel stacks etc)
+		ShowMapForProcessL(0, iFullName);
+		}
+	else if (iPid)
 		{
 		RProcess proc;
 		LeaveIfErr(proc.Open(iPid, EOwnerThread), _L("Couldn't open process of id %u"), iPid);
@@ -109,41 +115,97 @@ void CCmdMemmap::DoRunL()
 
 void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 	{
-	// Get all the chunks mapped into this process
-	iAddressesBuf.Zero();
-	TInt err = KErrNone;
-	do
-		{
-		err = iMemAccess.GetAllChunksInProcess(aPid, iAddressesBuf);
-		if (err == KErrOverflow)
-			{
-			iAddressesBuf.ReAllocL(iAddressesBuf.MaxLength() * 2);
-			}
-		}
-	while (err == KErrOverflow);
-	LeaveIfErr(err, _L("Unable to read chunk addresses for process %S"), &aProcessName);
-
-	TInt count = iAddressesBuf.Length() / (sizeof(void*) + sizeof(TLinAddr));
+	if (aPid) Printf(_L("\r\nProcess id %d %S:\r\n"), aPid, &aProcessName);
 	RArray<TMemArea> areas;
 	CleanupClosePushL(areas);
-	areas.ReserveL(count);
-	for (TInt i = 0; i < count; i++)
+	iAddressesBuf.Zero();
+
+	// Get all the chunks mapped into this process
+	// This won't work for kernel process as it doesn't use user handles
+	if (aPid)
 		{
-		TMemArea area;
-		area.iAddress = ((const TLinAddr*)iAddressesBuf.Ptr())[i*2 + 1];
-		area.iChunkObj = ((void**)iAddressesBuf.Ptr())[i*2];
-		area.iType = EChunkArea;
-		User::LeaveIfError(areas.InsertInUnsignedKeyOrder(area));
+		TInt err = KErrNone;
+		do
+			{
+			err = iMemAccess.GetAllChunksInProcess(aPid, iAddressesBuf);
+			if (err == KErrOverflow)
+				{
+				iAddressesBuf.ReAllocL(iAddressesBuf.MaxLength() * 2);
+				}
+			}
+		while (err == KErrOverflow);
+		LeaveIfErr(err, _L("Unable to read chunk addresses for process %S"), &aProcessName);
+
+		TInt count = iAddressesBuf.Length() / (sizeof(void*) + sizeof(TLinAddr));
+		areas.ReserveL(count);
+		for (TInt i = 0; i < count; i++)
+			{
+			TMemArea area;
+			area.iAddress = ((const TLinAddr*)iAddressesBuf.Ptr())[i*2 + 1];
+			area.iSize = 0;
+			area.iChunkObj = ((void**)iAddressesBuf.Ptr())[i*2];
+			area.iType = EChunkArea;
+			// Allow repeats in case of multiple zero addresses
+			if (area.iAddress == 0)
+				{
+				PrintWarning(_L("Chunk with null base address detected - do you need to enable FSHELL_FLEXIBLEMM_AWARE?"));
+				}
+			User::LeaveIfError(areas.InsertInUnsignedKeyOrderAllowRepeats(area));
+			}
+		}
+	else
+		{
+		// Take a stab at what's valid kernel-side or otherwise is globally mapped
+		// Currently we equate that with whatever was created from kernel side (ie whose controlling process id is 1)
+		TInt err = KErrNone;
+		do
+			{
+			err = iMemAccess.GetChunkAddresses(1, iAddressesBuf);
+			if (err == KErrOverflow)
+				{
+				iAddressesBuf.ReAllocL(iAddressesBuf.MaxLength() * 2);
+				}
+			}
+		while (err == KErrOverflow);
+		LeaveIfErr(err, _L("Unable to read chunk addresses for process %S"), &aProcessName);
+
+		TInt count = iAddressesBuf.Length() / sizeof(TLinAddr);
+		areas.ReserveL(count);
+		for (TInt i = 0; i < count; i++)
+			{
+			TMemArea area;
+			area.iChunkObj = ((void**)iAddressesBuf.Ptr())[i];
+			area.iType = EChunkArea;
+			TPckg<TChunkKernelInfo> chunkInfoPckg(iChunkInfo);
+			TInt err = iMemAccess.GetObjectInfo(EChunk, (TUint8*)area.iChunkObj, chunkInfoPckg);
+			if (!err && iChunkInfo.iBase)
+				{
+				area.iAddress = (TLinAddr)iChunkInfo.iBase;
+				area.iName.Copy(iChunkInfo.iFullName);
+				area.iSize = iChunkInfo.iSize;
+				User::LeaveIfError(areas.InsertInUnsignedKeyOrder(area));
+				}
+			}
 		}
 
 	// Now get all the codesegs
-	count = iMemAccess.AcquireCodeSegMutexAndFilterCodesegsForProcess(aPid);
+	TInt count;
+	if (aPid)
+		{
+		count = iMemAccess.AcquireCodeSegMutexAndFilterCodesegsForProcess(aPid);
+		}
+	else
+		{
+		count = iMemAccess.AcquireCodeSegMutex();
+		}
 	LeaveIfErr(count, _L("Couldn't acquire codeseg mutex"));
 	CleanupStack::PushL(TCleanupItem(&ReleaseCodesegMutex, &iMemAccess));
 
 	TPckg<TCodeSegKernelInfo> pkg(iCodeSegInfo);
 	while (iMemAccess.GetNextCodeSegInfo(pkg) == KErrNone)
 		{
+		if (aPid == 0 && iCodeSegInfo.iFileName.Right(4).CompareC(_L8(".exe")) == 0) continue; // No point showing EXE codesegs as most of them will have the same address
+		// Currently, all DLLs should still get unique addresses
 		TMemArea area;
 		area.iAddress = iCodeSegInfo.iRunAddress;
 		area.iSize = iCodeSegInfo.iSize;
@@ -155,8 +217,15 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 	CleanupStack::PopAndDestroy(); // ReleaseCodesegMutex
 
 	// Now thread stacks
-#ifdef __EPOC32__ // Never seem to get sensible answer on winscw regarding stack size
-	aProcessName.Append(_L("::*"));
+	if (aPid)
+		{
+		aProcessName.Append(_L("::*"));
+		}
+	else
+		{
+		// Get supervisor stacks for all threads
+		aProcessName.Copy(_L("*"));
+		}
 	iFindThread.Find(aProcessName);
 	TPckg<TThreadKernelInfo> threadPkg(iThreadInfo);
 	while (iFindThread.Next(aProcessName) == KErrNone)
@@ -165,15 +234,55 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 		if (!err)
 			{
 			TMemArea area;
-			area.iAddress = iThreadInfo.iUserStackLimit;
-			area.iSize = iThreadInfo.iUserStackSize;
+#ifdef __EPOC32__ // On WINSCW supervisor mode still uses the user stack I think (at least, iSupervisorStack is always null)
+			if (aPid == 0)
+				{
+				area.iAddress = iThreadInfo.iSupervisorStack;
+				area.iSize = iThreadInfo.iSupervisorStackSize;
+				}
+			else
+#endif
+				{
+				area.iAddress = iThreadInfo.iUserStackLimit;
+				area.iSize = iThreadInfo.iUserStackSize;
+				}
 			area.iType = EStackArea;
 			area.iName.Copy(aProcessName.Left(area.iName.MaxLength()));
 			area.iChunkObj = NULL;
-			User::LeaveIfError(areas.InsertInUnsignedKeyOrder(area));
+			User::LeaveIfError(areas.InsertInUnsignedKeyOrderAllowRepeats(area)); // TOMSCI allow temp...
 			}
 		}
+
+	// Finally, Other Stuff we know about kernel (if applicable)
+	if (aPid == 0)
+		{
+#ifdef __EPOC32__
+		const TRomHeader* header = (const TRomHeader*)UserSvr::RomHeaderAddress();
+		TMemArea romArea;
+		romArea.iAddress = header->iRomBase;
+		romArea.iSize = header->iRomSize;
+		romArea.iType = ERomArea;
+
+		if (header->iPageableRomStart)
+			{
+			romArea.iName = _L("ROM (Unpaged)");
+			romArea.iSize = header->iPageableRomStart;
+			User::LeaveIfError(areas.InsertInUnsignedKeyOrder(romArea));
+
+			romArea.iAddress = header->iRomBase + header->iPageableRomStart;
+			romArea.iSize = header->iRomSize - header->iPageableRomStart;
+			romArea.iName = _L("ROM (Pageable)");
+			User::LeaveIfError(areas.InsertInUnsignedKeyOrder(romArea));
+			}
+		else
+			{
+			romArea.iName = _L("ROM");
+			User::LeaveIfError(areas.InsertInUnsignedKeyOrder(romArea));
+			}
 #endif
+
+		}
+
 	PrintAreasL(areas);
 	CleanupStack::PopAndDestroy(&areas);
 	}
@@ -184,7 +293,7 @@ void CCmdMemmap::PrintAreasL(RArray<TMemArea>& aAreas)
 	for (TInt i = 0; i < n; i++)
 		{
 		TMemArea& area = aAreas[i];
-		if (area.iType == EChunkArea)
+		if (area.iType == EChunkArea && area.iSize == 0) // Avoid calling GetObjectInfo twice if we've already got all the info
 			{
 			TPckg<TChunkKernelInfo> chunkInfoPckg(iChunkInfo);
 			TInt err = iMemAccess.GetObjectInfo(EChunk, (TUint8*)area.iChunkObj, chunkInfoPckg);
@@ -194,7 +303,6 @@ void CCmdMemmap::PrintAreasL(RArray<TMemArea>& aAreas)
 				// happen if the chunk in question has been deleted since we called RMemoryAccess::GetAllChunksInProcess.
 				LeaveIfErr(err, _L("Unable to get info for chunk 0x%08x"), area.iChunkObj);
 				}
-			
 			area.iName.Copy(iChunkInfo.iFullName);
 			area.iSize = iChunkInfo.iSize;
 			}
@@ -206,7 +314,7 @@ void CCmdMemmap::PrintAreasL(RArray<TMemArea>& aAreas)
 			if (iHumanReadableSizes)
 				{
 				LtkUtils::FormatSize(sizeBuf, area.iSize);
-				while (sizeBuf.Length() < 8) sizeBuf.Insert(0, _L(" "));
+				while (sizeBuf.Length() < 10) sizeBuf.Insert(0, _L(" "));
 				}
 			else
 				{
@@ -224,6 +332,9 @@ void CCmdMemmap::PrintAreasL(RArray<TMemArea>& aAreas)
 				break;
 			case EStackArea:
 				Printf(_L("[Stack] "));
+				break;
+			case ERomArea:
+				Printf(_L("[ROM]   "));
 				break;
 			}
 		Printf(_L("%S\r\n"), &area.iName);

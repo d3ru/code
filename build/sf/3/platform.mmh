@@ -16,6 +16,7 @@
 #define FSHELL_LAUNCHER_SUPPORT_USB "ACM::1"
 
 #define FSHELL_QT_SUPPORT // I was suprised too...
+#define FSHELL_FLEXIBLEMM_AWARE
 
 #ifndef FSHELL_PLATFORM_SHARED_MMH
 #include <fshell/platform_shared.mmh>
