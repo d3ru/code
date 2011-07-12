@@ -10,6 +10,7 @@
 // Accenture - Initial contribution
 //
 #include <fshell/extrabtrace.h>
+#include <fshell/ltkutils.h>
 #include "common.h"
 
 NONSHARABLE_CLASS(RExtraBtraceImpl) : public RBusLogicalChannel
@@ -50,13 +51,13 @@ EXPORT_C TInt RExtraBtrace::EnableProfiling(TInt aSamplingPeriod)
 TInt RExtraBtraceImpl::Connect()
 	{
 	_LIT(KLddName,"extrabtracek");
-	TInt r = User::LoadLogicalDevice(KLddName);
+	TInt r = LtkUtils::LoadLogicalDevice(KLddName);
 	if(r!=KErrNone && r!=KErrAlreadyExists)
 		return r;
 
 #ifdef FSHELL_CUSTOM_BTRACE_SUPPORT_LIBRARY
 	// If FSHELL_TRACE_LIBRARY etc has been overridden it's possible that we need to load an additional driver to have extrabtrace function
-	r = User::LoadLogicalDevice(TPtrC((const TUint16*)FSHELL_CUSTOM_BTRACE_SUPPORT_LIBRARY));
+	r = LtkUtils::LoadLogicalDevice(TPtrC((const TUint16*)FSHELL_CUSTOM_BTRACE_SUPPORT_LIBRARY));
 	if(r!=KErrNone && r!=KErrAlreadyExists)
 		return r;
 #endif

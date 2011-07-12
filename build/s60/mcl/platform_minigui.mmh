@@ -28,6 +28,8 @@
 //////////////// Minigui specific stuff below ////////////////
 
 #define FSHELL_VARIANT_NAME fshellminigui
+// The following is needed for SMP builds to work
+#define FSHELL_ABI_DIR EPOCROOT##epoc32\release\armv5
 
 #define FSHELL_NO_GUI_SUPPORT
 #define FSHELL_WSERV_SUPPORT

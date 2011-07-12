@@ -15,6 +15,7 @@
 
 #ifndef __KERNEL_MODE__
 #include <e32std.h>
+#include <fshell/ltkutils.h>
 #endif
 #include <u32std.h>
 
@@ -638,7 +639,7 @@ public:
 // Inline implementations of user side interface
 
 inline TInt RMemoryAccess::LoadDriver()
-	{	return User::LoadLogicalDevice(KMemoryAccessName);	}
+	{	return LtkUtils::LoadLogicalDevice(KMemoryAccessName);	}
 inline void RMemoryAccess::CloseDriver()
 	{	User::FreeLogicalDevice(KMemoryAccessName);	}
 inline TInt RMemoryAccess::Open()

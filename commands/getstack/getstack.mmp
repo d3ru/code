@@ -26,5 +26,6 @@ source          getstack.cpp
 library         euser.lib
 library         efsrv.lib
 library         iocli.lib
+library			ltkutils.lib
 
 macro           EXE_BUILD

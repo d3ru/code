@@ -226,4 +226,5 @@ EXPORTS
 	_ZNK8LtkUtils13CHalAttribute13AttributeNameEv @ 225 NONAME
 	_ZNK8LtkUtils13CHalAttribute5ValueEv @ 226 NONAME
 	_ZNK8LtkUtils13CHalAttribute9AttributeEv @ 227 NONAME
+	_ZN8LtkUtils17LoadLogicalDeviceERK7TDesC16 @ 228 NONAME
 

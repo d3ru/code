@@ -12,6 +12,7 @@
 
 #include <fshell/ioutils.h>
 #include <fshell/common.mmh>
+#include <fshell/ltkutils.h>
 #include <e32cons.h>
 #include FSHELL_D32BTRACE_HEADER
 #include "memsamplerdd.h"
@@ -990,8 +991,8 @@ void CCmdMemsampler::DoRunL()
 		}
 	iStdinReader = CStdinReader::NewL(Stdin(), *this, iMemoryView);
 	iBtraceReader = CBtraceReader::NewL(mode, iFileName, *this, iMemoryView);
-	User::LeaveIfError(User::LoadLogicalDevice(KLdd));
-	User::LeaveIfError(iMemSampler.Open());
+	LeaveIfErr(LtkUtils::LoadLogicalDevice(KLdd), _L("Couldn't load %S"), &KLdd);
+	LeaveIfErr(iMemSampler.Open(), _L("Couldn't open RMemSampler"));
 	iMemSampler.Start(iRate);
 	}
 

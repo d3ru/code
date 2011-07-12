@@ -256,11 +256,15 @@ The RLoader::Delete() API is available in e32ldr.h or e32ldr_private.h
 
 =item FSHELL_SMP_SUPPORT
 
-(Experimental) Used to indicate that SIS files created by this platform should include armv5smp binaries. All the appropriate SMP binaries can be build by using the bld.inf located in \fshell\build\common\drivers\bld.inf.
+Used to indicate that SIS files created by this platform should include armv5smp binaries. All the appropriate SMP binaries can be build by using the bld.inf located in \fshell\build\common\drivers\bld.inf.
 
 =item FSHELL_VARIANT_NAME
 
 The name of the fshell variant being defined. Should only ever be defined in platform_<variant>.mmh files such as \fshell\build\s60\mcl\platform_minigui.mmh. The value of this macro must match the FEATUREVARIANTNAME defined in the appropriate fshell_variant_configs.xml file.
+
+=item FSHELL_ABI_DIR
+
+This macro only need be defined on SMP-aware platforms that also define C<FSHELL_VARIANT_NAME>. It is used to override (arguably) incorrect definitions of ABI_DIR when rom building. If needing to be defined, it should usually be set to C<EPOCROOT##epoc32\release\armv5>.
 
 =back
 

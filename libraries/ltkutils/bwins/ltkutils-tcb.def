@@ -161,4 +161,5 @@ EXPORTS
 	??0CHalAttribute@LtkUtils@@QAE@HHHH@Z @ 160 NONAME ABSENT ; LtkUtils::CHalAttribute::CHalAttribute(int, int, int, int)
 	?DeviceNumber@CHalAttribute@LtkUtils@@QBEHXZ @ 161 NONAME ; int LtkUtils::CHalAttribute::DeviceNumber(void) const
 	?Update@CHalAttribute@LtkUtils@@QAEHXZ @ 162 NONAME ; int LtkUtils::CHalAttribute::Update(void)
+	?LoadLogicalDevice@LtkUtils@@YAHABVTDesC16@@@Z @ 163 NONAME ; int LtkUtils::LoadLogicalDevice(class TDesC16 const &)
 

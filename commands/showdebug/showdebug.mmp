@@ -25,3 +25,4 @@ source			showdebug.cpp
 library			euser.lib
 library			iocli.lib
 library			hal.lib
+library			ltkutils.lib

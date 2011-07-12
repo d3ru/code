@@ -43,8 +43,10 @@
 #define FSHELL_EXECUTABLE_AS_DATA(fileNameFrom, fileNameTo) FSHELL_RENAMED_EXECUTABLE_FILE(fileNameFrom, fileNameTo)
 
 #ifdef FSHELL_SMP_SUPPORT
-// devcap(119) should hopefully return the number of CPUs
-#define FSHELL_SMP_EXECUTABLE(fileName, debugness) IF (devcap(119) > 1) FSHELL_EXECUTABLE_FILE_ABI(fileName, \epoc32\release\armv5smp\ ## debugness ## \ ## fileName) ELSE FSHELL_EXECUTABLE_FILE_ABI(fileName, \epoc32\release\armv5\ ## debugness ## \ ## fileName) ENDIF
+// Doesn't seem a nice way of doing this, so include both and decide at runtime...
+#define FSHELL_SMP_EXECUTABLE(fileName, debugness) \
+    FSHELL_EXECUTABLE_FILE_ABI(SMP_ ## fileName, \epoc32\release\armv5smp\ ## debugness ## \ ## fileName) \
+    FSHELL_EXECUTABLE_FILE_ABI(fileName, \epoc32\release\armv5\ ## debugness ## \ ## fileName)
 #define FSHELL_DEVICE_DRIVER(fileName) FSHELL_SMP_EXECUTABLE(fileName, urel)
 #define FSHELL_DEBUG_DEVICE_DRIVER(fileName) FSHELL_SMP_EXECUTABLE(fileName, udeb)
 #define FSHELL_KERNEL_EXTENSION(fileName) FSHELL_SMP_EXECUTABLE(fileName, urel)

@@ -70,6 +70,8 @@ namespace LtkUtils
 
 	IMPORT_C char GetSystemDrive(); // 9.1 doesn't have RFs::GetSystemDrive()
 
+	IMPORT_C TInt LoadLogicalDevice(const TDesC& aFileName);
+
 	/****
 	 * The functions below are not available if you're linking against ltkutils-tcb.dll. They
 	 * rely on being able to link against All -TCB dlls.

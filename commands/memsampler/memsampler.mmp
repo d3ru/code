@@ -27,5 +27,6 @@ FSHELL_TRACE_CONTROL_LIBRARY
 library         euser.lib
 library         efsrv.lib
 library         iocli.lib
+library			ltkutils.lib
 
 macro           EXE_BUILD

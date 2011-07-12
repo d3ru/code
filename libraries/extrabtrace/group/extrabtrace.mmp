@@ -25,3 +25,4 @@ sourcepath		..\src
 source			extrabtrace.cpp
 
 library 		euser.lib
+library			ltkutils-tcb.lib

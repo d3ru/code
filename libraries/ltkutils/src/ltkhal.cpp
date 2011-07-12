@@ -15,6 +15,7 @@
 #include <fshell/common.mmh>
 #include <HAL.h>
 #include <f32file.h>
+#include <u32std.h> // For EHalGroupKernel
 
 LtkUtils::CHalAttribute::CHalAttribute(TInt aAttribute, TInt aDeviceNumber, TInt aValue, TInt aProperties)
 	: iAttribute(aAttribute), iDeviceNumber(aDeviceNumber), iValue(aValue), iProperties(aProperties), iDescription(NULL)
@@ -407,4 +408,27 @@ EXPORT_C const TDesC& LtkUtils::CHalAttribute::DescriptionL()
 		CleanupStack::Pop(&buf);
 		}
 	return *iDescription;
+	}
+
+// Doesn't really belong in this file but there isn't anywhere better...
+
+EXPORT_C TInt LtkUtils::LoadLogicalDevice(const TDesC& aFileName)
+	{
+	TInt err = User::LoadLogicalDevice(aFileName);
+	enum THalFunctionsNotIn91
+		{
+		EKernelHalSmpSupported = 15,
+		};
+	//TBool smpEnabled = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
+	if (err == KErrNotSupported && UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone)
+		{
+		// We're on SMP, need to try the SMP_ prefixed version of the driver
+		// This is because the fshell SIS file cannot selectively install the correct driver, so it has to install both using the names driver.ldd and SMP_driver.ldd.
+		_LIT(KPrefix, "SMP_");
+		TBuf<32> name;
+		name.Append(KPrefix);
+		name.Append(aFileName);
+		err = User::LoadLogicalDevice(name);
+		}
+	return err;
 	}

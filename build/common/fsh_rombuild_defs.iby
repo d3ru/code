@@ -48,18 +48,24 @@
 #define FSHELL_DEV device[VARID]
 #endif
 
-#ifdef FSHELL_VARIANT_NAME
-define fshellvariant FSHELL_VARIANT_NAME
-#define FSHELL_BINARY_PATH(type, abi, builddir, name) type=abi##.fshellvariant##\##builddir##\##name
+#ifdef FSHELL_ABI_DIR
+define fshellabidir FSHELL_ABI_DIR
 #else
-#define FSHELL_BINARY_PATH(type, abi, builddir, name) type=abi##\##builddir##\##name
+define fshellabidir ABI_DIR
 #endif
 
-#define FSHELL_EXECUTABLE_FILE(fileName) FSHELL_BINARY_PATH(file, ABI_DIR, BUILD_DIR, fileName) sys\bin\##fileName
-#define FSHELL_EXECUTABLE_AS_DATA(fileNameFrom, fileNameTo) FSHELL_BINARY_PATH(data, ABI_DIR, BUILD_DIR, fileNameFrom) sys\bin\##fileNameTo
-#define FSHELL_DEBUG_EXECUTABLE_FILE(fileName) FSHELL_BINARY_PATH(file, ABI_DIR, udeb, fileName) sys\bin\##fileName
-#define FSHELL_RENAMED_EXECUTABLE_FILE(fileNameFrom, fileNameTo) FSHELL_BINARY_PATH(file, ABI_DIR, BUILD_DIR, fileNameFrom) sys\bin\##fileNameTo
-#define FSHELL_DEBUG_RENAMED_EXECUTABLE_FILE(fileNameFrom, fileNameTo) FSHELL_BINARY_PATH(file, ABI_DIR, udeb, fileNameFrom) sys\bin\##fileNameTo
+#ifdef FSHELL_VARIANT_NAME
+define fshellvariant FSHELL_VARIANT_NAME
+#define FSHELL_BINARY_PATH(type, abi, builddir, name) type=##abi##.fshellvariant##\##builddir##\##name
+#else
+#define FSHELL_BINARY_PATH(type, abi, builddir, name) type=##abi##\##builddir##\##name
+#endif
+
+#define FSHELL_EXECUTABLE_FILE(fileName) FSHELL_BINARY_PATH(file, fshellabidir, BUILD_DIR, fileName) sys\bin\##fileName
+#define FSHELL_EXECUTABLE_AS_DATA(fileNameFrom, fileNameTo) FSHELL_BINARY_PATH(data, fshellabidir, BUILD_DIR, fileNameFrom) sys\bin\##fileNameTo
+#define FSHELL_DEBUG_EXECUTABLE_FILE(fileName) FSHELL_BINARY_PATH(file, fshellabidir, udeb, fileName) sys\bin\##fileName
+#define FSHELL_RENAMED_EXECUTABLE_FILE(fileNameFrom, fileNameTo) FSHELL_BINARY_PATH(file, fshellabidir, BUILD_DIR, fileNameFrom) sys\bin\##fileNameTo
+#define FSHELL_DEBUG_RENAMED_EXECUTABLE_FILE(fileNameFrom, fileNameTo) FSHELL_BINARY_PATH(file, fshellabidir, udeb, fileNameFrom) sys\bin\##fileNameTo
 
 #define FSHELL_KERNEL_EXTENSION(fileName) ROM_IMAGE[0] FSHELL_BINARY_PATH(FSHELL_EXT, KERNEL_DIR, BUILD_DIR, fileName) sys\bin\##fileName
 #define FSHELL_DEBUG_KERNEL_EXTENSION(fileName) ROM_IMAGE[0] FSHELL_BINARY_PATH(FSHELL_EXT, KERNEL_DIR, udeb, fileName) sys\bin\##fileName

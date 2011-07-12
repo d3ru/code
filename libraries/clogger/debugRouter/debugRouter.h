@@ -15,6 +15,7 @@
 
 #ifndef __KERNEL_MODE__
 #include <e32std.h>
+#include <fshell/ltkutils.h>
 #endif
 #include <u32std.h>
 
@@ -98,7 +99,7 @@ public: // For registering buffers with the crash dumber (NOTE: requires support
 // Inline implementations of user side interface
 
 inline TInt RCloggerDebugRouter::LoadDriver()
-	{	return User::LoadLogicalDevice(KDebugRouterName);	}
+	{	return LtkUtils::LoadLogicalDevice(KDebugRouterName);	}
 inline void RCloggerDebugRouter::CloseDriver()
 	{	User::FreeLogicalDevice(KDebugRouterName);	}
 inline void RCloggerDebugRouter::Close()
