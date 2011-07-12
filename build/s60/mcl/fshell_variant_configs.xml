@@ -6,6 +6,7 @@
 
 	<group name="fshell_variant_configs">
 		<groupRef ref="armv5" mod="fshellminigui"/>
+		<groupRef ref="armv5" mod="fshelltshell"/>
 	</group>
 	
    	<var name="fshellminigui" type="product">
@@ -13,6 +14,13 @@
 		<set name='VARIANT_HRH' value='$(EPOCROOT)/epoc32/include/feature_settings.hrh'/>
 		<set name='FEATURELISTFILES' value='$(EPOCROOT)/epoc32/include/variant/featurelists/fshellminigui.txt'/> 
 		<prepend name='SYSTEMINCLUDE' value='$(EPOCROOT)/epoc32/include/fshellminigui'/> 
+	</var>
+	
+   	<var name="fshelltshell" type="product">
+		<set name='FEATUREVARIANTNAME' value='.fshelltshell'/> 
+		<set name='VARIANT_HRH' value='$(EPOCROOT)/epoc32/include/feature_settings.hrh'/>
+		<set name='FEATURELISTFILES' value='$(EPOCROOT)/epoc32/include/variant/featurelists/fshellminigui.txt'/> 
+		<prepend name='SYSTEMINCLUDE' value='$(EPOCROOT)/epoc32/include/fshelltshell'/> 
 	</var>
 
 </build>

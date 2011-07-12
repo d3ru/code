@@ -1,0 +1,46 @@
+#!fshell
+# debug-usb.script
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+echo "Running USB diagnostics"
+echo "======================="
+sleep 1
+
+if var KEEP_GOING not-defined
+	echo --stderr "Error: this script must be run with the --keep-going (-k) option"
+	sleep
+endif
+
+echo "Running rcomm..."
+rcomm
+
+echo "Listing CSYs..."
+ls z:\sys\bin\*.csy
+
+echo "Running rcomm -c Ecacm..."
+rcomm -c Ecacm
+
+echo "Starting USB svr..."
+start -r --timeout 20 usbsvr &| export ERR $?
+
+if var ERR == -1
+	echo "Running chkdeps on usbsvr.exe..."
+	chkdeps z:\sys\bin\usbsvr.exe
+endif
+
+echo "Running usb command..."
+usb
+
+echo "Launching fshell..."
+fshell --console vt100usbcons --console-title port=ACM::1,debug=1,personality=9
+echo "done"
+sleep

@@ -20,17 +20,21 @@ ARMV5SMP
 PRJ_EXPORTS
 .\platform.mmh                  \epoc32\include\fshell\platform.mmh
 
-// Support for minigui variant
+// Support for variants
 .\fshell_variant_configs.xml    \epoc32\sbs_config\fshell_variant_configs.xml
 .\minigui_featurelist.txt       \epoc32\include\variant\featurelists\fshellminigui.txt
+
 .\platform_minigui.mmh          \epoc32\include\fshellminigui\fshell\platform.mmh
+.\platform_tshell.mmh           \epoc32\include\fshelltshell\fshell\platform.mmh
 
 FSHELL_ROM_INCLUDE2(platform.mmh, fshell/platform.mmh)
 FSHELL_ROM_INCLUDE2(platform_minigui.mmh, fshell/platform_minigui.mmh)
+FSHELL_ROM_INCLUDE2(platform_tshell.mmh, fshell/platform_tshell.mmh)
 FSHELL_ROM_INCLUDE2(../fshell_platform.iby, fshell_platform.iby)
 
 FSHELL_ROM_INCLUDE(fshell.oby)
 FSHELL_ROM_INCLUDE(fshellminigui.oby)
+FSHELL_ROM_INCLUDE(fshelltshell.oby)
 
 ..\vt100btcons_preamble.script z:\system\console\scripts\vt100btcons_preamble.script
 

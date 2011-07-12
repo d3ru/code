@@ -1,0 +1,47 @@
+// platform.mmh
+// 
+// Copyright (c) 2011 Accenture. All rights reserved.
+// This component and the accompanying materials are made available
+// under the terms of the "Eclipse Public License v1.0"
+// which accompanies this distribution, and is available
+// at the URL "http://www.eclipse.org/legal/epl-v10.html".
+// 
+// Initial Contributors:
+// Accenture - Initial contribution
+//
+#ifndef FSHELL_PLATFORM_MMH
+#define FSHELL_PLATFORM_MMH
+
+// Correct as of 2011wk26
+
+#define FSHELL_CAP_ALL
+#define FSHELL_PROTECTED_UIDS
+
+#define FSHELL_PLATFORM_SYMTB 92
+#define FSHELL_PLATFORM_S60 6
+
+#define FSHELL_NO_WSERV_SUPPORT
+#define FSHELL_NO_ICL_SUPPORT
+#define FSHELL_NO_BLUETOOTH_SUPPORT
+#define FSHELL_NO_TELEPHONY_SUPPORT
+#define FSHELL_NO_AUDIO_SUPPORT
+#define FSHELL_NO_EZLIB_SUPPORT
+#define FSHELL_NO_SQL_SUPPORT
+#define FSHELL_NO_PIPS_SUPPORT
+#define FSHELL_NO_LBS_SUPPORT
+#define FSHELL_NO_DOBJECTIX_SUPPORT
+#define FSHELL_NO_EGL_SUPPORT
+#define FSHELL_NO_OPENVG_SUPPORT
+#define FSHELL_NO_ANALYSEHEAP_SUPPORT
+#define FSHELL_NO_APPARC_SUPPORT
+#define FSHELL_FLEXIBLEMM_AWARE
+#define FSHELL_ARM11XX_SUPPORT
+#define FSHELL_TRACECORE_SUPPORT
+#define FSHELL_NO_HTTP_SUPPORT // wk38 mislaid httpstringconstants.h
+//#define FSHELL_TESTEXECUTE_SUPPORT
+
+#define FSHELL_VARIANT_NAME fshelltshell
+// The following is needed for SMP builds to work
+#define FSHELL_ABI_DIR EPOCROOT##epoc32\release\armv5
+
+#endif // FSHELL_PLATFORM_MMH

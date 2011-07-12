@@ -22,18 +22,23 @@ __END__
 
 =item *
 
-Added mcl platform located at \fshell\build\s60\mcl. This platform supports building fshell for full gui and minigui at the same time. To build, do:
+Added mcl platform located at \fshell\build\s60\mcl. This platform supports building fshell for full gui, minigui and textshell at the same time. To build, do:
 
     M:\fshell\build\s60\mcl>sbs -c armv5_urel
     M:\fshell\build\s60\mcl>sbs -c armv5_urel.fshellminigui
+    M:\fshell\build\s60\mcl>sbs -c armv5_urel.fshelltshell
 
-Then to build a full gui rom with fshell included do:
+Then to build a full gui rom with fshell included do (something similar to):
 
-    imaker <device> core BLDROBY=\epoc32\rom\include\fshell.oby
+    imaker <device>_ui flash-all BLDROBY=\epoc32\rom\include\fshell.oby
 
 Or for a minigui:
 
     imaker <device> mingui BLDROBY=\epoc32\rom\include\fshellminigui.oby
+
+And finally for textshell:
+
+    imaker <device> flash BLDROBY=\epoc32\rom\include\fshelltshell.oby
 
 =item *
 
