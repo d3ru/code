@@ -42,7 +42,7 @@
 #define FSHELL_RENAMED_DEBUG_EXECUTABLE_FILE(fileNameFrom, fileNameTo) FSHELL_EXECUTABLE_FILE_ABI(fileNameTo, ABI_FOR(udeb\ ## fileNameFrom))
 #define FSHELL_EXECUTABLE_AS_DATA(fileNameFrom, fileNameTo) FSHELL_RENAMED_EXECUTABLE_FILE(fileNameFrom, fileNameTo)
 
-#ifdef FSHELL_SMP_SUPPORT
+#ifdef FSHELL_BUILD_SMP_SIS
 // Doesn't seem a nice way of doing this, so include both and decide at runtime...
 #define FSHELL_SMP_EXECUTABLE(fileName, debugness) \
     FSHELL_EXECUTABLE_FILE_ABI(SMP_ ## fileName, \epoc32\release\armv5smp\ ## debugness ## \ ## fileName) \
@@ -56,7 +56,7 @@
 #define FSHELL_DEBUG_DEVICE_DRIVER(fileName) FSHELL_DEBUG_EXECUTABLE_FILE(fileName)
 #define FSHELL_KERNEL_EXTENSION(fileName) FSHELL_EXECUTABLE_FILE(fileName)
 #define FSHELL_DEBUG_KERNEL_EXTENSION(fileName) FSHELL_DEBUG_EXECUTABLE_FILE(fileName)
-#endif
+#endif // FSHELL_BUILD_SMP_SIS
 
 #define FSHELL_ECOM_PLUGIN(dllName, resourceName) FSHELL_EXECUTABLE_FILE_ABI(dllName, ABI_FOR(urel\ ## dllName)) STRINGIFY(\epoc32\data\z\resource\plugins\##resourceName) - STRINGIFY(!:\resource\plugins\##resourceName)
 #define FSHELL_DEBUG_ECOM_PLUGIN(dllName, resourceName) FSHELL_EXECUTABLE_FILE_ABI(dllName, ABI_FOR(udeb\ ## dllName)) STRINGIFY(\epoc32\data\z\resource\plugins\##resourceName) - STRINGIFY(!:\resource\plugins\##resourceName)

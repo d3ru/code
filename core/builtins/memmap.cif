@@ -18,7 +18,47 @@ Display a breakdown of the address space for a given process.
 
 ==long-description
 
-Shows all the chunks and code segments mapped into the process, and the locations of thread stacks.
+Shows all the chunks and code segments mapped into the process, and the locations of thread stacks. If no arguments or C<--match> options are supplied, display a breakdown of the shared address space - that is, things that are mapped into the same location in all processes (such as the ROM, code segments, kernel data etc).
+
+Currently the following areas are shown, for processes:
+
+=over 5
+
+=item *
+
+Code segments mapped into that process.
+
+=item *
+
+Chunks that the process has a handle to.
+
+=item *
+
+User stacks for threads in that process.
+
+=back
+
+For the shared address space:
+
+=over 5
+
+=item *
+
+All code segments currently loaded.
+
+=item *
+
+Any chunks with fixed base addresses.
+
+=item *
+
+Location of Unpaged and Paged ROM area.
+
+=item *
+
+Supervisor mode stacks for all threads.
+
+=back
 
 ==argument uint process_id optional
 
