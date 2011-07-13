@@ -14,8 +14,8 @@ GENERATED_SOURCE = $(GENERATED_SOURCE_DIR)\fshell_version.cpp
 
 MAKMAKE :
 	perl $(EPOCROOT)epoc32\tools\emkdir.pl $(GENERATED_SOURCE_DIR)
-	echo perl .\genver.pl $(PLATFORM) $(CFG)
-	perl .\genver.pl $(PLATFORM) > $(GENERATED_SOURCE)
+	echo perl .\genver.pl $(PLATFORM) $(GENERATED_SOURCE)
+	perl .\genver.pl $(PLATFORM) $(GENERATED_SOURCE)
 
 CLEAN :
 	perl $(EPOCROOT)epoc32\tools\ermdir.pl $(GENERATED_SOURCE_DIR)

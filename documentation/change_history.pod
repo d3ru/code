@@ -86,6 +86,10 @@ Changed C<match --count> to return just an integer (rather than "Count = 2") so 
 
 Added C<--match> option to L<chunkinfo|commands::chunkinfo>. Also added C<--verbose> option so that detailed information can be obtained without needing to use the C<chunk_address> argument.
 
+=item *
+
+Made some changes to the build scripts; failures due to "Undefined symbol GetVersionInfoL(int)" should hopefully be much rarer and consequently the C<-j 1> option shouldn't be needed as often.
+
 =back
 
 =head2 Release 005

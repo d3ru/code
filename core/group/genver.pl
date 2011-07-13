@@ -14,6 +14,7 @@ use lib "../../tools";
 use fshu;
 
 my $platform = shift @ARGV;
+my $outputFile = shift @ARGV;
 my $version = fshu::Version();
 my $localTime = scalar(localtime);
 my $gmTime = scalar(gmtime);
@@ -21,7 +22,11 @@ my $builder = $ENV{USERNAME};
 my $compilerVersion = CompilerVersion();
 my $hgId = MercurialId();
 
-print "
+open(OUTFILE, "+>> $outputFile.tmp") || die "Couldn't open $outputFile.tmp";
+flock(OUTFILE, 2); # Exclusive lock
+seek(OUTFILE, 0, 0); truncate(OUTFILE, 0);
+
+print OUTFILE "
 #include <e32base.h>
 #include <fshell/descriptorutils.h>
 
@@ -51,6 +56,8 @@ extern HBufC* GetVersionInfoL(TBool aVerbose)
 	return buf.ToHBuf();
 	}
 ";
+close (OUTFILE);
+rename "$outputFile.tmp", "$outputFile";
 
 sub CompilerVersion {
   my $version = 'Unknown';
