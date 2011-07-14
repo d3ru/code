@@ -1619,6 +1619,7 @@ TInt DMemoryAccess::GetNextCodeSegInfo(TDes8* aCodeSegInfoBuf)
 #else
 			(*localInfoBuf)().iXip = EFalse;
 #endif
+			(*localInfoBuf)().iAttr = currentCodeseg->iAttr;
 			//Copy the local info buffer into the client's address space
 		    err = Kern::ThreadDesWrite(iClient, aCodeSegInfoBuf, *localInfoBuf, 0, KTruncateToMaxLength, NULL);
 			delete localInfoBuf;

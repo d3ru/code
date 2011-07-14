@@ -11,6 +11,7 @@
 //
 
 #include <hal.h>
+#include <u32std.h>
 #include "variant.h"
 #include <fshell/common.mmh>
 #include <fshell/descriptorutils.h>
@@ -88,6 +89,18 @@ const LtkUtils::SLitC KOtherSupportedVariants[] =
 	};
 const TInt KOtherSupportedVariantsCount = sizeof(KOtherSupportedVariants) / sizeof(LtkUtils::SLitC);
 
+static TBool Smp()
+	{
+	enum THalFunctionsNotIn91
+		{
+		EKernelHalSmpSupported = 15,
+		};
+	TBool smpEnabled = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
+	return smpEnabled;
+	}
+
+_LIT(KSmp, "smp");
+
 void CCmdVariant::DoRunL()
 	{
 	TInt localMachineUid = GetMachineUidL();
@@ -100,7 +113,7 @@ void CCmdVariant::DoRunL()
 			Printf(_L("%S, "), &KMachineIdVariants[i].iName);
 			}
 		// Finally add the ones which can appear in KOtherSupportedVariants
-		Printf(_L("wins, target, tracecore-support\r\n"));
+		Printf(_L("wins, target, tracecore-support, smp\r\n"));
 
 		Printf(_L("Variant names supported by this device: "));
 		for (TInt i = 0; i < KMachineIdVariantCount; i++)
@@ -110,6 +123,11 @@ void CCmdVariant::DoRunL()
 				Printf(_L("%S, "), &KMachineIdVariants[i].iName);
 				}
 			}
+		if (Smp())
+			{
+			Printf(_L("%S, "), &KSmp);
+			}
+
 		for (TInt i = 0; i < KOtherSupportedVariantsCount; i++)
 			{
 			if (i > 0) Printf(_L(", "));
@@ -151,6 +169,11 @@ void CCmdVariant::DoRunL()
 					{
 					match = ETrue;
 					}
+				}
+
+			if (iVariant[i]->CompareF(KSmp) == 0 && Smp())
+				{
+				match = ETrue;
 				}
 			}
 		}

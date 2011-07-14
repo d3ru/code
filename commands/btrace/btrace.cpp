@@ -120,6 +120,10 @@ void CCmdBtrace::DoRunL()
 
 	if (iOptions.IsPresent(&iBufferSize))
 		{
+		if (iBufferSize > 256*1024)
+			{
+			LeaveIfErr(KErrArgument, _L("--buffer argument too large (It is given in KB not bytes!)"));
+			}
 		iBtrace.ResizeBuffer(iBufferSize * 1024);
 		}
 

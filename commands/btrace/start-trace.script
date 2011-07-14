@@ -15,22 +15,31 @@ export QUIETLY ">/dev/null" # BTrace command is rather wordy by default
 export OnByDefault "0,1,2,3,9,15"
 export All "0,1,2,3,9,14,15"
 export TraceCmd "btrace"
+export StartProfiler "uprofiler start"
+
 
 # Check if we're using atrace
 exists ?:\resource\cif\fshell\atrace.cif && export TraceCmd "atrace"
 
+# Check if we're on SMP, if so don't try to run uprofiler
+if variant SMP
+	export StartProfiler "echo (Not starting uprofiler as it's not supported on SMP.)"
+endif
+
 $TraceCmd --reset $QUIETLY
 
-if 'var Usecase not-defined || var Usecase == all'
+if var Usecase == all
 	$TraceCmd -m1 -f $All $QUIETLY
-	uprofiler start
+	$StartProfiler
 else if var Usecase == heap
 	# EHeap is 14
 	$TraceCmd -m1 -f $OnByDefault -f 14 $QUIETLY
 else if var Usecase == profiling
 	$TraceCmd -m1 -f $OnByDefault $QUIETLY
 	# uprofiler will take care of enabling category 18 (EProfiling)
-	uprofiler start
+	$StartProfiler
+else if var Usecase == cpuusage
+	$TraceCmd -m1 -f $OnByDefault -f 4 $QUIETLY
 else
 	error -6 "Usecase not recognised!"
 endif
@@ -58,6 +67,10 @@ The categories listed below will be enabled regardless, as they are worth having
 
 The usecase to setup. If not specified, defaults to "all".
 
+==enum-value all
+
+Enable all of the below (except cpuusage).
+
 ==enum-value heap
 
 Heap tracing. Logging Allocator or similar must be configured.
@@ -66,6 +79,6 @@ Heap tracing. Logging Allocator or similar must be configured.
 
 CPU profiling. Not supported on SMP builds.
 
-==enum-value all
+==enum-value cpuusage
 
-Enable all of the above.
+CPU usage data (more fine-grained than 'profiling' option, supported on SMP).

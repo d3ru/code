@@ -27,6 +27,13 @@
 #include <W32STD.H>
 #endif
 
+#ifdef FSHELL_FLEXIBLEMM_AWARE
+#ifdef SYMBIAN_ENABLE_SPLIT_HEADERS
+#undef SYMBIAN_ENABLE_SPLIT_HEADERS
+#endif
+#include <e32ldr.h>
+#endif
+
 #include <fshell/ltkutils.h>
 #include "sandbox.h"
 
@@ -491,6 +498,9 @@ void AppendProcessFlags(TDes& aBuf, TUint32 aFlags)
 		}
 	}
 
+_LIT(KPipe, " | ");
+#define IF_FLAG_ADD(buf, val, flag) if ((val) & (flag)) { buf.Append(_L(#flag)); buf.Append(KPipe); }
+
 void CKernListBoxData::DoInfoForDialogL(RBuf& aTitle, RBuf& inf, TDes* aTemp)
 	{
 	TDes* name = aTemp;
@@ -610,6 +620,20 @@ void CKernListBoxData::DoInfoForDialogL(RBuf& aTitle, RBuf& inf, TDes* aTemp)
 			_LIT(KCodesegFmt, "File name: %S\nSize %S\nRef count %i\nDependancy count %i\nRun address 0x%08x");
 			aTemp->Copy(info.iFileName);
 			inf.AppendFormat(KCodesegFmt, aTemp, &size, info.iAccessCount, info.iDepCount, info.iRunAddress);
+			_LIT(KAttr, "\nAttributes: 0x%08x ");
+			inf.AppendFormat(KAttr, info.iAttr);
+#ifdef FSHELL_FLEXIBLEMM_AWARE // close enough
+			IF_FLAG_ADD(inf, info.iAttr, ECodeSegAttKernel)
+			IF_FLAG_ADD(inf, info.iAttr, ECodeSegAttGlobal)
+			IF_FLAG_ADD(inf, info.iAttr, ECodeSegAttFixed)
+			IF_FLAG_ADD(inf, info.iAttr, ECodeSegAttCodePaged)
+			IF_FLAG_ADD(inf, info.iAttr, ECodeSegAttDataPaged)
+			IF_FLAG_ADD(inf, info.iAttr, ECodeSegAttExpVer)
+			IF_FLAG_ADD(inf, info.iAttr, ECodeSegAttNmdExpData)
+			IF_FLAG_ADD(inf, info.iAttr, ECodeSegAttSMPSafe)
+			IF_FLAG_ADD(inf, info.iAttr, ECodeSegAttAddrNotUnique)
+			if (inf.Right(KPipe().Length()) == KPipe) inf.SetLength(inf.Length() - KPipe().Length()); // Remove trailing pipe char
+#endif
 			break;
 			}
 		case EListMimeTypes:

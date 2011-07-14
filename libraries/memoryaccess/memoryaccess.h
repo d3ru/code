@@ -323,6 +323,7 @@ public:
 	TInt iAccessCount;
 	TInt iDepCount;
 	TBool iXip;
+	TUint32 iAttr;
 	};
 typedef TPckgBuf<TCodeSegKernelInfo> TCodeSegKernelInfoBuf;	 
 

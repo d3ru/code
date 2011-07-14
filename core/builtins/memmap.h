@@ -30,7 +30,8 @@ public:
 private:
 	CCmdMemmap();
 	void ShowMapForProcessL(TUint aPid, TFullName& aProcessName);
-	void PrintAreasL(RArray<TMemArea>& aAreas);
+	void PrintAreasL(RPointerArray<TMemArea>& aAreas);
+	void AddAreaL(RPointerArray<TMemArea>& aAreas, const TMemArea& aArea);
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();

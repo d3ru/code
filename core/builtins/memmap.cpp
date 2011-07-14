@@ -116,8 +116,8 @@ void CCmdMemmap::DoRunL()
 void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 	{
 	if (aPid) Printf(_L("\r\nProcess id %d %S:\r\n"), aPid, &aProcessName);
-	RArray<TMemArea> areas;
-	CleanupClosePushL(areas);
+	RPointerArray<TMemArea> areas;
+	LtkUtils::CleanupResetAndDestroyPushL(areas);
 	iAddressesBuf.Zero();
 
 	// Get all the chunks mapped into this process
@@ -145,18 +145,19 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 			area.iSize = 0;
 			area.iChunkObj = ((void**)iAddressesBuf.Ptr())[i*2];
 			area.iType = EChunkArea;
-			// Allow repeats in case of multiple zero addresses
+			// Allow repeats in case of multiple zero addresses, but warn
 			if (area.iAddress == 0)
 				{
 				PrintWarning(_L("Chunk with null base address detected - do you need to enable FSHELL_FLEXIBLEMM_AWARE?"));
 				}
-			User::LeaveIfError(areas.InsertInUnsignedKeyOrderAllowRepeats(area));
+			AddAreaL(areas, area);
 			}
 		}
 	else
 		{
 		// Take a stab at what's valid kernel-side or otherwise is globally mapped
 		// Currently we equate that with whatever was created from kernel side (ie whose controlling process id is 1)
+		// TODO this doesn't work very well on flexible model...
 		TInt err = KErrNone;
 		do
 			{
@@ -183,7 +184,7 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 				area.iAddress = (TLinAddr)iChunkInfo.iBase;
 				area.iName.Copy(iChunkInfo.iFullName);
 				area.iSize = iChunkInfo.iSize;
-				User::LeaveIfError(areas.InsertInUnsignedKeyOrder(area));
+				AddAreaL(areas, area);
 				}
 			}
 		}
@@ -212,7 +213,7 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 		area.iName.Copy(iCodeSegInfo.iFileName.Left(area.iName.MaxLength()));
 		area.iType = ECodesegArea;
 		area.iChunkObj = NULL;
-		User::LeaveIfError(areas.InsertInUnsignedKeyOrder(area));
+		AddAreaL(areas, area);
 		}
 	CleanupStack::PopAndDestroy(); // ReleaseCodesegMutex
 
@@ -249,7 +250,7 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 			area.iType = EStackArea;
 			area.iName.Copy(aProcessName.Left(area.iName.MaxLength()));
 			area.iChunkObj = NULL;
-			User::LeaveIfError(areas.InsertInUnsignedKeyOrderAllowRepeats(area)); // TOMSCI allow temp...
+			AddAreaL(areas, area);
 			}
 		}
 
@@ -267,17 +268,17 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 			{
 			romArea.iName = _L("ROM (Unpaged)");
 			romArea.iSize = header->iPageableRomStart;
-			User::LeaveIfError(areas.InsertInUnsignedKeyOrder(romArea));
+			AddAreaL(areas, romArea);
 
 			romArea.iAddress = header->iRomBase + header->iPageableRomStart;
 			romArea.iSize = header->iRomSize - header->iPageableRomStart;
 			romArea.iName = _L("ROM (Pageable)");
-			User::LeaveIfError(areas.InsertInUnsignedKeyOrder(romArea));
+			AddAreaL(areas, romArea);
 			}
 		else
 			{
 			romArea.iName = _L("ROM");
-			User::LeaveIfError(areas.InsertInUnsignedKeyOrder(romArea));
+			AddAreaL(areas, romArea);
 			}
 #endif
 
@@ -287,12 +288,26 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 	CleanupStack::PopAndDestroy(&areas);
 	}
 
-void CCmdMemmap::PrintAreasL(RArray<TMemArea>& aAreas)
+TInt Compare(const TMemArea& aLeft, const TMemArea& aRight)
+	{
+	return aLeft.iAddress == aRight.iAddress ? 0 : aLeft.iAddress < aRight.iAddress ? -1 : 1;
+	}
+
+void CCmdMemmap::AddAreaL(RPointerArray<TMemArea>& aAreas, const TMemArea& aArea)
+	{
+	TMemArea* area = new(ELeave) TMemArea;
+	CleanupStack::PushL(area);
+	*area = aArea;
+	User::LeaveIfError(aAreas.InsertInOrderAllowRepeats(area, &Compare));
+	CleanupStack::Pop(area);
+	}
+
+void CCmdMemmap::PrintAreasL(RPointerArray<TMemArea>& aAreas)
 	{
 	const TInt n = aAreas.Count();
 	for (TInt i = 0; i < n; i++)
 		{
-		TMemArea& area = aAreas[i];
+		TMemArea& area = *aAreas[i];
 		if (area.iType == EChunkArea && area.iSize == 0) // Avoid calling GetObjectInfo twice if we've already got all the info
 			{
 			TPckg<TChunkKernelInfo> chunkInfoPckg(iChunkInfo);
