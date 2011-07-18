@@ -510,3 +510,10 @@ PRJ_EXPORTS
 PRJ_MMPFILES
 ..\startapp\startapp.mmp
 #endif
+
+#ifdef FSHELL_HCR_SUPPORT
+PRJ_EXPORTS
+..\hcr\hcr.cif           z:\resource\cif\fshell\hcr.cif
+PRJ_MMPFILES
+..\hcr\hcr.mmp
+#endif

@@ -50,6 +50,10 @@ source		objectix.cpp
 
 library		ekern.lib
 
+#ifdef FSHELL_HCR_SUPPORT
+library		hcr.lib
+#endif
+
 nostrictdef
 deffile		.\~\memoryaccess.def
 

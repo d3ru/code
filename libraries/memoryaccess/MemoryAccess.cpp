@@ -33,6 +33,10 @@ TBool ObjectIxContains(RObjectIx& aHandles, DObject* aObj);
 #include "fdebuggerkernel.h"
 #include "DynamicDfcSupport.h"
 
+#ifdef FSHELL_HCR_SUPPORT
+#include <drivers/hcr.h>
+#endif
+
 //define this to get log output
 /*#define DO_LOGGING
 
@@ -799,6 +803,130 @@ TInt DMemoryAccess::DoControl(TInt aFunction, TAny* a1, TAny* a2)
 		NKern::ThreadLeaveCS();
 		return err;
 		}
+#ifdef FSHELL_HCR_SUPPORT
+	case RMemoryAccess::EControlHcrGetInt:
+		{
+		TProp clientParams;
+		TInt err = Kern::ThreadRawRead(iClient, a1, &clientParams, sizeof(TProp));
+		if (err) return err;
+		HCR::TSettingId id(clientParams.iCategory.iUid, clientParams.iKey);
+		HCR::TSettingType type;
+		TUint16 len;
+		err = HCR::GetTypeAndSize(id, type, len);
+		if (err) return err;
+		TInt32 result;
+		// Overly-typesafe api...
+		switch (type)
+			{
+			case HCR::ETypeInt32:
+				err = HCR::GetInt(id, result); break;
+			case HCR::ETypeUInt32:
+				err = HCR::GetUInt(id, (TUint32&)result); break;
+			case HCR::ETypeBool:
+				err = HCR::GetBool(id, (TBool&)result); break;
+			case HCR::ETypeLinAddr:
+				err = HCR::GetLinAddr(id, (TLinAddr&)result); break;
+			case HCR::ETypeInt16:
+				{
+				TInt16 r;
+				err = HCR::GetInt(id, r);
+				result = r;
+				break;
+				}
+			case HCR::ETypeInt8:
+				{
+				TInt8 r;
+				err = HCR::GetInt(id, r);
+				result = r;
+				break;
+				}
+			case HCR::ETypeUInt16:
+				{
+				TUint16 r;
+				err = HCR::GetUInt(id, r);
+				result = r;
+				break;
+				}
+			case HCR::ETypeUInt8:
+				{
+				TUint8 r;
+				err = HCR::GetUInt(id, r);
+				result = r;
+				break;
+				}
+			default:
+				err = KErrArgument;
+				break;
+				}
+		if (!err) err = Kern::ThreadRawWrite(iClient, a2, &result, sizeof(TInt32));
+		return err;
+		}
+	case RMemoryAccess::EControlHcrGetBigData:
+		{
+		TProp clientParams;
+		TInt err = Kern::ThreadRawRead(iClient, a1, &clientParams, sizeof(TProp));
+		if (err) return err;
+		HCR::TSettingId id(clientParams.iCategory.iUid, clientParams.iKey);
+		HCR::TSettingType type;
+		TUint16 len;
+		err = HCR::GetTypeAndSize(id, type, len);
+		if (err) return err;
+		clientParams.iActualSize = len;
+		HBuf8* buf = HBuf8::New(len);
+		if (!buf) return KErrNoMemory;
+		// Overly-typesafe api...
+		switch (type)
+			{
+			case HCR::ETypeBinData:
+				err = HCR::GetData(id, *buf);
+				clientParams.iDefine = RMemoryAccess::EHcrData;
+				break;
+			case HCR::ETypeText8:
+				err = HCR::GetString(id, *buf);
+				clientParams.iDefine = RMemoryAccess::EHcrString;
+				break;
+			case HCR::ETypeArrayInt32:
+				{
+				err = HCR::GetArray(id, len, (TInt32*)buf->Ptr(), len);
+				clientParams.iDefine = RMemoryAccess::EHcrArray;
+				break;
+				}
+			case HCR::ETypeArrayUInt32:
+				{
+				err = HCR::GetArray(id, len, (TUint32*)buf->Ptr(), len);
+				clientParams.iDefine = RMemoryAccess::EHcrArray;
+				break;
+				}
+			case HCR::ETypeInt64:
+				err = HCR::GetInt(id, *(TInt64*)buf->Ptr());
+				clientParams.iDefine = RMemoryAccess::EHcrInt64;
+				break;
+			case HCR::ETypeUInt64:
+				err = HCR::GetInt(id, *(TInt64*)buf->Ptr());
+				clientParams.iDefine = RMemoryAccess::EHcrInt64;
+				break;
+			default:
+				err = KErrArgument;
+				break;
+			}
+		if (err == KErrTooBig)
+			{
+			err = Kern::ThreadRawWrite(iClient, a1, &clientParams, sizeof(TProp));
+			if (!err) err = KErrOverflow; // HCR uses one, we use the other
+			}
+		if (!err)
+			{
+			buf->SetLength(len);
+			err = Kern::ThreadDesWrite(iClient, a2, *buf, 0);
+			}
+		if (!err)
+			{
+			err = Kern::ThreadRawWrite(iClient, a1, &clientParams, sizeof(TProp));
+			}
+		delete buf;
+		return err;
+		}
+#endif
     default:
         return KErrNotSupported;
         }

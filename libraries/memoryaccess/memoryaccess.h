@@ -463,6 +463,8 @@ public:
 		EControlGetThreads,
 		EControlGetThreadStartTime,
 		EControlGetAllChunksInProcess,
+		EControlHcrGetInt,
+		EControlHcrGetBigData,
 		ENumRequests,  // Add new commands above this line
         };
 public:
@@ -533,6 +535,10 @@ public:
 	TInt SetProperty(TUid aCategory, TUint aKey, const TDesC8& aValue, TBool aDefineIfNotSet=EFalse);
 	TInt DeleteProperty(TUid aCategory, TUint aKey);
 	TInt SubscribeToProperty(TUid aCategory, TUint aKey, TBool aOutputToBtrace); // If aOutputToBtrace is false, use NotifyPropertyChange to get details
+
+	TInt GetHcrValue(TUint aCategory, TUint aKey, TInt& aValue);
+	enum THcrType { EHcrArray, EHcrInt64, EHcrData, EHcrString };
+	TInt GetHcrValue(TUint aCategory, TUint aKey, TDes8& aValue, THcrType& aType, TInt& aRequiredLen);
 
 	void NotifyPropertyChange(TPropNotifyResult& aResult, TRequestStatus& aStatus);
 	void CancelPropertyChange();
@@ -1116,6 +1122,32 @@ inline TUint32 RMemoryAccess::GetThreadStartTime(TUint aThreadId)
 	/*TInt err =*/ DoControl(EControlGetThreadStartTime, (TAny*)aThreadId, &result);
 	return result;
 	}
+
+inline TInt RMemoryAccess::GetHcrValue(TUint aCategory, TUint aKey, TInt& aValue)
+	{
+	TProp params;
+	params.iCategory.iUid = aCategory;
+	params.iKey = aKey;
+	return DoControl(EControlHcrGetInt, (TAny*)&params, (TAny*)&aValue);
+	}
+
+inline TInt RMemoryAccess::GetHcrValue(TUint aCategory, TUint aKey, TDes8& aValue, THcrType& aType, TInt& aRequiredLen)
+	{
+	TProp params;
+	params.iCategory.iUid = aCategory;
+	params.iKey = aKey;
+	TInt err = DoControl(EControlHcrGetBigData, (TAny*)&params, (TAny*)&aValue);
+	if (err == KErrOverflow)
+		{
+		aRequiredLen = params.iActualSize;
+		}
+	if (!err || err == KErrOverflow)
+		{
+		aType = (THcrType)params.iDefine; // Reusing inappropriate data structures, ah well.
+		}
+	return err;
+	}
+
 #endif //__KERNEL_MODE__
 
 #endif //__MemoryAccess_H__

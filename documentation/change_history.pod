@@ -1,4 +1,4 @@
-# change_history.pod
+4# change_history.pod
 #
 # Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
@@ -42,7 +42,7 @@ And finally for textshell:
 
 =item *
 
-Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch>, L<subst|commands::subst>, L<startapp|commands::startapp> and L<memmap|commands::memmap> commands.
+Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch>, L<subst|commands::subst>, L<startapp|commands::startapp>, L<memmap|commands::memmap> and L<hcr|commands::hcr> commands.
 
 =item *
 

@@ -409,4 +409,9 @@ FSHELL_EXECUTABLE_FILE(fshell_startapp.exe)
 FSHELL_COMMAND_INFO_FILE(fshell,startapp.cif)
 #endif
 
+#ifdef FSHELL_HCR_SUPPORT
+FSHELL_EXECUTABLE_FILE(fshell_hcr.exe)
+FSHELL_COMMAND_INFO_FILE(fshell,hcr.cif)
+#endif
+
 #endif // __FSHELL_COMMANDS_IBY__

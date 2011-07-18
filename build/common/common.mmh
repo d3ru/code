@@ -678,6 +678,7 @@
 #define FSHELL_UID_TRACESWITCH                0x10286F99
 #define FSHELL_UID_PROXYSERVER                0x10286F9A
 #define FSHELL_UID_STARTAPP                   0x10286F9B
+#define FSHELL_UID_HCR                        0x10286F9C
 #else // Not FSHELL_PROTECTED_UIDS
 
 #define FSHELL_UID_ACTIVEVIEW                 0xE02866D2
@@ -844,6 +845,7 @@
 #define FSHELL_UID_TRACESWITCH                0xE0286F99
 #define FSHELL_UID_PROXYSERVER                0xE0286F9A
 #define FSHELL_UID_STARTAPP                   0xE0286F9B
+#define FSHELL_UID_HCR                        0xE0286F9C
 
 #endif // FSHELL_PROTECTED_UIDS
 
