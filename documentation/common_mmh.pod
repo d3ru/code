@@ -186,6 +186,10 @@ Embedded-system Graphics Library is available. If FSHELL_NO_WSERV_SUPPORT is def
 
 Open Vector Graphics Library is available. If FSHELL_NO_WSERV_SUPPORT is defined, it is assumed OpenVG is not supported either.
 
+=item FSHELL_[NO_]OPENGLES_SUPPORT
+
+OpenGLES is available. Assumed unless FSHELL_NO_WSERV_SUPPORT is defined.
+
 =item FSHELL_ARM11XX_SUPPORT
 
 Defined if the target platform is ARM11. Eg ARM1136 or ARM1176. Do NOT define for Cortex A8/A9. Only used by fdb.
