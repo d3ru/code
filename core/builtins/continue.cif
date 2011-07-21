@@ -34,3 +34,7 @@ L<while|while>, L<endwhile|endwhile>, L<break|break>
 ==copyright
 
 Copyright (c) 2011 Accenture. All rights reserved.
+
+==smoke-test
+
+# Handled by while's

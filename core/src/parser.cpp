@@ -53,7 +53,7 @@ void MParserObserver::HandleParserExit(CParser&)
 	CActiveScheduler::Stop();
 	}
 
-TBool MParserObserver::AboutToExecutePipeLineStage(const TDesC&, const TDesC&, const TDesC&)
+TBool MParserObserver::AboutToExecutePipeLineStageL(const TDesC&, const TDesC&, const TDesC&)
 	{
 	return ETrue;
 	}
@@ -536,11 +536,11 @@ void CParser::CreateNextPipeLineL(TBool* aIsForeground)
 			TBool shouldExecute = ETrue;
 			if (CurrentConditionalScope())
 				{
-				shouldExecute = CurrentConditionalScope()->AboutToExecutePipeLineStage(pipeLineData, *expandedPipeLine, *KPipelineConditions[iCondition]);
+				shouldExecute = CurrentConditionalScope()->AboutToExecutePipeLineStageL(pipeLineData, *expandedPipeLine, *KPipelineConditions[iCondition]);
 				}
 			if (shouldExecute && (iMode & EDebug) && iObserver)
 				{
-				shouldExecute = iObserver->AboutToExecutePipeLineStage(pipeLineData, *expandedPipeLine, *KPipelineConditions[iCondition]);
+				shouldExecute = iObserver->AboutToExecutePipeLineStageL(pipeLineData, *expandedPipeLine, *KPipelineConditions[iCondition]);
 				}
 			if (shouldExecute)
 				{

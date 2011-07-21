@@ -107,12 +107,12 @@ void CCmdStartup::DoRunL()
 		CleanupStack::PushL(TCleanupItem(&EnumClose, &iDsc)); // Can't use the EnumOpenLC's cleanupitem because we have to pop it, because we need it inside its own TRAP harness to get good error messages out
 		for (;;)
 			{
-			CDscItem* item = iDsc.EnumReadNextL();
-			if (!item) break;
-			TPtrC args = item->Args();
-			TPtrC fn = item->FileName();
-			Printf(_L("DscId=0x%08x ItemId=0x%08x FileName=%S Args=%S\r\n"), item->DscId(), item->ItemId(), &fn, &args);
-			delete item;
+			CDscItem* dscItem = iDsc.EnumReadNextL();
+			if (!dscItem) break;
+			TPtrC args = dscItem->Args();
+			TPtrC fn = dscItem->FileName();
+			Printf(_L("DscId=0x%08x ItemId=0x%08x FileName=%S Args=%S\r\n"), dscItem->DscId(), dscItem->ItemId(), &fn, &args);
+			delete dscItem;
 			}
 		CleanupStack::PopAndDestroy(); // close enum
 		}

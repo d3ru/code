@@ -36,3 +36,7 @@ If specified, prints the given text to stderr before exiting.
 ==copyright
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
+
+==smoke-test
+
+# Handled in basic tests

@@ -163,7 +163,7 @@ EXPORT_C void CBtraceReader::Reset()
 	iRecordFile.Close();
 	delete iReplayData;
 	iReplayData = NULL;
-	ResetAndReprimeL();
+	ResetAndReprime();
 	}
 
 EXPORT_C void CBtraceReader::SynchronizeL()
@@ -189,7 +189,8 @@ EXPORT_C void CBtraceReader::Start(const TBtraceTickCount& aInitialTickCount, TT
 		}
 	else
 		{
-		iFlusher = CFlusher::NewL(*this);
+		TRAP_IGNORE(iFlusher = CFlusher::NewL(*this));
+		// TODO need to handle this error somehow
 		}
 
 	iFlusher->Start(aAutoFlushPeriod);
@@ -321,7 +322,7 @@ EXPORT_C void CBtraceReader::RemoveObserver(TUint aCategory, MBtraceObserver& aO
 		if (specificObserverFound && (numCatObservers == 0) && (iBtrace.Handle()))
 			{
 			// This was the last observer of this category, so turn it off.
-			DisableCategoryL(aCategory);
+			TRAP_IGNORE(DisableCategoryL(aCategory));
 			}
 		}
 	}
@@ -387,7 +388,7 @@ EXPORT_C void CBtraceReader::SetBufferSizeL(TInt aBufferSize)
 		User::Leave(KErrNotReady);
 		}
 	User::LeaveIfError(iBtrace.ResizeBuffer(aBufferSize));
-	ResetAndReprimeL(); // This is needed to a) reprime, and b) switch btrace back on. Calling ResizeBuffer actually sets the mode to zero. Who knew?
+	ResetAndReprime(); // This is needed to a) reprime, and b) switch btrace back on. Calling ResizeBuffer actually sets the mode to zero. Who knew?
 	}
 
 EXPORT_C void CBtraceReader::SetReplayFileNameL(const TDesC& aReplayFileName)
@@ -712,7 +713,7 @@ EXPORT_C void CBtraceReader::RecordBtraceDataToFileL(const TDesC& aRecordFileNam
 		{
 		// File must not already exist, we open in exclusive access
 		User::LeaveIfError(iRecordFile.Create(iFs, aRecordFileName, EFileShareExclusive|EFileWrite));
-		ResetAndReprimeL();
+		ResetAndReprime();
 		}
 	}
 
@@ -746,7 +747,7 @@ void CBtraceReader::DecIteratingObservers(TAny* aSelf)
 	static_cast<CBtraceReader*>(aSelf)->iIteratingObservers--;
 	}
 
-void CBtraceReader::ResetAndReprimeL()
+void CBtraceReader::ResetAndReprime()
 	{
 	iBtrace.Empty();
 	iBtrace.SetMode(RBTrace::EEnable);

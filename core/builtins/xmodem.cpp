@@ -1004,7 +1004,7 @@ void CCmdXmodem::HandleLeave(TInt aError)
 	if (iStarted)
 		{
 		Abort();
-		CleanupClonsoleAfterTransferL();
+		TRAP_IGNORE(CleanupClonsoleAfterTransferL());
 		}
 	CCommandBase::HandleLeave(aError);
 	}

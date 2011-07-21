@@ -215,7 +215,7 @@ private:
 	TInt GetData(TUint8*& aData);
 	void DispatchFrameL(const TBtraceFrame& aFrame);
 	void NotifyObserversOfBufferReset();
-	void ResetAndReprimeL();
+	void ResetAndReprime();
 	void NewMultipartFrameL(const TBtraceFrame& aFrame, TUint32 aExtra);
 	void AdditionalMultipartFragmentL(const TBtraceFrame& aFrame, TUint32 aExtra, TBool aLast);
 private:

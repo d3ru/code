@@ -31,20 +31,11 @@ enum TBtPanicCode
 
 class CBtAttributeBuilder;
 
-class CServiceRecordItem
+class CServiceRecordItem : public CBase
 	{
-public:
-	CServiceRecordItem()
-	{
-	iHandle = 0;
-	iServiceName = _L("");
-	}
-	
-	~CServiceRecordItem(){;}
-	
+public:	
 	TSdpServRecordHandle iHandle;
 	TBuf<64> iServiceName;
-	
 	};
 
 /**
@@ -59,7 +50,7 @@ class CBtServicesEng : public CBase, public MSdpAgentNotifier
 public:
 	static CBtServicesEng* NewL();
 	~CBtServicesEng();
-	void SetView(CBtServiceView* apView);
+	void SetView(MBtServiceView* apView);
 	//CDesCArrayFlat* GetTextArray() const;
 
 	// defined in MSdpAgentNotifier
@@ -120,7 +111,7 @@ private:
 	CSdpAttrIdMatchList* iAttributeMatchList;
 	CBtAttributeBuilder* iAttributeBuilder;
 
-	CBtServiceView* iView; // iView is not "owned" by this
+	MBtServiceView* iView; // iView is not "owned" by this
 	//CEikonEnv* iEikon;
 	
 	TInt iHandleCounter;

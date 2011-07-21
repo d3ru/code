@@ -96,3 +96,6 @@ Set the kernel text trace mode (C<Kern::SetTextTraceMode>). This is included as 
 
 Copyright (c) 2007-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+btrace $Quiet

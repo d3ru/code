@@ -1183,7 +1183,7 @@ void CLineEditor::HandleEnter()
 	{
 	if (iLine.Contents().Length() > 0)
 		{
-		iHistory->AddL(iLine.Contents());
+		TRAP_IGNORE(iHistory->AddL(iLine.Contents()));
 		}
 	iLine.End();
 	iObserver.LeoHandleLine(iLine.Contents());

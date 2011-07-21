@@ -1,4 +1,4 @@
-// ciftest.cpp
+// ciftest.cpp 
 //
 // Copyright (c) 2010 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
@@ -29,6 +29,7 @@ CCmdCifTest::~CCmdCifTest()
 	delete iEnvForScript;
 	delete iCurrentCif;
 	iCifFiles.ResetAndDestroy();
+	iCifNameHash.Close();
 	}
 
 CCmdCifTest::CCmdCifTest()
@@ -51,6 +52,7 @@ void CCmdCifTest::OptionsL(RCommandOptionList& aOptions)
 	{
 	aOptions.AppendBoolL(iVerbose, _L("verbose"));
 	aOptions.AppendBoolL(iKeepGoing, _L("keep-going"));
+	aOptions.AppendBoolL(iAll, _L("all"));
 	}
 
 void CCmdCifTest::DoRunL()
@@ -68,14 +70,22 @@ void CCmdCifTest::DoRunL()
 		TInt found = find.FindWildByDir(_L("*.cif"), KCifDir, dir);
 		while (found == KErrNone)
 			{
+			CleanupStack::PushL(dir);
 			for (TInt i = 0; i < dir->Count(); i++)
 				{
 				iFileName.Copy(TParsePtrC(find.File()).DriveAndPath()); // The docs for TFindFile state you shouldn't need the extra TParsePtrC::DriveAndPath(). Sigh.
-				iFileName.Append((*dir)[i].iName);
-				iCifFiles.AppendL(iFileName.AllocLC());
-				CleanupStack::Pop();
+				const TDesC& name = (*dir)[i].iName;
+				if (iCifNameHash.Find(name) == NULL)
+					{
+					// Don't add a CIF from Z if we've already found one for that command on C (for eg)
+					iFileName.Append(name);
+					HBufC* fileNameBuf = iFileName.AllocLC();
+					iCifNameHash.InsertL(name, fileNameBuf);
+					iCifFiles.AppendL(fileNameBuf);
+					CleanupStack::Pop(fileNameBuf);
+					}
 				}
-			delete dir;
+			CleanupStack::PopAndDestroy(dir);
 			dir = NULL;
 			found = find.FindWild(dir);
 			}
@@ -87,13 +97,14 @@ void CCmdCifTest::NextCif()
 	{
 	if (iNextCif == iCifFiles.Count())
 		{
-		if (iVerbose)
+		if (iVerbose || iCifFiles.Count())
 			{
 			Printf(_L("%d tests run, %d passes %d failures."), iPasses + iFailures, iPasses, iFailures);
 			if (iCifFiles.Count()) Printf(_L(" %d commands have no tests defined."), iCifFiles.Count() - iPasses - iFailures);
 			Printf(_L("\r\n"));
 			}
-		Complete(KErrNone);
+		SetErrorReported(ETrue);
+		Complete(iFirstError);
 		}
 	else
 		{
@@ -119,12 +130,30 @@ void CCmdCifTest::TestCifL(CCommandInfoFile* aCif)
 	iCurrentCif = aCif;
 	if (iVerbose) Printf(_L("Checking %S\r\n"), &aCif->CifFileName());
 
-	const TDesC& scriptData = aCif->SmokeTest();
-	if (scriptData.Length() == 0)
+	TInt smokeTestLineNum = 0;
+	const TDesC* scriptData = &aCif->SmokeTest();
+	if (scriptData->Length() == 0)
 		{
-		if (iVerbose) Printf(_L("Cif has no smoketest section\r\n"));
-		TestCompleted(KErrNone);
-		return;
+		if (iAll)
+			{
+			// Assume it's worth trying "commandname $Quiet", and wrap it in a timeout in case it enters interactive mode
+			// We're calling exes directly on the assumption that all built-in commands should have a smoketest defined!
+			iDummyScriptBuf.Zero();
+			_LIT(KScript, "start -wckt 5 %S $Quiet");
+			iDummyScriptBuf.AppendFormatL(KScript, &aCif->Name());
+			scriptData = &iDummyScriptBuf;
+			if (iVerbose) Printf(_L("Cif has no smoketest section, running %S\r\n"), scriptData);
+			}
+		else
+			{
+			if (iVerbose) Printf(_L("Cif has no smoketest section\r\n"));
+			TestCompleted(KErrNone);
+			return;
+			}
+		}
+	else
+		{
+		smokeTestLineNum = aCif->GetSmokeTestStartingLineNumber();
 		}
 
 	iEnvForScript = CEnvironment::NewL(Env());
@@ -140,7 +169,7 @@ void CCmdCifTest::TestCifL(CCommandInfoFile* aCif)
 	iEnvForScript->SetL(KScriptPath, parse.DriveAndPath());
 	iEnvForScript->SetL(_L("0"), iFileName);
 
-	iParser = CParser::NewL(CParser::EExportLineNumbers, scriptData, IoSession(), Stdin(), Stdout(), Stderr(), *iEnvForScript, gShell->CommandFactory(), this, aCif->GetSmokeTestStartingLineNumber());
+	iParser = CParser::NewL(CParser::EExportLineNumbers, *scriptData, IoSession(), Stdin(), Stdout(), Stderr(), *iEnvForScript, gShell->CommandFactory(), this, smokeTestLineNum);
 	iParser->Start();
 	}
 
@@ -149,6 +178,7 @@ void CCmdCifTest::HandleParserComplete(CParser& /*aParser*/, const TError& aErro
 	TInt err = aError.Error();
 	if (err)
 		{
+		if (!iFirstError) iFirstError = err;
 		iFailures++;
 		PrintError(err, _L("%S failed at line %d"), &aError.ScriptFileName(), aError.ScriptLineNumber());
 		}

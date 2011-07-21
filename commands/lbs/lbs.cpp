@@ -46,7 +46,7 @@ private:
 	void PrintModuleDetail(TPositionModuleInfo& aModInfo);
 	void DoListModuleL();
 	void DoListModuleS60L();
-	void DoLocation();
+	void DoLocationL();
 	void DoEnableModuleL(TBool aEnable = ETrue);	
 #if !defined (FSHELL_PLATFORM_S60)
 	void DoSynchTimeL();
@@ -98,7 +98,6 @@ CCmdLbs::CCmdLbs()
 	iOptModuleIndex = -1;
 	iOptTimeoutSec = 300;
 	iOptLoops = 1;
-	iActiveWait = new (ELeave) CActiveSchedulerWait;	
 	}
 
 
@@ -145,6 +144,8 @@ void CCmdLbs::OptionsL(RCommandOptionList& aOptions)
 
 void CCmdLbs::DoRunL()
 	{
+	iActiveWait = new (ELeave) CActiveSchedulerWait;	
+
 	Printf(_L("Connecting to RPositionServer...\r\n"));
 	TInt err = iPosSrv.Connect();
 	LeaveIfErr(err, _L("Cannot connect to position server"));
@@ -152,7 +153,7 @@ void CCmdLbs::DoRunL()
 	switch(iCommand)
 		{
 		case ECmdLocation:
-			DoLocation();
+			DoLocationL();
 			break;
 		case ECmdListModule:
 			DoListModuleL();
@@ -178,7 +179,7 @@ void CCmdLbs::DoRunL()
 		
 	}
 
-void CCmdLbs::DoLocation()
+void CCmdLbs::DoLocationL()
 	{
 	TInt VerboseLevel = iVerbose.Count();		
 	TInt err;

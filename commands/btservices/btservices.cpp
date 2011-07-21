@@ -31,23 +31,7 @@ class CBTEngSettings;
 #include <btengsettings.h>
 #endif
 
-CBtServiceView::CBtServiceView()
-	{
-	}
-
-CBtServiceView::~CBtServiceView()
-	{
-	}
-
-void CBtServiceView::PrintTextMsg(TInt /*aVerboseLevel*/, const TDesC& /*aMsg*/)
-	{
-	}
-
-void CBtServiceView::AsyncCompleted()
-	{
-	}
-
-class CCmdBtsvc : public CCommandBase, public CBtServiceView 
+class CCmdBtsvc : public CCommandBase, public MBtServiceView 
 	{
 public:
 	static CCommandBase* NewLC();
@@ -114,7 +98,6 @@ CCommandBase* CCmdBtsvc::NewLC()
 
 CCmdBtsvc::CCmdBtsvc()
 	{
-	iActiveWait = new (ELeave) CActiveSchedulerWait;
 	}
 
 
@@ -169,6 +152,8 @@ void CCmdBtsvc::OptionsL(RCommandOptionList& aOptions)
 
 void CCmdBtsvc::DoRunL()
 	{
+	iActiveWait = new (ELeave) CActiveSchedulerWait;
+
 	switch (iCommand)
 		{
 		case ECmdDevice:

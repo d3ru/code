@@ -33,7 +33,7 @@ class MParserObserver
 public:
 	virtual void HandleParserComplete(CParser& aParser, const TError& aError) = 0;
 	virtual void HandleParserExit(CParser& aParser);
-	virtual TBool AboutToExecutePipeLineStage(const TDesC& aOriginalLine, const TDesC& aExpandedLine, const TDesC& aPipelineCondition);
+	virtual TBool AboutToExecutePipeLineStageL(const TDesC& aOriginalLine, const TDesC& aExpandedLine, const TDesC& aPipelineCondition);
 	virtual void LineReturned(TInt aError);
 	};
 

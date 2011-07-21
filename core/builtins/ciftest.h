@@ -14,9 +14,13 @@
 #define CIFTEST_H
 
 #include <fshell/ioutils.h>
+#include <fshell/stringhash.h>
+#include <fshell/descriptorutils.h>
 #include "parser.h"
 
 using namespace IoUtils;
+using LtkUtils::RStringHash;
+using LtkUtils::RLtkBuf;
 
 class CCmdCifTest : public CCommandBase, public MParserObserver
 	{
@@ -41,16 +45,20 @@ private:
 	HBufC* iCmd;
 	TBool iVerbose;
 	TBool iKeepGoing;
+	TBool iAll;
 
 	TFileName iFileName;
 	CCommandInfoFile* iCurrentCif;
 	CParser* iParser;
 	CEnvironment* iEnvForScript;
 	RPointerArray<HBufC> iCifFiles;
+	RStringHash<HBufC*> iCifNameHash; // Maps cif name to the full path HBufC* in iCifFiles
+	RLtkBuf iDummyScriptBuf;
 
 	TInt iPasses;
 	TInt iFailures;
 	TInt iNextCif;
+	TInt iFirstError;
 	};
 
 #endif

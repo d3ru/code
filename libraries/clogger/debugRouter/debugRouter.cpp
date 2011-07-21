@@ -405,7 +405,10 @@ DCloggerDebugRouterLDD::~DCloggerDebugRouterLDD()
     {
 	//__BREAKPOINT();
 	ASSERT(!iRouter->iClientStatus); // Should have received a close message first
-	iRouter->iClient = NULL;
+	if (iRouter)
+		{
+		iRouter->iClient = NULL;
+		}
 	}
 
 void DCloggerDebugRouter::KillThreadDFC(TAny* /*aSelfP*/)

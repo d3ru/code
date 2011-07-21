@@ -113,7 +113,6 @@ CCommandBase* CCmdCalendar::NewLC()
 CCmdCalendar::CCmdCalendar()
 	{
 	iCurOpr = ECONone;
-	iActiveWait = new (ELeave) CActiveSchedulerWait;
 	}
 
 
@@ -224,6 +223,8 @@ TInt CCmdCalendar::CheckAlarmAlertServer()
 
 void CCmdCalendar::DoRunL()
 	{
+	iActiveWait = new (ELeave) CActiveSchedulerWait;
+
 	TInt res;
 	res = CheckAlarmAlertServer();
 	LeaveIfErr(res, _L("!AlarmAlertServer not running"));

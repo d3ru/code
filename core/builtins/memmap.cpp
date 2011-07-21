@@ -106,6 +106,12 @@ void CCmdMemmap::DoRunL()
 			RProcess proc;
 			TInt err = proc.Open(iFullName, EOwnerThread);
 			if (err) continue;
+			if (proc.ExitType() != EExitPending)
+				{
+				// No point trying to read mem for a process that has exited
+				proc.Close();
+				continue;
+				}
 			TUint pid = TUint(proc.Id());
 			proc.Close();
 			ShowMapForProcessL(pid, iFullName);

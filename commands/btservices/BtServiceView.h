@@ -18,15 +18,11 @@ const TInt KMaxDescriptorLength = 256;
 //this class can be used as Interface to receive progress information 
 //from CBtServicesEng
 //
-class CBtServiceView
+class MBtServiceView
 	{
-public:
-	CBtServiceView();
-	virtual ~CBtServiceView();
-	
-	virtual void PrintTextMsg(TInt aVerboseLevel, const TDesC& aMsg);
-	virtual void AsyncCompleted();
-	
+public:	
+	virtual void PrintTextMsg(TInt aVerboseLevel, const TDesC& aMsg)=0;
+	virtual void AsyncCompleted()=0;
 	};
 
 #endif

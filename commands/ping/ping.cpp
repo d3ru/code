@@ -18,7 +18,7 @@ using namespace IoUtils;
 
 
 
-class CCmdPing : public CCommandBase, public CPingContainer
+class CCmdPing : public CCommandBase, public MPingContainer
 	{
 public:
 	static CCommandBase* NewLC();
@@ -58,7 +58,6 @@ CCommandBase* CCmdPing::NewLC()
 
 CCmdPing::CCmdPing()
 	{
-	iActiveWait = new (ELeave) CActiveSchedulerWait;
 	}
 
 
@@ -112,6 +111,8 @@ void CCmdPing::OptionsL(RCommandOptionList& aOptions)
 
 void CCmdPing::DoRunL()
 	{
+	iActiveWait = new (ELeave) CActiveSchedulerWait;
+
 	InitModelL();
 		
 	iPingModel->SetConsole(this);

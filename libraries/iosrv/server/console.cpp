@@ -584,8 +584,8 @@ void CIoConsole::TConsoleWriteRequest::PrepareL()
 
 void CIoConsole::TConsoleWriteRequest::CompleteD(TInt aError)
 	{
-	delete iBuf;
-	delete iBuf8;
+	delete iBuf; iBuf = NULL;
+	delete iBuf8; iBuf8 = NULL;
 	iWriter.IowComplete(aError);
 	delete this;
 	}
@@ -682,7 +682,7 @@ void CIoConsole::TConsoleSetTitleRequest::PrepareL()
 
 void CIoConsole::TConsoleSetTitleRequest::CompleteD(TInt aError)
 	{
-	delete iTitle;
+	delete iTitle; iTitle = NULL;
 	iWriter.IowSetTitleComplete(aError);
 	delete this;
 	}

@@ -423,6 +423,7 @@ void CSymbolics::AddCodeseg(const QString& aName, int aSize, TProcessId aProcess
 		if (*iLoadedCodesegs[i] == *codeseg)
 			{
 			delete iLoadedCodesegs[i];
+			iLoadedCodesegs[i] = NULL; // CodeScanner...
 			iLoadedCodesegs.replace(i, codeseg);
 			return;
 			}

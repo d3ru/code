@@ -29,3 +29,4 @@ USERINCLUDE	..\debugRouter
 LIBRARY		euser.lib clogger.lib efsrv.lib
 LIBRARY 	bafl.lib
 LIBRARY		flogger.lib
+LIBRARY		ltkutils.lib

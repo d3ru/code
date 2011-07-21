@@ -450,7 +450,7 @@ void CBtServicesEng::DisplayLocalInfoL()
 	}
 
 
-void CBtServicesEng::SetView(CBtServiceView* apView)
+void CBtServicesEng::SetView(MBtServiceView* apView)
 	{
 	iView = apView;
 	}
@@ -616,17 +616,18 @@ void CBtServicesEng::DoNextRecordRequestCompleteL(TSdpServRecordHandle aHandle, 
 		}
 	}
 
-void CBtServicesEng::SdpCompletedWithError(const TInt aError)
+void CBtServicesEng::SdpCompletedWithError(TInt aError)
 	{
 	
-	HBufC* buf = HBufC::NewLC(KMaxDescriptorLength);
+	HBufC* buf = HBufC::New(KMaxDescriptorLength);
+	if (!buf) return; // There's probably something better could be done here, but it's not that important
 	TPtr errorText = buf->Des();
 	AppendErrorMessage(aError,errorText);
 //	TGulAlignment position(EHRightVTop);
 //	iView->GetEikonEnv()->InfoMsgWithAlignmentAndDuration(position,errorText,KErrorMsgDuration);
 	ReportMessage(0, *buf);
 	
-	CleanupStack::PopAndDestroy();
+	delete buf;
 	iSdpAgent->Cancel();
 //	iView->DimRefreshButton(EFalse);
 //	iView->DimCancelButton(ETrue);
@@ -635,7 +636,7 @@ void CBtServicesEng::SdpCompletedWithError(const TInt aError)
 	
 	}
 
-void CBtServicesEng::AppendErrorMessage(const TInt aError, TDes& aBuf) const
+void CBtServicesEng::AppendErrorMessage(TInt aError, TDes& aBuf) const
 	{
 	for (TInt i = 0; i < iErrorCodes.Count(); i++)
 		{

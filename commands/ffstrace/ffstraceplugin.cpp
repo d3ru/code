@@ -26,7 +26,7 @@
 NONSHARABLE_CLASS(CFfsTracerPluginFactory) : public CFsPluginFactory
 	{
 public:
-	static CFfsTracerPluginFactory* NewL();
+	static CFfsTracerPluginFactory* New();
 
 	// from CFsPluginFactory
 	virtual TInt Install();
@@ -65,12 +65,12 @@ public:
 
 extern "C" EXPORT_C CFsPluginFactory* CreateFileSystem()
 	{
-	return CFfsTracerPluginFactory::NewL();
+	return CFfsTracerPluginFactory::New();
 	}
 
-CFfsTracerPluginFactory* CFfsTracerPluginFactory::NewL()
+CFfsTracerPluginFactory* CFfsTracerPluginFactory::New()
 	{
-	return(new(ELeave) CFfsTracerPluginFactory());
+	return new CFfsTracerPluginFactory();
 	}
 
 CFfsTracerPluginFactory::CFfsTracerPluginFactory()

@@ -60,7 +60,10 @@ CRemoteConsole* CRemoteConsole::New(HINSTANCE aAppHandle, CSocketCommandReader& 
 
 CRemoteConsole::~CRemoteConsole()
 	{
-	iConsole->StopCaptureToFile();
+	if (iConsole)
+		{
+		iConsole->StopCaptureToFile();
+		}
 	delete iCommandReader;
 	delete iKeyEventSocket;
 	delete iConsole;

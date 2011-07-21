@@ -15,12 +15,7 @@
 #include <fshell/heaputils.h>
 using LtkUtils::RAllocatorHelper;
 
-#ifdef EKA2
-NONSHARABLE_CLASS(CIoConsole)
-#else
-class CIoConsole
-#endif
-	 : public CColorConsoleBase
+NONSHARABLE_CLASS(CIoConsole) : public CColorConsoleBase
 	{
 public:
 	CIoConsole(); // Only for use by iocons.dll

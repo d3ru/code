@@ -61,7 +61,7 @@
 #ifdef IAPSETTING
 #define MAX_IAP_LENGTH	5	//Must match the value of the pattern in the RSS file!!!
 #endif
-class CPingContainer;
+class MPingContainer;
 class CPingSender;
 
 
@@ -113,7 +113,7 @@ public:
 	//return the current preferences
 	void GetPreferences(TPreferences &aPref);
 	static void DefaultPreferences(TPreferences &aPref);
-	void SetConsole(CPingContainer *aConsole);
+	void SetConsole(MPingContainer *aConsole);
 	TDes* GetHostName();
 	void SetHostName(const TDesC& ahostname);
 	
@@ -156,7 +156,7 @@ private:
 
 private:
 	
-    CPingContainer *iConsole;
+    MPingContainer *iConsole;
 	RSocketServ iSockServ;  // Socket Server
 	RSocket iSocket;                                // Socket
 	RHostResolver iHostResolv;      //Resolver

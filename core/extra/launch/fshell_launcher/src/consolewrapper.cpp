@@ -116,7 +116,9 @@ void CDelayedDestroy::Trigger()
 void CDelayedDestroy::RunL()
 	{
 	DEBUG_PRINTF("CDelayedDestroy::RunL 0x%08x parent 0x%08x", this, iParent);
-	delete iParent;
+	// Rejiggled for CodeScanner
+	CConsoleWrapper* parent = iParent;
+	delete parent;
 	}
 
 void CDelayedDestroy::DoCancel()
