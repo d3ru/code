@@ -39,7 +39,8 @@ else if var Usecase == profiling
 	# uprofiler will take care of enabling category 18 (EProfiling)
 	$StartProfiler
 else if var Usecase == cpuusage
-	$TraceCmd -m1 -f $OnByDefault -f 4 $QUIETLY
+	# Add CPU usage category, and bump buffer size to 10MB
+	$TraceCmd -m1 -f $OnByDefault -f 4 -b 10240 $QUIETLY
 else
 	error -6 "Usecase not recognised!"
 endif
