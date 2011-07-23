@@ -47,4 +47,6 @@ end
 smpsafe
 #endif
 
+#ifdef FSHELL_VARIANT_NAME
 featurevariant
+#endif

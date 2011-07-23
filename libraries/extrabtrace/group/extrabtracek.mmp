@@ -49,4 +49,6 @@ library			ekern.lib
 
 capability		all
 
+#ifdef FSHELL_VARIANT_NAME
 featurevariant
+#endif

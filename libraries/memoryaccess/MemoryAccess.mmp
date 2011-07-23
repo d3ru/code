@@ -63,4 +63,6 @@ start wins
 win32_headers
 end
 
+#ifdef FSHELL_VARIANT_NAME
 featurevariant
+#endif

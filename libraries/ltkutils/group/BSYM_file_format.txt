@@ -126,7 +126,7 @@ String table
 
 Wherever variable-length strings are required (eg, for symbol names) they are referred to by an offset into the string table. The strings in the table can be variable length, and are stored as a leading length byte, followed by the string data. The string is stored 8-bit, without a trailing null byte. Strings that are longer than 254 characters are handled by having the length byte 0xFF, followed by a 16-bit length, followed by the data. The string table is not aligned in any way. A zero-length string is theoretically supported by a length byte of zero without any data following it (so following it would either be End-Of-File or the length byte of the next string).
 
-LEN Data               LEN Data 
+LEN Data-------------| LEN Data------|
 05 'H' 'e' 'l' 'l' 'o' 03  'a' 'l' 'l'
 
 A really long string:

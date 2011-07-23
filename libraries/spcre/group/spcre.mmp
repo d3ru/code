@@ -56,4 +56,6 @@ library				euser.lib
 library				libpcre.lib
 library				ltkutils.lib
 
+#ifdef FSHELL_VARIANT_NAME
 featurevariant
+#endif

@@ -64,6 +64,10 @@ Added start-trace and start-usb scripts.
 
 =item *
 
+Fixed Bug 3373715 "PIPS in S60V3" by enabling PIPS support in S60 3rd edition build.
+
+=item *
+
 Changed fshell's command factory to only treat files in '\resource\cif\fshell' that end with '.cif' as commands. This is to allow other extensions to be used for things like '==include' statements.
 
 =item *
