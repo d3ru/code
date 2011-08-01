@@ -188,7 +188,7 @@ void CPing::SetHostName(const TDesC& ahostname)
 	iHostname=ahostname;
 }
 
-void CPing::SetConsole(CPingContainer* aConsole)
+void CPing::SetConsole(MPingContainer* aConsole)
 {
 	iConsole=aConsole;
 }

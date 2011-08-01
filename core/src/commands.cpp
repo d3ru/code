@@ -668,6 +668,10 @@ void CCmdBg::DoRunL()
 		{
 		iForegroundAdjuster = CForegroundAdjuster::NewL(*this, jobId, EFalse);
 		}
+	else
+		{
+		Complete();
+		}
 	}
 
 void CCmdBg::ArgumentsL(RCommandArgumentList& aArguments)
@@ -2070,7 +2074,9 @@ void CCmdEnv::DoRunL()
 		else if (env.IsDes(key))
 			{
 			const TDesC& des = env.GetAsDesL(key);
-			Printf(_L("%S=%S\r\n"), &key, &des);
+			Printf(_L("%S="), &key);
+			Write(des);
+			Write(_L("\r\n"));
 			}
 		}
 	CleanupStack::PopAndDestroy(&keys);
@@ -3646,17 +3652,32 @@ void CCmdStart::DoRunL()
 		}
 	if (iTimeout && !(iRendezvous || iWait))
 		{
-		LeaveIfErr(KErrArgument, _L("--timeout must be used with either --rendezvous or --wait"));
+		LeaveIfErr(KErrArgument, _L("--timeout can only be used with either --rendezvous or --wait"));
 		}
 	if (iMeasure && !(iRendezvous || iWait))
 		{
-		LeaveIfErr(KErrArgument, _L("--measure must be used with either --rendezvous or --wait"));
+		LeaveIfErr(KErrArgument, _L("--measure can only be used with either --rendezvous or --wait"));
+		}
+	if (iChild && !(iRendezvous || iWait))
+		{
+		LeaveIfErr(KErrArgument, _L("--child requires that either --rendezvous or --wait is also specified"));
 		}
 
 	TRequestStatus waitStatus;
-	RProcess process;
-	LeaveIfErr(process.Create(*iExe, iCommandLine ? *iCommandLine : KNullDesC(), EOwnerThread), _L("Couldn't create \"%S\" process"), iExe);
-	CleanupClosePushL(process);
+	RChildProcess child;
+	RProcess& process(child.Process());
+	TInt err;
+	if (iChild)
+		{
+		TRAP(err, child.CreateL(*iExe, iCommandLine ? *iCommandLine : KNullDesC(), IoSession(), Stdin(), Stdout(), Stderr(), Env()));
+		}
+	else
+		{
+		// Bypass the RChildProcess wrappings and access the process directly
+		err = process.Create(*iExe, iCommandLine ? *iCommandLine : KNullDesC(), EOwnerThread);
+		}
+	LeaveIfErr(err, _L("Couldn't create \"%S\" process"), iExe);
+	CleanupClosePushL(child);
 
 	if (iRendezvous)
 		{
@@ -3710,6 +3731,10 @@ void CCmdStart::DoRunL()
 				process.LogonCancel(waitStatus);
 				}
 			User::WaitForRequest(waitStatus);
+			if (iKillOnTimeout)
+				{
+				process.Kill(KErrAbort);
+				}
 			LeaveIfErr(KErrTimedOut, _L("Timed out waiting for \"%S\""), iExe);
 			}
 		else
@@ -3726,7 +3751,7 @@ void CCmdStart::DoRunL()
 		if (iMeasure) endTime = User::NTickCount();
 		}
 
-	CleanupStack::PopAndDestroy(&process);
+	CleanupStack::PopAndDestroy(&child);
 
 	if (iMeasure)
 		{
@@ -3772,12 +3797,16 @@ void CCmdStart::OptionsL(RCommandOptionList& aOptions)
 	_LIT(KOptTimeout, "timeout");
 	_LIT(KOptMeasure, "measure");
 	_LIT(KOptQuiet, "quiet");
+	_LIT(KOptChild, "child");
+	_LIT(KOptKillOnTimeout, "kill-on-timeout");
 
 	aOptions.AppendBoolL(iRendezvous, KOptRendezvous);
 	aOptions.AppendBoolL(iWait, KOptWait);
 	aOptions.AppendIntL(iTimeout, KOptTimeout);
 	aOptions.AppendBoolL(iMeasure, KOptMeasure);
 	aOptions.AppendBoolL(iQuiet, KOptQuiet);
+	aOptions.AppendBoolL(iChild, KOptChild);
+	aOptions.AppendBoolL(iKillOnTimeout, KOptKillOnTimeout);
 	}
 
 
@@ -4178,7 +4207,7 @@ void CCmdDebug::HandleParserComplete(CParser&, const TError& aError)
 	Complete(aError.Error());
 	}
 
-TBool CCmdDebug::AboutToExecutePipeLineStage(const TDesC& aOriginalLine, const TDesC& aExpandedLine, const TDesC& /*aPipelineCondition*/)
+TBool CCmdDebug::AboutToExecutePipeLineStageL(const TDesC& aOriginalLine, const TDesC& aExpandedLine, const TDesC& /*aPipelineCondition*/)
 	{
 	Write(aOriginalLine);
 	Write(KNewLine);

@@ -107,7 +107,7 @@ TBool CCmdIf::ElseL(CCommandBase* aElseCommand, const TDesC* aCondition)
 	return ETrue;
 	}
 
-TBool CCmdIf::AboutToExecutePipeLineStage(const TDesC& aOriginalLine, const TDesC& /*aExpandedLine*/, const TDesC& /*aPipelineCondition*/)
+TBool CCmdIf::AboutToExecutePipeLineStageL(const TDesC& aOriginalLine, const TDesC& /*aExpandedLine*/, const TDesC& /*aPipelineCondition*/)
 	{
 	if (iState == ERunning)
 		{

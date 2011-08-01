@@ -36,3 +36,7 @@ Assume the image file does not have a ROM header even if resides in an XIP ROM.
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+find -p1 ?:\sys\bin\fshell.exe | export -s FSHELL_EXE_PATH
+e32header $FSHELL_EXE_PATH $Quiet

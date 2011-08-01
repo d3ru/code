@@ -70,7 +70,7 @@ void CCmdWhile::DoRunL()
 	Complete(KRequestPending);
 	}
 
-TBool CCmdWhile::AboutToExecutePipeLineStage(const TDesC& aOriginalLine, const TDesC& /*aExpandedLine*/, const TDesC& aPipelineCondition)
+TBool CCmdWhile::AboutToExecutePipeLineStageL(const TDesC& aOriginalLine, const TDesC& /*aExpandedLine*/, const TDesC& aPipelineCondition)
 	{
 	if (iState == EAssemblingWhileBlock)
 		{

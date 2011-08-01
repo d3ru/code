@@ -22,6 +22,8 @@ var myarg == "abc123" || $Error
 if var myoptionalarg defined
 	var EXPECTEDMYOPTIONALARG defined || $Error
 	var myoptionalarg == "$EXPECTEDMYOPTIONALARG" || $Error
+else
+	var EXPECTEDMYOPTIONALARG defined && $Error # If EXPECTEDMYOPTIONALARG was defined, myoptionalarg should be too
 endif
 
 exit # Like __END__ in perl this stops the fshell parser tripping over the CIF data

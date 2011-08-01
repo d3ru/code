@@ -331,7 +331,8 @@ EXPORT_C void CBtraceContext::FindWindowGroupsByThreadName(const TDesC& aPattern
 				const TWindowGroup& thisWindowGroup = iWindowGroups[i];
 				if (thisWindowGroup.iThreadId.Id() == thread.iKernelId)
 					{
-					aWindowGroups.AppendL(thisWindowGroup.iId);
+					// Should we try and handle this error?
+					(void)aWindowGroups.Append(thisWindowGroup.iId);
 					}
 				}
 			}

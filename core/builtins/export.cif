@@ -32,3 +32,6 @@ Read the value from C<stdin>. May not be used in conjunction with a value argume
 
 Copyright (c) 2006-2010 Accenture. All rights reserved.
 
+==smoke-test
+
+# Handled in basic tests

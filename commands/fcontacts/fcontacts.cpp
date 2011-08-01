@@ -30,7 +30,7 @@ private:
 	
 	TInt CheckDuplicateAndUpdate(CContactItemFieldSet &aFieldSet, CContactItemField &aField);	
 	void FillContactFieldSetL(CContactItemFieldSet &aFieldSet, TUid aType);
-	void PrintContact(CContactItem* aContact);
+	void PrintContactL(CContactItem* aContact);
 	
 	void PrintGroupContentsL(CContactItem* aContactGroup, TInt aVerboseLevel);
 	void PrintGroupsJoined(CContactItem* aContact, TInt aVerboseLevel);	
@@ -169,8 +169,9 @@ void CCmdContacts::DoListL()
 		CContactItem* contact = NULL;
 		TRAPD(err, contact = iDb->ReadContactL(iOptContactId));
 		LeaveIfErr(err, _L("Couldn't read contact %d"), iOptContactId);
-		PrintContact(contact);
-		delete contact;
+		CleanupStack::PushL(contact);
+		PrintContactL(contact);
+		CleanupStack::PopAndDestroy(contact);
 		}
 	else
 		{
@@ -207,7 +208,7 @@ void CCmdContacts::DoListL()
 				}
 			if (show)
 				{
-				PrintContact(contact);
+				PrintContactL(contact);
 				}
 			CleanupStack::PopAndDestroy(contact);
 			if (show && iShowFirstPhoneOnly)
@@ -372,6 +373,7 @@ void CCmdContacts::DoAddToGroupL()
 // FOR TEST PURPOSE
 //to check if a field of the same type has already existed in a FieldSet.
 //if yes, delete that field first and then add it
+/*
 TInt CCmdContacts::CheckDuplicateAndUpdate(CContactItemFieldSet &aFieldSet, CContactItemField &aField) 
 	{
 	const CContentType &newContentType=aField.ContentType();
@@ -397,6 +399,7 @@ TInt CCmdContacts::CheckDuplicateAndUpdate(CContactItemFieldSet &aFieldSet, CCon
 	
 	return 0;
 	}
+*/
 
 //this function will retrieve infomation from command line arguments and fill them into 
 //a field set, FieldSet doesn't have to be empty
@@ -516,7 +519,7 @@ void CCmdContacts::FillContactFieldSetL(CContactItemFieldSet &aFieldSet, TUid aT
 		}
 	}
 
-void CCmdContacts::PrintContact(CContactItem* aContact)
+void CCmdContacts::PrintContactL(CContactItem* aContact)
 	{
 	TContactItemId ContactId = aContact->Id();
 	TUid ContactType = aContact->Type();

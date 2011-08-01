@@ -89,6 +89,10 @@ Print information about every test even when they succeed. By default only failu
 
 Rather than stop on the first failure, attempt to run all tests even if some of them fail. Only relevant if no command argument is given.
 
+==option bool a all
+
+Attempt to test all commands even those that don't include a C<==smoke-test> section. Such commands will be tested as if they had a smoke-test section containing C<commandname $Quiet>.
+
 ==copyright
 
 Copyright (c) 2010 Accenture. All rights reserved.

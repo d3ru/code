@@ -71,7 +71,7 @@ public:
 	~CCmdInput();
 private:
 	CCmdInput();
-	void ShowKeyMappings();
+	void ShowKeyMappingsL();
 	void SimulateKeyL(TInt aConsoleKey);
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
@@ -103,7 +103,7 @@ CCmdInput::CCmdInput()
 	{
 	}
 
-void CCmdInput::ShowKeyMappings()
+void CCmdInput::ShowKeyMappingsL()
 	{
 	IoUtils::CTextBuffer* buf = IoUtils::CTextBuffer::NewLC(0x100);
 
@@ -179,7 +179,7 @@ void CCmdInput::DoRunL()
 	{
 	if (iShow)
 		{
-		ShowKeyMappings();
+		ShowKeyMappingsL();
 		}
 	else if (iOptions.IsPresent(&iScanCode))
 		{

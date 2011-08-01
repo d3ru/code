@@ -34,7 +34,7 @@ private: // From CCommandBase
 	virtual void OptionsL(RCommandOptionList& aOptions);
 private: // From MConditionalBlock
 	virtual void HandleParserComplete(CParser& aParser, const TError& aError);
-	virtual TBool AboutToExecutePipeLineStage(const TDesC& aOriginalLine, const TDesC& aExpandedLine, const TDesC& aPipelineCondition);
+	virtual TBool AboutToExecutePipeLineStageL(const TDesC& aOriginalLine, const TDesC& aExpandedLine, const TDesC& aPipelineCondition);
 	virtual TBool Break();
 	virtual TBool Continue();
 	virtual void EndBlockL(CCommandBase* aEndCommand);

@@ -18,12 +18,7 @@
 #include "remote_console_config.h"
 
 
-#ifdef EKA2
-NONSHARABLE_CLASS(CRemoteConsole)
-#else
-class CRemoteConsole
-#endif
-	 : public CConsoleBase
+NONSHARABLE_CLASS(CRemoteConsole) : public CConsoleBase
 	{
 public:
 	CRemoteConsole();

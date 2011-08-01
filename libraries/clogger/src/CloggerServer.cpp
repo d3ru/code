@@ -1592,7 +1592,7 @@ void CCloggerServer::NotifySessionsOfChangedTag(CCloggerServer::TTagData* tag)
 	CCloggerSession* sess;
 	TServerCallback callback(ETagEnabledChanged);
 	TCallbackWriter writer(callback, NULL);
-	writer.AddL((TUint)tag->iEnabled);
+	TRAP_IGNORE(writer.AddL((TUint)tag->iEnabled)); // Not going to leave
 
 	while ((sess = (CCloggerSession*)iSessionIter++) != NULL)
 		{

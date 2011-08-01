@@ -810,9 +810,9 @@ void CShell::CoHandleKey(TUint aKeyCode, TUint aModifiers)
 				}
 			else
 				{
-				ClaimJobsLockLC();
+				iJobsLock.Wait();
 				ForegroundJob().Kill();
-				CleanupStack::PopAndDestroy(); // Jobs lock.
+				iJobsLock.Signal();
 				}
 			SetToForeground();
 			break;
@@ -821,10 +821,10 @@ void CShell::CoHandleKey(TUint aKeyCode, TUint aModifiers)
 			{
 			if (iForegroundJobId != KNoForegroundJob)
 				{
-				ClaimJobsLockLC();
+				iJobsLock.Wait();
 				CJob& job = ForegroundJob();
 				job.Suspend();
-				CleanupStack::PopAndDestroy(); // Jobs lock.
+				iJobsLock.Signal();
 				SetToForeground();
 				Printf(_L("[%d] %S\t\t%S\r\n"), iForegroundJobId, ShStringify::JobStatus(job.Status()), job.Name());
 				PrintPrompt();

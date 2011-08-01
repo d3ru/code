@@ -1026,6 +1026,7 @@ void CKernListBoxModel::RefreshDataL(TInt aIndex)
 			info = reinterpret_cast<TObjectKernelInfo*>(inf); // These aren't actually related classes, just convenient
 			}
 		delete inf;
+		inf = NULL;
 		mem.ReleaseCodeSegMutex();
 		}
 	else if (iCurrentList == EListHal)

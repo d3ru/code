@@ -330,7 +330,10 @@ CGuiConsAppUi::~CGuiConsAppUi()
 	{
 	CKeyCapturer::DeleteCapturer();
 
-	iAppView->RemoveEditorFromStack(this);
+	if (iAppView)
+		{
+		iAppView->RemoveEditorFromStack(this);
+		}
 	delete iConsoleServer;
 	iTabs.ResetAndDestroy();
 	delete iNaviDecorator;

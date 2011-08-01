@@ -170,7 +170,8 @@ void CCmdLocalDrive::DoRunL()
 		while (bytesRead < iCaps.iSize)
 			{
 			buf.Zero();
-			LeaveIfErr(iDrive.Read(bytesRead, KBufSize, buf), _L("Failed to read %Ld+%d bytes from partition"), bytesRead, KBufSize);
+			TInt toRead = Min(KBufSize, iCaps.iSize - bytesRead);
+			LeaveIfErr(iDrive.Read(bytesRead, toRead, buf), _L("Failed to read %Ld+%d bytes from partition"), bytesRead, toRead);
 			bytesRead += buf.Length();
 			if (file.SubSessionHandle())
 				{
@@ -221,8 +222,8 @@ TInt CCmdLocalDrive::OpenL(TInt aDrive, TBool aLeaveOnConnectErr)
 	{
 	if (aDrive >= KMaxLocalDrives) LeaveIfErr(KErrArgument, _L("drive number %d is outside of KMaxLocalDrives (%d)"), aDrive, KMaxLocalDrives);
 
-	TBool changed; // What is this for?
-	TInt err = iDrive.Connect(aDrive, changed);
+	TBool changedFlag = EFalse; // What is this for?
+	TInt err = iDrive.Connect(aDrive, changedFlag);
 	if (err == KErrNone)
 		{
 		TPckg<TLocalDriveCapsV2> capsBuf(iCaps);

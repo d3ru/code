@@ -18,12 +18,7 @@
 
 class CPing;
 
-//this class is used as pure interface,
-//should be named as M class by Symbian convention.
-//the class name is retained for the purpose of 
-//reference to original class name in pingapp.exe
-
-class CPingContainer
+class MPingContainer
 {
 public:
 	//TKeyResponse OfferKeyEventL(const TKeyEvent& aKeyEvent,TEventCode aType);

@@ -26,7 +26,7 @@ L<fg|fg>, L<jobs|jobs>, L<disown|disown>
 
 ==argument string job_spec optional
 
-The identifier of the job, as given by the C<jobs> command.
+The identifier of the job, as given by the C<jobs> command. If not specified, the most recent job (if any) is assumed, and no error is returned if there is no such job.
 
 ==copyright
 

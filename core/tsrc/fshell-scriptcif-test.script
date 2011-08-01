@@ -35,7 +35,7 @@ export myarg "Something that isn't abc123."
 source $SCRIPT_PATH\tscriptargs.script abc123 || $Error
 var myarg == "Something that isn't abc123." || $Error
 
-fshell tlotsofscriptargs abc123 123 0x123 $SCRIPT_PATHtlotsofscriptargs.script 3.141 enumsecondvalue || $Error
+fshell $SCRIPT_PATH\tlotsofscriptargs.script abc123 123 0x123 $SCRIPT_PATHtlotsofscriptargs.script 3.141 enumsecondvalue || $Error
 
 # Test that scripts can be treated as commands
 tscriptargs abc123 || $Error

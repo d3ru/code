@@ -817,6 +817,8 @@ private:
 	HBufC* iCommandLine;
 	TBool iMeasure;
 	TBool iQuiet;
+	TBool iChild;
+	TBool iKillOnTimeout;
 	};
 
 
@@ -911,7 +913,7 @@ private: // From CCommandBase.
 	virtual void OptionsL(RCommandOptionList& aOptions);
 private: // From MParserObserver.
 	virtual void HandleParserComplete(CParser& aParser, const TError& aError);
-	virtual TBool AboutToExecutePipeLineStage(const TDesC& aOrignalLine, const TDesC& aExpandedLine, const TDesC& aPipelineCondition);
+	virtual TBool AboutToExecutePipeLineStageL(const TDesC& aOrignalLine, const TDesC& aExpandedLine, const TDesC& aPipelineCondition);
 	virtual void LineReturned(TInt aError);
 private:
 	TFileName2 iFileName;
