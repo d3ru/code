@@ -1613,16 +1613,21 @@ TInt DMemoryAccess::GetAllChunksInProcess(TUint aProcessId, void* aKernelInfoBuf
 		return KErrNotFound;
 		}
 
-	TInt c = proc->iHandles.Count();
+#ifdef FSHELL_DOBJECTIX_SUPPORT
+	DObjectIxNinePointTwoHack& handles = *(DObjectIxNinePointTwoHack*)proc->iHandles;
+#else
+	RObjectIx& handles = proc->iHandles;
+#endif
+	TInt c = handles.Count();
 	HBuf8* buf = HBuf::New(c * (sizeof(DObject*) + sizeof(TLinAddr)));
 	if (buf)
 		{
 		void** ptr = (void**)buf->Ptr();
 		NKern::LockSystem();
-		c = Min(proc->iHandles.Count(), c); // In case it's changed
+		c = Min(handles.Count(), c); // In case it's changed
 		for (TInt i = 0; i < c; i++)
 			{
-			DObject* obj = proc->iHandles[i];
+			DObject* obj = handles[i];
 			if (!obj || obj->Open() != KErrNone) continue;
 			if (obj->iContainerID - 1 == EChunk)
 				{
