@@ -57,7 +57,7 @@ Behaviour is unspecified if the above rules are ignored.
 
 Nested while blocks are permitted providing there are the correct number of endwhile statements. Modifications to the environment within the while block (or even within the conditional, although this isn't recommended) are visible outside the block. In other words there is no scoping associated with the block.
 
-Be careful when using dollar-expansion in the C<condition> argument - it will be expanded when the while command is constructed, ie I<before> being used as the conditional, unless it is single-quoted. It is allowed to put multiple statements in the C<condition>, but note it must be quoted to prevent it appearing as if it is the while command that should be in the pipeline. Eg the correct way of including two conditions in the while statement is:
+Be careful when using dollar-expansion in the C<condition> argument - it will be expanded when the while command is constructed, ie I<before> being used as the conditional, unless it is single-quoted or escaped using ^$. It is allowed to put multiple statements in the C<condition>, but note it must be quoted to prevent it appearing as if it is the while command that should be in the pipeline. Eg the correct way of including two conditions in the while statement is:
 
     while 'var I == 0 && exists some_file'
         ...
