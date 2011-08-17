@@ -1,13 +1,32 @@
 # Grep.cif
 # 
-# Copyright (c) 2009 - 2010 Accenture. All rights reserved.
-# This component and the accompanying materials are made available
-# under the terms of the "Eclipse Public License v1.0"
-# which accompanies this distribution, and is available
-# at the URL "http://www.eclipse.org/legal/epl-v10.html".
-# 
-# Initial Contributors:
-# Accenture - Initial contribution
+# Copyright (c) 2009 - 2011 Accenture. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following disclaimer
+# in the documentation and/or other materials provided with the
+# distribution.
+#     * Neither the name of Accenture nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 ==name grep
 
@@ -19,13 +38,19 @@ Unix-style grep with full Regular Expression support.
 
 The pattern to be matched. To escape Regex special characters use '\'.
 
+==argument string substitution optional
+
+If specified, this argument causes any matches for the regex to be replaced by this string. Back references (of the form \1 \2 etc) can be used in the usual regex fashion. This means lines not matching the regex are printed unchanged. Cannot be combined with --invert-match.
+
+If C<--only-matching> is also specified, only print the substitution, and do not print lines that don't match the regex.
+
 ==option bool i ignore-case
 
 Ignore case distinctions.
 
 ==option bool v invert-match
 
-Print lines that do B<not> match.
+Print lines that do B<not> match. Cannot be combined with C<--only-matching>.
 
 ==option bool c count
 
@@ -35,6 +60,14 @@ Don't print the lines that match, just count them and print the total at the end
 
 Run the search in unicode (UTF-8) mode rather than assuming ASCII. Possibly slower.
 
+==option bool o only-matching
+
+Only print the part of the line that matches the regex. If a substitution is specified, only show the matching substitutions.
+
+==option bool d debug
+
+For each match, print out the contents of each capturing parenthesis group.
+
 ==long-description
 
 Prints to C<stdout> any lines of C<stdin> that match a particular pattern. Uses the PCRE library.
@@ -43,9 +76,37 @@ Prints to C<stdout> any lines of C<stdin> that match a particular pattern. Uses 
 
 L<match|match>
 
+==smoke-test
+
+echo "Test line of some sort^r^nIsn't fshell great?^r^nSome other line" | export -s TESTDATA
+echo "$TESTDATA" | grep "fshell great" | export -s RESULT
+var RESULT == "Isn't fshell great?^r^n" || $Error
+
+# Test case insensitive and count
+echo "$TESTDATA" | grep --count some | export -s RESULT
+var RESULT == 1 || $Error
+echo "$TESTDATA" | grep --ignore-case --count some | export -s RESULT
+var RESULT == 2 || $Error
+
+# Test anchored search
+echo "$TESTDATA" | grep --ignore-case "^^some" | export -s RESULT
+var RESULT == "Some other line^r^n" || $Error
+
+# Test substitution
+echo "Isn't fshell great?" | grep "..... (fshell) (.*)\?" "\1 is \2!" | export -s RESULT
+var RESULT == "fshell is great!^r^n" || $Error
+
+# Test only-matching
+echo "$TESTDATA" | grep --only-matching "fsh.ll g.eat" | export -s RESULT
+var RESULT == "fshell great" || $Error
+
+# Test only-matching with substitution
+echo "$TESTDATA" | grep --only-matching "(fshell) (.*)\?" "\1 is \2!" | export -s RESULT
+var RESULT == "fshell is great!" || $Error
+
 ==copyright
 
-The grep command itself is copyright (c) 2009 - 2010 Accenture. All rights reserved.
+The grep command itself is copyright (c) 2009 - 2011 Accenture. All rights reserved.
 
 The copyright notice for the PCRE library follows:
 

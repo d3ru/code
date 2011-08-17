@@ -56,6 +56,10 @@ Added support for glinfo to display GPU memory info from the eglQueryProfilingDa
 
 Added start-trace and start-usb scripts.
 
+=item *
+
+Added C<--only-matching> option to grep, and added ability to do text replacement by adding C<substitution> argument.
+
 =back
 
 =head3 Bugfixes
@@ -84,7 +88,7 @@ Performance improvements when executing scripts with a lot of command invokation
 
 =item *
 
-Changed C<match --count> to return just an integer (rather than "Count = 2") so as to be more useful in scripts.
+Changed C<match --count> and <grep --count> to return just an integer (rather than "Count = 2") so as to be more useful in scripts.
 
 =item *
 
@@ -93,6 +97,10 @@ Added C<--match> option to L<chunkinfo|commands::chunkinfo>. Also added C<--verb
 =item *
 
 Made some changes to the build scripts; failures due to "Undefined symbol GetVersionInfoL(int)" should hopefully be much rarer and consequently the C<-j 1> option shouldn't be needed as often.
+
+=item *
+
+Fixed bug in grep whereby whitespace was being ignored in the regex pattern.
 
 =back
 

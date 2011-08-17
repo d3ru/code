@@ -1,6 +1,6 @@
 // Grep.cpp
 // 
-// Copyright (c) 2009 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2009 - 2011 Accenture. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -30,7 +30,9 @@
 //
 #include <fshell/ioutils.h>
 #include <fshell/common.mmh>
+#include <fshell/ltkutils.h>
 #include <fshell/descriptorutils.h>
+#include <fshell/pcre/tregexarg.h>
 #include <fshell/pcre/cregex.h>
 
 using namespace IoUtils;
@@ -43,6 +45,9 @@ public:
 	~CCmdGrep();
 private:
 	CCmdGrep();
+	void PrintLineL(const TDesC& aLine);
+	void To16L(const TDesC8& aSrc, RLtkBuf16& aDest);
+	void To8L(const TDesC16& aSrc, RLtkBuf8& aDest);
 private: // From CCommandBase.
 	virtual const TDesC& Name() const;
 	virtual void DoRunL();
@@ -50,13 +55,20 @@ private: // From CCommandBase.
 	virtual void OptionsL(RCommandOptionList& aOptions);
 private:
 	HBufC* iPattern;
+	HBufC* iSubstitution;
 	TBool iIgnoreCase;
 	TBool iInvertMatch;
 	TBool iCount;
 	TBool iUnicode;
+	TBool iOnlyMatching;
+	TBool iDebug;
 
 	RLtkBuf8 iNarrowBuf;
+	RLtkBuf8 iNarrowOut;
+	RLtkBuf8 iNarrowSubst;
+	RLtkBuf16 iWideOut;
 	CRegEx* iRegex;
+	TBool iFirstLine;
 	};
 
 EXE_BOILER_PLATE(CCmdGrep)
@@ -72,11 +84,16 @@ CCommandBase* CCmdGrep::NewLC()
 CCmdGrep::~CCmdGrep()
 	{
 	delete iPattern;
+	delete iSubstitution;
 	delete iRegex;
 	iNarrowBuf.Close();
+	iNarrowOut.Close();
+	iNarrowSubst.Close();
+	iWideOut.Close();
 	}
 
 CCmdGrep::CCmdGrep()
+	: iFirstLine(ETrue)
 	{
 	}
 
@@ -89,6 +106,7 @@ const TDesC& CCmdGrep::Name() const
 void CCmdGrep::ArgumentsL(RCommandArgumentList& aArguments)
 	{
 	aArguments.AppendStringL(iPattern, _L("pattern"));
+	aArguments.AppendStringL(iSubstitution, _L("substitution"));
 	}
 
 void CCmdGrep::OptionsL(RCommandOptionList& aOptions)
@@ -97,44 +115,66 @@ void CCmdGrep::OptionsL(RCommandOptionList& aOptions)
 	_LIT(KCmdGrepOptInvertMatch, "invert-match");
 	_LIT(KCmdGrepOptCount, "count");
 	_LIT(KCmdGrepOptUnicode, "unicode");
+	_LIT(KCmdGrepOptOnlyMatching, "only-matching");
+	_LIT(KCmdGrepOptDebug, "debug");
 	aOptions.AppendBoolL(iIgnoreCase, KCmdGrepOptIgnoreCase);
 	aOptions.AppendBoolL(iInvertMatch, KCmdGrepOptInvertMatch);
 	aOptions.AppendBoolL(iCount, KCmdGrepOptCount);
 	aOptions.AppendBoolL(iUnicode, KCmdGrepOptUnicode);
+	aOptions.AppendBoolL(iOnlyMatching, KCmdGrepOptOnlyMatching);
+	aOptions.AppendBoolL(iDebug, KCmdGrepOptDebug);
 	}
 
 void CCmdGrep::DoRunL()
 	{
-	TRegExOptions options(EPcreExtended|EPcreNewlineAny);
+	if (iInvertMatch && iSubstitution) LeaveIfErr(KErrArgument, _L("Cannot use both the --invert-match option with the substution argument"));
+	if (iInvertMatch && iOnlyMatching) LeaveIfErr(KErrArgument, _L("Cannot use both --invert-match and --only-matching options"));
+	if (iSubstitution) To8L(*iSubstitution, iNarrowSubst);
+
+	TRegExOptions options(EPcreNewlineAny);
+	To8L(*iPattern, iNarrowBuf);
 	if (iUnicode)
 		{
-		iNarrowBuf.CopyAsUtf8L(*iPattern);
 		options.SetUtf8(ETrue);
 		}
-	else
-		{
-		iNarrowBuf.AppendL(*iPattern);
-		}
 	if (iIgnoreCase) options.SetCaseless(ETrue);
-
 	iRegex = CRegEx::NewL(iNarrowBuf, options);
+
+	// Man this is a painful interface... remind me to gut it when I've got absolutely nothing better to do, or maybe just use prce directly...
+	RPointerArray<TPtrC8> captures;
+	CleanupResetAndDestroyPushL(captures);
+	RPointerArray<const TRegExArg> caps;
+	CleanupResetAndDestroyPushL(caps);
+	if (iDebug)
+		{
+		TInt numCaptures = iRegex->NumberOfCapturingGroups();
+		captures.ReserveL(numCaptures);
+		caps.ReserveL(numCaptures);
+		while (numCaptures--)
+			{
+			TPtrC8* cap = new(ELeave) TPtrC8();
+			captures.Append(cap);
+			caps.Append(new(ELeave) TRegExArg(cap));
+			}
+		}
 
 	Stdin().SetReadMode(RIoReadHandle::ELine);
 	TBuf<0x100> line;
 	TInt count = 0;
 	while (Stdin().Read(line) == KErrNone)
 		{
-		iNarrowBuf.Zero();
-		if (iUnicode)
+		To8L(line, iNarrowBuf);
+		
+		//TBool matches = iRegex->PartialMatchL(iNarrowBuf);
+		TInt dontCare;
+		TBool matches = iRegex->DoMatchL(iNarrowBuf, CRegEx::EUnanchored, dontCare, caps);
+		if (iDebug && matches)
 			{
-			iNarrowBuf.CopyAsUtf8L(line);
+			for (TInt i = 0; i < captures.Count(); i++)
+				{
+				Printf(_L8("Capture %d: %S\r\n"), i+1, captures[i]);
+				}
 			}
-		else
-			{
-			iNarrowBuf.AppendL(line);
-			}
-
-		TBool matches = iRegex->PartialMatchL(iNarrowBuf);
 
 		if (iInvertMatch)
 			{
@@ -148,13 +188,84 @@ void CCmdGrep::DoRunL()
 				}
 			else
 				{
-				Write(line);
+				PrintLineL(line);
 				}
 			}
+		else if (iSubstitution && !iOnlyMatching)
+			{
+			// We should always print all lines in this case
+			PrintLineL(line);
+			}
 		}
+	CleanupStack::PopAndDestroy(2, &captures);
 
 	if (iCount)
 		{
-		Printf(_L("Count = %d"), count);
+		Printf(_L("%d"), count);
+		}
+	}
+
+void CCmdGrep::PrintLineL(const TDesC& aLine)
+	{
+	_LIT(KCrLf, "\r\n");
+	if (!iFirstLine && iWideOut.Right(2) != KCrLf()) Write(KCrLf);
+	iFirstLine = EFalse;
+
+	if (iSubstitution || iOnlyMatching)
+		{
+		TBool ok = EFalse;
+		// Yes we have already called DoMatches but it's easier to duplicate effort here rather than try and achieve everything in one call
+		if (iOnlyMatching)
+			{
+			iNarrowOut.Zero();
+			iNarrowOut.ReserveExtraL(iNarrowBuf.Length() + 256); // TODO don't just guess...
+			_LIT8(KBackZero, "\\0");
+			ok = iRegex->ExtractL(iSubstitution ? iNarrowSubst : KBackZero(), iNarrowBuf, iNarrowOut);
+			To16L(iNarrowOut, iWideOut);
+			}
+		else
+			{
+			iNarrowBuf.ReserveExtraL(256);
+			ok = iRegex->ReplaceL(iNarrowSubst, iNarrowBuf);
+			To16L(iNarrowBuf, iWideOut);
+			}
+		/* comment below not true...
+		if (!ok)
+			{
+			// We know we should match because we've already called DoMatchL
+			User::Leave(iRegex->Error());
+			}
+		*/
+		Write(iWideOut);
+		}
+	else
+		{
+		Write(aLine);
+		}
+	}
+
+void CCmdGrep::To8L(const TDesC16& aSrc, RLtkBuf8& aDest)
+	{
+	aDest.Zero();
+	if (iUnicode)
+		{
+		aDest.CopyAsUtf8L(aSrc);
+		}
+	else
+		{
+		aDest.AppendL(aSrc);
+		}
+	}
+
+void CCmdGrep::To16L(const TDesC8& aSrc, RLtkBuf16& aDest)
+	{
+	aDest.Zero();
+	if (iUnicode)
+		{
+		aDest.CopyFromUtf8L(aSrc);
+		}
+	else
+		{
+		aDest.AppendL(aSrc);
 		}
 	}

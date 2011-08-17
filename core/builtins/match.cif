@@ -51,5 +51,5 @@ echo "$TESTDATA" | match *fshell* | export -s RESULT
 var RESULT == "Isn't fshell great?^r^n" || $Error
 
 # Test anchored search
-echo "$TESTDATA" | match Some* | export -s RESULT
+echo "$TESTDATA" | match -i some* | export -s RESULT
 var RESULT == "Some other line^r^n" || $Error
