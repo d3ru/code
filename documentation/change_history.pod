@@ -14,7 +14,7 @@ __END__
 
 =head1 fshell Change History
 
-=head2 Release 006 **Not yet released**
+=head2 Release 006
 
 =head3 New functionality
 
@@ -42,7 +42,7 @@ And finally for textshell:
 
 =item *
 
-Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch>, L<subst|commands::subst>, L<startapp|commands::startapp>, L<memmap|commands::memmap> and L<hcr|commands::hcr> commands.
+Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch>, L<subst|commands::subst>, L<startapp|commands::startapp>, L<memmap|commands::memmap> and L<hcr|commands::hcr> commands (on supported platforms).
 
 =item *
 
@@ -100,7 +100,7 @@ Made some changes to the build scripts; failures due to "Undefined symbol GetVer
 
 =item *
 
-Fixed bug in grep whereby whitespace was being ignored in the regex pattern.
+Fixed bug in grep whereby whitespace in the regex pattern was being ignored.
 
 =back
 

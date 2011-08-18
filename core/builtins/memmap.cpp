@@ -270,6 +270,7 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 		romArea.iSize = header->iRomSize;
 		romArea.iType = ERomArea;
 
+#ifndef FSHELL_9_1_SUPPORT
 		if (header->iPageableRomStart)
 			{
 			romArea.iName = _L("ROM (Unpaged)");
@@ -282,6 +283,7 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 			AddAreaL(areas, romArea);
 			}
 		else
+#endif
 			{
 			romArea.iName = _L("ROM");
 			AddAreaL(areas, romArea);

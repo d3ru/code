@@ -175,4 +175,5 @@ EXPORTS
 	DeviceNumber__CQ28LtkUtils13CHalAttribute @ 174 NONAME R3UNUSED ; LtkUtils::CHalAttribute::DeviceNumber(void) const
 	Update__Q28LtkUtils13CHalAttribute @ 175 NONAME R3UNUSED ; LtkUtils::CHalAttribute::Update(void)
 	Value__CQ28LtkUtils13CHalAttribute @ 176 NONAME R3UNUSED ; LtkUtils::CHalAttribute::Value(void) const
+	LoadLogicalDevice__8LtkUtilsRC7TDesC16 @ 177 NONAME R3UNUSED ; LtkUtils::LoadLogicalDevice(TDesC16 const &)
 

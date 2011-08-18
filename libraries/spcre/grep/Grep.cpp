@@ -218,7 +218,7 @@ void CCmdGrep::PrintLineL(const TDesC& aLine)
 		if (iOnlyMatching)
 			{
 			iNarrowOut.Zero();
-			iNarrowOut.ReserveExtraL(iNarrowBuf.Length() + 256); // TODO don't just guess...
+			iNarrowOut.ReserveExtraL(iNarrowBuf.Length() + 256); // TODO shouldn't just guess...
 			_LIT8(KBackZero, "\\0");
 			ok = iRegex->ExtractL(iSubstitution ? iNarrowSubst : KBackZero(), iNarrowBuf, iNarrowOut);
 			To16L(iNarrowOut, iWideOut);
@@ -229,7 +229,7 @@ void CCmdGrep::PrintLineL(const TDesC& aLine)
 			ok = iRegex->ReplaceL(iNarrowSubst, iNarrowBuf);
 			To16L(iNarrowBuf, iWideOut);
 			}
-		/* comment below not true...
+		(void)ok; /* comment below not true...
 		if (!ok)
 			{
 			// We know we should match because we've already called DoMatchL

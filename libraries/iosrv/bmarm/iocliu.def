@@ -566,4 +566,11 @@ EXPORTS
 	Extension__CQ27IoUtils12CCommandBase @ 565 NONAME R3UNUSED ; IoUtils::CCommandBase::Extension(void) const
 	CancelRequestFile__10RIoConsole @ 566 NONAME R3UNUSED ; RIoConsole::CancelRequestFile(void)
 	RequestFile__10RIoConsoleRC7TDesC16T1R14TRequestStatus @ 567 NONAME ; RIoConsole::RequestFile(TDesC16 const &, TDesC16 const &, TRequestStatus &)
+	Arguments__CQ27IoUtils16CCommandInfoFile @ 568 NONAME R3UNUSED ; IoUtils::CCommandInfoFile::Arguments(void) const
+	Close__Q27IoUtils12ROptArgCache @ 569 NONAME R3UNUSED ; IoUtils::ROptArgCache::Close(void)
+	Constructed__CQ27IoUtils12ROptArgCache @ 570 NONAME R3UNUSED ; IoUtils::ROptArgCache::Constructed(void) const
+	Copy__Q27IoUtils12ROptArgCacheRCQ27IoUtils18RCommandOptionListRCQ27IoUtils20RCommandArgumentList @ 571 NONAME R3UNUSED ; IoUtils::ROptArgCache::Copy(IoUtils::RCommandOptionList const &, IoUtils::RCommandArgumentList const &)
+	HasWildDriveLetter__CQ27IoUtils10TFileName2 @ 572 NONAME R3UNUSED ; IoUtils::TFileName2::HasWildDriveLetter(void) const
+	SetTemplates__Q27IoUtils12CCommandBaseRCQ27IoUtils18RCommandOptionListRCQ27IoUtils20RCommandArgumentList @ 573 NONAME R3UNUSED ; IoUtils::CCommandBase::SetTemplates(IoUtils::RCommandOptionList const &, IoUtils::RCommandArgumentList const &)
+	__Q27IoUtils12ROptArgCache @ 574 NONAME R3UNUSED ; IoUtils::ROptArgCache::ROptArgCache(void)
 
