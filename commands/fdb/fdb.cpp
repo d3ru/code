@@ -656,7 +656,8 @@ TPtrC CCmdFdb::LookupSymbol(TUint32 aAddress)
 		}
 	// Try getting a codeseg from memaccess
 	TFullName8 codesegname8;
-	TInt res = iMemAccess.FindAddressInCodeSegments(codesegname8, (TAny*)aAddress, iCurrent->iThread);
+	RThread medummy;
+	TInt res = iMemAccess.FindAddressInCodeSegments(codesegname8, (TAny*)aAddress, iCurrent ? iCurrent->iThread : medummy);
 	if (res >= 0)
 		{
 		iTempNameBuf.Copy(codesegname8);

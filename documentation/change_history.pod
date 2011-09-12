@@ -14,7 +14,7 @@ __END__
 
 =head1 fshell Change History
 
-=head2 Release 006
+=head2 Release 006 [Still not yet released!]
 
 =head3 New functionality
 
@@ -101,6 +101,10 @@ Made some changes to the build scripts; failures due to "Undefined symbol GetVer
 =item *
 
 Fixed bug in grep whereby whitespace in the regex pattern was being ignored.
+
+=item *
+
+Fixed signed arithmetic problem in CBsymFile that meant that lookup of ROM symbols from combined ROM+ROFS BSYM files would fail. Also fixed crash in fdb when doing a lookup with no thread focussed.
 
 =back
 

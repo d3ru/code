@@ -338,7 +338,8 @@ TInt TCodeSegKey::Compare(TInt aLeft, TInt aRight) const
 	{
 	TUint32 left = aLeft == KIndexPtr ? iAddress : iFile->CodeSegL(aLeft).Address();
 	TUint32 right = aRight == KIndexPtr ? iAddress : iFile->CodeSegL(aRight).Address();
-	return (TInt)left - (TInt)right;
+	if (left == right) return 0;
+	return left < right ? -1 : 1;
 	}
 
 
@@ -350,7 +351,8 @@ TInt TSymbolKey::Compare(TInt aLeft, TInt aRight) const
 	{
 	TUint32 left = aLeft == KIndexPtr ? iAddress : iFile->SymbolL(iCodeSeg.SymbolStart() + aLeft).Address();
 	TUint32 right = aRight == KIndexPtr ? iAddress : iFile->SymbolL(iCodeSeg.SymbolStart() + aRight).Address();
-	return (TInt)left - (TInt)right;
+	if (left == right) return 0;
+	return left < right ? -1 : 1;
 	}
 
 TCodeAndSym::TCodeAndSym(const TCodeSeg* aCodeSeg, const TSymbol* aSymbol)
@@ -363,6 +365,12 @@ TCodeAndSym::TCodeAndSym(const TCodeSeg* aCodeSeg, const TSymbol* aSymbol)
 TCodeAndSym CBsymFileImpl::DoLookup(TUint32 aAddress) const
 	{
 	// Find codeseg (need to know this if the symbol has a name prefix)
+	for (int i = 0; i < CodeSegCountL(); i++)
+		{
+		TCodeSeg codeseg = CodeSegL(i);
+		RDebug::Printf("Codeseg %d: %08x", i, codeseg.Address());
+		}
+
 	TInt pos = 0;
 	TCodeSegKey codesegKey(this, aAddress);
 	TBool found = !User::BinarySearch(CodeSegCountL(), codesegKey, pos);
