@@ -288,6 +288,10 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 			romArea.iName = _L("ROM");
 			AddAreaL(areas, romArea);
 			}
+		romArea.iAddress = (TLinAddr)header;
+		romArea.iSize = header->iRomHeaderSize;
+		romArea.iName = _L("TRomHeader");
+		AddAreaL(areas, romArea);
 #endif
 
 		}
