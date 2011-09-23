@@ -377,7 +377,9 @@ TCodeAndSym CBsymFileImpl::DoLookup(TUint32 aAddress) const
 	if (!found && pos != 0) pos--;
 	TCodeSeg codeseg = CodeSegL(pos);
 
-	if (aAddress >= codeseg.Address() && aAddress < codeseg.Address() + CodeSegLengthL(&codeseg))
+	// With just an address we should only match ROM symbols, ie ones where the codeseg address is non-zero
+	// Therefore don't allow a codeseg with zero address to match - a big enough DLL in ROFS could overlap with a valid range
+	if (codeseg.Address() != 0 && aAddress >= codeseg.Address() && aAddress < codeseg.Address() + CodeSegLengthL(&codeseg))
 		{
 		return DoCodesegLookup(codeseg, aAddress);
 		}

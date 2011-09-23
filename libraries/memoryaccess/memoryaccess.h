@@ -204,10 +204,10 @@ class TMutexKernelInfo : public TObjectKernelInfo
 public:
 	TInt iHoldCount;
 	TInt iWaitCount;
-	TUint8 iResetting;
+	TUint8 iSpare; // was iResetting
 	TUint8 iOrder;
 	TPointerArrayBuffer iSuspendedQ;
-	TPointerArrayBuffer iPendingQ;
+	TPointerArrayBuffer iRemoved; // was iPendingQ;
 	};
 typedef TPckgBuf<TMutexKernelInfo> TMutexKernelInfoBuf;	 
 

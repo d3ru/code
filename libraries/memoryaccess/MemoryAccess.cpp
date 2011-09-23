@@ -2052,7 +2052,7 @@ TInt DMemoryAccess::GetMutexInfo(DMutex* aMutex, TDes8* aMutexInfoBuf)
 		//Get the Mutex specific info
 		(*localInfoBuf)().iHoldCount = aMutex->iHoldCount;
 		(*localInfoBuf)().iWaitCount = aMutex->iWaitCount;
-		(*localInfoBuf)().iResetting = aMutex->iResetting;
+		//(*localInfoBuf)().iResetting = aMutex->iResetting;
 		(*localInfoBuf)().iOrder = aMutex->iOrder;
 		TInt ii=0;
 	    SDblQueLink* pLink=aMutex->iSuspendedQ.First();
@@ -2065,6 +2065,7 @@ TInt DMemoryAccess::GetMutexInfo(DMutex* aMutex, TDes8* aMutexInfoBuf)
 			 }
 		(*localInfoBuf)().iSuspendedQ.iStartFrom=0;
 		(*localInfoBuf)().iSuspendedQ.iCount=ii;
+		/*
 		ii=0;
 	    pLink=aMutex->iPendingQ.First();
 		while ((pLink!=&aMutex->iPendingQ.iA) && (ii<KQueBufferLength))
@@ -2076,6 +2077,7 @@ TInt DMemoryAccess::GetMutexInfo(DMutex* aMutex, TDes8* aMutexInfoBuf)
 			 }
 		(*localInfoBuf)().iPendingQ.iStartFrom=0;
 		(*localInfoBuf)().iPendingQ.iCount=ii;
+		*/
 
 		//Copy the local info buffer into the client's address space
 	    err = Kern::ThreadDesWrite(iClient, aMutexInfoBuf, *localInfoBuf, 0, KTruncateToMaxLength, NULL);	

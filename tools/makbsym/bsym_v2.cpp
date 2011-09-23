@@ -203,7 +203,10 @@ CBsymV2::TCodeAndSym CBsymV2::DoLookup(quint32 aAddress) const
 	QVector<TCodeSeg>::const_iterator codeiter = qUpperBound(CodeSegs(), CodeSegs() + CodeSegCount(), tempSeg);
 	if (codeiter != CodeSegs()) codeiter--;
 	const TCodeSeg& codeseg = *codeiter;
-	if (address >= codeseg.Address() && address < codeseg.Address() + CodeSegLength(&codeseg))
+
+	// With just an address we should only match ROM symbols, ie ones where the codeseg address is non-zero
+	// Therefore don't allow a codeseg with zero address to match - a big enough DLL in ROFS could overlap with a valid range
+	if (codeseg.Address() != 0 && address >= codeseg.Address() && address < codeseg.Address() + CodeSegLength(&codeseg))
 		{
 		return DoCodesegLookup(codeseg, address - codeseg.Address());
 		}
