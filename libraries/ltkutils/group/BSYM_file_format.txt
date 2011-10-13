@@ -69,7 +69,7 @@ TCodeSeg format
 
 Word 0: Address. Run address of the first symbol in the code segment, whatever was in the original symbol file. Can be zero in the case of a ROFS symbol file.
 Word 1: SymbolCount. Number of symbols in this code segment.
-Word 2: NameOffset. Offset from the start of the file to the string containing the full path of the code segment's binary. (See strings format below).
+Word 2: NameOffset. Offset from the start of the file to the string containing the full path of the code segment's binary. (See strings format below). The path is absolute and lower-cased, eg "p:\epoc32\release\armv5\urel\_variant_euser.dll".
 Word 3: StartSymbolIndex. Index from the start of the symbols to the first symbol that belongs to this code segment. An index of '1' would indicate this codesegment starts at the second symbol in the symbol table.
 Word 4: PrefixTableOffset. Offset from the start of the file to the prefix table, or 0 if this codeseg doesn't have a prefix table. See later for details of what this table is for.
 
