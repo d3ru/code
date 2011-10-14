@@ -385,7 +385,7 @@ void CCmdSudo::DeleteModifiedBinary()
 		iMemAccess.FreeShadowMemory((TLinAddr)Fs().IsFileInRom(iPath), sizeof(TRomImageHeader));
 #endif
 		}
-	else
+	else if (iChangeBinaryOnDisk)
 		{
 		TInt err = Fs().Delete(iNewPath);
 		if (err && err != KErrNotFound && err != KErrPathNotFound) PrintError(err, _L("Couldn't delete file %S"), &iNewPath);

@@ -106,6 +106,10 @@ Fixed bug in grep whereby whitespace in the regex pattern was being ignored.
 
 Fixed signed arithmetic problem in CBsymFile that meant that lookup of ROM symbols from combined ROM+ROFS BSYM files would fail. Also fixed crash in fdb when doing a lookup with no thread focussed.
 
+=item *
+
+Fixed sudo from incorrectly deleting exes on C drive when --disk wasn't specified.
+
 =back
 
 =head2 Release 005
