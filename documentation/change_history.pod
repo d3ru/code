@@ -60,6 +60,10 @@ Added start-trace and start-usb scripts.
 
 Added C<--only-matching> option to grep, and added ability to do text replacement by adding C<substitution> argument.
 
+=item *
+
+The sleep command now supports sleeping for arbitrary lengths rather than just for a multiple of seconds.
+
 =back
 
 =head3 Bugfixes

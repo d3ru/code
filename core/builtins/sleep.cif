@@ -1,6 +1,6 @@
 # sleep.cif
 # 
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -16,9 +16,9 @@
 
 Pause for a specified number of seconds.
 
-==argument uint duration optional
+==argument real duration optional
 
-The length of time to sleep for in seconds. If not specified, sleeps indefinitely.
+The length of time to sleep for in seconds. If not specified, sleeps indefinitely. A fractional time may be specified, for example "1.5" to sleep for one and a half seconds. The precision of the sleep is that of the C<User::After()> API.
 
 ==copyright
 

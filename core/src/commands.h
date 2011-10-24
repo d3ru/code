@@ -446,7 +446,7 @@ private: // From CCommandBase.
 	virtual void DoRunL();
 	virtual void ArgumentsL(RCommandArgumentList& aArguments);
 private:
-	TUint iDuration;
+	TReal iDuration;
 	};
 
 

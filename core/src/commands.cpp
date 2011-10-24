@@ -2025,7 +2025,7 @@ void CCmdSleep::DoRunL()
 void CCmdSleep::ArgumentsL(RCommandArgumentList& aArguments)
 	{
 	_LIT(KCmdSleepArg1, "duration");
-	aArguments.AppendUintL(iDuration, KCmdSleepArg1);
+	aArguments.AppendRealL(iDuration, KCmdSleepArg1);
 	}
 
 
