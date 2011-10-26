@@ -72,7 +72,7 @@ DDebuggerEventHandler* DDebuggerEventHandler::New(TDfcQue* aQue)
 	// be done as 2nd-phase construction is done first
 
 	DMutex* breakpointMutex = NULL;
-	TInt err = Kern::MutexCreate(breakpointMutex, _L("FDebuggerBreakpointMutex"), KMutexOrdGeneral5); // No special reason for using 5
+	TInt err = Kern::MutexCreate(breakpointMutex, _L("FDebuggerBreakpointMutex"), KMutexOrdGeneral0); // General0 is a bit of a hack and is chosen to avoid (having to fix a problem caused by) a driver mutex at OrdGeneral1 which creates a thread from inside a driver exec while holding the mutex
 	if (err) return NULL;
 
 	DDebuggerEventHandler* self = new DDebuggerEventHandler(aQue);
