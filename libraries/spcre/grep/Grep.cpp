@@ -68,7 +68,7 @@ private:
 	RLtkBuf8 iNarrowSubst;
 	RLtkBuf16 iWideOut;
 	CRegEx* iRegex;
-	TBool iFirstLine;
+	TBool iRequireNewLine;
 	};
 
 EXE_BOILER_PLATE(CCmdGrep)
@@ -93,7 +93,7 @@ CCmdGrep::~CCmdGrep()
 	}
 
 CCmdGrep::CCmdGrep()
-	: iFirstLine(ETrue)
+	: iRequireNewLine(EFalse)
 	{
 	}
 
@@ -208,40 +208,37 @@ void CCmdGrep::DoRunL()
 void CCmdGrep::PrintLineL(const TDesC& aLine)
 	{
 	_LIT(KCrLf, "\r\n");
-	if (!iFirstLine && iWideOut.Right(2) != KCrLf()) Write(KCrLf);
-	iFirstLine = EFalse;
-
+	if (iRequireNewLine) Write(KCrLf);
+	const TDesC* output = &aLine;
 	if (iSubstitution || iOnlyMatching)
 		{
-		TBool ok = EFalse;
+		//TBool ok = EFalse;
 		// Yes we have already called DoMatches but it's easier to duplicate effort here rather than try and achieve everything in one call
 		if (iOnlyMatching)
 			{
 			iNarrowOut.Zero();
 			iNarrowOut.ReserveExtraL(iNarrowBuf.Length() + 256); // TODO shouldn't just guess...
 			_LIT8(KBackZero, "\\0");
-			ok = iRegex->ExtractL(iSubstitution ? iNarrowSubst : KBackZero(), iNarrowBuf, iNarrowOut);
+			/*ok =*/ iRegex->ExtractL(iSubstitution ? iNarrowSubst : KBackZero(), iNarrowBuf, iNarrowOut);
 			To16L(iNarrowOut, iWideOut);
 			}
 		else
 			{
 			iNarrowBuf.ReserveExtraL(256);
-			ok = iRegex->ReplaceL(iNarrowSubst, iNarrowBuf);
+			/*ok =*/ iRegex->ReplaceL(iNarrowSubst, iNarrowBuf);
 			To16L(iNarrowBuf, iWideOut);
 			}
-		(void)ok; /* comment below not true...
+		/* comment below not true...
 		if (!ok)
 			{
 			// We know we should match because we've already called DoMatchL
 			User::Leave(iRegex->Error());
 			}
 		*/
-		Write(iWideOut);
+		output = &iWideOut;
 		}
-	else
-		{
-		Write(aLine);
-		}
+	Write(*output);
+	iRequireNewLine = output->Right(2) != KCrLf();
 	}
 
 void CCmdGrep::To8L(const TDesC16& aSrc, RLtkBuf8& aDest)

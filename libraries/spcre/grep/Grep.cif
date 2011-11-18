@@ -104,6 +104,10 @@ var RESULT == "fshell great" || $Error
 echo "$TESTDATA" | grep --only-matching "(fshell) (.*)\?" "\1 is \2!" | export -s RESULT
 var RESULT == "fshell is great!" || $Error
 
+# Test no extraneous newlines
+echo "Foo^r^nFooBar^r^nYah" | grep Foo | export -s RESULT
+var RESULT == "Foo^r^nFooBar^r^n" || $Error
+
 ==copyright
 
 The grep command itself is copyright (c) 2009 - 2011 Accenture. All rights reserved.

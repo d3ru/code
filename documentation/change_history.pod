@@ -104,7 +104,7 @@ Made some changes to the build scripts; failures due to "Undefined symbol GetVer
 
 =item *
 
-Fixed bug in grep whereby whitespace in the regex pattern was being ignored.
+Fixed bugs in grep whereby whitespace in the regex pattern was being ignored, and additional whitespace was being incorrectly output for non-matching lines.
 
 =item *
 
