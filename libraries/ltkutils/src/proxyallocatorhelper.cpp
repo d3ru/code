@@ -63,6 +63,7 @@ EXPORT_C TInt LtkUtils::RProxyAllocatorHelper::OpenChunkHeap(RMemoryAccess& aMem
 
 	const TChunkKernelInfo* chunkInfo = (const TChunkKernelInfo*)buf.Ptr();
 	err = iMemoryAccess->GetObjectInfo(EChunk, (TUint8*)aDChunkPtr, buf);
+	if (!err && chunkInfo->iBase == 0) err = KErrNotFound;
 	if (err)
 		{
 		buf.Close();

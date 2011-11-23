@@ -48,7 +48,7 @@ All non-overlapping code segments (ie excluding EXEs) currently loaded.
 
 =item *
 
-Any chunks with fixed base addresses.
+Any chunks with fixed base addresses (in practice, this generally just means SvHeap).
 
 =item *
 
@@ -59,6 +59,8 @@ Location of Unpaged and Paged ROM area.
 Supervisor mode stacks for all threads.
 
 =back
+
+Chunk ranges/sizes are reported in terms of the virtual address range reserved for them - in other words, the maximum chunk size. To see the actual committed range(s) as well, use the C<--committed> option. Note however that it is not possible to display committed ranges for disconnected chunks if their owner isn't a user process.
 
 ==argument uint process_id optional
 
@@ -75,6 +77,10 @@ Display chunk/codeseg/stack sizes.
 ==option bool H human
 
 Show sizes in human-readable format. Implies C<--size>.
+
+==option bool c committed
+
+For chunks, show the committed region in addition to the virtual address space range. For disconnected chunks the chunk has to be scanned page-by-page, which can make this option quite slow.
 
 ==copyright
 

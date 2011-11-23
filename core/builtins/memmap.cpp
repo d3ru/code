@@ -1,6 +1,6 @@
 // memmap.cpp
 //
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -29,6 +29,7 @@
 enum TMemAreaType
 	{
 	EChunkArea,
+	EChunkCommittedArea,
 	ECodesegArea,
 	EGlobalCodeArea,
 	EStackArea,
@@ -38,10 +39,11 @@ enum TMemAreaType
 class TMemArea
 	{
 public:
+	TMemArea() : iAddress(0), iSize(0) {}
+
 	TLinAddr iAddress;
 	TUint iSize;
 	TMemAreaType iType;
-	TAny* iChunkObj;
 	TFullName iName;
 	};
 
@@ -79,6 +81,7 @@ void CCmdMemmap::OptionsL(RCommandOptionList& aOptions)
 	aOptions.AppendStringL(iMatch, _L("match"));
 	aOptions.AppendBoolL(iDisplaySize, _L("size"));
 	aOptions.AppendBoolL(iHumanReadableSizes, _L("human"));
+	aOptions.AppendBoolL(iShowCommitted, _L("committed"));
 	}
 
 static void ReleaseCodesegMutex(TAny* aMemAccess)
@@ -154,18 +157,17 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 		areas.ReserveL(count);
 		for (TInt i = 0; i < count; i++)
 			{
-			TMemArea area;
-			area.iAddress = ((const TLinAddr*)iAddressesBuf.Ptr())[i*2 + 1];
-			area.iSize = 0;
-			area.iChunkObj = ((void**)iAddressesBuf.Ptr())[i*2];
-			if (!area.iChunkObj) continue; // Messy API, it can do this
-			area.iType = EChunkArea;
+			TLinAddr address = ((const TLinAddr*)iAddressesBuf.Ptr())[i*2 + 1];
+			TLinAddr chunkObj = ((TLinAddr*)iAddressesBuf.Ptr())[i*2];
+			if (chunkObj == 0) continue; // Messy API, it can do this
 			// Allow repeats in case of multiple zero addresses, but warn
-			if (area.iAddress == 0)
+			if (address == 0)
 				{
 				PrintWarning(_L("Chunk with null base address detected - do you need to enable FSHELL_FLEXIBLEMM_AWARE?"));
 				}
-			AddAreaL(areas, area);
+			TPckg<TChunkKernelInfo> chunkInfoPckg(iChunkInfo);
+			err = iMemAccess.GetObjectInfo(EChunk, (TUint8*)chunkObj, chunkInfoPckg);
+			if (!err) AddChunkAreaL(areas, address, iChunkInfo);
 			}
 		}
 	else
@@ -189,17 +191,12 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 		areas.ReserveL(count);
 		for (TInt i = 0; i < count; i++)
 			{
-			TMemArea area;
-			area.iChunkObj = ((void**)iAddressesBuf.Ptr())[i];
-			area.iType = EChunkArea;
+			TLinAddr chunkObj = ((TLinAddr*)iAddressesBuf.Ptr())[i];
 			TPckg<TChunkKernelInfo> chunkInfoPckg(iChunkInfo);
-			TInt err = iMemAccess.GetObjectInfo(EChunk, (TUint8*)area.iChunkObj, chunkInfoPckg);
+			TInt err = iMemAccess.GetObjectInfo(EChunk, (TUint8*)chunkObj, chunkInfoPckg);
 			if (!err && iChunkInfo.iBase)
 				{
-				area.iAddress = (TLinAddr)iChunkInfo.iBase;
-				area.iName.Copy(iChunkInfo.iFullName);
-				area.iSize = iChunkInfo.iSize;
-				AddAreaL(areas, area);
+				AddChunkAreaL(areas, (TLinAddr)iChunkInfo.iBase, iChunkInfo);
 				}
 			}
 		}
@@ -230,7 +227,6 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 #ifdef FSHELL_FLEXIBLEMM_AWARE
 		if (iCodeSegInfo.iAttr & ECodeSegAttGlobal) area.iType = EGlobalCodeArea;
 #endif
-		area.iChunkObj = NULL;
 		AddAreaL(areas, area);
 		}
 	CleanupStack::PopAndDestroy(); // ReleaseCodesegMutex
@@ -251,7 +247,6 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 				area.iSize = iCodeSegInfo.iSize;
 				area.iName.Copy(iCodeSegInfo.iFileName.Left(area.iName.MaxLength()));
 				area.iType = EGlobalCodeArea;
-				area.iChunkObj = NULL;
 				AddAreaL(areas, area);
 				}
 			}
@@ -291,7 +286,6 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 				}
 			area.iType = EStackArea;
 			area.iName.Copy(aProcessName.Left(area.iName.MaxLength()));
-			area.iChunkObj = NULL;
 			AddAreaL(areas, area);
 			}
 		}
@@ -338,7 +332,8 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 
 TInt Compare(const TMemArea& aLeft, const TMemArea& aRight)
 	{
-	return aLeft.iAddress == aRight.iAddress ? 0 : aLeft.iAddress < aRight.iAddress ? -1 : 1;
+	if (aLeft.iAddress == aRight.iAddress) return aRight.iSize - aLeft.iSize; // Bigger size comes first
+	else return aLeft.iAddress - aRight.iAddress;
 	}
 
 void CCmdMemmap::AddAreaL(RPointerArray<TMemArea>& aAreas, const TMemArea& aArea)
@@ -350,26 +345,96 @@ void CCmdMemmap::AddAreaL(RPointerArray<TMemArea>& aAreas, const TMemArea& aArea
 	CleanupStack::Pop(area);
 	}
 
+enum { EChunkDoubleEnded = 1, EChunkDisconnected = 2 };
+
+void CCmdMemmap::AddChunkAreaL(RPointerArray<TMemArea>& aAreas, TLinAddr aAddress, const TChunkKernelInfo& aInfo)
+	{
+	TMemArea* area = new(ELeave) TMemArea;
+	CleanupStack::PushL(area);
+	area->iAddress = aAddress;
+	area->iType = EChunkArea;
+	area->iName.Copy(aInfo.iFullName);
+	area->iSize = aInfo.iMaxSize;
+	User::LeaveIfError(aAreas.InsertInOrderAllowRepeats(area, &Compare));
+	CleanupStack::Pop(area);
+
+	if (iShowCommitted)
+		{
+		TMemArea committedArea;
+		committedArea.iType = EChunkCommittedArea;
+		committedArea.iName = _L("Memory committed to chunk ");
+		committedArea.iName.Append(area->iName);
+		if (aInfo.iAttributes & EChunkDisconnected)
+			{
+			// Have to scan page-by-page
+			RProcess proc;
+			if (aInfo.iBase && aInfo.iControllingOwnerProcessId && proc.Open(aInfo.iControllingOwnerProcessId) == KErrNone)
+				{
+				TThreadMemoryAccessParamsBuf params;
+				params().iId = proc.Id() + 1; // Lazy lazy (don't care la la la)
+				proc.Close();
+				params().iAddr = aInfo.iBase;
+				params().iSize = 4;
+				committedArea.iAddress = 0;
+				TBuf8<4> buf;
+				while (params().iAddr < aInfo.iBase + aInfo.iMaxSize)
+					{
+					TInt err = iMemAccess.GetThreadMem(params, buf); // Don't care about the contents of mem, just use err to decide if it's committed or not
+					if (err)
+						{
+						// Finish current committed if any
+						if (committedArea.iAddress)
+							{
+							committedArea.iSize = (TLinAddr)params().iAddr - committedArea.iAddress;
+							AddAreaL(aAreas, committedArea);
+							committedArea.iAddress = 0;
+							}
+						}
+					else
+						{
+						if (committedArea.iAddress)
+							{
+							// Just carry on extending current region
+							}
+						else
+							{
+							// Start it from here
+							committedArea.iAddress = (TLinAddr)params().iAddr;
+							}
+						}
+					params().iAddr += 4096;
+					}
+
+				if (committedArea.iAddress)
+					{
+					// Finish final region
+					committedArea.iSize = (TLinAddr)params().iAddr - committedArea.iAddress;
+					AddAreaL(aAreas, committedArea);
+					}
+				}
+			}
+		else if (aInfo.iAttributes & EChunkDoubleEnded)
+			{
+			committedArea.iAddress = aInfo.iBottom;
+			committedArea.iSize = aInfo.iSize;
+			AddAreaL(aAreas, committedArea);
+			}
+		else
+			{
+			committedArea.iAddress = aAddress;
+			committedArea.iSize = aInfo.iSize;
+			AddAreaL(aAreas, committedArea);
+			}
+		}
+	}
+
+
 void CCmdMemmap::PrintAreasL(RPointerArray<TMemArea>& aAreas)
 	{
 	const TInt n = aAreas.Count();
 	for (TInt i = 0; i < n; i++)
 		{
 		TMemArea& area = *aAreas[i];
-		if (area.iType == EChunkArea && area.iSize == 0) // Avoid calling GetObjectInfo twice if we've already got all the info
-			{
-			TPckg<TChunkKernelInfo> chunkInfoPckg(iChunkInfo);
-			TInt err = iMemAccess.GetObjectInfo(EChunk, (TUint8*)area.iChunkObj, chunkInfoPckg);
-			if (err && err != KErrNotFound)
-				{
-				// Only abort on something other than KErrNotFound. KErrNotFound could legitimately
-				// happen if the chunk in question has been deleted since we called RMemoryAccess::GetAllChunksInProcess.
-				LeaveIfErr(err, _L("Unable to get info for chunk 0x%08x"), area.iChunkObj);
-				}
-			area.iName.Copy(iChunkInfo.iFullName);
-			area.iSize = iChunkInfo.iSize;
-			}
-
 		Printf(_L("%08x-%08x "), area.iAddress, area.iAddress + area.iSize);
 		TBuf<16> sizeBuf;
 		if (iDisplaySize)
@@ -390,6 +455,9 @@ void CCmdMemmap::PrintAreasL(RPointerArray<TMemArea>& aAreas)
 			case EChunkArea:
 				Printf(_L("[Chunk]  "));
 				break;
+			case EChunkCommittedArea:
+				Printf(_L("         "));
+				break;
 			case ECodesegArea:
 				Printf(_L("[Code]   "));
 				break;
@@ -401,6 +469,8 @@ void CCmdMemmap::PrintAreasL(RPointerArray<TMemArea>& aAreas)
 				break;
 			case ERomArea:
 				Printf(_L("[ROM]    "));
+				break;
+			default:
 				break;
 			}
 		Printf(_L("%S\r\n"), &area.iName);

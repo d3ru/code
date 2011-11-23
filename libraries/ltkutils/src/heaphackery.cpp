@@ -236,7 +236,7 @@ TInt RAllocatorHelper::FinishConstruction()
 TInt RAllocatorHelper::ReadWord(TLinAddr aLocation, TUint32& aResult) const
 	{
 	// Check if we can satisfy the read from the cache
-	if (aLocation >= iPageCacheAddr)
+	if (iPageCache && aLocation >= iPageCacheAddr)
 		{
 		TUint offset = aLocation - iPageCacheAddr;
 		if (offset < KPageSize)

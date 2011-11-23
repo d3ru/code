@@ -2900,7 +2900,7 @@ void CCmdChunkInfo::PrintChunkInfoL(TUint aAddress)
 				}
 			else
 				{
-				iBuf->AppendL(_L("\t[RHeap allocator not found]\r\n"));
+				iBuf->AppendL(_L("\t[No allocator found]\r\n"));
 				}
 			CleanupStack::PopAndDestroy(&allocHelper);
 			}
