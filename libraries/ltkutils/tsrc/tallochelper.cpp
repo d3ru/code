@@ -25,7 +25,7 @@ public:
 	~CCmdTAllocHelper();
 private:
 	CCmdTAllocHelper();
-	void PrintStats(const TDesC& aDesc);
+	void PrintStatsL(const TDesC& aDesc);
 
 	void AllocL(TInt aSize, TInt aNumber=1);
 	void Free(TInt aNumber=1);
@@ -98,19 +98,21 @@ void CCmdTAllocHelper::DoRunL()
 	iAllocations.ReserveL(128);
 
 	Printf(_L("Udeb allocator=%d\r\n"), iAlloc.AllocatorIsUdeb());
+	Printf(_L("Allocator type = %S"), &iAlloc.Description());
 
-	PrintStats(_L("Initial stats"));
+	PrintStatsL(_L("Initial stats"));
 	// And do an RHeap walk, just to compare
 	User::Allocator().DebugFunction(128, (TAny*)&RHeapWalkCallback, this);
 	Printf(_L("allocated size according to RHeap::Walk: %d\r\n"), iAllocationsAccordingToRHeapWalker);
 
 	AllocL(64*1024);
-	PrintStats(_L("Stats after 1 64K alloc"));
+	TBuf<64> buf;
+	buf.Format(_L("Stats after 1 64K alloc to 0x%08x"), iAllocations[0]);
+	PrintStatsL(buf);
 	User::Allocator().DebugFunction(128, (TAny*)&RHeapWalkCallback, this); // debug
 
-
 	AllocL(4, 50);
-	PrintStats(_L("Stats after 50 small allocs"));
+	PrintStatsL(_L("Stats after 50 small allocs"));
 
 	/*
 	// Open a new RAllocatorHelper cos the stats will be cached otherwise
@@ -125,14 +127,16 @@ void CCmdTAllocHelper::DoRunL()
 	if (!iWaitOnExit)
 		{
 		Free(50);
-		PrintStats(_L("Stats after freeing them"));
+		PrintStatsL(_L("Stats after freeing them"));
 		Complete();
 		}
 	}
 
-void CCmdTAllocHelper::PrintStats(const TDesC& aDesc)
+void CCmdTAllocHelper::PrintStatsL(const TDesC& aDesc)
 	{
-	iAlloc.RefreshDetails();
+	TInt err = iAlloc.RefreshDetails();
+	LeaveIfErr(err, _L("Error returned from RAllocatorHelper::RefreshDetails()"));
+
 	TBuf<16> allocSize, freeSize, dlaSize, slabSize, freeDlaSize, partiallyFreeSlabSize, freeSlabSize, pageSize;
 	FormatSize(allocSize, iAlloc.SizeForCellType(RAllocatorHelper::EAllocationMask));
 	FormatSize(freeSize, iAlloc.SizeForCellType(RAllocatorHelper::EFreeMask));
@@ -202,7 +206,7 @@ TBool CCmdTAllocHelper::WalkCallback(RAllocatorHelper& /*aAlloc*/, TAny* aContex
 		TInt lenFromAllocLen = User::AllocLen((TAny*)aAddress);
 		if (lenFromAllocLen != aLength)
 			{
-			static_cast<CCmdTAllocHelper*>(aContext)->PrintWarning(_L("Walker reports cell 0x%08x size %d but AllocLen says %d\r\n"), aAddress, aLength, lenFromAllocLen);
+			static_cast<CCmdTAllocHelper*>(aContext)->PrintWarning(_L("Walker reports cell 0x%08x (type %d) size %d but AllocLen says %d\r\n"), aAddress, aType, aLength, lenFromAllocLen);
 			}
 		}
 

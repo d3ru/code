@@ -55,7 +55,10 @@ __ASSERT_COMPILE(sizeof(LtkUtils::RUserAllocatorHelper) == 10*4);
 #define HUEXPORT_C EXPORT_C
 #endif
 #define PANIC(r) User::Panic( _L("HeapUtils"), (r));
+
 #endif // __KERNEL_MODE__
+
+#define RETURN_IF_ERR(x) do { TInt _err = (x); if (_err) { LOG("Returning err %d from %d", _err, __LINE__); return _err; } } while (0)
 
 using LtkUtils::RAllocatorHelper;
 
@@ -448,6 +451,7 @@ void LtkUtils::RKernelCopyAllocatorHelper::TryUnlock()
 
 TInt RAllocatorHelper::OpenChunkHeap(TLinAddr aChunkBase, TInt aChunkMaxSize)
 	{
+	LOG("RAllocatorHelper::OpenChunkHeap(0x%08x, 0x%08x)", aChunkBase, aChunkMaxSize);
 #ifdef __KERNEL_MODE__
 	// Must be in CS
 	// Assumes that this only ever gets called for the kernel heap. Otherwise goes through RKernelSideAllocatorHelper::OpenUserHeap.
@@ -478,6 +482,7 @@ TInt RAllocatorHelper::OpenChunkHeap(TLinAddr aChunkBase, TInt aChunkMaxSize)
 		TAllocatorType oldType = iAllocatorType;
 		// Try middle of chunk, in case it's an RHybridHeap
 		iAllocatorAddress += aChunkMaxSize / 2;
+		LOG("RAllocatorHelper::OpenChunkHeap(0x%08x, 0x%08x) retrying IdentifyAllocatorType at 0x%08x", aChunkBase, aChunkMaxSize, iAllocatorAddress);
 		err = IdentifyAllocatorType(udeb, isTheKernelHeap);
 		if (err || iAllocatorType == EAllocatorUnknown)
 			{
@@ -593,7 +598,7 @@ TInt RAllocatorHelper::IdentifyAllocatorType(TBool aAllocatorIsUdeb, TBool aIsTh
 	TUint32 handlesPtr = 0;
 	TInt err = ReadWord(iAllocatorAddress + _FOFF(RHackAllocator, iHandles), handlesPtr);
 
-	if (err) return err;
+	RETURN_IF_ERR(err);
 	if (aIsTheKernelHeap || 
 		handlesPtr == iAllocatorAddress + _FOFF(RHackHeap, iChunkHandle) || 
 		handlesPtr == iAllocatorAddress + _FOFF(RHackHeap, iLock))
@@ -601,7 +606,7 @@ TInt RAllocatorHelper::IdentifyAllocatorType(TBool aAllocatorIsUdeb, TBool aIsTh
 		// It's an RHeap of some kind - I doubt any other RAllocator subclass will use iHandles in this way
 		TUint32 base = 0;
 		err = ReadWord(iAllocatorAddress + _FOFF(RHackHeap, iBase), base);
-		if (err) return err;
+		RETURN_IF_ERR(err);
 		TInt objsize = (TInt)base - (TInt)iAllocatorAddress;
 		LOG("RAllocatorHelper::IdentifyAllocatorType() - allocator size is: 0x%08x", objsize);
 
@@ -617,7 +622,7 @@ TInt RAllocatorHelper::IdentifyAllocatorType(TBool aAllocatorIsUdeb, TBool aIsTh
 
 			TUint32 possibleSelfRef = 0; // in RHybridHeap v2 ...
 			err = ReadWord(iAllocatorAddress + HybridV2::KSelfReferenceOffset, possibleSelfRef);
-			if (err) return err;
+			RETURN_IF_ERR(err);
 
 			// Only the second version references itself
 			if (possibleSelfRef == iAllocatorAddress)
@@ -694,7 +699,7 @@ HUEXPORT_C TInt RAllocatorHelper::GetCellNestingLevel(TAny* aCell, TInt& aNestin
 TInt RAllocatorHelper::RefreshDetails(TUint aMask)
 	{
 	TInt err = FinishConstruction();
-	if (err) return err;
+	RETURN_IF_ERR(err);
 
 	// Invalidate the page cache
 	iPageCacheAddr = 0;
@@ -710,7 +715,7 @@ const TInt KHeapWalkStatsForNewHeap = (EAllocated|ECount|EUnusedPages|ECommitted
 
 TInt RAllocatorHelper::DoRefreshDetails(TUint aMask)
 	{
-	TInt err = KErrNotSupported;
+	TInt err = KErrNone;
 	switch (iAllocatorType)
 		{
 		case EUrelOldRHeap:
@@ -724,9 +729,9 @@ TInt RAllocatorHelper::DoRefreshDetails(TUint aMask)
 				TUint32 top = 0;
 				//TUint32 base = 0;
 				//err = ReadWord(iAllocatorAddress + _FOFF(RHackHeap, iBase), base);
-				//if (err) return err;
+				//RETURN_IF_ERR(err);
 				err = ReadWord(iAllocatorAddress + _FOFF(RHackHeap, iTop), top);
-				if (err) return err;
+				RETURN_IF_ERR(err);
 
 				//iInfo->iCommittedSize = top - base;
 				iInfo->iCommittedSize = top - iAllocatorAddress;
@@ -736,7 +741,7 @@ TInt RAllocatorHelper::DoRefreshDetails(TUint aMask)
 				{
 				TUint32 allocSize = 0;
 				err = ReadWord(iAllocatorAddress + _FOFF(RHackAllocator, iTotalAllocSize), allocSize);
-				if (err) return err;
+				RETURN_IF_ERR(err);
 				iInfo->iAllocatedSize = allocSize;
 				iInfo->iValidInfo |= EAllocated;
 				}
@@ -744,7 +749,7 @@ TInt RAllocatorHelper::DoRefreshDetails(TUint aMask)
 				{
 				TUint32 count = 0;
 				err = ReadWord(iAllocatorAddress + _FOFF(RHackAllocator, iCellCount), count);
-				if (err) return err;
+				RETURN_IF_ERR(err);
 				iInfo->iAllocationCount = count;
 				iInfo->iValidInfo |= ECount;
 				}
@@ -752,7 +757,7 @@ TInt RAllocatorHelper::DoRefreshDetails(TUint aMask)
 				{
 				TUint32 maxlen = 0;
 				err = ReadWord(iAllocatorAddress + _FOFF(RHackHeap, iMaxLength), maxlen);
-				if (err) return err;
+				RETURN_IF_ERR(err);
 				iInfo->iMaxCommittedSize = maxlen;
 				iInfo->iValidInfo |= EMaxSize;
 				}
@@ -760,7 +765,7 @@ TInt RAllocatorHelper::DoRefreshDetails(TUint aMask)
 				{
 				TUint32 minlen = 0;
 				err = ReadWord(iAllocatorAddress + _FOFF(RHackHeap, iMaxLength) - 4, minlen); // This isn't a typo! iMinLength is 4 bytes before iMaxLength, on old heap ONLY
-				if (err) return err;
+				RETURN_IF_ERR(err);
 				iInfo->iMinCommittedSize = minlen;
 				iInfo->iValidInfo |= EMinSize;
 				}
@@ -789,10 +794,10 @@ TInt RAllocatorHelper::DoRefreshDetails(TUint aMask)
 				// And if fact we don't bother and just use iChunkSize
 				TUint32 chunkSize = 0;
 				err = ReadWord(iAllocatorAddress + KChunkSizeOffset, chunkSize);
-				if (err) return err;
+				RETURN_IF_ERR(err);
 				//TUint32 baseAddr = 0;
 				//err = ReadWord(iAllocatorAddress + _FOFF(RHackHeap, iBase), baseAddr);
-				//if (err) return err;
+				//RETURN_IF_ERR(err);
 				iInfo->iCommittedSize = chunkSize; // - (baseAddr - iAllocatorAddress);
 				iInfo->iValidInfo |= ECommitted;
 				}
@@ -803,13 +808,13 @@ TInt RAllocatorHelper::DoRefreshDetails(TUint aMask)
 					// Easy, just get them from the counter
 					TUint32 totalAlloc = 0;
 					err = ReadWord(iAllocatorAddress + _FOFF(RHackAllocator, iTotalAllocSize), totalAlloc);
-					if (err) return err;
+					RETURN_IF_ERR(err);
 					iInfo->iAllocatedSize = totalAlloc;
 					iInfo->iValidInfo |= EAllocated;
 
 					TUint32 cellCount = 0;
 					err = ReadWord(iAllocatorAddress + _FOFF(RHackAllocator, iCellCount), cellCount);
-					if (err) return err;
+					RETURN_IF_ERR(err);
 					iInfo->iAllocationCount = cellCount;
 					iInfo->iValidInfo |= ECount;
 					}
@@ -823,7 +828,7 @@ TInt RAllocatorHelper::DoRefreshDetails(TUint aMask)
 				{
 				TUint32 maxlen = 0;
 				err = ReadWord(iAllocatorAddress + _FOFF(RHackHeap, iMaxLength), maxlen);
-				if (err) return err;
+				RETURN_IF_ERR(err);
 				iInfo->iMaxCommittedSize = maxlen;
 				iInfo->iValidInfo |= EMaxSize;
 				}
@@ -831,7 +836,7 @@ TInt RAllocatorHelper::DoRefreshDetails(TUint aMask)
 				{
 				TUint32 minlen = 0;
 				err = ReadWord(iAllocatorAddress + _FOFF(RHackHeap, iAlign) + 4*4, minlen); // iMinLength is in different place to old RHeap
-				if (err) return err;
+				RETURN_IF_ERR(err);
 				iInfo->iMinCommittedSize = minlen;
 				iInfo->iValidInfo |= EMinSize;
 				}
@@ -870,21 +875,21 @@ TInt RAllocatorHelper::CheckValid(TUint aMask)
 HUEXPORT_C TInt RAllocatorHelper::CommittedSize()
 	{
 	TInt err = CheckValid(ECommitted);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 	return iInfo->iCommittedSize;
 	}
 
 HUEXPORT_C TInt RAllocatorHelper::AllocatedSize()
 	{
 	TInt err = CheckValid(EAllocated);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 	return iInfo->iAllocatedSize;
 	}
 
 HUEXPORT_C TInt RAllocatorHelper::AllocationCount()
 	{
 	TInt err = CheckValid(ECount);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 	return iInfo->iAllocationCount;
 	}
 
@@ -903,14 +908,14 @@ HUEXPORT_C TInt RAllocatorHelper::RefreshDetails()
 HUEXPORT_C TInt RAllocatorHelper::MaxCommittedSize()
 	{
 	TInt err = CheckValid(EMaxSize);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 	return iInfo->iMaxCommittedSize;
 	}
 
 HUEXPORT_C TInt RAllocatorHelper::MinCommittedSize()
 	{
 	TInt err = CheckValid(EMinSize);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 	return iInfo->iMinCommittedSize;
 	}
 
@@ -927,7 +932,7 @@ HUEXPORT_C TInt RAllocatorHelper::AllocCountForCell(TAny* aCell) const
 			{
 			TLinAddr allocCountAddr = (TLinAddr)aCell - 4;
 			TInt err = ReadWord(allocCountAddr, allocCount);
-			if (err) return err;
+			RETURN_IF_ERR(err);
 			return (TInt)allocCount;
 			}
 		default:
@@ -1182,7 +1187,7 @@ HUEXPORT_C TInt RAllocatorHelper::Walk(TWalkFunc3 aCallbackFn, TAny* aContext)
 	SContext3 context = { aCallbackFn, aContext };
 
 	TInt err = FinishConstruction(); // In case this hasn't been done yet
-	if (err) return err;
+	RETURN_IF_ERR(err);
 
 	TryLock();
 	err = DoWalk(&DispatchClientWalkCallback, &context);
@@ -1258,27 +1263,27 @@ TInt RAllocatorHelper::OldSkoolWalk(TWalkFunc3 aCallbackFn, TAny* aContext)
 	{
 	TLinAddr pC = 0;
 	TInt err = ReadWord(iAllocatorAddress + _FOFF(RHackHeap, iBase), pC); // pC = iBase; // allocated cells
-	if (err) return err;
+	RETURN_IF_ERR(err);
 	TLinAddr pF = iAllocatorAddress + _FOFF(RHackHeap, iAlign) + 3*4; // pF = &iFree; // free cells
 
 	TLinAddr top = 0;
 	err = ReadWord(iAllocatorAddress + _FOFF(RHackHeap, iTop), top);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 	const TInt KAllocatedCellHeaderSize = iAllocatorType == EUdebOldRHeap ? 12 : 4;
 	TInt minCell = 0;
 	err = ReadWord(iAllocatorAddress + _FOFF(RHackHeap, iAlign) + 4, (TUint32&)minCell);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 	TInt align = 0;
 	err = ReadWord(iAllocatorAddress + _FOFF(RHackHeap, iAlign), (TUint32&)align);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 
 	FOREVER
 		{
 		err = ReadWord(pF+4, pF); // pF = pF->next; // next free cell
-		if (err) return err;
+		RETURN_IF_ERR(err);
 		TLinAddr pFnext = 0;
 		if (pF) err = ReadWord(pF + 4, pFnext);
-		if (err) return err;
+		RETURN_IF_ERR(err);
 
 		if (!pF)
 			{
@@ -1295,7 +1300,7 @@ TInt RAllocatorHelper::OldSkoolWalk(TWalkFunc3 aCallbackFn, TAny* aContext)
 			{
 			TInt l; // = pF->len
 			err = ReadWord(pF, (TUint32&)l);
-			if (err) return err;
+			RETURN_IF_ERR(err);
 			if (l<minCell || (l & (align-1)))
 				{
 				// free cell length invalid
@@ -1309,7 +1314,7 @@ TInt RAllocatorHelper::OldSkoolWalk(TWalkFunc3 aCallbackFn, TAny* aContext)
 			{
 			TInt l; // pC->len;
 			err = ReadWord(pC, (TUint32&)l);
-			if (err) return err;
+			RETURN_IF_ERR(err);
 			if (l<minCell || (l & (align-1)))
 				{
 				// allocated cell length invalid
@@ -1335,7 +1340,7 @@ TInt RAllocatorHelper::OldSkoolWalk(TWalkFunc3 aCallbackFn, TAny* aContext)
 			break;		// reached end of heap
 		TInt pFlen = 0;
 		err = ReadWord(pF, (TUint32&)pFlen);
-		if (err) return err;
+		RETURN_IF_ERR(err);
 		pC = pF + pFlen; // pC = __NEXT_CELL(pF);	// step to next allocated cell
 		TBool shouldContinue = (*aCallbackFn)(*this, aContext, EHeapFreeCell, pF, pFlen);
 		if (!shouldContinue) return KErrNone;
@@ -1346,14 +1351,14 @@ TInt RAllocatorHelper::OldSkoolWalk(TWalkFunc3 aCallbackFn, TAny* aContext)
 HUEXPORT_C TInt RAllocatorHelper::CountUnusedPages()
 	{
 	TInt err = CheckValid(EUnusedPages);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 	return iInfo->iUnusedPages;
 	}
 
 HUEXPORT_C TInt RAllocatorHelper::CommittedFreeSpace()
 	{
 	TInt err = CheckValid(ECommittedFreeSpace);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 	return iInfo->iCommittedFreeSpace;
 	}
 
@@ -1510,7 +1515,7 @@ TInt RAllocatorHelper::NewHotnessWalk(TWalkFunc3 aCallbackFn, TAny* aContext)
 
 	TUint32 basePtr;
 	TInt err = ReadWord(iAllocatorAddress + _FOFF(RHackHeap, iBase), basePtr);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 	if (basePtr < iAllocatorAddress + UserInitialHeapMetaDataSize())
 		{
 		// Must be a kernel one - don't do page and slab
@@ -1522,13 +1527,13 @@ TInt RAllocatorHelper::NewHotnessWalk(TWalkFunc3 aCallbackFn, TAny* aContext)
 		LOG("RAllocatorHelper::NewHotnessWalk() - paged cells");
 		TUint32 membase = 0;
 		err = ReadWord(iAllocatorAddress + MemBaseOffset(), membase);
-		if (err) return err;
+		RETURN_IF_ERR(err);
 
 		TBool shouldContinue = ETrue;
 		for (int ix = 0;(ix = PageMapFind(ix,1,err)) >= 0 && err == KErrNone;)
 			{
 			int npage = PagedDecode(ix, err);
-			if (err) return err;
+			RETURN_IF_ERR(err);
 			// Introduce paged buffer to the walk function 
 			TLinAddr bfr = membase + (1 << (PAGESHIFT-1))*ix;
 			int len = npage << PAGESHIFT;
@@ -1547,13 +1552,13 @@ TInt RAllocatorHelper::NewHotnessWalk(TWalkFunc3 aCallbackFn, TAny* aContext)
 				}
 			ix += (npage<<1);
 			}
-		if (err) return err;
+		RETURN_IF_ERR(err);
 
 		// Slab
 		LOG("RAllocatorHelper::NewHotnessWalk() - slab cells");
 		TUint32 sparePage = 0;
 		err = ReadWord(iAllocatorAddress + SparePageOffset(), sparePage);
-		if (err) return err;
+		RETURN_IF_ERR(err);
 		if (sparePage)
 			{
 			//Walk(wi, iSparePage, iPageSize, EGoodFreeCell, ESlabSpare); // Introduce Slab spare page to the walk function 
@@ -1583,8 +1588,14 @@ TInt RAllocatorHelper::NewHotnessWalk(TWalkFunc3 aCallbackFn, TAny* aContext)
 		}
 
 	// DLA
+
+#ifndef DLA_H_INCLUDED // If we haven't included dla.h (which we do for purposes of testing the asserts) we need to define these ourselves
 #define CHUNK_OVERHEAD (sizeof(TUint))
-#define CHUNK_ALIGN_MASK (7) 
+#define CHUNK_ALIGN_MASK (7)
+#define CINUSE_BIT 2
+#define INUSE_BITS 3
+#endif // DLA_H_INCLUDED
+
 #define CHUNK2MEM(p)		((TLinAddr)(p) + 8)
 #define MEM2CHUNK(mem)	  ((TLinAddr)(p) - 8)
 /* chunk associated with aligned address A */
@@ -1592,17 +1603,15 @@ TInt RAllocatorHelper::NewHotnessWalk(TWalkFunc3 aCallbackFn, TAny* aContext)
 	((((TLinAddr)(A) & CHUNK_ALIGN_MASK) == 0)? 0 :\
 	((8 - ((TLinAddr)(A) & CHUNK_ALIGN_MASK)) & CHUNK_ALIGN_MASK))
 #define ALIGN_AS_CHUNK(A)   ((A) + ALIGN_OFFSET(CHUNK2MEM(A)))
-#define CINUSE_BIT 2
-#define INUSE_BITS 3
 
 	LOG("RAllocatorHelper::NewHotnessWalk() - dla cells");
 	TUint32 topSize = 0;
 	err = ReadWord(iAllocatorAddress + MallocStateOffset() + HybridCom::KMallocStateTopSizeOffset, topSize);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 
 	TUint32 top = 0;
 	err = ReadWord(iAllocatorAddress + MallocStateOffset() + HybridCom::KMallocStateTopOffset, top);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 
 	TInt max = ((topSize-1) & ~CHUNK_ALIGN_MASK) - CHUNK_OVERHEAD;
 	if ( max < 0 )
@@ -1613,13 +1622,13 @@ TInt RAllocatorHelper::NewHotnessWalk(TWalkFunc3 aCallbackFn, TAny* aContext)
 	
 	TUint32 mallocStateSegBase = 0;
 	err = ReadWord(iAllocatorAddress + MallocStateOffset() + HybridCom::KMallocStateSegOffset, mallocStateSegBase);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 
 	for (TLinAddr q = ALIGN_AS_CHUNK(mallocStateSegBase); q != top; /*q = NEXT_CHUNK(q)*/)
 		{
 		TUint32 qhead = 0;
 		err = ReadWord(q + 4, qhead);
-		if (err) return err;
+		RETURN_IF_ERR(err);
 		//TInt sz = CHUNKSIZE(q);
 		TInt sz = qhead & ~(INUSE_BITS);
 		if (!(qhead & CINUSE_BIT))
@@ -1657,7 +1666,7 @@ TInt RAllocatorHelper::TreeWalk(TUint32 aSlabRoot, TInt aSlabType, TWalkFunc3 aC
 
 	TUint32 s = 0;
 	TInt err = ReadWord(aSlabRoot, s);
-	if (err) return err;
+	RETURN_IF_ERR(err);
 	//slab* s = *root;
 	LOG("RAllocatorHelper::TreeWalk() - root at: 0x%08x, s: 0x%08x", aSlabRoot, s );
 	if (!s)
@@ -1673,7 +1682,7 @@ TInt RAllocatorHelper::TreeWalk(TUint32 aSlabRoot, TInt aSlabType, TWalkFunc3 aC
 			{
 			err = ReadWord(s + HybridCom::KSlabChild1Offset, c);
 			LOG("RAllocatorHelper::TreeWalk() - walking down left side, current: 0x%08x, error: %d", c, err );
-			if (err) return err;
+			RETURN_IF_ERR(err);
 			if (c == 0) break;
 			else s = c;
 			}
@@ -1683,7 +1692,7 @@ TInt RAllocatorHelper::TreeWalk(TUint32 aSlabRoot, TInt aSlabType, TWalkFunc3 aC
 			//TODO __HEAP_CORRUPTED_TEST_STATIC
 			TUint32 h;
 			err = ReadWord(s, h); // = aSlab->iHeader;
-			if (err) return err;
+			RETURN_IF_ERR(err);
 			TUint32 size = (h&0x0003f000)>>12; //SlabHeaderSize(h);
 			LOG("RAllocatorHelper::TreeWalk() - slab header at: 0x%08x, size is %d", h, size );
 			TUint debugheadersize = 0;
@@ -1731,7 +1740,7 @@ TInt RAllocatorHelper::TreeWalk(TUint32 aSlabRoot, TInt aSlabType, TWalkFunc3 aC
 						TUint32 addr = s + freeOffset;
 						TUint8 nextCell = 0;
 						err = ReadByte(addr, nextCell);
-						if (err) return err;
+						RETURN_IF_ERR(err);
 						freeOffset = ((TUint32)nextCell) << 2;
 						}
 					memset(iTempSlabBitmap + count - wildernessCount, 0, wildernessCount); // Mark the wilderness as free
@@ -1758,7 +1767,7 @@ TInt RAllocatorHelper::TreeWalk(TUint32 aSlabRoot, TInt aSlabType, TWalkFunc3 aC
 					TUint32 pageAddr = ROUND_DOWN(s, KPageSize);
 					TUint32 headerForPage = 0;
 					err = ReadWord(pageAddr, headerForPage);
-					if (err) return err;
+					RETURN_IF_ERR(err);
 					TUint32 slabHeaderPageMap = (headerForPage & 0x00000f00)>>8; // SlabHeaderPagemap(unsigned h)
 					for (TInt slabIdx = 0; slabIdx < 4; slabIdx++)
 						{
@@ -1775,7 +1784,7 @@ TInt RAllocatorHelper::TreeWalk(TUint32 aSlabRoot, TInt aSlabType, TWalkFunc3 aC
 
 			//c = s->iChild2;
 			err = ReadWord(s + HybridCom::KSlabChild2Offset, c);
-			if (err) return err;
+			RETURN_IF_ERR(err);
 
 			if (c)
 				{	// one step down right side, now try and walk down left
@@ -1786,7 +1795,7 @@ TInt RAllocatorHelper::TreeWalk(TUint32 aSlabRoot, TInt aSlabType, TWalkFunc3 aC
 				{	// loop to walk up right side
 				TUint32 pp = 0;
 				err = ReadWord(s + HybridCom::KSlabParentOffset, pp);
-				if (err) return err;
+				RETURN_IF_ERR(err);
 				//slab** pp = s->iParent;
 				if (pp == aSlabRoot)
 					return KErrNone;
@@ -1808,7 +1817,11 @@ HUEXPORT_C TInt RAllocatorHelper::SizeForCellType(TExtendedCellType aType)
 	if (aType & EBadnessMask) return KErrArgument;
 	if (aType == EAllocationMask) return AllocatedSize();
 
-	if (iAllocatorType == EUdebOldRHeap || iAllocatorType == EUrelOldRHeap)
+	//if (iAllocatorType == EUdebOldRHeap || iAllocatorType == EUrelOldRHeap)
+	switch (iAllocatorType)
+		{
+	case EUdebOldRHeap:
+	case EUrelOldRHeap:
 		{
 		switch (aType)
 			{
@@ -1821,10 +1834,15 @@ HUEXPORT_C TInt RAllocatorHelper::SizeForCellType(TExtendedCellType aType)
 				return KErrNotSupported;
 			}
 		}
-	else if (iAllocatorType == EUrelHybridHeap || iAllocatorType == EUdebHybridHeap)
+	case EUrelHybridHeap:
+	case EUdebHybridHeap:
+	case EUrelHybridHeapV2:
+	case EUdebHybridHeapV2:
+	case EUrelHybridHeapQt:
+	case EUdebHybridHeapQt:
 		{
 		TInt err = CheckValid(EHybridStats);
-		if (err) return err;
+		RETURN_IF_ERR(err);
 
 		switch (aType)
 			{
@@ -1850,8 +1868,7 @@ HUEXPORT_C TInt RAllocatorHelper::SizeForCellType(TExtendedCellType aType)
 				return KErrNotSupported;
 			}
 		}
-	else
-		{
+	default:
 		return KErrNotSupported;
 		}
 	}
@@ -1861,7 +1878,10 @@ HUEXPORT_C TInt RAllocatorHelper::CountForCellType(TExtendedCellType aType)
 	if (aType & EBadnessMask) return KErrArgument;
 	if (aType == EAllocationMask) return AllocationCount();
 
-	if (iAllocatorType == EUdebOldRHeap || iAllocatorType == EUrelOldRHeap)
+	switch (iAllocatorType)
+		{
+	case EUdebOldRHeap:
+	case EUrelOldRHeap:
 		{
 		switch (aType)
 			{
@@ -1871,17 +1891,22 @@ HUEXPORT_C TInt RAllocatorHelper::CountForCellType(TExtendedCellType aType)
 			case EFreeMask:
 				{
 				TInt err = CheckValid(ECommittedFreeSpace);
-				if (err) return err;
+				RETURN_IF_ERR(err);
 				return iInfo->iHeapFreeCellCount;
 				}
 			default:
 				return KErrNotSupported;
 			}
 		}
-	else if (iAllocatorType == EUrelHybridHeap || iAllocatorType == EUdebHybridHeap)
+	case EUrelHybridHeap:
+	case EUdebHybridHeap:
+	case EUrelHybridHeapV2:
+	case EUdebHybridHeapV2:
+	case EUrelHybridHeapQt:
+	case EUdebHybridHeapQt:
 		{
 		TInt err = CheckValid(EHybridStats);
-		if (err) return err;
+		RETURN_IF_ERR(err);
 
 		switch (aType)
 			{
@@ -1907,8 +1932,7 @@ HUEXPORT_C TInt RAllocatorHelper::CountForCellType(TExtendedCellType aType)
 				return KErrNotSupported;
 			}
 		}
-	else
-		{
+	default:
 		return KErrNotSupported;
 		}
 	}

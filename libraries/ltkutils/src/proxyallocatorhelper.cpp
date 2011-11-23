@@ -57,23 +57,35 @@ EXPORT_C TInt LtkUtils::RProxyAllocatorHelper::OpenChunkHeap(RMemoryAccess& aMem
 #ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	iMemoryAccess = &aMem;
 
-	TChunkKernelInfo chunkInfo;
-	TPckg<TChunkKernelInfo> chunkInfoPckg(chunkInfo);
-	TInt err = iMemoryAccess->GetObjectInfo(EChunk, (TUint8*)aDChunkPtr, chunkInfoPckg);
+	RBuf8 buf;
+	TInt err = buf.Create(Max((int)sizeof(TChunkKernelInfo), (int)sizeof(TProcessKernelInfo)));
 	if (err) return err;
+
+	const TChunkKernelInfo* chunkInfo = (const TChunkKernelInfo*)buf.Ptr();
+	err = iMemoryAccess->GetObjectInfo(EChunk, (TUint8*)aDChunkPtr, buf);
+	if (err)
+		{
+		buf.Close();
+		return err;
+		}
 	RProcess process;
-	err = process.Open(chunkInfo.iControllingOwnerProcessId);
+	err = process.Open(chunkInfo->iControllingOwnerProcessId);
 	if (err == KErrNone)
 		{
-		TPckgBuf<TProcessKernelInfo> processInfo;
-		err = iMemoryAccess->GetObjectInfoByHandle(EProcess, RThread().Id(), process.Handle(), processInfo);
+		// Remember these as we're about to overwrite the buffer
+		TLinAddr base = (TLinAddr)chunkInfo->iBase;
+		TInt maxSize = chunkInfo->iMaxSize;
+		err = iMemoryAccess->GetObjectInfoByHandle(EProcess, RThread().Id(), process.Handle(), buf);
 		process.Close();
 		if (err == KErrNone)
 			{
-			iThreadId = processInfo().iFirstThreadId;
-			return RAllocatorHelper::OpenChunkHeap((TLinAddr)chunkInfo.iBase, chunkInfo.iMaxSize);
+			const TProcessKernelInfo* processInfo = (const TProcessKernelInfo*)buf.Ptr();
+			iThreadId = processInfo->iFirstThreadId;
+			buf.Close();
+			return RAllocatorHelper::OpenChunkHeap(base, maxSize);
 			}
 		}
+	buf.Close();
 	return err;
 #else
 	(void)aMem;

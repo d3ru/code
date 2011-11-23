@@ -33,6 +33,7 @@
 #include "common.h"
 #include "heap_priv_defs.h"
 #include "dla.h"
+#define DLA_H_INCLUDED
 #endif
 
 #ifdef TEST_HYBRIDHEAP_COMMON_ASSERTS
@@ -184,7 +185,7 @@ const TInt KUserPartialPageOffset = 173*4;
 const TInt KUserFullSlabOffset = 174*4;
 const TInt KUserSlabAllocOffset = 180*4;
 const TInt KSelfReferenceOffset = 34*4; // same for user and kernel heaps
-const TInt KUserInitialHeapMetaDataSize = 194 * 4;
+const TInt KUserInitialHeapMetaDataSize = 195 * 4; //  A previous incarnation of RHybridHeapV2 seemed to have this as 194 due to KUserSlabAllocatorSize being smaller
 const TInt KKernelInitialHeapMetaDataSize = 144 * 4;
 
 __ASSERT_COMPILE(HeapV1::KUserInitialHeapMetaDataSize < KUserInitialHeapMetaDataSize);
@@ -197,8 +198,10 @@ __ASSERT_COMPILE(KSelfReferenceOffset == HybridV1::KMallocStateOffset);
 
 const TInt KUserHybridHeapSize = 44*4;
 const TInt KUserDlAllocatorOffset = KUserHybridHeapSize;
+const TInt KUserPageAllocatorSize = 20*4;
+const TInt KUserSlabAllocatorSize = 23*4; // A previous incarnation of RHybridHeapV2 seemed to have this as 22 not 23.
 const TInt KUserPageAllocatorOffset = 152 * 4;
-const TInt KUserSlabAllocatorOffset = 172 * 4;
+const TInt KUserSlabAllocatorOffset = KUserPageAllocatorOffset + KUserPageAllocatorSize;
 
 const TInt KKernelHybridHeapSize = 36*4;
 const TInt KKernelDlAllocatorOffset = KKernelHybridHeapSize;
@@ -206,25 +209,26 @@ const TInt KKernelDlAllocatorOffset = KKernelHybridHeapSize;
 
 #ifndef __KERNEL_MODE__
 __ASSERT_COMPILE(sizeof(RHybridHeap) == KUserHybridHeapSize);
-__ASSERT_COMPILE(sizeof(RDlAllocator) == KUserPageAllocatorOffset - KUserDlAllocatorOffset);
-__ASSERT_COMPILE(_FOFF(RDlAllocator, iDlaState) == KUserMallocStateOffset - KUserHybridHeapSize);
-__ASSERT_COMPILE(sizeof(RPageAllocator) == KUserSlabAllocatorOffset - KUserPageAllocatorOffset);
-__ASSERT_COMPILE(sizeof(RSlabHeapAllocator) == KUserInitialHeapMetaDataSize - KUserSlabAllocatorOffset);
+__ASSERT_COMPILE(KUserDlAllocatorOffset + sizeof(RDlAllocator) == KUserPageAllocatorOffset);
+__ASSERT_COMPILE(KUserHybridHeapSize + _FOFF(RDlAllocator, iDlaState) == KUserMallocStateOffset);
+__ASSERT_COMPILE(sizeof(RPageAllocator) == KUserPageAllocatorSize);
+__ASSERT_COMPILE(sizeof(RSlabHeapAllocator) == KUserSlabAllocatorSize);
 __ASSERT_COMPILE(sizeof(RHybridHeap) + sizeof(RDlAllocator) + sizeof(RPageAllocator) + sizeof(RSlabHeapAllocator) == KUserInitialHeapMetaDataSize);
-__ASSERT_COMPILE(_FOFF(RPageAllocator, iPageMap) == KUserPageMapOffset - KUserPageAllocatorOffset);
-__ASSERT_COMPILE(_FOFF(RPageAllocator, iMemBase) == KUserMemBaseOffset - KUserPageAllocatorOffset);
-__ASSERT_COMPILE(_FOFF(RSlabHeapAllocator, iSparePage) == KUserSparePageOffset - KUserSlabAllocatorOffset);
-__ASSERT_COMPILE(_FOFF(RSlabHeapAllocator, iPartialPage) == KUserPartialPageOffset - KUserSlabAllocatorOffset);
-__ASSERT_COMPILE(_FOFF(RSlabHeapAllocator, iSlabAlloc) == KUserSlabAllocOffset - KUserSlabAllocatorOffset);
+__ASSERT_COMPILE(KUserPageAllocatorOffset + _FOFF(RPageAllocator, iPageMap) == KUserPageMapOffset);
+__ASSERT_COMPILE(_FOFF(RHybridHeap, iMemBase) == KUserMemBaseOffset);
+__ASSERT_COMPILE(KUserSlabAllocatorOffset + _FOFF(RSlabHeapAllocator, iSparePage) == KUserSparePageOffset);
+__ASSERT_COMPILE(KUserSlabAllocatorOffset + _FOFF(RSlabHeapAllocator, iPartialPage) == KUserPartialPageOffset);
+__ASSERT_COMPILE(KUserSlabAllocatorOffset + _FOFF(RSlabHeapAllocator, iSlabAlloc) == KUserSlabAllocOffset);
 __ASSERT_COMPILE(_FOFF(TSlab, iParent) == HybridCom::KSlabParentOffset);
 __ASSERT_COMPILE(_FOFF(TSlab, iChild1) == HybridCom::KSlabChild1Offset);
 __ASSERT_COMPILE(_FOFF(TSlab, iChild2) == HybridCom::KSlabChild2Offset);
 __ASSERT_COMPILE(_FOFF(TSlab, iPayload) == HybridCom::KSlabPayloadOffset);
 __ASSERT_COMPILE(sizeof(TSlabSet) == HybridCom::KSlabsetSize);
-#endif
+#else
 __ASSERT_COMPILE(sizeof(RHybridHeap) == KKernelHybridHeapSize);
 __ASSERT_COMPILE(_FOFF(RHybridHeap, iHybridHeap) == KSelfReferenceOffset);
 __ASSERT_COMPILE(_FOFF(RDlAllocator, iDlaState) == KKernelMallocStateOffset - KKernelHybridHeapSize);
+#endif // __KERNEL_MODE__
 __ASSERT_COMPILE(_FOFF(malloc_state, topsize) == HybridCom::KMallocStateTopSizeOffset);
 __ASSERT_COMPILE(_FOFF(malloc_state, top) == HybridCom::KMallocStateTopOffset);
 __ASSERT_COMPILE(_FOFF(malloc_state, seg) == HybridCom::KMallocStateSegOffset);

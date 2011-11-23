@@ -2863,7 +2863,7 @@ void CCmdChunkInfo::PrintChunkInfoL(TUint aAddress)
 			iBuf->AppendFormatL(_L("Controlling process:\t\'%S\' (%u)\r\n"), &iName, iChunkInfo.iControllingOwnerProcessId);
 			LtkUtils::RProxyAllocatorHelper allocHelper;
 			CleanupClosePushL(allocHelper);
-			err = allocHelper.OpenChunkHeap(iMemAccess, (TAny*)iAddress);
+			err = allocHelper.OpenChunkHeap(iMemAccess, (TAny*)aAddress);
 			if (err == KErrNone)
 				{
 				iBuf->AppendFormatL(_L("Allocator type:\t%S\r\n"), &allocHelper.Description());

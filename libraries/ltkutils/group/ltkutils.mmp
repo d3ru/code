@@ -65,6 +65,9 @@ library			ws32.lib
 
 //library			clogger.lib
 
-// Enable these 2 lines to check all the offset calculations in RAllocatorHelper are correct. Requires base_e32 source code to be installed
-//MACRO TEST_HYBRIDHEAP_ASSERTS
-//userinclude ..\..\..\..\sf\os\kernelhwsrv\kernel\eka\include
+// Enable these lines to check all the offset calculations for RAllocatorHelper are correct. Requires base_e32 source code to be installed
+//MACRO TEST_HYBRIDHEAP_V1_ASSERTS
+//MACRO TEST_HYBRIDHEAP_V2_ASSERTS
+//USERINCLUDE /sf/os/kernelhwsrv/kernel/eka/include
+//USERINCLUDE /sf/os/kernelhwsrv/kernel/eka/common
+//USERINCLUDE /sf/os/kernelhwsrv/kernel/eka/common/dla
