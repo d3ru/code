@@ -1,6 +1,6 @@
 # load.cif
 # 
-# Copyright (c) 2010 Accenture. All rights reserved.
+# Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of the "Eclipse Public License v1.0"
 # which accompanies this distribution, and is available
@@ -38,13 +38,17 @@ The version of the DLL to be loaded. The top 16 bits of the version are the majo
 
 Don't wait before exiting.
 
+==option bool l locale
+
+Load with C<RLoader::LoadLocale> (via C<TExtendedLocale::LoadLocale>) rather than the normal C<RLibrary::Load>. --uid and --version options are ignored if this is specified. Does not change the system locale, this option is mainly as a vector for loading global code segments.
+
 ==argument string dll_name
 
 The name of the DLL to load.
 
 ==copyright
 
-Copyright (c) 2008-2010 Accenture. All rights reserved.
+Copyright (c) 2008-2011 Accenture. All rights reserved.
 
 ==smoke-test
 

@@ -202,6 +202,10 @@
 #define FSHELL_MEMORY_ACCESS_SUPPORT
 #endif
 
+#if defined(FSHELL_ARM11XX_SUPPORT) || defined(FSHELL_ARM_MEM_MAPPED_DEBUG)
+#define FSHELL_HWBREAK_SUPPORT
+#endif
+
 //
 // extrabtrace
 //
@@ -261,11 +265,10 @@
 #ifndef FSHELL_NO_SUPPORT_BUILTIN_REBOOT
 #define FSHELL_CORE_SUPPORT_BUILTIN_REBOOT
 #endif
-// This really isn't supported ever
-//#define FSHELL_CORE_SUPPORT_HEAPTRACE
+#define FSHELL_CORE_SUPPORT_HEAPTRACE
 #define FSHELL_CORE_SUPPORT_PROXYSERVER
 #define FSHELL_CORE_SUPPORT_TRACESWITCH
-#endif
+#endif // FSHELL_MEMORY_ACCESS_SUPPORT
 
 #ifdef FSHELL_CAP_ALL
 #define FSHELL_CORE_SUPPORT_SUDO
@@ -679,6 +682,7 @@
 #define FSHELL_UID_PROXYSERVER                0x10286F9A
 #define FSHELL_UID_STARTAPP                   0x10286F9B
 #define FSHELL_UID_HCR                        0x10286F9C
+#define FSHELL_UID_DUMMYLOCALE                0x10286F9D
 #else // Not FSHELL_PROTECTED_UIDS
 
 #define FSHELL_UID_ACTIVEVIEW                 0xE02866D2
@@ -846,6 +850,7 @@
 #define FSHELL_UID_PROXYSERVER                0xE0286F9A
 #define FSHELL_UID_STARTAPP                   0xE0286F9B
 #define FSHELL_UID_HCR                        0xE0286F9C
+#define FSHELL_UID_DUMMYLOCALE                0xE0286F9D
 
 #endif // FSHELL_PROTECTED_UIDS
 

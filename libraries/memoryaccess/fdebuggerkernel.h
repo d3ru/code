@@ -26,6 +26,8 @@ public:
 	virtual void ZombieCreated(RMemoryAccess::TZombieNotification& aNotification) =0;
 	};
 
+struct SSpike;
+
 NONSHARABLE_CLASS(DDebuggerEventHandler) : public DKernelEventHandler
 	{
 public:
@@ -51,7 +53,11 @@ public:
 	TUint GetCreatorThread(TUint aThreadId); // Returns 0 if not known
 	TUint32 GetThreadStartTime(TUint aThreadId); // Returns 0 if not known
 
+	TInt SpikeAddress(DThread* aThread, TLinAddr aAddr, TLinAddr aFnToCall, TUint32 aR0);
+	TInt SpikeVtable(DThread* aThread, TLinAddr aVtablePtrAddress, TLinAddr aFnToCall, TUint32 aR0);
+
 private:
+	SSpike* GetFreeSpike();
 	DDebuggerEventHandler(TDfcQue* aQue);
 	~DDebuggerEventHandler();
 	static TUint Event(TKernelEvent aEvent, TAny* a1, TAny* a2, TAny* aPrivateData);
@@ -64,7 +70,7 @@ private:
 	struct SZombie;
 	struct SBreakpoint;
 	SZombie* FindZombie(DThread* aThread);
-	void ReleaseZombie(SZombie* aZombie);
+	void DoReleaseZombie(SZombie* aZombie);
 	void ReleaseZombieAndUnlock(SZombie* aZombie);
 	void UnsuspendThread(SZombie* aZombie);
 	TInt Zombify(const SBreakpoint* aBreakpoint=NULL);
@@ -211,6 +217,10 @@ private:
 		TUint iCreationTickCount;
 		};
 	RArray<TCreatorInfo> iCreatorInfo;
+
+    DPlatChunkHw* iSpikeChunk;
+    SSpike* iSpikes;
+    TPhysAddr iSpikeChunkPhysAddr;
 	};
 
 #endif // FDEBUGGERKERNEL_H

@@ -1,6 +1,6 @@
 // bld.inf
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -29,8 +29,12 @@ PRJ_EXPORTS
 
 PRJ_MMPFILES
 loggingallocator.mmp
+loggingallocatordummylocale.mmp
 #endif // FSHELL_QR3_SUPPORT_LOGGINGALLOCATOR
 
 #ifdef FSHELL_QR3_SUPPORT_SANDBOX
 sandbox.mmp
 #endif
+
+PRJ_TESTMMPFILES
+..\tsrc\tloggingallocator.mmp

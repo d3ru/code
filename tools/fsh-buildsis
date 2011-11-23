@@ -86,7 +86,11 @@ sub BuildSis {
   $ibyFileName = basename($ibyFileName);
   my $cwd = cwd();
   chdir ($ibyDirName) or die "Error: Couldn't chdir to \"$ibyDirName\": $!\n";
-  my $command = "$kCpp -D$platform $ibyFileName 2>&1 >$tempFileName |";
+  my $smp = "";
+  if (-e "$ENV{EPOCROOT}epoc32\\release\\armv5smp") {
+    $smp = "-DFSHELL_BUILD_SMP_SIS";
+  }
+  my $command = "$kCpp -D$platform $smp $ibyFileName 2>&1 >$tempFileName |";
   print "Running \"$command\"\n" if ($options{verbose});
   open (CPP, $command) or die "Error: Couldn't run \"cpp.exe\": $!\n";
   my $error = 0;

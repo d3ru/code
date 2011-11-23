@@ -1,6 +1,6 @@
 // LoggingAllocator.cpp
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -37,11 +37,11 @@ enum THeap
 	EHeapReAlloc,
 	EHeapFree,
 	// My additions go after this
-	ELoggingAllocatorInstalled = 128,
-	EHeapPrimingFinished,
-	EHeapExtendedAlloc,
-	EHeapExtendedFree,
-	EHeapExtendedRealloc,
+	ELoggingAllocatorInstalled = 128, // [allocator*, 0 (was tid), pid]
+	EHeapPrimingFinished, // [allocator*, 0 (was tid), pid]
+	EHeapExtendedAlloc, // [allocator*, addr, actualLen, requestedLen, 0 (was tid), pid, stack...]
+	EHeapExtendedFree, // [allocator*, addr, actualLen, -1 or 0, 0 (was tid), pid, stack...]
+	EHeapExtendedRealloc, // [allocator*, addr, actualLen, newLen, 0 (was tid), pid, oldPtr, stack...]
 	};
 
 const TInt KUidUninstallLoggingAllocator = 0x10285BAB;
@@ -97,7 +97,7 @@ void RLoggingAllocator::Free(TAny* aPtr)
 
 	if (iFlags & EOldFormatLogging)
 		{
-		BTrace8(KHeapCategory, EHeapFree, iA, aPtr);
+		BTraceContext8(KHeapCategory, EHeapFree, iA, aPtr);
 		}
 	}
 
@@ -109,7 +109,7 @@ TAny* RLoggingAllocator::Alloc(TInt aSize)
 	if (cellPtr && (iFlags & EOldFormatLogging))
 		{
 		TUint32 remainder[] = { AllocLen(cellPtr), aSize };
-		BTraceN(KHeapCategory, EHeapAlloc, iA, cellPtr, remainder, sizeof(remainder));
+		BTraceContextN(KHeapCategory, EHeapAlloc, iA, cellPtr, remainder, sizeof(remainder));
 		}
 	return cellPtr;
 	}
@@ -169,7 +169,7 @@ void RLoggingAllocator::DoTraceAllocEvent(RAllocator* aAllocator, TAny* aCellPtr
 			*(ptr++) = aAllocator->AllocLen(aCellPtr);
 			}
 		*(ptr++) = (aAllocEvent == EHeapFree) ? 0xFFFFFFFFu : aRequestedSize; // uint 3
-		*(ptr++) = (TUint)RThread().Id(); // uint 4
+		*(ptr++) = 0; //(TUint)RThread().Id(); // uint 4
 		*(ptr++) = iPid; // uint 5
 		if (aAllocEvent == EHeapReAlloc) *(ptr++) = (TUint)aOldPtr; // uint 6, for reallocs only
 		while (((TUint32)sp < (TUint32)stackInfo.iBase) && ptr != end)
@@ -190,7 +190,7 @@ void RLoggingAllocator::DoTraceAllocEvent(RAllocator* aAllocator, TAny* aCellPtr
 			default:
 				return; // Shouldn't get this
 			}
-		BTraceBig(KHeapCategory, subcat, aAllocator, buf, (TLinAddr)ptr - (TLinAddr)buf);
+		BTraceContextBig(KHeapCategory, subcat, aAllocator, buf, (TLinAddr)ptr - (TLinAddr)buf);
 		Mem::FillZ(buf, KBufSize); // To avoid leaving a bunch of addresses kicking around on the stack to be misinterpretted later on.
 		}
 
@@ -245,7 +245,7 @@ TAny* RLoggingAllocator::ReAlloc(TAny* aPtr, TInt aSize, TInt aMode)
 			TraceFree(iA, aPtr, ETrue);
 			if (iFlags & EOldFormatLogging)
 				{
-				BTrace8(KHeapCategory, EHeapFree, iA, aPtr);
+				BTraceContext8(KHeapCategory, EHeapFree, iA, aPtr);
 				}
 			}
 		}
@@ -253,7 +253,7 @@ TAny* RLoggingAllocator::ReAlloc(TAny* aPtr, TInt aSize, TInt aMode)
 	if (res && (iFlags & EOldFormatLogging))
 		{
 		TUint32 remainder [] = { AllocLen(res), aSize, (TUint32)aPtr };
-		BTraceN(KHeapCategory, EHeapReAlloc, iA, res, remainder, sizeof(remainder));
+		BTraceContextN(KHeapCategory, EHeapReAlloc, iA, res, remainder, sizeof(remainder));
 		}
 	return res;
 	}
@@ -347,13 +347,13 @@ TBool RLoggingAllocator::TraceExistingAllocs(TAny* aContext, RAllocatorHelper::T
 		if (self->iFlags & EOldFormatLogging)
 			{
 			TUint32 remainder[] = { aLen, aLen };
-			BTraceN(KHeapCategory, EHeapAlloc, self->iA, cellPtr, remainder, sizeof(remainder));
+			BTraceContextN(KHeapCategory, EHeapAlloc, self->iA, cellPtr, remainder, sizeof(remainder));
 			}
 		else
 			{
-			TUint32 remainder[] = { aLen, aLen, RThread().Id(), self->iPid };
+			TUint32 remainder[] = { aLen, aLen, 0, self->iPid };
 			TUint8 subcat = EHeapExtendedAlloc;
-			BTraceN(KHeapCategory, subcat, self->iA, cellPtr, remainder, sizeof(remainder));
+			BTraceContextN(KHeapCategory, subcat, self->iA, cellPtr, remainder, sizeof(remainder));
 			}
 		}
 	return ETrue; // Keep going
@@ -403,7 +403,7 @@ EXPORT_C TInt RLoggingAllocator::New(TUint aFlags, RAllocator* aOrigAllocator, R
 		}
 
 	// Do this *before* switching the allocator, in case we're using atrace which means it will have to alloc for the first trace
-	BTrace12(KHeapCategory, (TUint)ELoggingAllocatorInstalled, aOrigAllocator ? aOrigAllocator : &User::Allocator(), TUint(RThread().Id()), a->iPid);
+	BTraceContext12(KHeapCategory, (TUint)ELoggingAllocatorInstalled, aOrigAllocator ? aOrigAllocator : &User::Allocator(), 0, a->iPid);
 
 	// Ditto
 	err = a->iHelper.Open(aOrigAllocator ? aOrigAllocator : &User::Allocator());
@@ -425,7 +425,7 @@ EXPORT_C TInt RLoggingAllocator::New(TUint aFlags, RAllocator* aOrigAllocator, R
 	LOG("LA: HeapWalk returned %d", err);
 	if (err == KErrNone)
 		{
-		BTrace12(KHeapCategory, (TUint)EHeapPrimingFinished, a->iA, TUint(RThread().Id()), a->iPid);
+		BTraceContext12(KHeapCategory, (TUint)EHeapPrimingFinished, a->iA, 0, a->iPid);
 		}
 	a->iHelper.SetCellNestingLevel(a, -1); // This is so we are immune from being included in any leak detection (because we have to leak the allocator in order that that it is still in use when the markend happens)
 	aResult = a;

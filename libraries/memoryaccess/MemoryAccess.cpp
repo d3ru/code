@@ -168,6 +168,7 @@ private:
 	TInt InPlaceSetProcessFileName(TAny* aParamsBuf, TAny* aNewNamePtr);
 	TLinAddr DoGetAllocatorAddress(DThread* aThread, TBool aGetCurrent);
 	TInt EnableHeapTracing(TUint aThreadId, TBool aEnable);
+	TInt InstallLoggingAllocator(TUint aThreadId, TLinAddr aAddressOfInstallFn);
 	TInt DefragRam(TInt aPriority);
 	TInt EmptyRamZone(TInt aPriority, TUint aZone);
 	TInt GetRamZoneInfo(TUint aZone, TAny* aInfoPkg);
@@ -673,6 +674,8 @@ TInt DMemoryAccess::DoControl(TInt aFunction, TAny* a1, TAny* a2)
 		}
 	case RMemoryAccess::EControlEnableHeapTracing:
 		return EnableHeapTracing((TUint)a1, (TBool)a2);
+	case RMemoryAccess::EControlInstallLoggingAllocator:
+		return InstallLoggingAllocator((TUint)a1, (TLinAddr)a2);
 	case RMemoryAccess::EControlDefragRam:
 		return DefragRam((TInt)a1);
 	case RMemoryAccess::EControlEmptyRamZone:
@@ -1629,15 +1632,10 @@ TInt DMemoryAccess::GetAllChunksInProcess(TUint aProcessId, void* aKernelInfoBuf
 			{
 			DObject* obj = handles[i];
 			if (!obj || obj->Open() != KErrNone) continue;
-			if (obj->iContainerID - 1 == EChunk)
-				{
-				*ptr++ = obj;
-				*ptr++ = 0; // Fill in next time round when we're not holding the system lock...
-				}
-			else
-				{
-				obj->Close(NULL);
-				}
+
+			// We've opened it, so can't close it and continue if it isn't a chunk (because we're still holding the system lock
+			*ptr++ = obj;
+			*ptr++ = 0; // Fill in next time round when we're not holding the system lock...
 			}
 		NKern::UnlockSystem();
 		c = (ptr - (void**)buf->Ptr()) / 2; // c is now the number of chunks
@@ -1647,15 +1645,23 @@ TInt DMemoryAccess::GetAllChunksInProcess(TUint aProcessId, void* aKernelInfoBuf
 		// Now we're not holding the system lock we can call Kern::ChunkUserBase()
 		for (TInt i = 0; i < c; i++)
 			{
-			DChunk* chunk = (DChunk*)(ptr[i*2]);
+			DObject* obj = (DObject*)ptr[i*2];
+			if (obj->iContainerID - 1 == EChunk)
+				{
+				DChunk* chunk = (DChunk*)(obj);
 #ifdef FSHELL_FLEXIBLEMM_AWARE
-			TUint8* base = Kern::ChunkUserBase(chunk, firstThread);
-			
+				TUint8* base = Kern::ChunkUserBase(chunk, firstThread);
+				
 #else
-			TUint8* base = chunk->Base();
+				TUint8* base = chunk->Base();
 #endif
-			*(TLinAddr*)(ptr + i*2 + 1) = (TLinAddr)base;
-			chunk->Close(NULL);
+				*(TLinAddr*)(ptr + i*2 + 1) = (TLinAddr)base;
+				}
+			else
+				{
+				ptr[i*2] = NULL;
+				}
+			obj->Close(NULL);
 			}
 
 		err = Kern::ThreadDesWrite(iClient, aKernelInfoBuf, *buf, 0);
@@ -3003,6 +3009,33 @@ TInt DMemoryAccess::EnableHeapTracing(TUint aThreadId, TBool aEnable)
     NKern::ThreadLeaveCS();
 	return err;
 #endif
+	}
+
+TInt DMemoryAccess::InstallLoggingAllocator(TUint aThreadId, TLinAddr aAddressOfInstallFn)
+	{
+	DDebuggerEventHandler* handler = NULL;
+	TInt err = ((DMemoryAccessFactory*)iDevice)->GetEventHandler(handler);
+	if (err) return err;
+	
+	DObjectCon* threads = Kern::Containers()[EThread];
+	NKern::ThreadEnterCS();
+	threads->Wait();
+	DThread* thread = Kern::ThreadFromId(aThreadId);
+	if (thread) thread->Open();
+    threads->Signal();
+    NKern::ThreadLeaveCS();
+
+	if (!thread) return KErrNotFound;
+	TLinAddr allocatorAddr = DoGetAllocatorAddress(thread, ETrue);
+	if (!allocatorAddr) 
+		{
+		thread->Close(NULL);
+		return KErrNotFound;
+		}
+
+	err = handler->SpikeVtable(thread, allocatorAddr, aAddressOfInstallFn, 0);
+	thread->Close(NULL);
+	return err;
 	}
 
 #if defined(FSHELL_RAMDEFRAG_SUPPORT) && !defined(__WINS__) // emulator platform.h doesn't have the ram defrag APIs

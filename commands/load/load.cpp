@@ -1,6 +1,6 @@
 // load.cpp
 // 
-// Copyright (c) 2008 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2008 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -33,6 +33,7 @@ private:
 	TUint iModuleVersion;
 	RLibrary iLibrary;
 	TBool iNoWait;
+	TBool iLoadLocale;
 	};
 
 
@@ -79,7 +80,12 @@ void CCmdLoad::DoRunL()
 	TUidType type(TUid::Uid(iUids[0]), TUid::Uid(iUids[1]), TUid::Uid(iUids[2]));
 
 	_LIT(KError, "Unable to load \"%S\"");
-	if (iOptions.IsPresent(&iModuleVersion))
+	if (iLoadLocale)
+		{
+		TExtendedLocale locale;
+		LeaveIfErr(locale.LoadLocale(*iDllName), KError, iDllName);
+		}
+	else if (iOptions.IsPresent(&iModuleVersion))
 		{
 		LeaveIfErr(iLibrary.Load(*iDllName, KNullDesC, type, iModuleVersion), KError, iDllName);
 		}
@@ -88,10 +94,17 @@ void CCmdLoad::DoRunL()
 		LeaveIfErr(iLibrary.Load(*iDllName, type), KError, iDllName);
 		}
 
-	TFileName file = iLibrary.FileName();
-	TUidType uids = iLibrary.Type();
-	Printf(_L("Loaded %S\r\n"), &file);
-	Printf(_L("Uids: 0x%x, 0x%x, 0x%x\r\n"), uids[0].iUid, uids[1].iUid, uids[2].iUid);
+	if (iLoadLocale)
+		{
+		Printf(_L("Locale DLL loaded ok\r\n"));
+		}
+	else
+		{
+		TFileName file = iLibrary.FileName();
+		TUidType uids = iLibrary.Type();
+		Printf(_L("Loaded %S\r\n"), &file);
+		Printf(_L("Uids: 0x%x, 0x%x, 0x%x\r\n"), uids[0].iUid, uids[1].iUid, uids[2].iUid);
+		}
 
 	if (iNoWait) Complete(KErrNone);
 	}
@@ -106,6 +119,9 @@ void CCmdLoad::OptionsL(RCommandOptionList& aOptions)
 
 	_LIT(KCmdOptNoWait, "nowait");
 	aOptions.AppendBoolL(iNoWait, KCmdOptNoWait);
+
+	_LIT(KCmdOptLocale, "locale");
+	aOptions.AppendBoolL(iLoadLocale, KCmdOptLocale);
 	}
 
 void CCmdLoad::ArgumentsL(RCommandArgumentList& aArguments)

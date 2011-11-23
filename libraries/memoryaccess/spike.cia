@@ -1,0 +1,35 @@
+// spike.cia
+// 
+// Copyright (c) 2011 Accenture. All rights reserved.
+// This component and the accompanying materials are made available
+// under the terms of the "Eclipse Public License v1.0"
+// which accompanies this distribution, and is available
+// at the URL "http://www.eclipse.org/legal/epl-v10.html".
+// 
+// Initial Contributors:
+// Accenture - Initial contribution
+//
+
+#include <kernel.h>
+
+// Remember PC is always 8 bytes ahead
+__NAKED__ void SpikeFn()
+	{
+    asm("stmfd sp!,{r0-r3,r12,lr}");// 01: Save regs
+	asm("add r14, pc, #20");		// 02: r14 = &InsertedFnR0
+	asm("ldmia r14, {r0-r3}");		// 03: r0 = InsertedFnR0, r1 = InsertedFn, r2 = iModifiedAddr, r3 = iOrigValue
+	asm("str r3, [r2]");			// 04: Undo the spike before calling InsertedFn, *iModifiedAddr = iOrigValue
+
+	asm("blx r1");					// 05: Call InsertedFn
+	asm("str r0, [pc,#4]");			// 06: Put InsertedFn result in iInsertedFnR0 (in case the undef handler cares to check it)
+    asm("ldmfd sp!,{r0-r3,r12,lr}");// 07: restore regs
+	asm("mcr p15, 0, r12, c3, c0");	// 08: Undefined instruction, try to access domain access control register in user mode
+	// Above never returns - undef handler sets PC to iAddressToReturnTo and removes this spike
+
+	// TUint32 InsertedFnR0			// 09
+	// TLinAddr InsertedFn
+	// TLinAddr iModifiedAddr;
+	// TLinAddr iOrigValue;
+	// DThread* iThread;
+	// TLinAddr iAddressToReturnTo
+	}

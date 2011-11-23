@@ -35,14 +35,25 @@
 #define ASSERT(x) if (!(x)) { Kern::Printf("Assertion failed @ %d: " #x, __LINE__); NKern::Sleep(NKern::TimerTicks(5000)); }
 #endif
 
-#define ASSERT_LOCKED() ASSERT(Kern::CurrentThread().iNThread.iHeldFastMutex == &iLock)
-#define ASSERT_UNLOCKED() ASSERT(Kern::CurrentThread().iNThread.iHeldFastMutex == NULL)
-#define ASSERT_BREAKPOINT_LOCKED() ASSERT(iBreakpointMutex->iCleanup.iThread == &Kern::CurrentThread());
-#define ASSERT_BREAKPOINT_UNLOCKED() ASSERT(iBreakpointMutex->iCleanup.iThread != &Kern::CurrentThread());
+// Old definitions - no longer correct in newest kernel
+//#define ASSERT_LOCKED() ASSERT(Kern::CurrentThread().iNThread.iHeldFastMutex == &iLock)
+//#define ASSERT_UNLOCKED() ASSERT(Kern::CurrentThread().iNThread.iHeldFastMutex == NULL)
+//#define ASSERT_BREAKPOINT_LOCKED() ASSERT(iBreakpointMutex->iCleanup.iThread == &Kern::CurrentThread())
+//#define ASSERT_BREAKPOINT_UNLOCKED() ASSERT(iBreakpointMutex->iCleanup.iThread != &Kern::CurrentThread())
 
+//#define ASSERT_LOCKED() ASSERT(iLock.HeldByCurrentThread())
+//#define ASSERT_UNLOCKED() ASSERT(!iLock.HeldByCurrentThread())
+//#define ASSERT_BREAKPOINT_LOCKED() ASSERT(iBreakpointMutex->HeldByCurrentThread())
+//#define ASSERT_BREAKPOINT_UNLOCKED() ASSERT(!iBreakpointMutex->HeldByCurrentThread())
 //#define LOG(args...) Kern::Printf(args)
+
+#define ASSERT_LOCKED()
+#define ASSERT_UNLOCKED()
+#define ASSERT_BREAKPOINT_LOCKED()
+#define ASSERT_BREAKPOINT_UNLOCKED()
 #define LOG(args...)
 
+#ifdef FSHELL_HWBREAK_SUPPORT
 void MCR_SetContextIdBrp(TInt aRegister, TUint aContextId);
 void MCR_SetBreakpointPair(TInt aRegister, TUint aBvrValue, TUint aBcrValue);
 TUint MRC_ReadBcr(TInt aRegister);
@@ -54,6 +65,7 @@ TUint32 GetContextId();
 void Dsb();
 void Isb();
 void Imb();
+#endif
 
 enum TMemMappedDebugAddresses
 	{
@@ -64,6 +76,23 @@ enum TMemMappedDebugAddresses
 	EAuthStatusOffset = 0xFB8,
 	};
 
+static const TInt KSpikeAllocSize = 4096;
+static const TInt KSpikeInstructionsSize = 8*4;
+static const TUint32 KTrashMask = 0xFFFFF000u;
+struct SSpike
+	{
+	TUint32 iInstructions[KSpikeInstructionsSize / 4];
+	TUint32 InsertedFnR0; // Also used for the return value of calling iInsertedFn
+	TLinAddr iInsertedFn;
+	TLinAddr iModifiedAddr; // The location we changed to contain the address of this spike
+	TUint32 iOrigValue; // Its original value
+	DThread* iThread;
+	TLinAddr iAddressToReturnTo; // Defaults to iOrigValue
+
+	TUint32 TrashVal() { return 0xC0000000 | (((TUint32)this & 0xFFF) << 16); } // Anything above 0xC0000000 is a kernel address so never valid for a user thread
+	};
+static const TInt KMaxSpikes = KSpikeAllocSize / sizeof(SSpike);
+extern void SpikeFn();
 
 DDebuggerEventHandler* DDebuggerEventHandler::New(TDfcQue* aQue)
 	{
@@ -91,7 +120,7 @@ DDebuggerEventHandler* DDebuggerEventHandler::New(TDfcQue* aQue)
 DDebuggerEventHandler::DDebuggerEventHandler(TDfcQue* aQue)
 	: DKernelEventHandler(&Event, this), iNextBreakpointId(1), iHandleCodesegRemovedDfc(&HandleCodesegRemoved, this, aQue, 0)
 	{
-#if defined(FSHELL_ARM11XX_SUPPORT) || defined(FSHELL_ARM_MEM_MAPPED_DEBUG)
+#ifdef FSHELL_HWBREAK_SUPPORT
 	iFreeHwBreakpoints = 0x3F; // BRPs 0,1,2,3,4,5 (at a minimum) are supported on ARM11xx or later
 #endif
 	}
@@ -110,7 +139,7 @@ TUint DDebuggerEventHandler::DoEvent(TKernelEvent aEvent, TAny* a1, TAny* a2)
 
 	if (aEvent == EEventKillThread)
 		{
-#ifdef __MARM__
+#if defined(__MARM__) && defined(FSHELL_HWBREAK_SUPPORT)
 		LOG("Thread %x %O with contextId %x killed", &Kern::CurrentThread().iNThread, &Kern::CurrentThread(), GetContextId());
 #endif
 		if (iZombieMode == EAllExits || (iZombieMode == EAbnormalExit && Kern::CurrentThread().iExitType != EExitKill))
@@ -122,10 +151,61 @@ TUint DDebuggerEventHandler::DoEvent(TKernelEvent aEvent, TAny* a1, TAny* a2)
 		}
 	else if (aEvent == EEventHwExc)
 		{
-		// Breakpoint?
 #ifdef __MARM__
 		TArmExcInfo* info = (TArmExcInfo*)a1;
-		LOG("fdbk: Exception excCode=%d addr=0x%08x", info->iExcCode, info->iR15);
+		LOG("fdbk: Exception excCode=%d addr=0x%08x faultaddr=0x%08x thread=%O", info->iExcCode, info->iR15, info->iFaultAddress, &Kern::CurrentThread());
+
+		// Request from SpikeFn to spike or unspike?
+		for (TInt i = 0; i < KMaxSpikes; i++)
+			{
+			SSpike* spike = iSpikes + i;
+			const TUint32 trashVal = spike->TrashVal();
+			if (spike->iModifiedAddr && (info->iFaultAddress & KTrashMask) == trashVal)
+				{
+				ASSERT(spike->iAddressToReturnTo == 0);
+				spike->iAddressToReturnTo = info->iR15;
+				LOG("Moving PC in thread %O from 0x%08x to spike 0x%08x", &Kern::CurrentThread(), info->iR15, spike);
+				TInt err = SetProgramCounter(&Kern::CurrentThread(), (TLinAddr)spike);
+				if (err)
+					{
+					LOG("fdbk: Failed to set PC during spike");
+					return ERunNext; // This will mean the crash happens
+					}
+				return (TUint)EExcHandled;
+				}
+			if (spike->iModifiedAddr && info->iR15 == (TLinAddr)(spike) + 7*4)
+				{
+				LOG("fdbk: Unspike %d, inserted fn returned %d, returning to 0x%08x", i, spike->InsertedFnR0, spike->iAddressToReturnTo);
+				// This isn't really very thread-safe...
+				TInt err = SetProgramCounter(&Kern::CurrentThread(), spike->iAddressToReturnTo); // Set PC to where it originally would have branched to 
+				if (err)
+					{
+					LOG("fdbk: Failed to set PC during unspike");
+					}
+				// This is already done by SpikeFn
+				//kumemput((TAny*)foundSpike->iModifiedAddr, &foundSpike->iOrigValue, 4); // Stop anything from hitting this again
+
+				// trashVal will still be in the registers so we need to edit it away - hope like hell it hadn't been pushed onto the stack between being read and loading from it!
+				TUint32 regs[32];
+				TUint32 valid = 0;
+				NKern::ThreadGetUserContext(&Kern::CurrentThread().iNThread, &regs[0], valid);
+				for (TInt i = 0; i < 13; i++)
+					{
+					// Allow a bit of leeway - the address could have had an immediate added to it before being dereferenced
+					if ((regs[i] & KTrashMask) == trashVal)
+						{
+						TInt delta = regs[i] & ~KTrashMask; // Gonna assume the delta can never be negative - eg hope there's no typeinfo access for a vtable spike
+						regs[i] = spike->iOrigValue + delta;
+						}
+					}
+				NKern::ThreadSetUserContext(&Kern::CurrentThread().iNThread, &regs[0]);
+
+				spike->iModifiedAddr = 0; // Clearing this frees the SSpike for reuse
+				return (TUint)EExcHandled;
+				}
+			}
+
+		// Breakpoint?
 		SBreakpoint* b = NULL;
 		TLinAddr excAddr = info->iR15 & ~1;
 		BreakpointLock();
@@ -452,6 +532,15 @@ DDebuggerEventHandler::~DDebuggerEventHandler()
 		iDebugRegistersChunk->Close(NULL);
 		}
 #endif
+	if (iSpikeChunk)
+		{
+		iSpikeChunk->Close(NULL);
+		}
+	if (iSpikeChunkPhysAddr)
+		{
+		Epoc::FreePhysicalRam(iSpikeChunkPhysAddr, KSpikeAllocSize);
+		}
+
 	iCreatorInfo.Close();
 	}
 
@@ -521,15 +610,14 @@ TInt DDebuggerEventHandler::ReleaseZombie(DThread* aThread)
 void DDebuggerEventHandler::ReleaseZombieAndUnlock(SZombie* aZombie)
 	{
 	ASSERT_LOCKED();
-	ReleaseZombie(aZombie);
-	Unlock();
-	}
-
-void DDebuggerEventHandler::ReleaseZombie(SZombie* aZombie)
-	{
-	ASSERT_LOCKED();
 	aZombie->iLink.Deque();
 	iZombieCount--;
+	Unlock();
+	DoReleaseZombie(aZombie);
+	}
+
+void DDebuggerEventHandler::DoReleaseZombie(SZombie* aZombie)
+	{
 	if (aZombie->iBlocker)
 		{
 		Kern::SemaphoreSignal(*aZombie->iBlocker);
@@ -840,16 +928,26 @@ void DDebuggerEventHandler::ClearBreakpoint(SBreakpoint* aBreakpoint, TBool aRes
 
 	if (aResumeAllBlocked)
 		{
+		SDblQue toRelease;
 		Lock();
-		for (SDblQueLink* link = iZombies.First(); link != NULL && link != &iZombies.iA; link=link->iNext)
+		for (SDblQueLink* link = iZombies.First(); link != NULL && link != &iZombies.iA; )
 			{
 			SZombie* zom = _LOFF(link, SZombie, iLink);
+			link = link->iNext;
 			if (zom->iBreakpointAddress == addr)
 				{
-				ReleaseZombie(zom);
+				iZombieCount--;
+				zom->iLink.Deque();
+				toRelease.Add(&zom->iLink);
 				}
 			}
 		Unlock();
+
+		for (SDblQueLink* link = iZombies.First(); link != NULL && link != &iZombies.iA; link = link->iNext)
+			{
+			SZombie* zom = _LOFF(link, SZombie, iLink);
+			DoReleaseZombie(zom);
+			}
 		}
 	}
 
@@ -861,6 +959,7 @@ void DDebuggerEventHandler::UnapplyBreakpoint(SBreakpoint* aBreakpoint)
 		DebugSupport::RestoreCode(aBreakpoint->iThread, aBreakpoint->iAddress);
 		HandleRestoreCode(aBreakpoint->iAddress);
 		}
+#ifdef FSHELL_HWBREAK_SUPPORT
 	if (aBreakpoint->IsHardware())
 		{
 #ifdef __SMP__
@@ -878,19 +977,20 @@ void DDebuggerEventHandler::UnapplyBreakpoint(SBreakpoint* aBreakpoint)
 #endif // __SMP__
 		iFreeHwBreakpoints |= (1 << aBreakpoint->iHardwareBreakpointId);
 		}
+#endif // FSHELL_HWBREAK_SUPPORT
 #else
 	(void)aBreakpoint;
 #endif // __EABI__
 	}
 
-#ifdef __EABI__
+#if defined(__EABI__) && defined(FSHELL_HWBREAK_SUPPORT)
 void DDebuggerEventHandler::DoClearHardwareBreakpoint(SBreakpoint* aBreakpoint)
 	{
 	TUint32 bcr = ReadBcr(aBreakpoint->iHardwareBreakpointId);
 	bcr = bcr & ~1; // Clear the enabled bit
 	SetBreakpointPair(aBreakpoint->iHardwareBreakpointId, 0, bcr);
 	}
-#endif
+#endif // defined(__EABI__) && defined(FSHELL_HWBREAK_SUPPORT)
 
 void DDebuggerEventHandler::ClearAllBreakpoints()
 	{
@@ -1060,7 +1160,10 @@ TInt DDebuggerEventHandler::SetProgramCounter(DThread* aThread, TLinAddr aAddres
 	TUint32 valid = 0;
 	NKern::ThreadGetUserContext(&aThread->iNThread, &regs[0], valid);
 	if (!(valid & (1<<15))) return KErrNotSupported; // If we can't read it, we can't set it
-	regs[15] = aAddress;
+	TBool currentlyInThumb = regs[15] & 1;
+	TBool settingToThumb = aAddress & 1;
+	ASSERT(currentlyInThumb == settingToThumb);
+	regs[15] = aAddress & ~1;
 	NKern::ThreadSetUserContext(&aThread->iNThread, &regs[0]);
 	return KErrNone;
 #else
@@ -1219,6 +1322,7 @@ TInt DDebuggerEventHandler::ReadInstructions(DThread* aThread, TLinAddr aAddress
 
 TInt DDebuggerEventHandler::ApplyHardwareBreakpoint(SBreakpoint* aBreakpoint)
 	{
+#ifdef FSHELL_HWBREAK_SUPPORT
 	ASSERT_BREAKPOINT_LOCKED();
 
 	// First, check the context registers and see if we have one for this thread
@@ -1284,8 +1388,14 @@ TInt DDebuggerEventHandler::ApplyHardwareBreakpoint(SBreakpoint* aBreakpoint)
 		iFreeHwBreakpoints &= ~(1<<breakreg);
 		}
 	return err;
+#else
+	(void)aBreakpoint;
+	return KErrNotSupported;
+#endif
 	}
 
+
+#ifdef FSHELL_HWBREAK_SUPPORT
 TInt DDebuggerEventHandler::DoApplyHardwareBreakpoint(SBreakpoint* aBreakpoint, TInt aContextReg)
 	{
 #if defined(__EABI__)
@@ -1409,6 +1519,7 @@ TInt DDebuggerEventHandler::DoApplyHardwareBreakpoint(SBreakpoint* aBreakpoint, 
 	return KErrNotSupported;
 #endif // __EABI__
 	}
+#endif // FSHELL_HWBREAK_SUPPORT
 
 TUint32 DDebuggerEventHandler::GetArmContextIdForThread(DThread* aThread)
 	{
@@ -1441,7 +1552,7 @@ void DDebuggerEventHandler::WriteRegister(TInt aRegisterOffset, TUint32 aValue)
 
 #endif // FSHELL_ARM_MEM_MAPPED_DEBUG
 
-#ifdef __EABI__
+#if defined(__EABI__) && defined(FSHELL_HWBREAK_SUPPORT)
 
 void DDebuggerEventHandler::SetDscr(TUint32 aVal)
 	{
@@ -1495,7 +1606,7 @@ void DDebuggerEventHandler::SetContextIdBrp(TInt aRegister, TUint aContextId)
 #endif
 	}
 
-#endif
+#endif // defined(__EABI__) && defined(FSHELL_HWBREAK_SUPPORT)
 
 void DDebuggerEventHandler::RemoveAllHardwareBreakpointsForThread(DThread* aThread)
 	{
@@ -1514,7 +1625,6 @@ void DDebuggerEventHandler::RemoveAllHardwareBreakpointsForThread(DThread* aThre
 
 TInt DDebuggerEventHandler::MoveBreakpointToNextInstructionForThread(DThread* aThread, SBreakpoint* aBreakpoint)
 	{
-#ifdef SUPPORT_BREAKPOINT_STUFF
 	ASSERT_BREAKPOINT_LOCKED();
 	TUint32 notUsed = 0;
 	TBool aModeChange = EFalse;
@@ -1546,11 +1656,6 @@ TInt DDebuggerEventHandler::MoveBreakpointToNextInstructionForThread(DThread* aT
 	iNextBreakpointId++;
 
 	return KErrNone;
-#else
-	(void)aThread;
-	(void)aBreakpoint;
-	return KErrNotSupported;
-#endif
 	}
 
 
@@ -1671,4 +1776,104 @@ TUint32 DDebuggerEventHandler::GetThreadStartTime(TUint aThreadId)
 		}
 	BreakpointUnlock();
 	return result;
+	}
+
+#ifdef __MARM__
+SSpike* DDebuggerEventHandler::GetFreeSpike()
+	{
+	if (!iSpikeChunkPhysAddr)
+		{
+		TInt err = Epoc::AllocPhysicalRam(KSpikeAllocSize, iSpikeChunkPhysAddr);
+		if (err)
+			{
+			LOG("Epoc::AllocPhysicalRam failed with %d", err);
+			return NULL;
+			}
+		}
+	if (!iSpikeChunk)
+		{
+		TInt err = DPlatChunkHw::New(iSpikeChunk, iSpikeChunkPhysAddr, KSpikeAllocSize, EMapAttrL2CachedWTWA|EMapAttrCachedWTWA|EMapAttrUserRwx);
+		if (err)
+			{
+			LOG("DPlatChunkHw::New failed with %d", err);
+			return NULL;
+			}
+		TUint8* base = (TUint8*) iSpikeChunk->LinearAddress();
+		memset(base,0,KSpikeAllocSize); // zero page
+		iSpikes = (SSpike*) base;
+		}
+
+	// Find free spike
+	for (TInt i = 0; i < KMaxSpikes; i++)
+		{
+		if (iSpikes[i].iModifiedAddr == 0) return iSpikes+i;
+		}
+	return NULL;
+	}
+#endif
+
+TInt DDebuggerEventHandler::SpikeAddress(DThread* aThread, TLinAddr aAddr, TLinAddr aFnToCall, TUint32 aR0)
+	{
+	TInt err = KErrNotSupported;
+#ifdef __MARM__
+	SSpike* spike = GetFreeSpike();
+	if (!spike) return KErrOverflow;
+
+	err = Kern::ThreadRawRead(aThread, (const TAny*)aAddr, &spike->iOrigValue, 4);
+	if (err)
+		{
+		LOG("Spike failed to read addr %08x from thread %O", aAddr, aThread);
+		return err;
+		}
+	memcpy(spike, (TAny*)&SpikeFn, KSpikeInstructionsSize);
+	spike->iInsertedFn = aFnToCall;
+	spike->InsertedFnR0 = aR0;
+	spike->iThread = aThread;
+	spike->iAddressToReturnTo = spike->iOrigValue;
+	err = Kern::ThreadRawWrite(aThread, (TAny*)aAddr, &spike, 4);
+	if (err)
+		{
+		LOG("Spike failed to write new spike addr %08x to %08x in %O", (TLinAddr)spike, aAddr, aThread);
+		return err;
+		}
+	spike->iModifiedAddr = aAddr;
+	LOG("Spiked address 0x%08x to call 0x0%08x using asm at 0x%08x", aAddr, aFnToCall, spike);
+#endif
+	return err;
+	}
+
+TInt DDebuggerEventHandler::SpikeVtable(DThread* aThread, TLinAddr aVtablePtrAddress, TLinAddr aFnToCall, TUint32 aR0)
+	{
+	// VTable layout defined in http://sourcery.mentor.com/public/cxx-abi/abi.html
+	// As linked to from ARM's "C++ ABI for the ARM Architecture"
+	// This isn't really relevant but I wanted to write it down somewhere...
+
+	TInt err = KErrNotSupported;
+#ifdef __MARM__
+	SSpike* spike = GetFreeSpike();
+	if (!spike) return KErrOverflow;
+
+	err = Kern::ThreadRawRead(aThread, (const TAny*)aVtablePtrAddress, &spike->iOrigValue, 4);
+	if (err)
+		{
+		LOG("Spike failed to read addr %08x from thread %O", aVtablePtrAddress, aThread);
+		return err;
+		}
+	memcpy(spike, (TAny*)&SpikeFn, KSpikeInstructionsSize);
+	spike->iInsertedFn = aFnToCall;
+	spike->InsertedFnR0 = aR0;
+	spike->iThread = aThread;
+	spike->iAddressToReturnTo = 0; // This is filled in in the undef handler
+	TUint32 trashed = spike->TrashVal();
+	// We trash the vtable ptr to get an abort which we then jump from
+	err = Kern::ThreadRawWrite(aThread, (TAny*)aVtablePtrAddress, &trashed, 4);
+	if (err)
+		{
+		LOG("Spike failed to null vtbl ptr at %08x in %O", aVtablePtrAddress, aThread);
+		return err;
+		}
+	spike->iModifiedAddr = aVtablePtrAddress;
+	LOG("Spiked vtbl 0x%08x to call 0x%08x using asm at 0x%08x", aVtablePtrAddress, aFnToCall, spike);
+#endif
+	return err;
 	}

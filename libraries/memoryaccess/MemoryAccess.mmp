@@ -30,11 +30,14 @@ source		memoryaccess.cpp
 source		propertyaccess.cpp
 source		fdebuggerkernel.cpp
 source		DynamicDfcSupport.cpp
+#ifdef FSHELL_HWBREAK_SUPPORT
 #if defined(GCCE)
 source		hwbreak_cia.cpp
 #elif defined(ARMCC)
 source		hwbreak.cia
 #endif
+#endif // FSHELL_HWBREAK_SUPPORT
+source      spike.cia
 
 #if defined(EABI) && !defined(GCCE)
 macro		SUPPORT_BREAKPOINT_STUFF

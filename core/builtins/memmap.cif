@@ -44,7 +44,7 @@ For the shared address space:
 
 =item *
 
-All code segments currently loaded.
+All non-overlapping code segments (ie excluding EXEs) currently loaded.
 
 =item *
 

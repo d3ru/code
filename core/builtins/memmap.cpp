@@ -14,6 +14,13 @@
 #include <fshell/ltkutils.h>
 #include "memmap.h"
 
+#ifdef FSHELL_FLEXIBLEMM_AWARE
+#ifdef SYMBIAN_ENABLE_SPLIT_HEADERS
+#undef SYMBIAN_ENABLE_SPLIT_HEADERS
+#endif
+#include <e32ldr.h>
+#endif
+
 // Needlessly cunning definitions to save memory. Why can't unions actually work? 
 #define iChunkInfo (*(TChunkKernelInfo*)iInfoBuf)
 #define iCodeSegInfo (*(TCodeSegKernelInfo*)iInfoBuf)
@@ -23,6 +30,7 @@ enum TMemAreaType
 	{
 	EChunkArea,
 	ECodesegArea,
+	EGlobalCodeArea,
 	EStackArea,
 	ERomArea,
 	};
@@ -150,6 +158,7 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 			area.iAddress = ((const TLinAddr*)iAddressesBuf.Ptr())[i*2 + 1];
 			area.iSize = 0;
 			area.iChunkObj = ((void**)iAddressesBuf.Ptr())[i*2];
+			if (!area.iChunkObj) continue; // Messy API, it can do this
 			area.iType = EChunkArea;
 			// Allow repeats in case of multiple zero addresses, but warn
 			if (area.iAddress == 0)
@@ -218,10 +227,37 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 		area.iSize = iCodeSegInfo.iSize;
 		area.iName.Copy(iCodeSegInfo.iFileName.Left(area.iName.MaxLength()));
 		area.iType = ECodesegArea;
+#ifdef FSHELL_FLEXIBLEMM_AWARE
+		if (iCodeSegInfo.iAttr & ECodeSegAttGlobal) area.iType = EGlobalCodeArea;
+#endif
 		area.iChunkObj = NULL;
 		AddAreaL(areas, area);
 		}
 	CleanupStack::PopAndDestroy(); // ReleaseCodesegMutex
+
+	// Do further check for global codesegs, which aren't included in FilterCodesegsForProcess
+#ifdef FSHELL_FLEXIBLEMM_AWARE
+	if (aPid)
+		{
+		count = iMemAccess.AcquireCodeSegMutex();
+		LeaveIfErr(count, _L("Couldn't acquire codeseg mutex"));
+		CleanupStack::PushL(TCleanupItem(&ReleaseCodesegMutex, &iMemAccess));
+		while (iMemAccess.GetNextCodeSegInfo(pkg) == KErrNone)
+			{
+			if (iCodeSegInfo.iAttr & ECodeSegAttGlobal)
+				{
+				TMemArea area;
+				area.iAddress = iCodeSegInfo.iRunAddress;
+				area.iSize = iCodeSegInfo.iSize;
+				area.iName.Copy(iCodeSegInfo.iFileName.Left(area.iName.MaxLength()));
+				area.iType = EGlobalCodeArea;
+				area.iChunkObj = NULL;
+				AddAreaL(areas, area);
+				}
+			}
+		CleanupStack::PopAndDestroy(); // ReleaseCodesegMutex
+		}
+#endif
 
 	// Now thread stacks
 	if (aPid)
@@ -283,7 +319,7 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 			AddAreaL(areas, romArea);
 			}
 		else
-#endif
+#endif // FSHELL_9_1_SUPPORT
 			{
 			romArea.iName = _L("ROM");
 			AddAreaL(areas, romArea);
@@ -292,7 +328,7 @@ void CCmdMemmap::ShowMapForProcessL(TUint aPid, TFullName& aProcessName)
 		romArea.iSize = header->iRomHeaderSize;
 		romArea.iName = _L("TRomHeader");
 		AddAreaL(areas, romArea);
-#endif
+#endif // __EPOC32__
 
 		}
 
@@ -352,16 +388,19 @@ void CCmdMemmap::PrintAreasL(RPointerArray<TMemArea>& aAreas)
 		switch(area.iType)
 			{
 			case EChunkArea:
-				Printf(_L("[Chunk] "));
+				Printf(_L("[Chunk]  "));
 				break;
 			case ECodesegArea:
-				Printf(_L("[Code]  "));
+				Printf(_L("[Code]   "));
+				break;
+			case EGlobalCodeArea:
+				Printf(_L("[Global] "));
 				break;
 			case EStackArea:
-				Printf(_L("[Stack] "));
+				Printf(_L("[Stack]  "));
 				break;
 			case ERomArea:
-				Printf(_L("[ROM]   "));
+				Printf(_L("[ROM]    "));
 				break;
 			}
 		Printf(_L("%S\r\n"), &area.iName);

@@ -16,7 +16,7 @@ TARGET			LoggingAllocator.dll
 TARGETTYPE		DLL
 UID				0x1000008D FSHELL_UID_LOGGINGALLOCATOR
 
-CAPABILITY		FSHELL_CAP_MMP_NORMAL
+CAPABILITY		FSHELL_CAP_MMP_MAX // Needs to be max for loggingallocatordummylocale.dll
 
 #include <fshell/fsh_system_include.mmh>
 SOURCEPATH		..\src
@@ -26,6 +26,6 @@ SOURCE			LoggingAllocator.cpp
 // Specifies import libraries
 FSHELL_TRACE_LIBRARY
 LIBRARY			euser.lib
-LIBRARY			ltkutils.lib
+LIBRARY			ltkutils-tcb.lib
 //LIBRARY		efsrv.lib
 //LIBRARY		clogger.lib

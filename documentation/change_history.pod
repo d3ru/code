@@ -14,11 +14,15 @@ __END__
 
 =head1 fshell Change History
 
-=head2 Release 006 [Still not yet released!]
+=head2 Release 006 [STILL not yet released!]
 
 =head3 New functionality
 
 =over 5
+
+=item *
+
+Added C<heaptrace --logging-allocator> command. This allows you to enable tracing on any given thread's allocator, without needing to instrument the code or rebuild anything. This uses the logging allocator and a number of other tricks.
 
 =item *
 
@@ -27,6 +31,8 @@ Added mcl platform located at \fshell\build\s60\mcl. This platform supports buil
     M:\fshell\build\s60\mcl>sbs -c armv5_urel
     M:\fshell\build\s60\mcl>sbs -c armv5_urel.fshellminigui
     M:\fshell\build\s60\mcl>sbs -c armv5_urel.fshelltshell
+
+For convenience, a batchfile build_all.bat is supplied which runs the above 3 sbs commands. It also builds the SMP drivers if necessary.
 
 Then to build a full gui rom with fshell included do (something similar to):
 
@@ -58,7 +64,7 @@ Added start-trace and start-usb scripts.
 
 =item *
 
-Added C<--only-matching> option to grep, and added ability to do text replacement by adding C<substitution> argument.
+Added C<--only-matching> option to grep, and added ability to do text replacement by adding a C<substitution> argument.
 
 =item *
 
@@ -113,6 +119,18 @@ Fixed signed arithmetic problem in CBsymFile that meant that lookup of ROM symbo
 =item *
 
 Fixed sudo from incorrectly deleting exes on C drive when --disk wasn't specified.
+
+=item *
+
+Fixed bug 3438770: udeb kernel assert fail in memoryaccess
+
+=item *
+
+Fixed bug 3434826: Building for MCL fails
+
+=item *
+
+Fixed bug 3439354: Showdebug crashes on UDEB kernels
 
 =back
 

@@ -465,6 +465,7 @@ public:
 		EControlGetAllChunksInProcess,
 		EControlHcrGetInt,
 		EControlHcrGetBigData,
+		EControlInstallLoggingAllocator,
 		ENumRequests,  // Add new commands above this line
         };
 public:
@@ -560,6 +561,7 @@ public:
 	TUint32 GetThreadStartTime(TUint aThreadId);
 
 	TInt EnableHeapTracing(TUint aThreadId, TBool aEnable);
+	TInt InstallLoggingAllocator(TUint aThreadId, TLinAddr aAddressOfInstallFn);
 	TInt DefragRam(TInt aPriority);
 	TInt EmptyRamZone(TUint aZone, TInt aPriority);
 	TInt GetRamZoneInfo(TUint aZone, TDes8& aInfoPkg);
@@ -906,6 +908,11 @@ inline TInt RMemoryAccess::InPlaceSetProcessFileName(RProcess& aProcess, const T
 inline TInt RMemoryAccess::EnableHeapTracing(TUint aThreadId, TBool aEnable)
 	{
 	return DoControl(EControlEnableHeapTracing, (TAny*)aThreadId, (TAny*)aEnable);
+	}
+
+inline TInt RMemoryAccess::InstallLoggingAllocator(TUint aThreadId, TLinAddr aAddressOfInstallFn)
+	{
+	return DoControl(EControlInstallLoggingAllocator, (TAny*)aThreadId, (TAny*)aAddressOfInstallFn);
 	}
 
 inline TInt RMemoryAccess::DefragRam(TInt aPriority)

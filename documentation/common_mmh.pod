@@ -260,7 +260,7 @@ The RLoader::Delete() API is available in e32ldr.h or e32ldr_private.h
 
 =item FSHELL_BUILD_SMP_SIS
 
-Used to indicate that SIS files created by this platform should include armv5smp binaries as well as the usual armv5 ones. All the appropriate SMP binaries can be build by using the bld.inf located in \fshell\build\common\drivers\bld.inf.
+This macro should no longer be defined in platform.mmh files. It is calculated at runtime and is only ever defined when the IBYs are being parsed by fsh-buildsis.
 
 =item FSHELL_VARIANT_NAME
 
