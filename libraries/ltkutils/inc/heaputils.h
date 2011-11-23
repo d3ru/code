@@ -1,6 +1,6 @@
 // heaputils.h
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -10,7 +10,7 @@
 // Accenture - Initial contribution
 //
 // Contributors:
-// Adrian Issott (Nokia) - Updates for kernel-side alloc helper
+// Adrian Issott (Nokia) - Updates for kernel-side alloc helper & RHybridHeap v2
 //
 
 #ifndef FSHELL_HEAP_UTILS_H
@@ -43,7 +43,7 @@ HUCLASS(RAllocatorHelper) // class RAllocatorHelper
 public:
 	HUIMPORT_C RAllocatorHelper();
 #ifdef __KERNEL_MODE__
-	TLinAddr GetKernelAllocator(DChunk* aKernelChunk);
+	static TLinAddr GetKernelAllocator(DChunk* aKernelChunk);
 	TInt OpenKernelHeap();
 #else
 	HUIMPORT_C TInt Open(RAllocator* aAllocator);
@@ -113,6 +113,8 @@ public:
 		ETypeUnknown,
 		ETypeRHeap,
 		ETypeRHybridHeap,
+		ETypeRHybridHeapV2,
+		ETypeRHybridHeapQt,
 		};
 	TType GetType() const; // This is for information only, nothing should care about the return value
 #endif
@@ -126,7 +128,10 @@ protected:
 #endif
 	virtual TInt ReadData(TLinAddr aLocation, TAny* aResult, TInt aSize) const;
 	virtual TInt WriteData(TLinAddr aLocation, const TAny* aData, TInt aSize);
-
+	
+	void SetIsKernelHeapAllocator(TBool aIsKernelHeapAllocator);
+	TBool GetIsKernelHeapAllocator() const;	
+	
 #ifndef __KERNEL_MODE__
 protected:
 #else
@@ -152,21 +157,38 @@ private:
 	TUint PageMapBits(unsigned ix, unsigned len, TInt& err);
 	TUint PagedDecode(TUint pos, TInt& err);
 	TInt TreeWalk(TUint32 aSlabRoot, TInt aSlabType, TWalkFunc3 aCallbackFn, TAny* aContext, TBool& shouldContinue);
+
+private:
+	TInt PageMapOffset() const;
+	TInt MemBaseOffset() const;
+	TInt MallocStateOffset() const;
+	TInt SparePageOffset() const;
+	TInt PartialPageOffset() const;
+	TInt FullSlabOffset() const;
+	TInt SlabAllocOffset() const;
+	TInt SlabPadding( TInt aSize ) const;
+	TInt UserInitialHeapMetaDataSize() const;
+
 protected:
 	TLinAddr iAllocatorAddress;
 	enum TAllocatorType
 		{
-		EUnknown,
-		EAllocator,
+		EAllocatorNotSet,
+		EAllocatorUnknown,
 		EUrelOldRHeap,
 		EUdebOldRHeap,
 		EUrelHybridHeap,
 		EUdebHybridHeap,
+		EUrelHybridHeapV2,
+		EUdebHybridHeapV2,
+		EUrelHybridHeapQt,
+		EUdebHybridHeapQt,
 		};
 	TAllocatorType iAllocatorType;
+	
 private:
 	THeapInfo* iInfo;
-	TUint iValidInfo;
+	TBool iIsKernelHeapAllocator;
 	TUint8* iTempSlabBitmap;
 	mutable TAny* iPageCache;
 	mutable TLinAddr iPageCacheAddr;
@@ -181,7 +203,7 @@ private:
 #ifdef __KERNEL_MODE__
 
 HUCLASS(RUserAllocatorHelper) : public RAllocatorHelper
-    {
+	{
 public:
 	RUserAllocatorHelper();
 	TInt OpenUserHeap(TUint aThreadId, TLinAddr aAllocatorAddress, TBool aEuserIsUdeb);
