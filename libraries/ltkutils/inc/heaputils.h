@@ -103,6 +103,7 @@ public:
 	HUIMPORT_C TInt SizeForCellType(TExtendedCellType aType);
 	HUIMPORT_C TInt CountForCellType(TExtendedCellType aType);
 	HUIMPORT_C TBool AllocatorIsUdeb() const;
+	HUIMPORT_C TInt IsMultiThreaded() const;
 	HUIMPORT_C const TDesC& Description() const;
 	HUIMPORT_C virtual void Close();
 
@@ -166,23 +167,30 @@ private:
 	TInt PartialPageOffset() const;
 	TInt FullSlabOffset() const;
 	TInt SlabAllocOffset() const;
-	TInt SlabPadding( TInt aSize ) const;
+	TInt SlabPadding(TInt aSize) const;
 	TInt UserInitialHeapMetaDataSize() const;
 
 protected:
 	TLinAddr iAllocatorAddress;
+	enum
+		{
+		EUdebMask =          0x08000000, // Indicates that cells use a 8-byte cell header containing nesting level and alloc count
+		EHybridMask =        0x04000000, // Indicates something RHybridHeap-based that NewHotnessWalk understands
+		EOriginalRHeapMask = 0x02000000, // Indicates the original RHeap implementation
+		};
+
 	enum TAllocatorType
 		{
-		EAllocatorNotSet,
-		EAllocatorUnknown,
-		EUrelOldRHeap,
-		EUdebOldRHeap,
-		EUrelHybridHeap,
-		EUdebHybridHeap,
-		EUrelHybridHeapV2,
-		EUdebHybridHeapV2,
-		EUrelHybridHeapQt,
-		EUdebHybridHeapQt,
+		EAllocatorNotSet = 0,
+		EAllocatorUnknown = 1,
+		EUrelOldRHeap = EOriginalRHeapMask,
+		EUdebOldRHeap = EOriginalRHeapMask | EUdebMask,
+		EUrelHybridHeap = 1 | EHybridMask,
+		EUdebHybridHeap = 1 | EHybridMask | EUdebMask,
+		EUrelHybridHeapV2 = 2 | EHybridMask,
+		EUdebHybridHeapV2 = 2 | EHybridMask | EUdebMask,
+		EUrelHybridHeapQt = 3 | EHybridMask,
+		EUdebHybridHeapQt = 3 | EHybridMask | EUdebMask,
 		};
 	TAllocatorType iAllocatorType;
 	

@@ -2867,6 +2867,10 @@ void CCmdChunkInfo::PrintChunkInfoL(TUint aAddress)
 			if (err == KErrNone)
 				{
 				iBuf->AppendFormatL(_L("Allocator type:\t%S\r\n"), &allocHelper.Description());
+				TInt multi = allocHelper.IsMultiThreaded();
+				_LIT(KYes, "Yes");
+				_LIT(KNo, "No");
+				if (multi >= 0) iBuf->AppendFormatL(_L("Multithreaded:\t%S\r\n"), multi ? &KYes : &KNo);
 				PrintSizeL(_L("Heap size:\t"), allocHelper.CommittedSize());
 				PrintSizeL(_L("Heap max size:\t"), allocHelper.MaxCommittedSize());
 				iBuf->AppendFormatL(_L("Alloc count:\t%d\r\n"), allocHelper.AllocationCount());

@@ -65,6 +65,7 @@ namespace LtkUtils
 class RHackAllocator : public RAllocator
 	{
 public:
+	using RAllocator::iFlags;
 	using RAllocator::iHandles;
 	using RAllocator::iTotalAllocSize;
 	using RAllocator::iCellCount;
@@ -188,7 +189,7 @@ const TInt KSelfReferenceOffset = 34*4; // same for user and kernel heaps
 const TInt KUserInitialHeapMetaDataSize = 195 * 4; //  A previous incarnation of RHybridHeapV2 seemed to have this as 194 due to KUserSlabAllocatorSize being smaller
 const TInt KKernelInitialHeapMetaDataSize = 144 * 4;
 
-__ASSERT_COMPILE(HeapV1::KUserInitialHeapMetaDataSize < KUserInitialHeapMetaDataSize);
+__ASSERT_COMPILE(HeapV1::KUserInitialHeapMetaDataSize < KUserInitialHeapMetaDataSize); // Otherwise IdentifyAllocatorType logic won't work
 __ASSERT_COMPILE(HeapV1::KUserInitialHeapMetaDataSize < KKernelInitialHeapMetaDataSize);
 
 // The code relies on the following so we just check it's actually true here 
