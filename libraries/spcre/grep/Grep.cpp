@@ -238,7 +238,7 @@ void CCmdGrep::PrintLineL(const TDesC& aLine)
 		output = &iWideOut;
 		}
 	Write(*output);
-	iRequireNewLine = output->Right(2) != KCrLf();
+	iRequireNewLine = output->Right(1) != KCrLf().Right(1);
 	}
 
 void CCmdGrep::To8L(const TDesC16& aSrc, RLtkBuf8& aDest)
