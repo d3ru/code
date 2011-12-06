@@ -466,6 +466,7 @@ public:
 		EControlHcrGetInt,
 		EControlHcrGetBigData,
 		EControlInstallLoggingAllocator,
+		EControlNKernTimestamp,
 		ENumRequests,  // Add new commands above this line
         };
 public:
@@ -559,6 +560,7 @@ public:
 	TInt SetDebugPort(TInt aPort);
 	TUint GetThreadCreatorId(TUint aThreadId);
 	TUint32 GetThreadStartTime(TUint aThreadId);
+	TUint64 NKernTimestamp();
 
 	TInt EnableHeapTracing(TUint aThreadId, TBool aEnable);
 	TInt InstallLoggingAllocator(TUint aThreadId, TLinAddr aAddressOfInstallFn);
@@ -1153,6 +1155,13 @@ inline TInt RMemoryAccess::GetHcrValue(TUint aCategory, TUint aKey, TDes8& aValu
 		aType = (THcrType)params.iDefine; // Reusing inappropriate data structures, ah well.
 		}
 	return err;
+	}
+
+inline TUint64 RMemoryAccess::NKernTimestamp()
+	{
+	TUint64 result = 0;
+	DoControl(EControlNKernTimestamp, (TAny*)&result, NULL);
+	return result;
 	}
 
 #endif //__KERNEL_MODE__

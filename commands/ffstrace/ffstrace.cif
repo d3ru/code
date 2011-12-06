@@ -22,6 +22,10 @@ Control the ffstraceplugin.fxt file system plugin. This plugin loads into the fi
 
 Note that on older platforms, operations on the Z drive are not logged and you need to hack the f32 code to enable it. On newer platforms Z drive operations are correctly logged.
 
+==option bool v verbose
+
+For command C<monitor>, this causes timestamps and calling thread name to be printed.
+
 ==argument enum command optional
 
 The command to execute.

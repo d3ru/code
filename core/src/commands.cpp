@@ -3290,11 +3290,20 @@ TBool FastCounterCountsUp()
 
 void CCmdTicks::DoRunL()
 	{
+	enum { EKernelHalSmpSupported = 15 };
+	TBool smp = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
+	if (smp) LoadMemoryAccessL();
+
 	TUint nticks = User::NTickCount();
 	TUint fast = User::FastCounter();
+	TUint64 timestamp;
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+	if (smp) timestamp = iMemAccess.NKernTimestamp();
+#endif
 
 	Printf(_L("NKern ticks: %u\r\n"), nticks);
 	Printf(_L("Fast ticks: %u\r\n"), fast);
+	if (smp) Printf(_L("NKern::Timestamp(): %Lu\r\n"), timestamp);
 
 	if (iVerbose)
 		{

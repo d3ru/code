@@ -699,7 +699,7 @@ private: // From CCommandBase.
 	};
 
 
-class CCmdTicks : public CCommandBase
+class CCmdTicks : public CMemoryAccessCommandBase
 	{
 public:
 	static CCommandBase* NewLC();

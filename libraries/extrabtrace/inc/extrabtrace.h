@@ -43,19 +43,24 @@ namespace ExtraBTrace
 		EPubSubDataPropertyChanged = 1,
 		};
 
-	// As used by category EFfsTrace
+	// As used by category EFfsTrace. All filenames are 8-bit Collapse()'d.
 	enum TFfsTrace
 		{
-		EFfsDelete = 0,
-		EFfsRename,
-		EFfsReplace,
-		EFfsEntry,
-		EFfsFileSubClose,
-		EFfsFileOpen,
-		EFfsFileCreate,
-		EFfsFileReplace,
-		EFfsFileTemp,
-		EFfsFileRename,
+		EFfsDelete = 0, // threadid, filename
+		EFfsRename = 1, // threadid, filename, \0, [\0 for alignment], newname
+		EUnusedWasEFfsReplace = 2, // Not used
+		EFfsEntry = 3, // threadid, filename
+
+		// These use handles
+		EFfsFileSubClose = 4, // threadid, handle
+		EFfsFileOpen = 5, // threadid, handleid, filename
+		EFfsFileCreate = 6, // threadid, handleid, filename
+		EFfsFileReplace = 7, // threadid, handleid, filename
+		EFfsFileTemp = 8, // threadid, handleid, filename
+		EFfsFileRename = 9, // threadid, handleid, newname
+		EFfsFileRead = 10, // threadid, handleid, pos64, len
+		EFfsFileWrite = 11, // threadid, handleid, pos64, len
+		EFfsFilePriming = 12, // handleid, name
 
 		EFfsPost = 128,
 		};

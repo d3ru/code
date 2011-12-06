@@ -12,8 +12,13 @@
 
 #include <e32math.h>
 #include <hal.h>
+#include <u32std.h> // For EHalGroupKernel
 #include "btrace_parser.h"
+#include <fshell/common.mmh>
 #include <fshell/ltkutils.h>
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+#include <fshell/memoryaccess.h>
+#endif
 
 void Panic(TBtraceParserPanic aReason)
 	{
@@ -26,12 +31,14 @@ enum TTlsFlags
 	ENanoSet = 1,
 	EFastCounterSet = 2,
 	EFastCountsUpSet = 4,
+	ETimer2Set = 8,
 	};
 
 struct SBtraceParserTls
 	{
 	TUint32 iFlags;
 	TInt iNanoTickPeriod;
+	TInt64 iTimer2TickPeriod; // On non-smp, this is the same as the nano tick period. On SMP is 2^32 times the fast counter period
 	TInt iFastCounterFrequency;
 	TBool iFastCounterCountsUp;
 	};
@@ -84,6 +91,43 @@ TInt TBtraceUtils::NanoTickPeriod()
 			tls->iFlags |= ENanoSet;
 			}
 		return res;
+		}
+	}
+
+TInt64 TBtraceUtils::Timer2TickPeriod()
+	{
+	SBtraceParserTls* tls = (SBtraceParserTls*)Dll::Tls();
+	if (tls && tls->iFlags & ETimer2Set)
+		{
+		return tls->iTimer2TickPeriod;
+		}
+	else
+		{
+		TInt64 res = CalculateTimer2TickPeriod();
+		tls = CreateTls();
+		if (tls)
+			{
+			tls->iTimer2TickPeriod = res;
+			tls->iFlags |= ETimer2Set;
+			}
+		return res;
+		}
+	}
+
+TInt64 TBtraceUtils::CalculateTimer2TickPeriod()
+	{
+	// Check for SMP, which uses a 64-bit counter rather than the nano tick period.
+	enum { EKernelHalSmpSupported = 15 };
+	TBool smpEnabled = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
+	if (smpEnabled)
+		{
+		// This is 2^32 / fastfreq, ie  2^32 * (1/fastfreq) ie 2^32 * fastperiod
+		TInt64 res = MAKE_TINT64(1, 0) / (TInt64)FastCounterFrequency();
+		return res;
+		}
+	else
+		{
+		return CalculateNanoTickPeriod();
 		}
 	}
 
@@ -149,7 +193,7 @@ TBool TBtraceUtils::FastCounterCountsUp()
 
 TBool TBtraceUtils::CalculateFastCounterCountsUp()
 	{
-	TBool countsUp;
+	TBool countsUp = ETrue;
 	if (HAL::Get(HAL::EFastCounterCountsUp, countsUp) != KErrNone)
 		{
 		countsUp = EFalse;
@@ -158,11 +202,10 @@ TBool TBtraceUtils::CalculateFastCounterCountsUp()
 	// Hack for N96 which returns countsup=false even though the fast counter is slaved to the nanokernel tick counter (and thus does actually count upwards)
 	TInt fastCount = User::FastCounter();
 	TInt ntick = User::NTickCount();
-	if (FastCounterFrequency() == NanoTickPeriod() && fastCount == ntick)
+	if (FastCounterFrequency() == 1000 && Timer2TickPeriod() == 1000 && fastCount == ntick)
 		{
 		countsUp = ETrue;
 		}
-
 	return countsUp;
 	}
 
@@ -203,7 +246,29 @@ EXPORT_C TBtraceTickCount::TBtraceTickCount()
 EXPORT_C void TBtraceTickCount::SetToNow()
 	{
 	iFast = User::FastCounter();
-	iNano = User::NTickCount();
+	if (TBtraceUtils::Timer2TickPeriod() == TBtraceUtils::NanoTickPeriod())
+		{
+		iNano = User::NTickCount();
+		}
+	else
+		{
+		iNano = 0;
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+		// Don't like having a memoryaccess dependancy here but can't see any other way around it without breaking BC
+		RMemoryAccess mem;
+		TInt err = RMemoryAccess::LoadDriver();
+		if (err && err != KErrAlreadyExists)
+			{
+			return;
+			}
+		err = mem.Open();
+		if (!err)
+			{
+			iNano = (TUint32)(mem.NKernTimestamp() >> 32);
+			mem.Close();
+			}
+		}
+#endif
 	}
 
 EXPORT_C TUint32 TBtraceTickCount::IntervalInNanoTicks(const TBtraceTickCount& aTickCount) const
@@ -218,7 +283,7 @@ EXPORT_C TUint64 TBtraceTickCount::IntervalInFastTicks(const TBtraceTickCount& a
 	TUint64 n = IntervalInNanoTicks(aTickCount);
 
 	// Convert to microseconds;
-	n *= TBtraceUtils::NanoTickPeriod();
+	n *= TBtraceUtils::Timer2TickPeriod();
 
 	// Convert this into fast counter ticks.
 	n *= TBtraceUtils::FastCounterFrequency();

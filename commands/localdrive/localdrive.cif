@@ -14,7 +14,7 @@
 
 ==short-description
 
-Manipulate local drives using RLocalDrive.
+Manipulate local drives using RLocalDrive API.
 
 ==long-description
 
@@ -36,7 +36,7 @@ Write the file specified by --file back into the partition given by <drive>. The
 
 ==argument int drive optional
 
-The drive to operate on. Must be specified for read and write commands.
+The drive to operate on. Must be specified for read and write commands. This drive number is not the same as eg drvinfo uses - it must be found using C<localdrive list>.or by referring to the estart configuration file.
 
 ==option bool b bytes
 
@@ -45,6 +45,10 @@ Display sizes in bytes rather than as human-readable strings - ie "1048576" rath
 ==option filename f file
 
 Use in conjunction with read and write to specify the file to read/write the raw partition data from/to.
+
+==see-also
+
+L<drvinfo|drvinfo>
 
 ==copyright
 

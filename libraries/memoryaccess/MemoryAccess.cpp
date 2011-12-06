@@ -930,6 +930,13 @@ TInt DMemoryAccess::DoControl(TInt aFunction, TAny* a1, TAny* a2)
 		return err;
 		}
 #endif
+#ifdef __SMP__
+	case RMemoryAccess::EControlNKernTimestamp:
+		{
+		TUint64 timestamp = NKern::Timestamp();
+		return Kern::ThreadRawWrite(iClient, a1, &timestamp, sizeof(TUint64));
+		}
+#endif
     default:
         return KErrNotSupported;
         }

@@ -50,6 +50,10 @@ RAM disk
 
 For example, C<re-> indicates a removable disk that is read-only. The attributes are followed by the drive letter, the free space on disk, the total disk size, and the volume name if there is one.
 
+==see-also
+
+L<localdrive|localdrive>
+
 ==copyright
 
 Copyright (c) 2007-2010 Accenture. All rights reserved.

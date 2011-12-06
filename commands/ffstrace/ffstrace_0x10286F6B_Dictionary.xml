@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tracedictionary xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="DictionarySchema.xsd">
+	<typedefs>
+		<object type="S32" size="4" formatchar="d" classification="integer"/>
+		<object type="H32" size="4" formatchar="x" classification="hex"/>
+		<object type="U32" size="4" formatchar="u" classification="integer"/>
+		<object type="S16" size="2" formatchar="hd" classification="integer"/>
+		<object type="H16" size="2" formatchar="hx" classification="hex"/>
+		<object type="U16" size="2" formatchar="hu" classification="integer"/>
+		<object type="S8" size="1" formatchar="hhd" classification="integer"/>
+		<object type="H8" size="1" formatchar="hhx" classification="hex"/>
+		<object type="U8" size="1" formatchar="hhu" classification="integer"/>
+		<object type="S64" size="8" formatchar="Ld" classification="integer"/>
+		<object type="H64" size="8" formatchar="Lx" classification="hex"/>
+		<object type="U64" size="8" formatchar="Lu" classification="integer"/>
+		<object type="ASCII" size="1" formatchar="s" classification="string"/>
+		<object type="UNICODE" size="2" formatchar="S" classification="string"/>
+	</typedefs>
+	<data>
+		<def id="0" type="string">tid:%d Delete %{ASCII}</def>
+		<def id="1" type="string">tid:%d Rename from %{ASCII}</def>
+		<def id="3" type="string">tid:%d RFs::Entry name:{ASCII}</def>
+		<def id="4" type="string">tid:%d RFile::Close() handle:%d</def>
+		<def id="5" type="string">tid:%d RFile::Open() handle:%d name: %s</def>
+		<def id="6" type="string">tid:%d RFile::Create() handle:%d name: %s</def>
+		<def id="7" type="string">tid:%d RFile::Replace() handle:%d name: %s</def>
+		<def id="8" type="string">tid:%d RFile::Temp() handle:%d name: %s</def>
+		<def id="9" type="string">tid:%d RFile::Rename() handle:%d new name: %s</def>
+		<def id="10" type="string">tid:%d handle:%d Read from 0x%Lu %d bytes</def>
+		<def id="11" type="string">tid:%d handle:%d Write to 0x%Lu %d bytes</def>
+		<def id="12" type="string">handle:%d name: %s</def>
+	</data>
+	<component id="271085419" name="ffstrace" prefix="ffstrace: " suffix="">
+		<group id="134" name="TRACE_NORMAL" prefix="" suffix="">
+			<trace data-ref="0" name="EFfsDelete">
+				<instance id="0" loc-ref="0" line="0"/>
+			</trace>
+			<trace data-ref="1" name="EFfsRename">
+				<instance id="1" loc-ref="0" line="0"/>
+			</trace>
+			<trace data-ref="3" name="EFfsEntry">
+				<instance id="3" loc-ref="0" line="0"/>
+			</trace>
+			<trace data-ref="4" name="EFfsFileSubClose">
+				<instance id="4" loc-ref="0" line="0"/>
+			</trace>
+			<trace data-ref="5" name="EFfsFileOpen">
+				<instance id="5" loc-ref="0" line="0"/>
+			</trace>
+			<trace data-ref="6" name="EFfsFileCreate">
+				<instance id="6" loc-ref="0" line="0"/>
+			</trace>
+			<trace data-ref="7" name="EFfsFileReplace">
+				<instance id="7" loc-ref="0" line="0"/>
+			</trace>
+			<trace data-ref="8" name="EFfsFileTemp">
+				<instance id="8" loc-ref="0" line="0"/>
+			</trace>
+			<trace data-ref="9" name="EFfsFileRename">
+				<instance id="9" loc-ref="0" line="0"/>
+			</trace>
+			<trace data-ref="10" name="EFfsFileRead">
+				<instance id="10" loc-ref="0" line="0"/>
+			</trace>
+			<trace data-ref="11" name="EFfsFileWrite">
+				<instance id="11" loc-ref="0" line="0"/>
+			</trace>
+			<trace data-ref="12" name="EFfsFilePriming">
+				<instance id="12" loc-ref="0" line="0"/>
+			</trace>
+		</group>
+	</component>
+</tracedictionary>

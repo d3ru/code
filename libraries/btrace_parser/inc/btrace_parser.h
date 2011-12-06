@@ -89,12 +89,14 @@ public:
 	IMPORT_C static void DebugOverrideTimerSettings(TInt aNanoPeriod, TInt aFastCounterFreq, TBool aFastCountUp);
 
 public:
+	static TInt64 Timer2TickPeriod();
 	static TInt NanoTickPeriod();
 	static TInt FastCounterFrequency();
 	static TBool FastCounterCountsUp();
 private:
 	static SBtraceParserTls* CreateTls();
 	static TInt CalculateNanoTickPeriod();
+	static TInt64 CalculateTimer2TickPeriod();
 	static TInt CalculateFastCounterFrequency();
 	static TInt CalculateFastCounterCountsUp();
 	};

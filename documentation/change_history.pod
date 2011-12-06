@@ -22,6 +22,10 @@ __END__
 
 =item *
 
+ffstrace command revamped to work on SMP systems and with TraceCore. Added --verbose option and extended it to trace file reads and writes as well.
+
+=item *
+
 Added C<heaptrace --logging-allocator> command. This allows you to enable tracing on any given thread's allocator, without needing to instrument the code or rebuild anything. This uses the logging allocator and a number of other tricks.
 
 =item *
@@ -131,6 +135,14 @@ Fixed bug 3434826: Building for MCL fails
 =item *
 
 Fixed bug 3439354: Showdebug crashes on UDEB kernels
+
+=item *
+
+Fixed crash in running chunkinfo -v on a local chunk.
+
+=item *
+
+Fixed how memmap reported chunk size (it was inaccurate for disconnected chunks) and added --committed option.
 
 =back
 
