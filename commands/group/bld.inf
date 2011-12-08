@@ -399,6 +399,9 @@ PRJ_MMPFILES
 #ifdef FSHELL_FSTRACER_SUPPORT
 PRJ_EXPORTS
 ..\ffstrace\ffstrace.cif        z:\resource\cif\fshell\ffstrace.cif
+#ifdef FSHELL_TRACECORE_SUPPORT
+..\ffstrace\ffstrace_0x10286F6B_Dictionary.xml \epoc32\ost_dictionaries\ffstrace_0x10286F6B_Dictionary.xml
+#endif
 PRJ_MMPFILES
 ..\ffstrace\ffstraceplugin.mmp
 ..\ffstrace\ffstrace.mmp

@@ -46,6 +46,7 @@ private:
 	TBtraceTickCount iNowTick;
 	TTime iNowTime;
 	RHashMap<TInt, HBufC*> iHandles;
+	TFileName iTempName;
 	};
 
 EXE_BOILER_PLATE(CCmdFfstrace)
@@ -136,8 +137,10 @@ void CCmdFfstrace::HandleBtraceFrameL(const TBtraceFrame& aFrame)
 	{
 	if (aFrame.iSubCategory == EFfsFilePriming)
 		{
-		TPtrC name((TUint16*)(aFrame.iData.Ptr()+4), (aFrame.iData.Size()-4)/2);
-		iHandles.InsertL(*(TUint32*)aFrame.iData.Ptr(), name.AllocLC());
+		TPtrC8 name8((aFrame.iData.Ptr()+4), aFrame.iData.Size()-4);
+		HBufC16* name = HBufC::NewLC(name8.Length());
+		name->Des().Copy(name8);
+		iHandles.InsertL(*(TUint32*)aFrame.iData.Ptr(), name);
 		CleanupStack::Pop();
 		}
 	else
@@ -147,24 +150,25 @@ void CCmdFfstrace::HandleBtraceFrameL(const TBtraceFrame& aFrame)
 		TUint threadId = *(TUint*)aFrame.iData.Ptr();
 
 		// Work out name
+		TPtrC8 name8;
+		TPtrC8 newName8;
 		TPtrC name;
-		TPtrC newName;
 		TInt handle = 0;
 		switch (fn)
 			{
 		// These don't use handles at all
 		case EFfsDelete:
 		case EFfsEntry:
-			name.Set(TPtrC((TUint16*)(aFrame.iData.Ptr()+4), (aFrame.iData.Size()-4)/2));
+			name8.Set(TPtrC8((aFrame.iData.Ptr()+4), aFrame.iData.Size()-4));
 			break;
 		case EFfsRename:
 			{
-			name.Set(TPtrC((TUint16*)(aFrame.iData.Ptr()+4), (aFrame.iData.Size()-4)/2));
+			name8.Set(TPtrC8((aFrame.iData.Ptr()+4), aFrame.iData.Size()-4));
 			TInt separator = name.Locate(0);
 			if (separator != KErrNotFound)
 				{
-				newName.Set(name.Mid(separator+1));
-				name.Set(name.Left(separator));
+				newName8.Set(name8.Mid(separator+1));
+				name8.Set(name8.Left(separator));
 				}
 			break;
 			}
@@ -177,7 +181,9 @@ void CCmdFfstrace::HandleBtraceFrameL(const TBtraceFrame& aFrame)
 		case EFfsFileRename:
 			{
 			handle = *(TInt*)(aFrame.iData.Ptr() + 4);
-			name.Set(TPtrC((TUint16*)(aFrame.iData.Ptr()+8), (aFrame.iData.Size()-8)/2));
+			name8.Set(TPtrC8((aFrame.iData.Ptr()+8), aFrame.iData.Size()-8));
+			iTempName.Copy(name8);
+			name.Set(iTempName);
 			HBufC** existingName = iHandles.Find(handle);
 			if (existingName)
 				{
@@ -230,6 +236,12 @@ void CCmdFfstrace::HandleBtraceFrameL(const TBtraceFrame& aFrame)
 				}
 			}
 
+		if (name.Length() == 0)
+			{
+			iTempName.Copy(name8);
+			name.Set(iTempName);
+			}
+
 		// Not everything gets as far as post - if an error occurs during the pre checking for eg
 		if (post) Printf(_L("-"));
 		else Printf(_L("+"));
@@ -256,7 +268,9 @@ void CCmdFfstrace::HandleBtraceFrameL(const TBtraceFrame& aFrame)
 				break;
 			case ExtraBTrace::EFfsRename:
 			case ExtraBTrace::EFfsFileRename:
-				Printf(_L("Rename from %S to %S"), &name, &newName);
+				Printf(_L("Rename from %S to "), &name);
+				iTempName.Copy(newName8);
+				Write(iTempName);
 				break;
 			case ExtraBTrace::EFfsEntry:
 				Printf(_L("RFs::Entry %S"), &name);
@@ -287,8 +301,8 @@ void CCmdFfstrace::HandleBtraceFrameL(const TBtraceFrame& aFrame)
 		if (err == KErrNone)
 			{
 			Printf(_L(" "));
-			TFullName name = thread.FullName();
-			Write(name);
+			TFullName threadname = thread.FullName();
+			Write(threadname);
 			thread.Close();
 			}
 		Printf(_L("\r\n"));

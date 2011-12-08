@@ -108,7 +108,7 @@ CFsPlugin* CFfsTracerPluginFactory::NewPluginL()
 	
 TInt CFfsTracerPluginFactory::UniquePosition()
 	{
-	return 1; // Isn't used, apparently
+	return 0x20286F6B; // The bottom 28 bits are from FSHELL_UID_FFSTRACERPLUGIN, the top must be 2 in order to be within EPluginObserverRange
 	}
 
 //
@@ -206,9 +206,9 @@ TInt CFfsTracerFsPlugin::DoRequestL(TFsPluginRequest& aRequest)
 	{
 	// This is where it all happens
 	TInt fn = aRequest.Function();
-	LOG("DoRequestL fn=%d", fn);
 	TBuf<128+1+256+6> name; // For renames we need it to (temporarily) fit an 8-bit filename (ie 128 wide chars) plus a full-fat TFileName. Also up to 12 bytes for threadId, handle and traceName
 	GetName(&aRequest, name);
+	LOGW(_L("DoRequestL fn=%d name=%S"), fn, &name);
 	TInt handle = 0; // Means invalid
 
 	TPtr8 buf8(NULL, 0);
