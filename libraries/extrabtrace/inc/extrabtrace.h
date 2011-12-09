@@ -58,9 +58,11 @@ namespace ExtraBTrace
 		EFfsFileReplace = 7, // threadid, handleid, filename
 		EFfsFileTemp = 8, // threadid, handleid, filename
 		EFfsFileRename = 9, // threadid, handleid, newname
+		// Note the pos64s below will be the *new* file position in the post events!
 		EFfsFileRead = 10, // threadid, handleid, pos64, len
 		EFfsFileWrite = 11, // threadid, handleid, pos64, len
 		EFfsFilePriming = 12, // handleid, name
+		EFfsFileFlush = 13, // threadid, handleid
 
 		EFfsPost = 128,
 		};

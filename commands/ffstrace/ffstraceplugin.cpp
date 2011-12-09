@@ -338,6 +338,11 @@ TInt CFfsTracerFsPlugin::DoRequestL(TFsPluginRequest& aRequest)
 				}
 			break;
 			}
+		case EFsFileFlush:
+			subcat |= EFfsFileFlush;
+			buf8.Zero();
+			TraceThreadHandleBuf(subcat, threadId, handle, buf8);
+			break;
 		default:
 			// An operation we're not interested in
 			break;
