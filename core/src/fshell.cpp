@@ -100,7 +100,7 @@ void TError::Set(TInt aError, TReason aReason, TRefByValue<const TDesC> aFmt, ..
 		SetScriptContextFromEnvironment();
 		iError = aError;
 		iReason = aReason;
-		Format(aFmt, list);
+		FormatList(aFmt, list);
 		iSet = ETrue;
 		}
 	LogListIfRequired(aError, aReason, aFmt, list);
@@ -147,7 +147,7 @@ void TError::Format(TRefByValue<const TDesC> aFmt, ...)
 	VA_END(list);
 	}
 
-void TError::FormatList(TRefByValue<const TDesC> aFmt, VA_LIST& aList)
+void TError::FormatList(const TDesC& aFmt, VA_LIST aList)
 	{
 	iContext.Zero();
 	TOverflowTruncate overflow;
@@ -187,7 +187,7 @@ void TError::LogIfRequired(TInt aError, TReason aReason, TRefByValue<const TDesC
 	VA_END(list);
 	}
 
-void TError::LogListIfRequired(TInt aError, TReason aReason, TRefByValue<const TDesC> aFmt, VA_LIST& aList)
+void TError::LogListIfRequired(TInt aError, TReason aReason, const TDesC& aFmt, VA_LIST aList)
 	{
 	if (Verbose())
 		{
@@ -238,12 +238,19 @@ void TError::NewLine() const
 		}
 	}
 
+_LIT(KError, "Error: ");
+
 void TError::PrintError() const
 	{
 	NewLine();
 	IoUtils::TOverflowTruncate overflow;
-	iScratch.Zero();
-	iScratch.AppendFormat(_L("Error: %S (%d)\r\n"), &overflow, Stringify::Error(iError), iError);
+	iScratch = KError;
+	if (iContext.Length())
+		{
+		iScratch.Append(iContext);
+		iScratch.Append(_L(" : "));
+		}
+	iScratch.AppendFormat(_L("%S (%d)\r\n"), &overflow, Stringify::Error(iError), iError);
 	iStderr->Write(iScratch);
 	}
 
@@ -253,7 +260,7 @@ void TError::FormatError(TRefByValue<const TDesC> aFmt, ...) const
 	VA_LIST list;
 	VA_START(list, aFmt);
 	IoUtils::TOverflowTruncate overflow;
-	iScratch = _L("Error: ");
+	iScratch = KError;
 	iScratch.AppendFormatList(aFmt, list, &overflow);
 	VA_END(list);
 	iScratch.AppendFormat(_L(" : %S (%d)\r\n"), Stringify::Error(iError), iError);

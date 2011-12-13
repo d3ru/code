@@ -167,6 +167,13 @@ void CParser::ConstructL(const TDesC* aDes, RIoReadHandle* aSourceHandle)
 	iLexer2->DefineTokenTypeL(TToken::ERedirectStderrToFileAppend, KRedirectStderrToFileAppend);
 	iLexer2->DefineTokenTypeL(TToken::ERedirectStderrToStdout, KRedirectStderrToStdout);
 	iLexer2->DefineTokenTypeL(TToken::EAmpersand, KAmpersand);
+	// If you're going to understand & you need to know about && and &| in order to disambiguate
+	// Otherwise it gets parsed as something like cmd1 <BACKGROUND> <PIPETO> cmd2 which due to
+	// further parsing badness ends up being evaluated as cmd1 | (cmd2&) which is just bonkers
+	iLexer2->DefineTokenTypeL(TToken::EDoubleAmpersand, KDoubleAmpersand);
+	iLexer2->DefineTokenTypeL(TToken::EAmpersandPipe, KAmpersandPipe);
+	iLexer2->DefineTokenTypeL(TToken::EAmpersandPipe, KAmpersandPipe);
+	iLexer2->DefineTokenTypeL(TToken::EDoublePipe, KDoublePipe);
 
 	if (iMode & EExportLineNumbers)
 		{
@@ -443,7 +450,7 @@ void CParser::CreateNextPipeLineL(TBool* aIsForeground)
 	{
 	// Parsing is now carried out in three main steps:
 	//
-	// 1) Use iLexer1 to find the next "pipe-line's worth" of data (carried out by FindNextPipeLine).
+	// 1) Use iLexer1 to find the next "pipe-line's worth" of data (carried out by FindNextPipeLineL).
 	// 2) Expand environment variables in this data into a new HBufC ('expandedPipeLine' returned by ExpandVariablesLC).
 	// 3) Use iLexer2 to parse the data in this expanded descriptor.
 
@@ -483,6 +490,14 @@ void CParser::CreateNextPipeLineL(TBool* aIsForeground)
 				background = ETrue;
 				break;
 				}
+			case TToken::EDoublePipe:
+			case TToken::EDoubleAmpersand:
+			case TToken::EAmpersandPipe:
+				// This can only happen if expanding the environment vars caused a new pipeline
+				// Since this doesn't work properly, better to flag it as an error rather than do something incorrect and weird
+				iCompletionError.Set(KErrArgument, TError::EFailedToCreatePipeLine, _L("Environment variables containing %S cannot be expanded to cause multiple pipelines"), &token.String());
+				User::Leave(KErrArgument);
+				break;
 			case TToken::ERedirectStdinFromFile:
 			case TToken::ERedirectStdoutToFile:
 			case TToken::ERedirectStdoutToFileAppend:

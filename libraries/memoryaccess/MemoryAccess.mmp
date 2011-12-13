@@ -37,7 +37,9 @@ source		hwbreak_cia.cpp
 source		hwbreak.cia
 #endif
 #endif // FSHELL_HWBREAK_SUPPORT
+#ifdef EABI
 source      spike.cia
+#endif
 
 #if defined(EABI) && !defined(GCCE)
 macro		SUPPORT_BREAKPOINT_STUFF

@@ -113,7 +113,9 @@ private:
 	RThread iWorkerThread;
 	RAllocator* iSharedAllocator;
 	TRequestStatus* iDispatchStatus;
-	CActiveSchedulerWait iAsWait; // Use a CActiveSchedulerWait to protect ourselves from whatever aThreadFunction may try and do
+	// Use a CActiveSchedulerWait to protect ourselves from whatever aThreadFunction may try and do
+	// Don't make this embedded as that could mean its destructor could potentially be invoked from the wrong thread
+	CActiveSchedulerWait* iAsWait; // NOT OWNED and is on the worker thread heap. Can only be deleted from ThreadFnL(), like the worker thread active scheduler itself
 	CThreadDeathWatcher* iThreadDeathWatcher;
 	TBool iBusy;
 

@@ -40,6 +40,7 @@ private: // From CCommandBase.
 	virtual void OptionsL(RCommandOptionList& aOptions);
 private: // From MParserObserver.
 	virtual void HandleParserComplete(CParser& aParser, const TError& aError);
+	virtual void HandleParserExit(CParser& aParser);
 
 private:
 	HBufC* iCmd;

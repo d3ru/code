@@ -48,9 +48,9 @@ public:
 	TInt ScriptLineNumber() const;
 private:
 	void Format(TRefByValue<const TDesC> aFmt, ...);
-	void FormatList(TRefByValue<const TDesC> aFmt, VA_LIST& aList);
+	void FormatList(const TDesC& aFmt, VA_LIST aList);
 	void LogIfRequired(TInt aError, TReason aReason, TRefByValue<const TDesC> aFmt, ...);
-	void LogListIfRequired(TInt aError, TReason aReason, TRefByValue<const TDesC> aFmt, VA_LIST& aList);
+	void LogListIfRequired(TInt aError, TReason aReason, const TDesC& aFmt, VA_LIST aList);
 	const TDesC* StringifyReason(TReason aReason) const;
 	TBool Verbose() const;
 	void NewLine() const;

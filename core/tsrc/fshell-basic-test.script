@@ -37,18 +37,22 @@ export TEST_CMD "export TEST_CMD_COMPLETED 1"
 $TEST_CMD
 var TEST_CMD_COMPLETED == 1 || error
 
+# Test that an env var cannot be expanded to *multiple* pipelines (this wasn't detected prior to 006 and caused lots of strange effects)
+export TEST_CMD "echo -n '' || echo -n ''"
+fshell -e '$TEST_CMD' --console nullcons && $Error
+
 # Now we know that works, use it to give ourselves better error reporting
-# Apparently an env var can't expand to more than one pipeline stage, which is why we have to wrap this in fshell -e
+# Since an env var can't expand to more than one pipeline, we have to wrap this in fshell -e
 var KEEP_GOING not-defined && export Error 'fshell -e "echo ^"Test failed, env is:^" && env && error"'
 var KEEP_GOING defined && export Error 'error -39 "Test failure in $SCRIPT_NAME at line $SCRIPT_LINE"'
 
 # Check we've defined the things we're supposed to in a script
 var SCRIPT_PATH defined || $Error
 var SCRIPT_NAME == fshell-basic-test.script || $Error
-var SCRIPT_LINE == 48 || error -39 "SCRIPT_LINE isn't 48, it's $SCRIPT_LINE" # Remember to update this if you change the script above this point!
+var SCRIPT_LINE == 52 || error -39 "SCRIPT_LINE isn't 52, it's $SCRIPT_LINE" # Remember to update this if you change the script above this point!
 var 0 == $SCRIPT_PATH$SCRIPT_NAME || $Error
 export DOLLAR_SCRIPT_LINE_VALUE $SCRIPT_LINE
-var DOLLAR_SCRIPT_LINE_VALUE == 50 || $Error
+var DOLLAR_SCRIPT_LINE_VALUE == 54 || $Error
 
 # Test pipes, redirection
 
@@ -169,3 +173,16 @@ var PRINTERR == "$EXPECTED_ERR" || $Error
 
 source $SCRIPT_PATHprinterror.script 2>&1 | export -s PRINTERR
 var PRINTERR == "$EXPECTED_ERR" || $Error
+
+# A format string bug meant a command name with a % would crash with USER-12
+export ERR 0
+fshell --console nullcons -e "%" || export ERR $?
+var ERR == -1 || $Error
+
+# This used to cause a hang or crash - since it relies on an exit make sure this is the last test!
+# The behaviour of backgrounding a thread command then immediately exiting isn't guaranteed to complete
+# the backgrounded command (afaik) but it shouldn't hang or crash
+#
+# This test is disabled by default because it still causes a memory leak check panic
+#export SOMETHING something &
+#exit

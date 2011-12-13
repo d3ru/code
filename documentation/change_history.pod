@@ -36,7 +36,7 @@ Added mcl platform located at \fshell\build\s60\mcl. This platform supports buil
     M:\fshell\build\s60\mcl>sbs -c armv5_urel.fshellminigui
     M:\fshell\build\s60\mcl>sbs -c armv5_urel.fshelltshell
 
-For convenience, a batchfile build_all.bat is supplied which runs the above 3 sbs commands. It also builds the SMP drivers if necessary.
+For convenience, a batchfile build_all.bat is supplied which runs the above 3 sbs commands, and also builds the SMP drivers if necessary.
 
 Then to build a full gui rom with fshell included do (something similar to):
 
@@ -143,6 +143,10 @@ Fixed crash in running chunkinfo -v on a local chunk.
 =item *
 
 Fixed how memmap reported chunk size (it was inaccurate for disconnected chunks) and added --committed option.
+
+=item *
+
+Fixed crash bugs in fshell parser when issuing a command containing a percent sign or when backgrounding a thread command immediately prior to exiting a script. Also explicitly disallowed certain environment variable useages which were previously permitted but didn't work properly.
 
 =back
 

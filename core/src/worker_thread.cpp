@@ -22,12 +22,11 @@ Some notes on how CThreadPool works:
    that the CThreadPool was created on. User::SwitchAllocator() is used where necessary to manipulate CThreadPool data from other threads
    while the Lock is held
  * When a task is queued, a non-busy CWorkerThread is found (or created).
- * When a task is completed in a worker thread, it calls iParentThread.RequestComplete(iCompletionStatus, err). It then calls
-   CThreadPool::WorkerFinished() to set the CWorkerThread to be non-busy again.
+ * When a task is completed in a worker thread, it calls calls CThreadPool::WorkerFinished() to set the CWorkerThread to be non-busy again.
+   It then calls iParentThread.RequestComplete(iCompletionStatus, err).
  * When a CWorkerThread is created it arranges (via SignalSelf()) to add a CThreadDeathWatcher to the main thread.
    It follows that notifications about tasks failed because of thread death are always serviced by the main thread, which must therefore
    remain responsive. (In the non-dead case, the completion notification is sent directly from the worker thread).
-
 */
 
 #include "worker_thread.h"
@@ -421,7 +420,7 @@ public:
 		else
 			{
 			// Time to die
-			iThread->iAsWait.AsyncStop();
+			iThread->iAsWait->AsyncStop();
 			}
 		}
 
@@ -493,6 +492,8 @@ void CWorkerThread::ConstructL()
 
 CWorkerThread::~CWorkerThread()
 	{
+	// This runs in context of the threadpool thread
+	// Note we do not attempt to touch iAsWait (because we could be in wrong heap context, as iAsWait is created in worker thread ThreadFnL)
 	if (iWorkerThread.Handle())
 		{
 		WT_LOG(_L("Deleting worker thread %d"), TUint(GetThreadId()));
@@ -700,12 +701,16 @@ void CWorkerThread::ThreadFnL()
 	CleanupStack::PushL(dispatcher);
 	iDispatchStatus = &dispatcher->iStatus;
 	RThread::Rendezvous(KErrNone);
-	iAsWait.Start();
-	CleanupStack::PopAndDestroy(2, scheduler); // dispatcher, scheduler
+	CActiveSchedulerWait* waiter = new(ELeave) CActiveSchedulerWait;
+	CleanupStack::PushL(waiter);
+	iAsWait = waiter;
+	iAsWait->Start();
+	CleanupStack::PopAndDestroy(3, scheduler); // waiter, dispatcher, scheduler
 	}
 
 void CWorkerThread::CompleteParentRequest(TInt aError)
 	{
+	WT_LOG(_L("Completing parent request for thread %d task %d"), TUint(GetThreadId()), iTaskId);
 	if (iCompletionStatus)
 		{
 		// If the parent thread has died, then the completion status pointer might no longer be valid (as it would point into the parent's heap
@@ -730,6 +735,7 @@ void CWorkerThread::Shutdown()
 		{
 		WT_LOG(_L("Thread is still busy - killing it"));
 		iWorkerThread.Kill(KErrAbort);
+		CompleteParentRequest(KErrAbort);
 		// The thread death watcher should take care of everything else, eventually
 		}
 	else if (iWorkerThread.ExitType() == EExitPending)

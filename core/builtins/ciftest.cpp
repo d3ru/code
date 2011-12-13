@@ -193,6 +193,17 @@ void CCmdCifTest::HandleParserComplete(CParser& /*aParser*/, const TError& aErro
 	TestCompleted(err);
 	}
 
+void CCmdCifTest::HandleParserExit(CParser&)
+	{
+	if (iVerbose)
+		{
+		Printf(_L("Smoketest for %S completed ok.\r\n"), &iCurrentCif->Name());
+		}
+	iPasses++;
+	TestCompleted(KErrNone);
+	}
+
+
 void CCmdCifTest::TestCompleted(TInt aError)
 	{
 	// Delete interim data

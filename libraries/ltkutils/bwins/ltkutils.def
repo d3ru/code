@@ -191,4 +191,5 @@ EXPORTS
 	?DeviceNumber@CHalAttribute@LtkUtils@@QBEHXZ @ 190 NONAME ; int LtkUtils::CHalAttribute::DeviceNumber(void) const
 	?Update@CHalAttribute@LtkUtils@@QAEHXZ @ 191 NONAME ; int LtkUtils::CHalAttribute::Update(void)
 	?LoadLogicalDevice@LtkUtils@@YAHABVTDesC16@@@Z @ 192 NONAME ; int LtkUtils::LoadLogicalDevice(class TDesC16 const &)
+	?IsMultiThreaded@RAllocatorHelper@LtkUtils@@QBEHXZ @ 193 NONAME ; int LtkUtils::RAllocatorHelper::IsMultiThreaded(void) const
 

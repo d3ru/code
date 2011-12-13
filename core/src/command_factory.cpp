@@ -136,7 +136,8 @@ MCommand* CCommandFactory::CreateCommandL(const TDesC& aCommandName, TError& aEr
 	if (err)
 		{
 		KillAndCloseProcess(process);
-		aErrorContext.Set(err, TError::EFailedToConstructCommand, aCommandName);
+		_LIT(KFmt, "%S");
+		aErrorContext.Set(err, TError::EFailedToConstructCommand, KFmt, &aCommandName);
 		User::Leave(err);
 		}
 	CleanupStack::PopAndDestroy(); // WaitLC()

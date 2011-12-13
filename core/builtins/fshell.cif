@@ -148,7 +148,7 @@ The 'andor' operator is effectively an alternative for proper block support. It 
 
   exist some_dir || do_something &| do_something_else
 
-In this example, "do_something" is only executed if "some_dir" does not already exist. However, if "do_something" is run, then "do_something_else" is also guaranteed to also run.
+In this example, "do_something" is only executed if "some_dir" does not already exist. However, if "do_something" is run, then "do_something_else" is also guaranteed to run, regardless of whether or not "do_something" returned an error.
 
 More advanced multi-line conditional statements are possible using the L<if command|if>. Looping is possible using the L<while|while> command, or for more basic iterations the L<repeat|repeat> or L<foreach|foreach> commands.
 

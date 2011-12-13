@@ -532,6 +532,7 @@ DDebuggerEventHandler::~DDebuggerEventHandler()
 		iDebugRegistersChunk->Close(NULL);
 		}
 #endif
+#ifdef __MARM__
 	if (iSpikeChunk)
 		{
 		iSpikeChunk->Close(NULL);
@@ -540,7 +541,7 @@ DDebuggerEventHandler::~DDebuggerEventHandler()
 		{
 		Epoc::FreePhysicalRam(iSpikeChunkPhysAddr, KSpikeAllocSize);
 		}
-
+#endif
 	iCreatorInfo.Close();
 	}
 
@@ -1626,6 +1627,7 @@ void DDebuggerEventHandler::RemoveAllHardwareBreakpointsForThread(DThread* aThre
 TInt DDebuggerEventHandler::MoveBreakpointToNextInstructionForThread(DThread* aThread, SBreakpoint* aBreakpoint)
 	{
 	ASSERT_BREAKPOINT_LOCKED();
+#ifdef SUPPORT_BREAKPOINT_STUFF
 	TUint32 notUsed = 0;
 	TBool aModeChange = EFalse;
 	TLinAddr nextAddr = PCAfterInstructionExecutes(aThread, aBreakpoint->iAddress, notUsed, aBreakpoint->iFlags & SBreakpoint::EThumb ? 2 : 4, notUsed, aModeChange);
@@ -1656,6 +1658,11 @@ TInt DDebuggerEventHandler::MoveBreakpointToNextInstructionForThread(DThread* aT
 	iNextBreakpointId++;
 
 	return KErrNone;
+#else
+	(void)aThread;
+	(void)aBreakpoint;
+	return KErrNotSupported;
+#endif
 	}
 
 

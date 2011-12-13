@@ -38,5 +38,6 @@ Copyright (c) 2006-2010 Accenture. All rights reserved.
 
 ==smoke-test
 
+variant target || exit # Can't be tested on wins
 find -p1 ?:\sys\bin\fshell.exe | export -s FSHELL_EXE_PATH
 e32header $FSHELL_EXE_PATH $Quiet

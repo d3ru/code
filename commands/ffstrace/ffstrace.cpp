@@ -93,9 +93,10 @@ void CCmdFfstrace::OptionsL(RCommandOptionList& aOptions)
 
 void CCmdFfstrace::DoRunL()
 	{
+	TInt err;
 #ifdef FSHELL_TRACECORE_SUPPORT
 	_LIT_SECURITY_POLICY_PASS(KPass);
-	TInt err = RProperty::Define(0, RProperty::EInt, KPass, KPass);
+	err = RProperty::Define(0, RProperty::EInt, KPass, KPass);
 	if (err != KErrAlreadyExists) LeaveIfErr(err, _L("Couldn't define property"));
 	TBool useOst = (iCommand == ELoad); // Don't use OST format if we're monitoring, because CBtraceReader doesn't understand OST
 	RProperty::Set(TUid::Uid(FSHELL_UID_FFSTRACE), 0, useOst);
