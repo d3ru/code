@@ -539,9 +539,23 @@ void CParser::CreateNextPipeLineL(TBool* aIsForeground)
 			// Special case the handling of 'exit'. This allows the concept of 'local commands' (i.e. commands that run in either fshell's main
 			// thread or in the thread belonging to a 'source' or 'debug' command) to be dropped. That's a good thing, because local commands
 			// can't synchronously interact with iosrv without risk of deadlock when two or more thread commands are run in a pipe-line. 
+
+			// Play nice with exit inside a conditional!
+			TBool shouldExecute = ETrue;
+			if (CurrentConditionalScope())
+				{
+				shouldExecute = CurrentConditionalScope()->AboutToExecutePipeLineStageL(pipeLineData, *expandedPipeLine, *KPipelineConditions[iCondition]);
+				}
 			CleanupStack::PopAndDestroy(2, &pipeSections);
-			iExitCallBack = new(ELeave) CAsyncCallBack(TCallBack(ExitCallBack, this), CActive::EPriorityStandard);
-			iExitCallBack->Call();
+			if (shouldExecute)
+				{
+				iExitCallBack = new(ELeave) CAsyncCallBack(TCallBack(ExitCallBack, this), CActive::EPriorityStandard);
+				iExitCallBack->Call();
+				}
+			else
+				{
+				iNextPipeLineCallBack->Call();
+				}
 			}
 		else
 			{

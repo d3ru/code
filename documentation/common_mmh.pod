@@ -270,6 +270,14 @@ The name of the fshell variant being defined. Should only ever be defined in pla
 
 This macro only need be defined on SMP-aware platforms that also define C<FSHELL_VARIANT_NAME>. It is used to override (arguably) incorrect definitions of ABI_DIR when rom building. If needing to be defined, it should usually be set to C<EPOCROOT##epoc32\release\armv5>.
 
+=item FSHELL_CUSTOM_AUTOSTART_SCRIPT
+
+Indicates that this platform provides a custom autostart.script and therefore the default \fshell\core\group\autostart.script should not be included in the sis/iby. If this is defined, it is the platform IBY's responsibility to include a suitable script when FSHELL_AUTOSTART is defined.
+
+=item FSHELL_CUSTOM_AUTOSTART_MECHANISM
+
+Indicates that this platform provides a custom way to run the autostart script and fshell should not attempt the usual recogniser hack or autoexec.bat approach when -DFSHELL_AUTOSTART is specified at rombuild time.
+
 =back
 
 A couple of further macros follow - these are specifically for platforms that provide an custom implementation of the relevant command rather than using fshell's built-in version.

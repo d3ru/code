@@ -1,0 +1,59 @@
+#!fshell
+# set-autostart.script
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+# Remove any existing setting - needed if setting it again
+startup delete fshell.exe autostart 2>&1 >/dev/null &| echo -n ''
+
+if var type == remove
+	# We're done
+	exit
+endif
+
+export AUTOSTART c:\system\console\scripts\autostart.script
+echo 'echo "Using $0"' > $AUTOSTART
+
+if var type == comm
+	echo "source comm" >> $AUTOSTART
+else if var type == usb
+	echo "source start-usb -v" >> $AUTOSTART
+else
+	error -6 "Unrecognised argument $type"
+endif
+
+startup add fshell.exe autostart
+
+exit
+
+==name set-autostart
+
+==short-description
+
+Set fshell to automatically start when the device is booted.
+
+==long-description
+
+Similar in effect to specifying the C<-DFSHELL_AUTOSTART> or C<-DFSHELL_AUTOSTART_USB> buildrom flags. Creates a suitable autostart.script file and uses the C<startup> command to have it invoked at boot time.
+
+==argument enum type optional
+
+==enum-value usb
+
+Autostart using the start-usb script.
+
+==enum-value comm
+
+Autostart using comm.script.
+
+==enum-value remove
+
+Remove fshell from the startup list.

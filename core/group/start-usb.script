@@ -11,7 +11,13 @@
 # Accenture - Initial contribution
 #
 
-var port not-defined && export port ACM::1
+if var port not-defined
+	if var FSHELL_LAUNCHER_SUPPORT_USB defined
+		export port "$FSHELL_LAUNCHER_SUPPORT_USB"
+	else
+		export port ACM::1
+	endif
+endif
 var debug not-defined && export debug 0
 
 export ERR -1
@@ -42,7 +48,7 @@ This script attempts to start an fshell session on the given USB port, using vt1
 
 ==argument string port optional
 
-Name of port. If not specified, defaults to ACM::1.
+Name of port. If not specified, defaults to the value of C<FSHELL_LAUNCHER_SUPPORT_USB>, or failing that to C<ACM::1>.
 
 ==option bool v verbose
 

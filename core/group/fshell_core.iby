@@ -98,8 +98,15 @@ FSHELL_DATA_FILE(ZPRIVATE\10003a3f\apps\sbapp_reg.RSC, Private\10003a3f\import\A
 FSHELL_DATA_FILE(ZRESOURCE\Apps\sbapp_loc.rsc, Resource\Apps\sbapp_loc.rsc)
 #endif
 
-#ifdef FSHELL_AUTOSTART
+#if defined(FSHELL_AUTOSTART) || defined(FSHELL_AUTOSTART_USB)
+#ifndef FSHELL_CUSTOM_AUTOSTART_SCRIPT
+#ifdef FSHELL_AUTOSTART_USB
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\autostart-usb.script, system\console\scripts\autostart.script)
+#else
 FSHELL_DATA_FILE(ZSYSTEM\console\scripts\autostart.script, system\console\scripts\autostart.script)
+#endif // FSHELL_AUTOSTART_USB
+#endif // FSHELL_CUSTOM_AUTOSTART_SCRIPT
+#ifndef FSHELL_CUSTOM_AUTOSTART_MECHANISM
 #if defined(FSHELL_CORE_SUPPORT_SHEBANG)
 patchdata sbrec.dll@KAutoStartFshell 1
 #elif !defined(FSHELL_GUI_SUPPORT)
@@ -108,8 +115,12 @@ FSHELL_DATA_FILE(DATAZ_\fshell_autoexec.bat, autoexec.bat)
 #else
 // If we don't support a recogniser but aren't textshell/minigui, we're not a configuration worth worrying about
 #endif
+#endif // FSHELL_CUSTOM_AUTOSTART_MECHANISM
 #endif // FSHELL_AUTOSTART
 
+#ifdef FSHELL_DYNAMICSTARTUP_SUPPORT
+FSHELL_DATA_FILE(ZSYSTEM\console\scripts\set-autostart.script, system\console\scripts\set-autostart.script)
+#endif
 
 #ifdef FSHELL_CORE_SUPPORT_PIPSRUN
 FSHELL_EXECUTABLE_FILE(pipsrun.exe)

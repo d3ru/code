@@ -1,4 +1,4 @@
-4# change_history.pod
+# change_history.pod
 #
 # Copyright (c) 2010 - 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available
@@ -49,6 +49,10 @@ Or for a minigui:
 And finally for textshell:
 
     imaker <device> flash BLDROBY=\epoc32\rom\include\fshelltshell.oby
+
+=item *
+
+Added C<FSHELL_AUTOSTART_USB> buildrom macro which causes fshell to autostart at boot but also to attempt to reconnect if the USB cable is subsequently disconnected (unlike the normal C<FSHELL_AUTOSTART> macro). Also added C<set-autostart> script which has a similar effect (just not for first boot, obviously, because you have to have booted at least once to run the script on the device).
 
 =item *
 
@@ -146,7 +150,7 @@ Fixed how memmap reported chunk size (it was inaccurate for disconnected chunks)
 
 =item *
 
-Fixed crash bugs in fshell parser when issuing a command containing a percent sign or when backgrounding a thread command immediately prior to exiting a script. Also explicitly disallowed certain environment variable useages which were previously permitted but didn't work properly.
+Fixed crash bugs in fshell parser when issuing a command containing a percent sign or when backgrounding a thread command immediately prior to exiting a script. Also explicitly disallowed certain environment variable useages which were previously permitted but didn't work properly, and fixed incorrect handling of exit statement within a conditional block (if or while).
 
 =back
 

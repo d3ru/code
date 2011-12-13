@@ -12,6 +12,7 @@
 
 #include "ioutils.h"
 #include "command_base.h"
+#include <fshell/common.mmh>
 #include <fshell/stringhash.h>
 #include <fshell/ltkutils.h>
 #include <fshell/descriptorutils.h>
@@ -32,6 +33,7 @@ _LIT(KEnvPwd, "PWD");
 _LIT(KDefaultPwd, "c:\\");
 _LIT(KChildError, "?");
 _LIT(KEnvEscapeChar, "ESCAPE");
+#define EXPAND(f, x) f(x)
 
 //
 // CEnvironment.
@@ -44,6 +46,10 @@ EXPORT_C CEnvironment* CEnvironment::NewL()
 	self->ConstructL();
 	self->SetPwdL(KDefaultPwd);
 	self->SetL(KChildError, KErrNone);
+	// We replicate certain things from the common.mmh environment here - other (boolean) options are done in the variant command
+#ifdef FSHELL_LAUNCHER_SUPPORT_USB
+	self->SetL(_L("FSHELL_LAUNCHER_SUPPORT_USB"), EXPAND(_L, FSHELL_LAUNCHER_SUPPORT_USB));
+#endif
 	CleanupStack::Pop(self);
 	return self;
 	}

@@ -118,8 +118,10 @@ FSHELL_ROM_INCLUDE(fshell_core.iby)
 #endif
 
 .\autostart.script                     z:\system\console\scripts\autostart.script
+.\autostart-usb.script                 z:\system\console\scripts\autostart-usb.script
 .\comm.script                          z:\system\console\scripts\comm.script
 .\start-stdio.script                   z:\system\console\scripts\start-stdio.script
+.\set-autostart.script                 z:\system\console\scripts\set-autostart.script
 .\fshell_autoexec.bat                  z:\fshell_autoexec.bat
 
 #ifdef FSHELL_CORE_SUPPORT_USB

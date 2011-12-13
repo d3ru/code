@@ -68,7 +68,7 @@ CApaDataRecognizerType* CShebangRecognizer::CreateRecognizerL()
 #ifdef FSHELL_PATCHABLE_CONSTANTS_SUPPORT
 	if (KAutoStartFshell)
 		{
-	_LIT(KFshell, "fshell.exe");
+		_LIT(KFshell, "fshell.exe");
 		_LIT(KArgs, "autostart.script");
 		RProcess proc;
 		TInt err = proc.Create(KFshell, KArgs);

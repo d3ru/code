@@ -115,7 +115,17 @@ if nonexistantcommand $Silent && $Error
 else $Silent && $Error
 endif $Silent && $Error
 
-# Check that a negative in the first part of a conditional using && prevents execution
-if "var NONEXIST defined && var NONEXIST2 defined"
+# Check that a negative in the first part of a conditional using && prevents execution of both the second bit of the conditional and the body
+if "var NONEXIST defined && error"
     $Error
 endif
+
+# Create a separate script file to test whether exit is being handled correctly within conditionals - the exit should not trigger, so if OK doesn't get defined then that's a bug
+export OK 0
+echo "if var nonexist defined"  > iftest.script
+echo "    exit"                >> iftest.script
+echo "endif"                   >> iftest.script
+echo "export OK 1"             >> iftest.script
+source iftest.script
+rm iftest.script
+var OK == 1 || $Error
