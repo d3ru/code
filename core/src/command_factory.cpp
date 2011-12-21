@@ -371,6 +371,7 @@ void CCommandFactory::ConstructL()
 #ifdef FSHELL_CORE_SUPPORT_MEMMAP
 	AddThreadCommandL(CCmdMemmap::NewLC);
 #endif
+	AddThreadCommandL(CCmdClockTest::NewLC);
 
 	// Add some DOS-style namings of common commands.
 	AddThreadCommandL(_L("del"), CCmdRm::NewLC, CCommandConstructorBase::EAttAlias);

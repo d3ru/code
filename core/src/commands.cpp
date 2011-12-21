@@ -6622,3 +6622,113 @@ void CCmdSubst::DoRunL()
 	}
 
 #endif // FSHELL_CORE_SUPPORT_SUBST
+
+//
+// CCmdClockTest.
+//
+
+CCommandBase* CCmdClockTest::NewLC()
+	{
+	CCmdClockTest* self = new(ELeave) CCmdClockTest();
+	CleanupStack::PushL(self);
+	self->BaseConstructL();
+	return self;
+	}
+
+CCmdClockTest::~CCmdClockTest()
+	{
+	}
+
+CCmdClockTest::CCmdClockTest()
+	: iCount(1)
+	{
+	}
+
+const TDesC& CCmdClockTest::Name() const
+	{
+	_LIT(KName, "clocktest");	
+	return KName;
+	}
+
+void CCmdClockTest::ArgumentsL(RCommandArgumentList& aArguments)
+	{
+	aArguments.AppendEnumL((TInt&)iOp, _L("operation"));
+	aArguments.AppendIntL(iTime, _L("time"));
+	}
+
+void CCmdClockTest::OptionsL(RCommandOptionList& aOptions)
+	{
+	aOptions.AppendIntL(iCount, _L("count"));
+	}
+
+void CCmdClockTest::DoRunL()
+	{
+	TBool smp = EFalse;
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+	enum { EKernelHalSmpSupported = 15 };
+	smp = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
+	if (smp) LoadMemoryAccessL();
+	TInt64 timestamp1, timestamp2;
+#endif
+
+	const TInt64 c = iCount;
+	switch (iOp)
+		{
+	case EUserAfter:
+		if (iVerbose) Printf(_L("About to User::After %d sec %Ld times\r\n"), iTime, iCount);
+		RDebug::Printf("About to User::After %d sec %Ld times", iTime, iCount);
+		if (smp) timestamp1 = iMemAccess.NKernTimestamp();
+		for (TInt64 i = 0; i < c; i++)
+			{
+			User::After(iTime * 1000000);
+			}
+		break;
+	case ERTimerAfter:
+		{
+		RTimer timer;
+		TRequestStatus stat;
+		LeaveIfErr(timer.CreateLocal(), _L("Couldn't create RTimer"));
+		if (iVerbose) Printf(_L("About to RTimer::After %d sec %Ld times\r\n"), iTime, iCount);
+		RDebug::Printf("About to RTimer::After %d sec %Ld times", iTime, iCount);
+		if (smp) timestamp1 = iMemAccess.NKernTimestamp();
+		for (TInt64 i = 0; i < c; i++)
+			{
+			timer.After(stat, iTime * 1000000);
+			User::WaitForRequest(stat);
+			}
+		timer.Close();
+		break;
+		}
+	case ESpin:
+		{
+		TInt outerloop = I64HIGH(iCount);
+		if (iVerbose) Printf(_L("About to loop %Ld times\r\n"), iCount);
+		RDebug::Printf("About to loop %Ld times", iCount);
+		if (smp) timestamp1 = iMemAccess.NKernTimestamp();
+		while (outerloop--)
+			{
+			TUint loop = 0xFFFFFFFFu;
+			while (loop--) { /*Spin!*/ }
+			}
+		TUint remainder = I64LOW(iCount);
+		while (remainder--) { /*Spin!*/ }
+		break;
+		}
+		}
+
+	// No point measuring fast counter ticks in non-smp because it'll probably wrap (at least, I can't be bothered to replicate the logic to handle that here)
+	if (smp)
+		{
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+		timestamp2 = iMemAccess.NKernTimestamp();
+		RDebug::Printf("Done");
+		if (iVerbose) Printf(_L("Done in %Ld fastcounter ticks\r\n"), timestamp2 - timestamp1);
+		else Printf(_L("%Ld\r\n"), timestamp2 - timestamp1);
+#endif
+		}
+	else
+		{
+		RDebug::Printf("Done");
+		if (iVerbose) Printf(_L("Done\r\n"));
+		}
+	}

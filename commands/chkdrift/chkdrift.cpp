@@ -11,11 +11,11 @@
 //
 
 #include <hal.h>
-#include <fshell/ioutils.h>
+#include <fshell/memoryaccesscmd.h>
 
 using namespace IoUtils;
 
-class CCmdChkdrift : public CCommandBase
+class CCmdChkdrift : public CMemoryAccessCommandBase
 	{
 public:
 	static CCommandBase* NewLC();
@@ -109,6 +109,14 @@ void FormatTime(const TTimeIntervalMicroSeconds& aInterval, TDes& aBuf)
 
 void CCmdChkdrift::DoRunL()
 	{
+	TBool smp = EFalse;
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+	enum { EKernelHalSmpSupported = 15 };
+	smp = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
+	if (smp) LoadMemoryAccessL();
+	TInt64 timestamp1, timestamp2;
+#endif
+
 	TInt nanoTickPeriod = NanoTickPeriod();
 	Printf(_L("NKern tick period: %d\r\n"), nanoTickPeriod);
 	TInt fastCounterFrequency = FastCounterFrequency();
@@ -117,16 +125,24 @@ void CCmdChkdrift::DoRunL()
 	Printf(_L("Press any key to start test\r\n"));
 	TBuf<1> key;
 	ReadL(key);
-	TUint fast1 = User::FastCounter();
 	TUint nano1 = User::NTickCount();
+	TUint fast1 = User::FastCounter();
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+	if (smp) timestamp1 = iMemAccess.NKernTimestamp();
+#endif
 
 	Printf(_L("Press any key to stop test\r\n"));
 	ReadL(key);
+#ifdef FSHELL_MEMORY_ACCESS_SUPPORT
+	if (smp) timestamp2 = iMemAccess.NKernTimestamp();
+#endif
 	TUint fast2 = User::FastCounter();
 	TUint nano2 = User::NTickCount();
 
-	Printf(_L("before: nano: %u, fast: %u\r\n"), nano1, fast1);
-	Printf(_L("after: nano: %u, fast: %u\r\n"), nano2, fast2);
+	Printf(_L("Before: nano: %u, fast: %u"), nano1, fast1);
+	if (smp) Printf(_L(" NKern::Timestamp: %Ld"), timestamp1);
+	Printf(_L("\r\nAfter: nano: %u, fast: %u"), nano2, fast2);
+	if (smp) Printf(_L(" NKern::Timestamp: %Ld"), timestamp1);
 	TUint64 diffNano = nano2 - nano1;
 	diffNano *= NanoTickPeriod();
 	TUint64 diffFast;
@@ -146,7 +162,8 @@ void CCmdChkdrift::DoRunL()
 	FormatTime(diffNano, timeNano);
 	TBuf<32> timeFast;
 	FormatTime(diffFast, timeFast);
-	Printf(_L("difference:\r\n\tnano: %u ticks (%Lu us, %S)\r\n\tfast: %u ticks (%Lu us, %S)\r\n"), nano2 - nano1, diffNano, &timeNano, fast2 - fast1, diffFast, &timeFast);
+	Printf(_L("\r\nDifference:\r\n\tnano: %u ticks (%Lu us, %S)\r\n\tfast: %u ticks (%Lu us, %S)\r\n"), nano2 - nano1, diffNano, &timeNano, fast2 - fast1, diffFast, &timeFast);
+	if (smp) Printf(_L("\tNKern::Timestamp: %Ld\r\n"), timestamp2 - timestamp1);
 	}
 
 

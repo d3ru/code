@@ -1386,4 +1386,24 @@ private:
 
 #endif // FSHELL_CORE_SUPPORT_SUBST
 
+class CCmdClockTest : public CMemoryAccessCommandBase
+	{
+public:
+	static CCommandBase* NewLC();
+	~CCmdClockTest();
+private:
+	CCmdClockTest();
+private: // From CCommandBase.
+	virtual const TDesC& Name() const;
+	virtual void DoRunL();
+	virtual void ArgumentsL(RCommandArgumentList& aArguments);
+	virtual void OptionsL(RCommandOptionList& aOptions);
+private:
+	enum TOp { EUserAfter, ERTimerAfter, ESpin };
+	TOp iOp;
+	TInt iTime;
+	TInt64 iCount;
+	TBool iVerbose;
+	};
+
 #endif // __COMMANDS_H__

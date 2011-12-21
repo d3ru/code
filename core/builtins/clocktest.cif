@@ -1,0 +1,48 @@
+# clocktest.cif
+# 
+# Copyright (c) 2011 Accenture. All rights reserved.
+# This component and the accompanying materials are made available
+# under the terms of the "Eclipse Public License v1.0"
+# which accompanies this distribution, and is available
+# at the URL "http://www.eclipse.org/legal/epl-v10.html".
+# 
+# Initial Contributors:
+# Accenture - Initial contribution
+#
+
+==name clocktest
+
+==short-description
+
+Measure how long various timing-related operations take.
+
+==argument enum operation
+
+==enum-value userafter
+
+Wait for the specified amount of time using C<User::After>.
+
+==enum-value rtimerafter
+
+Wait for the specified amount of time using C<RTimer::After>.
+
+==enum-value spin
+
+Run a C<while> loop for the number of iterations given by C<--count>.
+
+==argument int time optional
+
+The amount of time in seconds to wait for (not applicable for 'spin' operation).
+
+==option bool v verbose
+
+Display verbose information.
+
+==option int64 c count
+
+The number of times to run C<operation>. If not specified, defaults to 1.
+
+==copyright
+
+Copyright (c) 2011 Accenture. All rights reserved.
+

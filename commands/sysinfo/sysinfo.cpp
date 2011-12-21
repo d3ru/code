@@ -366,7 +366,9 @@ const TDesC* Version(QSysInfo::S60Version aVersion)
 		CASE_LIT2(QSysInfo::SV_S60_3_2, "S60 3rd Edition Feature Pack 2")
 		CASE_LIT2(QSysInfo::SV_S60_5_0, "S60 5th Edition")
 		CASE_LIT2(QSysInfo::SV_S60_5_1, "S60 5th Edition Feature Pack 1")
-		CASE_LIT2(QSysInfo::SV_S60_5_2, "S60 5th Edition Feature Pack 2")
+		CASE_LIT2(QSysInfo::SV_S60_5_2, "S60 5.2 (Anna)")
+		CASE_LIT2(70, "S60 5.3")
+		CASE_LIT2(80, "S60 5.4")
 		CASE_LIT2(QSysInfo::SV_S60_Unknown, "?")
 	default:
 		_LIT(KUnknown, "?");
@@ -384,6 +386,8 @@ const TDesC* Version(QSysInfo::SymbianVersion aVersion)
 		CASE_LIT2(QSysInfo::SV_SF_2, "Symbian^2")
 		CASE_LIT2(QSysInfo::SV_SF_3, "Symbian^3")
 		CASE_LIT2(QSysInfo::SV_SF_4, "Symbian^4")
+		CASE_LIT2(70, "S60 5.3")
+		CASE_LIT2(80, "S60 5.4")
 		CASE_LIT2(QSysInfo::SV_Unknown, "?")
 	default:
 		_LIT(KUnknown, "?");

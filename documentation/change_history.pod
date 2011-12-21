@@ -56,7 +56,7 @@ Added C<FSHELL_AUTOSTART_USB> buildrom macro which causes fshell to autostart at
 
 =item *
 
-Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch>, L<subst|commands::subst>, L<startapp|commands::startapp>, L<memmap|commands::memmap> and L<hcr|commands::hcr> commands (on supported platforms).
+Added L<proxyserver|commands::proxyserver>, L<traceswitch|commands::traceswitch>, L<subst|commands::subst>, L<startapp|commands::startapp>, L<memmap|commands::memmap>, L<hcr|commands::hcr> and L<clocktest|commands::clocktest> commands (on supported platforms).
 
 =item *
 
