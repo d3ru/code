@@ -34,8 +34,9 @@ variant qemu && export ARGS "--console vt100busdevcons --console-title pdd=eseri
 # Old Bridge HW - terminal keyboard is broken for some reason, but USB now works
 variant -u 0x85001100 && export ARGS "--console vt100usbcons --console-title port=ACM::1,personality=1"
 
-# MCL-type things
-if "variant -u 0x2002bf94 || variant -u 0x101ff810"
+# MCL-type things - machine uids (ie variant -u) seems to be too much in flux, so check sysinfo for anything promising...
+sysinfo 2>/dev/null | grep -c "RM-.* \(c\) Nokia" | export -s FOUND_NOKIA_DEV
+if "var FOUND_NOKIA_DEV gt 0"
 	# Check if we're full gui or not
 	ps -m eiksrvs* | match -c * | export -s FOUND_EIKSRV
 	if var FOUND_EIKSRV ge 1

@@ -16,8 +16,9 @@ echo "======================="
 sleep 1
 
 if var KEEP_GOING not-defined
-	echo --stderr "Error: this script must be run with the --keep-going (-k) option"
-	sleep
+	echo "(Rerunning $0 with -k option)"
+	source -k $0
+	exit
 endif
 
 echo "Running rcomm..."
