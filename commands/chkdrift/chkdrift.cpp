@@ -12,6 +12,7 @@
 
 #include <hal.h>
 #include <fshell/memoryaccesscmd.h>
+#include <fshell/ltkutils.h>
 
 using namespace IoUtils;
 
@@ -111,8 +112,7 @@ void CCmdChkdrift::DoRunL()
 	{
 	TBool smp = EFalse;
 #ifdef FSHELL_MEMORY_ACCESS_SUPPORT
-	enum { EKernelHalSmpSupported = 15 };
-	smp = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
+	smp = LtkUtils::IsSmp();
 	if (smp) LoadMemoryAccessL();
 	TInt64 timestamp1, timestamp2;
 #endif

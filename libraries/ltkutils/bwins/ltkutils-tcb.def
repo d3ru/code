@@ -163,4 +163,5 @@ EXPORTS
 	?Update@CHalAttribute@LtkUtils@@QAEHXZ @ 162 NONAME ; int LtkUtils::CHalAttribute::Update(void)
 	?LoadLogicalDevice@LtkUtils@@YAHABVTDesC16@@@Z @ 163 NONAME ; int LtkUtils::LoadLogicalDevice(class TDesC16 const &)
 	?IsMultiThreaded@RAllocatorHelper@LtkUtils@@QBEHXZ @ 164 NONAME ; int LtkUtils::RAllocatorHelper::IsMultiThreaded(void) const
+	?IsSmp@LtkUtils@@YAHXZ @ 165 NONAME ; int LtkUtils::IsSmp(void)
 

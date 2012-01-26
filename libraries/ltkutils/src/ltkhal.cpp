@@ -1,6 +1,6 @@
 // ltkhal.cpp
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2012 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -415,12 +415,7 @@ EXPORT_C const TDesC& LtkUtils::CHalAttribute::DescriptionL()
 EXPORT_C TInt LtkUtils::LoadLogicalDevice(const TDesC& aFileName)
 	{
 	TInt err = User::LoadLogicalDevice(aFileName);
-	enum THalFunctionsNotIn91
-		{
-		EKernelHalSmpSupported = 15,
-		};
-	//TBool smpEnabled = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
-	if (err == KErrNotSupported && UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone)
+	if (err == KErrNotSupported && IsSmp())
 		{
 		// We're on SMP, need to try the SMP_ prefixed version of the driver
 		// This is because the fshell SIS file cannot selectively install the correct driver, so it has to install both using the names driver.ldd and SMP_driver.ldd.
@@ -431,4 +426,14 @@ EXPORT_C TInt LtkUtils::LoadLogicalDevice(const TDesC& aFileName)
 		err = User::LoadLogicalDevice(name);
 		}
 	return err;
+	}
+
+EXPORT_C TBool LtkUtils::IsSmp()
+	{
+	enum THalFunctionsNotIn91
+		{
+		EKernelHalSmpSupported = 15,
+		};
+	TBool smpEnabled = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
+	return smpEnabled;
 	}

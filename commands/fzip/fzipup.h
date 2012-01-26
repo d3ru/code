@@ -1,6 +1,6 @@
 // fzipup.h
 // 
-// Copyright (c) 2008 - 2010 Accenture. All rights reserved.
+// Copyright (c) 2008 - 2012 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -67,7 +67,7 @@ class CZipEntry : public CZipArchive
 public:
 	friend class CZipItUp;
 	static CZipEntry* NewLC(RFs& aFs, const TDesC& aFilename, const TInt aUid);
-        virtual ~CZipEntry();
+	virtual ~CZipEntry();
 
 	void SetOffset(TUint32 aOffset);
 	TUint32 ReturnOffset();
@@ -77,15 +77,15 @@ private:
 	void ConstructL(const TDesC& aFilename);
 	void CalcCRCL();
 private:
-        static const TInt iOffset;
-        TLocalHeader iLFH;					// Local File Header
-        HBufC8* iFileData;					// File Data
-        TCentralDirectoryHeader iFH;		// File Header
-        RFs& iFs;							// f32 hook
-        TBuf8<KMaxFileName>	iAsciiName;	// Ascii file name
-        RFile iInput;						// input data from file
-        const TInt iUid;					// uid id'ing this particular zip entry
-        TSglQueLink iLink;
+	static const TInt iOffset;
+	TLocalHeader iLFH;					// Local File Header
+	HBufC8* iFileData;					// File Data
+	TCentralDirectoryHeader iFH;		// File Header
+	RFs& iFs;							// f32 hook
+	TBuf8<KMaxFileName>	iAsciiName;	// Ascii file name
+	RFile iInput;						// input data from file
+	const TInt iUid;					// uid id'ing this particular zip entry
+	TSglQueLink iLink;
 	};
 	
 //

@@ -13,6 +13,7 @@
 #include <e32hashtab.h>
 #include <fshell/ioutils.h>
 #include <fshell/memoryaccesscmd.h>
+#include <fshell/ltkutils.h>
 #include "sampler.h"
 
 using namespace IoUtils;
@@ -116,12 +117,7 @@ void CCmdTop::DoRunL()
 		{
 		if (err == KErrNotSupported)
 			{
-			enum THalFunctionsNotIn91
-				{
-				EKernelHalSmpSupported = 15,
-				};
-			TBool smpEnabled = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
-			if (smpEnabled) LeaveIfErr(err, _L("top command not supported on SMP builds"));
+			if (LtkUtils::IsSmp()) LeaveIfErr(err, _L("top command not supported on SMP builds"));
 			}
 		LeaveIfErr(err, _L("Couldn't load sampler ldd %S"), &KSamplerName);
 		}

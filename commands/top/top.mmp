@@ -28,3 +28,4 @@ source          topfshell.cpp
 
 library         euser.lib
 library         iocli.lib
+library			ltkutils.lib

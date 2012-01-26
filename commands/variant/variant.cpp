@@ -15,6 +15,7 @@
 #include "variant.h"
 #include <fshell/common.mmh>
 #include <fshell/descriptorutils.h>
+#include <fshell/ltkutils.h>
 
 //
 // CCmdVariant
@@ -89,16 +90,6 @@ const LtkUtils::SLitC KOtherSupportedVariants[] =
 	};
 const TInt KOtherSupportedVariantsCount = sizeof(KOtherSupportedVariants) / sizeof(LtkUtils::SLitC);
 
-static TBool Smp()
-	{
-	enum THalFunctionsNotIn91
-		{
-		EKernelHalSmpSupported = 15,
-		};
-	TBool smpEnabled = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
-	return smpEnabled;
-	}
-
 _LIT(KSmp, "smp");
 
 void CCmdVariant::DoRunL()
@@ -123,7 +114,7 @@ void CCmdVariant::DoRunL()
 				Printf(_L("%S, "), &KMachineIdVariants[i].iName);
 				}
 			}
-		if (Smp())
+		if (LtkUtils::IsSmp())
 			{
 			Printf(_L("%S, "), &KSmp);
 			}
@@ -171,7 +162,7 @@ void CCmdVariant::DoRunL()
 					}
 				}
 
-			if (iVariant[i]->CompareF(KSmp) == 0 && Smp())
+			if (iVariant[i]->CompareF(KSmp) == 0 && LtkUtils::IsSmp())
 				{
 				match = ETrue;
 				}

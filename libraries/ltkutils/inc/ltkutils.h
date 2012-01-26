@@ -1,6 +1,6 @@
 // ltkutils.h
 // 
-// Copyright (c) 2010 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2012 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -71,6 +71,8 @@ namespace LtkUtils
 	IMPORT_C char GetSystemDrive(); // 9.1 doesn't have RFs::GetSystemDrive()
 
 	IMPORT_C TInt LoadLogicalDevice(const TDesC& aFileName);
+
+	IMPORT_C TBool IsSmp();
 
 	/****
 	 * The functions below are not available if you're linking against ltkutils-tcb.dll. They

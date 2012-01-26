@@ -163,7 +163,6 @@ void CZipEntry::ConstructL(const TDesC& aFilename)
 	iLFH.iSignature = KLocalHeaderSignature;
 	iLFH.iVersionNeeded = KFZipVersion;
 	iLFH.iFlags = 0x0002; // best (-exx/-ex) compression was used
-	iLFH.iCompressionMethod = EDeflated;
 	TTime time;
 	User::LeaveIfError(iInput.Modified(time));
 	TDateTime td = time.DateTime();
@@ -177,11 +176,10 @@ void CZipEntry::ConstructL(const TDesC& aFilename)
 	iLFH.iLastModifiedFileTime = (param1 << 11) | (param2 << 5) | (param3 >> 1);
 	TInt uSize = 0;
 	User::LeaveIfError(iInput.Size(uSize));
-	if (uSize <= 0)
-		{
-		User::Leave(KErrAbort);
-		}
 	iLFH.iUncompressedSize = uSize;
+	if (uSize) iLFH.iCompressionMethod = EDeflated;
+	else iLFH.iCompressionMethod = EStored;
+
 	iLFH.iCompressedSize = uSize; // note: to be adjusted later once the compression is performed
 	CalcCRCL();
 	iLFH.iFileNameLength = iAsciiName.Size();
@@ -503,20 +501,31 @@ void CZipItUp::AppendLocalFileHeaderL(RFileWriteStream& aStream, CZipEntry& aZip
 
 void CZipItUp::AppendCompressedDataL(RFileWriteStream& aStream, CZipEntry& aZipEntry)
 	{
-	// compress data & stream it to the zip archive (aStream)
-	RFileReadStream inStream;
-	inStream.Attach(aZipEntry.iInput); // note takes ownership of iInput subsession handle
-	CBufferManager* fb = CBufferManager::NewLC(inStream, aStream, aZipEntry.iLFH.iUncompressedSize, KDefaultZipBufferLength);
-	CEZCompressor* compressor = CEZCompressor::NewLC(*fb, CEZCompressor::EBestCompression, KWindowBits, CEZCompressor::EDefMemLevel, CEZCompressor::EDefaultStrategy);
-	while (compressor->DeflateL()){/* do nothing */}
-	
-	// update the entry's LocalFileHeader and FileHeader
-	aZipEntry.iLFH.iCompressedSize = fb->TotalBytesOut();
-	aZipEntry.iFH.iCompressedSize = aZipEntry.iLFH.iCompressedSize;
-	
-	// cleanup
-	CleanupStack::PopAndDestroy(2, fb); // compressor, fb
-	inStream.Close();
+	if (aZipEntry.iLFH.iCompressionMethod == EDeflated)
+		{
+		// compress data & stream it to the zip archive (aStream)
+		RFileReadStream inStream;
+		inStream.Attach(aZipEntry.iInput); // note takes ownership of iInput subsession handle
+		CBufferManager* fb = CBufferManager::NewLC(inStream, aStream, aZipEntry.iLFH.iUncompressedSize, KDefaultZipBufferLength);
+		CEZCompressor* compressor = CEZCompressor::NewLC(*fb, CEZCompressor::EBestCompression, KWindowBits, CEZCompressor::EDefMemLevel, CEZCompressor::EDefaultStrategy);
+		while (compressor->DeflateL()){/* do nothing */}
+		
+		// update the entry's LocalFileHeader and FileHeader
+		aZipEntry.iLFH.iCompressedSize = fb->TotalBytesOut();
+		aZipEntry.iFH.iCompressedSize = aZipEntry.iLFH.iCompressedSize;
+		
+		// cleanup
+		CleanupStack::PopAndDestroy(2, fb); // compressor, fb
+		inStream.Close();
+		}
+	else if (aZipEntry.iLFH.iUncompressedSize == 0)
+		{
+		// Nothing to do
+		}
+	else
+		{
+		StaticLeaveIfErr(KErrAbort, _L("Unrecognised compression method %d!"), aZipEntry.iLFH.iCompressionMethod);
+		}
 	}
 
 void CZipItUp::AppendCentralDirectoryFileHeaderL(RFileWriteStream& aStream, CZipEntry& aEntry)

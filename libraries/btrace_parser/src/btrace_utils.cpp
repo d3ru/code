@@ -117,9 +117,7 @@ TInt64 TBtraceUtils::Timer2TickPeriod()
 TInt64 TBtraceUtils::CalculateTimer2TickPeriod()
 	{
 	// Check for SMP, which uses a 64-bit counter rather than the nano tick period.
-	enum { EKernelHalSmpSupported = 15 };
-	TBool smpEnabled = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
-	if (smpEnabled)
+	if (LtkUtils::IsSmp())
 		{
 		// This is 2^32 / fastfreq, ie  2^32 * (1/fastfreq) ie 2^32 * fastperiod
 		TInt64 res = MAKE_TINT64(1, 0) / (TInt64)FastCounterFrequency();

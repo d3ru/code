@@ -1,6 +1,6 @@
 // commands.cpp
 // 
-// Copyright (c) 2006 - 2011 Accenture. All rights reserved.
+// Copyright (c) 2006 - 2012 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -3290,8 +3290,7 @@ TBool FastCounterCountsUp()
 
 void CCmdTicks::DoRunL()
 	{
-	enum { EKernelHalSmpSupported = 15 };
-	TBool smp = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
+	TBool smp = LtkUtils::IsSmp();
 	if (smp) LoadMemoryAccessL();
 
 	TUint nticks = User::NTickCount();
@@ -6665,8 +6664,7 @@ void CCmdClockTest::DoRunL()
 	{
 	TBool smp = EFalse;
 #ifdef FSHELL_MEMORY_ACCESS_SUPPORT
-	enum { EKernelHalSmpSupported = 15 };
-	smp = (UserSvr::HalFunction(EHalGroupKernel, EKernelHalSmpSupported, 0, 0) == KErrNone);
+	smp = LtkUtils::IsSmp();
 	if (smp) LoadMemoryAccessL();
 	TInt64 timestamp1, timestamp2;
 #endif

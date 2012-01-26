@@ -88,3 +88,9 @@ fzip --unzip test.txt.zip --overwrite
 
 rm test.txt
 rm test.txt.zip
+
+# Check we can handle an empty file
+touch emptyfile
+fzip --file emptyfile
+exists emptyfile.zip || $Error
+rm emptyfile emptyfile.zip

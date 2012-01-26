@@ -192,4 +192,5 @@ EXPORTS
 	_ZNK8LtkUtils13CHalAttribute9AttributeEv @ 191 NONAME
 	_ZN8LtkUtils17LoadLogicalDeviceERK7TDesC16 @ 192 NONAME
 	_ZNK8LtkUtils16RAllocatorHelper15IsMultiThreadedEv @ 193 NONAME
+	_ZN8LtkUtils5IsSmpEv @ 194 NONAME
 
