@@ -501,7 +501,7 @@ void CZipItUp::AppendLocalFileHeaderL(RFileWriteStream& aStream, CZipEntry& aZip
 
 void CZipItUp::AppendCompressedDataL(RFileWriteStream& aStream, CZipEntry& aZipEntry)
 	{
-	if (aZipEntry.iLFH.iCompressionMethod == EDeflated)
+	if (aZipEntry.iLFH.iCompressionMethod == CZipEntry::EDeflated)
 		{
 		// compress data & stream it to the zip archive (aStream)
 		RFileReadStream inStream;
