@@ -1,6 +1,6 @@
 // bsym_v2.h
 // 
-// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2012 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -28,6 +28,8 @@ public:
 	virtual TLookupResult Lookup(const QString& aCodesegName, quint32 aCodesegRelativeOffset) const;
 
 	virtual quint32 RomChecksum() const;
+
+	void Dump(bool aVerbose) const;
 
 private:
 	using CBsymFile::WriteString;
@@ -59,7 +61,7 @@ private:
 	static void WriteString(QDataStream& stream, int aVersion, const QString& aString);
 	static quint32 StringTableLen(int aVersion, const QString& aString);
 
-	void Dump() const;
+	void DumpCodeSeg(const TCodeSeg* aCodeSeg) const;
 
 private:
 	class TSymbol

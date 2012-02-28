@@ -114,7 +114,7 @@ void CCmdChkdrift::DoRunL()
 #ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	smp = LtkUtils::IsSmp();
 	if (smp) LoadMemoryAccessL();
-	TInt64 timestamp1, timestamp2;
+	TInt64 timestamp1 = 0, timestamp2 = 0;
 #endif
 
 	TInt nanoTickPeriod = NanoTickPeriod();

@@ -3295,7 +3295,7 @@ void CCmdTicks::DoRunL()
 
 	TUint nticks = User::NTickCount();
 	TUint fast = User::FastCounter();
-	TUint64 timestamp;
+	TUint64 timestamp = 0;
 #ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	if (smp) timestamp = iMemAccess.NKernTimestamp();
 #endif
@@ -6666,7 +6666,7 @@ void CCmdClockTest::DoRunL()
 #ifdef FSHELL_MEMORY_ACCESS_SUPPORT
 	smp = LtkUtils::IsSmp();
 	if (smp) LoadMemoryAccessL();
-	TInt64 timestamp1, timestamp2;
+	TInt64 timestamp1 = 0, timestamp2 = 0;
 #endif
 
 	const TInt64 c = iCount;

@@ -13,7 +13,8 @@
 #ifndef MB_PARSER_H
 #define MB_PARSER_H
 
-#include <QtCore>
+#include <QString>
+#include <QByteArray>
 
 namespace Parser
 	{
@@ -24,6 +25,7 @@ namespace Parser
 	QString Int(int x); // returns decimal if less than 1000 or negative, otherwise hex with preceding 0x
 	QString MemInt(qint64 x); // Returns a number in MB, GB etc as appropriate
 	QString HexDumpLE(const QByteArray& aData);
+	QString HexDump(const QByteArray& aData);
 	QString HtmlEscape(const QString& aString);
 	};
 

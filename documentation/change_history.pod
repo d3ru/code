@@ -14,7 +14,7 @@ __END__
 
 =head1 fshell Change History
 
-=head2 Release 006 [STILL not yet released!]
+=head2 Release 006
 
 =head3 New functionality
 
@@ -151,6 +151,10 @@ Fixed how memmap reported chunk size (it was inaccurate for disconnected chunks)
 =item *
 
 Fixed crash bugs in fshell parser when issuing a command containing a percent sign or when backgrounding a thread command immediately prior to exiting a script. Also explicitly disallowed certain environment variable usages which were previously permitted but didn't work properly, and fixed incorrect handling of exit statement within a conditional block (if or while).
+
+=item *
+
+Fixed fzip's handling of empty files when compressing.
 
 =back
 
@@ -588,6 +592,6 @@ I<Information about older non-public fshell releases is available L<here|old_cha
 
 =head1 Copyright
 
-Copyright (c) 2010 - 2011 Accenture. All rights reserved.
+Copyright (c) 2010 - 2012 Accenture. All rights reserved.
 
 =cut

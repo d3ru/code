@@ -10,6 +10,8 @@
 // Accenture - Initial contribution
 //
 
+#include <QtEndian>
+#include <QRegExp>
 #include "parser.h"
 
 static const QString KProcessRegex = "^(.*)\\[([0-9a-f]{8})\\]([0-9]{4})";
@@ -108,7 +110,7 @@ QString Parser::ShortWindowgroupName(const QString& aName)
 #define KB *1024
 #define MB KB*1024
 #define GB MB*1024
-#define TB GB*1024LL // The LL is needed to promote the maths to 64-bit
+#define TB GB*Q_INT64_C(1024) // The Q_INT64_C is needed to promote the maths to 64-bit
 
 QString Parser::MemInt(qint64 aSize)
 	{
@@ -168,6 +170,17 @@ QString Parser::HexDumpLE(const QByteArray& aData)
 	if (remainder.count())
 		{
 		result.append(QString(remainder.toHex()));
+		}
+	return result;
+	}
+
+QString Parser::HexDump(const QByteArray& aData)
+	{
+	const uchar* ptr = (const uchar*)aData.constData();
+	QString result;
+	for (int i = 0; i < aData.count(); i++)
+		{
+		result.append(QString("%1 ").arg(ptr[i], 2, 16, QLatin1Char('0')));
 		}
 	return result;
 	}

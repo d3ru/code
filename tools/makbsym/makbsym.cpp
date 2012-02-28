@@ -1,6 +1,6 @@
 // makbsym.cpp
 // 
-// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2012 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -13,6 +13,7 @@
 #include <QtCore>
 #include "makbsym.h"
 #include "symbolics.h"
+#include "mbversion.h"
 
 void LookupMode(const QString& aBsym, const QStringList& aAddresses);
 
@@ -20,11 +21,14 @@ int main(int argc, char **argv)
 	{
     QCoreApplication app(argc, argv);
 	QStringList args = QCoreApplication::arguments();
-	if (args.count() < 2)
+	if (args.count() < 2 || args.indexOf("-h") >= 0 || args.indexOf("--help") >= 0)
 		{
 		qWarning("Syntax: makbsym <file> [<file>...] [output.bsym]");
 		qWarning("            Where <file> is *.symbol, rombuild.log, rofsbuild.log, mapfile.map");
 		qWarning("        makbsym file.bsym  --lookup <address> [, <address>, ...]");
+		qWarning("        makbsym --dump file.bsym");
+		qWarning(" ");
+		qWarning("Part of Magic Briefcase v%s", KMbVersion);
 		return 1;
 		}
 	
@@ -36,6 +40,17 @@ int main(int argc, char **argv)
 		inputs.removeAt(0);
 		inputs.removeAll("--lookup");
 		LookupMode(file, inputs);
+		return 0;
+		}
+	else if (inputs.contains("--dump"))
+		{
+		inputs.removeAll("--dump");
+		CSymbolics* symbolics = new CSymbolics(false);
+		foreach (const QString& input, inputs)
+			{
+			symbolics->AddBsymFile(input);
+			}
+		symbolics->DumpBsyms(true);
 		return 0;
 		}
 
@@ -73,7 +88,8 @@ int main(int argc, char **argv)
 			}
 		else if (input.endsWith(".map", Qt::CaseInsensitive))
 			{
-			bool ok = symbolics->AddMapFile(input);
+			QString absInput = QDir::toNativeSeparators(QFileInfo(input).absoluteFilePath());
+			bool ok = symbolics->AddMapFile(absInput);
 			if (!ok)
 				{
 				qWarning("Failed to parse map file %s", qPrintable(input));
@@ -86,7 +102,7 @@ int main(int argc, char **argv)
 			return 2;
 			}
 		}
-	
+
 	//qDebug("Writing to file %s", qPrintable(output));
 	int symbolCount = symbolics->WriteBsymFile(output);
 	if (symbolCount == 0)

@@ -1,4 +1,4 @@
-# opendoc.cif
+# startapp.cif
 # 
 # Copyright (c) 2011 Accenture. All rights reserved.
 # This component and the accompanying materials are made available

@@ -1,6 +1,6 @@
 // symbolics.cpp
 // 
-// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2012 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -10,6 +10,14 @@
 // Accenture - Initial contribution
 //
 
+// Grr!
+#include "qglobal.h"
+#ifdef Q_CC_MSVC // Doesn't even have inttypes.h ...
+#define PRId64 "I64d"
+#else
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+#endif
 #include "symbolics.h"
 #include "parser.h"
 #include "bsym_v2.h"
@@ -17,22 +25,28 @@
 #include "bsym_v3.h"
 #endif
 
+#ifndef NO_THREADMODEL
+#include "threadmodel.h"
+#endif
+
+bool gSymbolLookupDebug = false;
+
 class TLoadedCodeseg
 	{
 public:
 	TLoadedCodeseg(TTimeInterval aCreateTime, TKernelId aId, const QString& aName); // Used by btrace
-	TLoadedCodeseg(TProcessId aProcessId, const QString& aName, int aSize, quint32 aRunAddr); // Used when the time dimension isn't important and you already know all the info about the mapping
+	TLoadedCodeseg(TOpaqueProcessId aProcess, const QString& aName, int aSize, quint32 aRunAddr); // Used when the time dimension isn't important and you already know all the info about the mapping
 	void SetInfo(int aSize, quint32 aRunAddr);
 	TLoadedCodeseg(quint32 aAddress) { iRunAddr = aAddress; } // Only for use while sorting
 	bool operator==(const TLoadedCodeseg& aOther) const;
 	bool operator<(const TLoadedCodeseg& aOther) const;
 
-	bool Contains(quint32 aAddress, TProcessId aProcessId) const;
+	bool Contains(quint32 aAddress, TOpaqueProcessId aProcess) const;
 
 	TTimeInterval iCreateTime;
 	TTimeInterval iDestroyTime;
 	TKernelId iCodesegPtr; // This is only so we can find the codeseg again in CSymbolics::CodesegDestroyed
-	TProcessId iProcessId;
+	TOpaqueProcessId iProcess;
 	QString iName;
 	int iSize;
 	quint32 iRunAddr;
@@ -100,8 +114,9 @@ const QString& CSymbolics::Symbol::RawName() const
 	}
 
 CSymbolics::CSymbolics(bool aAutoCreateBsym, QObject* aParent)
-	: QObject(aParent), iWriteBsym(aAutoCreateBsym), iCurrentTime(KEndTime)
+	: QObject(aParent), iWriteBsym(aAutoCreateBsym), iCurrentTime(KEndTime), iLoadedCodesegsNextIdx(0)
 	{
+	connect(this, SIGNAL(ParsingComplete(QString,int,QVector<CodeSeg>)), this, SLOT(DoParsingComplete(QString,int,QVector<CodeSeg>)));
 	}
 
 CSymbolics::~CSymbolics()
@@ -141,9 +156,9 @@ TLookupResult CSymbolics::DoLookupInSymbolList(quint32 aAddress) const
 	return TLookupResult();
 	}
 
-TLookupResult CSymbolics::Lookup(quint32 aAddress, TProcessId aProcessId, TTimeInterval aTime) const
+TLookupResult CSymbolics::Lookup(quint32 aAddress, TOpaqueProcessId aProcess, TTimeInterval aTime) const
 	{
-
+	if (gSymbolLookupDebug) qDebug("Lookup(0x%08x)", aAddress);
 	//if (aAddress == 0x00402664)
 	//	{
 	//	(++aAddress)--;
@@ -152,6 +167,7 @@ TLookupResult CSymbolics::Lookup(quint32 aAddress, TProcessId aProcessId, TTimeI
 	TLookupResult symbol = DoLookupInSymbolList(aAddress);
 	if (!symbol.Valid())
 		{
+		if (gSymbolLookupDebug) qDebug("Not found in symbol list");
 		// Try bsym files
 		foreach(CBsymFile* bsym, iBsymFiles)
 			{
@@ -163,7 +179,7 @@ TLookupResult CSymbolics::Lookup(quint32 aAddress, TProcessId aProcessId, TTimeI
 	if (!symbol.Valid() || symbol.Accuracy() == TLookupResult::EFoundCodeseg)
 		{
 		// Try looking up in codesegs, in case it's RAM-loaded code
-		const TLoadedCodeseg* codeseg = LookupCodesegForAddress(aAddress, aProcessId, aTime);
+		const TLoadedCodeseg* codeseg = LookupCodesegForAddress(aAddress, aProcess, aTime);
 		if (codeseg)
 			{
 			// See if we have a codeseg loaded directly (Eg from a map file)
@@ -172,6 +188,7 @@ TLookupResult CSymbolics::Lookup(quint32 aAddress, TProcessId aProcessId, TTimeI
 				// We don't attempt to be clever about rename matching here. c.iFileName is of form P:\epoc32\release\armv5\urel\whatever.dll, codeseg.iName is C:\sys\bin\whatever.dll
 				if (c.iFileName.mid(c.iFileName.lastIndexOf('\\') + 1).compare(codeseg->iName.mid(codeseg->iName.lastIndexOf('\\') + 1), Qt::CaseInsensitive) == 0)
 					{
+					if (gSymbolLookupDebug) qDebug("Found codeseg %s in CSymbolics::CodeSeg list", qPrintable(codeseg->iName));
 					// Now find the right symbol within that segment
 					Symbol temp; temp.iAddress = (aAddress & 0xFFFFFFFE) - codeseg->iRunAddr;
 					QVector<Symbol>::const_iterator iter = qUpperBound(c.iSymbols.begin(), c.iSymbols.end(), temp);
@@ -192,6 +209,7 @@ TLookupResult CSymbolics::Lookup(quint32 aAddress, TProcessId aProcessId, TTimeI
 					symbol = bsym->Lookup(codeseg->iName, aAddress - codeseg->iRunAddr);
 					if (symbol.Valid())
 						{
+						if (gSymbolLookupDebug) qDebug("BSYM %s lookup ftw", qPrintable(bsym->Filename()));
 						symbol.iSymbolStartAddress += codeseg->iRunAddr; // Make sure the TLookupResult symbol address is updated for the run address (which CBsymFile doesn't know anything about)
 						break;
 						}
@@ -201,11 +219,13 @@ TLookupResult CSymbolics::Lookup(quint32 aAddress, TProcessId aProcessId, TTimeI
 			if (!symbol.Valid())
 				{
 				// We still have the codeseg name
+				if (gSymbolLookupDebug) qDebug("Not found anywhere else, falling back to just the codeseg");
 				symbol = TLookupResult(codeseg->iRunAddr, (aAddress&0xFFFFFFFE) - codeseg->iRunAddr, QString(), codeseg->iName, TLookupResult::EFoundCodeseg);
 				}
 			}
 		}
 
+	if (gSymbolLookupDebug) qDebug("Lookup(0x%08x) returning %s", aAddress, qPrintable(symbol.Description()));
 	return symbol;
 	}
 
@@ -244,7 +264,15 @@ void CSymbolics::DoAddSymbolFile(QFile& aFile)
 			{
 			if (line.length() > 22)
 				{
-				if (line.endsWith("(.data)") || line.endsWith("(.bss)")) continue; // Ignore these, they are sometimes valid (WSD gets a fixed address for kernel extensions) but mostly they're junk and they mess things up because they lie outside the code address range. With BSYM v3 support we can maybe address this.
+				if (line.endsWith("(.data)") || line.endsWith("(.bss)") || line.contains(".o(.data") || line.contains(".o(.bss"))
+					{
+					// For now (with bsym v2 and all) we counstruct a new "codeseg" to contain the data. Fortunately all the .data and .bss appears at the end of the codeseg stuff
+					// But only do this for stuff in ROM - for ROFS we need to also account for data load addresses which there's no provision for in the format or any of the tools
+					if (codeSegs.last().Address() == 0) continue;
+					CodeSeg dataSeg;
+					dataSeg.iFileName = codeSegs.last().iFileName;
+					codeSegs.append(dataSeg);
+					}
 				Symbol symbol;
 				bool ok = false;
 				symbol.iAddress = (line.left(8).toUInt(&ok, 16)) & 0xFFFFFFFE; // Remove thumb bit
@@ -259,7 +287,7 @@ void CSymbolics::DoAddSymbolFile(QFile& aFile)
 			}
 		}
 
-	// Go through and fix up codesegs with zero-length first symbols - they really mess things up if left unmodified because a codeseg with no symbols is considered to have address zero, and therefore appears out-of-order. Generally this is caused by files that aren't actually executables - they appear to have a single, zero-length symbol that is their file name. We will represent that by saying they have one symbol that fills the extent to the next codeseg, because that's really what it is, and we'll rely on the user being able to figure this isn't a code symbol
+	// Go through and fix up codesegs with zero-length first symbols - they really mess things up if left unmodified because a codeseg with no symbols is considered to have address zero, and therefore appears out-of-order. Generally this is caused by files that aren't actually executables - they appear to have a single, zero-length symbol that is their file name. We will represent that by saying they have one symbol that fills the extent to the next codeseg, because that's really what it is, and we'll rely on the user being smart enough to figure this isn't a code symbol
 	for (int i = codeSegs.count()-1; i >= 0; i--)
 		{
 		QVector<Symbol>& symbols = codeSegs[i].iSymbols;
@@ -298,11 +326,17 @@ void CSymbolics::DoAddSymbolFile(QFile& aFile)
 		}
 
 	qStableSort(codeSegs);
+	emit ParsingComplete(aFile.fileName(), symbolCount, codeSegs); // This will call DoParsingComplete on the main thread
+	emit SymbolicsChanged();
+	}
+
+void CSymbolics::DoParsingComplete(const QString& aFile, int aSymbolCount, const QVector<CodeSeg>& aCodeSegs)
+	{
 	bool bsymSuccessfullyWritten = false;
 	if (iWriteBsym)
 		{
-		emit SetProgressMaximum((symbolCount + codeSegs.count())*2);
-		CBsymFile* file = WriteBsym(aFile.fileName(), codeSegs, symbolCount, QHash<QString,QString>());
+		emit SetProgressMaximum((aSymbolCount + aCodeSegs.count())*2);
+		CBsymFile* file = WriteBsym(aFile, aCodeSegs, aSymbolCount, QHash<QString,QString>());
 		if (file)
 			{
 			bsymSuccessfullyWritten = true;
@@ -310,13 +344,13 @@ void CSymbolics::DoAddSymbolFile(QFile& aFile)
 			}
 		else
 			{
-			qWarning("Couldn't create bsym file file for %s", qPrintable(aFile.fileName()));
+			qWarning("Couldn't create bsym file file for %s", qPrintable(aFile));
 			}
 		}
 	
 	if (!bsymSuccessfullyWritten)
 		{
-		iCodeSegs += codeSegs;
+		iCodeSegs += aCodeSegs;
 		qStableSort(iCodeSegs);
 		}
 	}
@@ -337,6 +371,7 @@ bool CSymbolics::AddBsymFile(const QString& aFilePath)
 	if (file)
 		{
 		iBsymFiles.append(file);
+		emit SymbolicsChanged();
 		return true;
 		}
 	else
@@ -413,9 +448,9 @@ CBsymFile* CSymbolics::WriteBsym(const QString& aFileName, const QVector<CSymbol
 	return b;
 	}
 
-void CSymbolics::AddCodeseg(const QString& aName, int aSize, TProcessId aProcessId, quint32 aRunAddr)
+void CSymbolics::AddCodeseg(const QString& aName, int aSize, TOpaqueProcessId aProcess, quint32 aRunAddr)
 	{
-	TLoadedCodeseg* codeseg = new TLoadedCodeseg(aProcessId, aName, aSize, aRunAddr);
+	TLoadedCodeseg* codeseg = new TLoadedCodeseg(aProcess, aName.toLower(), aSize, aRunAddr);
 
 	// Check if we've already seen this
 	for (int i = 0; i < iLoadedCodesegs.count(); i++)
@@ -430,29 +465,29 @@ void CSymbolics::AddCodeseg(const QString& aName, int aSize, TProcessId aProcess
 		}
 
 	iLoadedCodesegs.append(codeseg);
-	iCurrentTime = KEndTime; // Invalidates iCurrentCodesegs
+	iCurrentTime = KEndTime; // Invalidates iCurrentDllCodesegs and iCurrentExeCodesegs
 	}
 
-TLoadedCodeseg::TLoadedCodeseg(TProcessId aProcessId, const QString& aName, int aSize, quint32 aRunAddr)
-	: iCreateTime(0), iDestroyTime(KEndTime), iCodesegPtr(0), iProcessId(aProcessId), iName(aName), iSize(aSize), iRunAddr(aRunAddr)
+TLoadedCodeseg::TLoadedCodeseg(TOpaqueProcessId aProcess, const QString& aName, int aSize, quint32 aRunAddr)
+	: iCreateTime(0), iDestroyTime(KEndTime), iCodesegPtr(0), iProcess(aProcess), iName(aName), iSize(aSize), iRunAddr(aRunAddr)
 	{
 	}
 
 TLoadedCodeseg::TLoadedCodeseg(TTimeInterval aCreateTime, TKernelId aId, const QString& aName)
-	: iCreateTime(aCreateTime), iDestroyTime(KEndTime), iCodesegPtr(aId), iProcessId(0), iName(aName), iSize(0), iRunAddr(0)
+	: iCreateTime(aCreateTime), iDestroyTime(KEndTime), iCodesegPtr(aId), iProcess(), iName(aName), iSize(0), iRunAddr(0)
 	{
 	}
 
-bool TLoadedCodeseg::Contains(quint32 aAddress, TProcessId aProcessId) const
+bool TLoadedCodeseg::Contains(quint32 aAddress, TOpaqueProcessId aProcess) const
 	{
 	// The definition below nicely handles kernel-side RAM loaded code - it is passed to AddCodeseg with a TProcessId of zero meaning valid in any process
-	if (iProcessId != 0 && aProcessId != 0 && aProcessId != iProcessId) return false; // If aAddress must be in a specific process, and we are in a different process, we don't have this address
+	if (iProcess != NULL && aProcess != NULL && aProcess != iProcess) return false; // If aAddress must be in a specific process, and we are in a different process, we don't have this address
 	return aAddress >= iRunAddr && aAddress < iRunAddr + iSize;
 	}
 
 bool TLoadedCodeseg::operator==(const TLoadedCodeseg& aOther) const
 	{
-	return iProcessId == aOther.iProcessId && iRunAddr == aOther.iRunAddr && iName == aOther.iName && iCreateTime == aOther.iCreateTime && iSize == aOther.iSize;
+	return iProcess == aOther.iProcess && iRunAddr == aOther.iRunAddr && iName == aOther.iName && iCreateTime == aOther.iCreateTime && iSize == aOther.iSize;
 	}
 
 bool TLoadedCodeseg::operator<(const TLoadedCodeseg& t2) const
@@ -468,7 +503,7 @@ void TLoadedCodeseg::SetInfo(int aSize, quint32 aRunAddr)
 
 void CSymbolics::CodesegCreated(TTimeInterval aCreateTime, TKernelId aId, const QString& aName)
 	{
-	iLoadedCodesegs.append(new TLoadedCodeseg(aCreateTime, aId, aName));
+	iLoadedCodesegs.append(new TLoadedCodeseg(aCreateTime, aId, aName.toLower())); // Tracing seems inconsistant about things like whether the drive letter is capitalised...
 	}
 
 void CSymbolics::CodesegDestroyed(TTimeInterval aDestroyTime, TKernelId aId)
@@ -476,12 +511,12 @@ void CSymbolics::CodesegDestroyed(TTimeInterval aDestroyTime, TKernelId aId)
 	TLoadedCodeseg* codeseg = FindLoadedCodesegById(aId, aDestroyTime);
 	if (!codeseg)
 		{
-		qWarning("Failed to find codeseg %x at time %I64d", aId, aDestroyTime);
+		qWarning("Failed to find codeseg %x at time %"PRId64, aId, aDestroyTime);
 		return;
 		}
 	if (codeseg->iDestroyTime != KEndTime)
 		{
-		qWarning("Duplicate CodesegDestroyed for codeseg %x %s at %I64d (previously was %I64d)", aId, qPrintable(codeseg->iName), aDestroyTime, codeseg->iDestroyTime);
+		qWarning("Duplicate CodesegDestroyed for codeseg %x %s at %"PRId64" (previously was %"PRId64")", aId, qPrintable(codeseg->iName), aDestroyTime, codeseg->iDestroyTime);
 		return;
 		}
 	codeseg->iDestroyTime = aDestroyTime;
@@ -492,26 +527,23 @@ void CSymbolics::CodesegInfo(TTimeInterval aCurrentTime, TKernelId aId, int aSiz
 	TLoadedCodeseg* codeseg = FindLoadedCodesegById(aId, aCurrentTime);
 	if (!codeseg)
 		{
-		qWarning("Failed to find codeseg %x at time %I64d", aId, aCurrentTime);
+		qWarning("Failed to find codeseg %x at time %"PRId64, aId, aCurrentTime);
 		return;
 		}
 	codeseg->SetInfo(aSize, aRunAddr);
 	}
 
-void CSymbolics::CodesegMapped(TTimeInterval aCurrentTime, TKernelId aId, TKernelId aProcessPtr)
+void CSymbolics::CodesegMapped(TTimeInterval aCurrentTime, TKernelId aId, CProcess* aProcess)
 	{
 	TLoadedCodeseg* codeseg = FindLoadedCodesegById(aId, aCurrentTime);
 	if (!codeseg)
 		{
-		qWarning("Failed to find codeseg %x at time %I64d", aId, aCurrentTime);
+		qWarning("Failed to find codeseg %x at time %"PRId64, aId, aCurrentTime);
 		return;
 		}
 	if (codeseg->iName.endsWith(".exe", Qt::CaseInsensitive))
 		{
-		// Currently the only codesegs that can overlap are exe codesegs (and even then only if they don't have WSD)
-		// BTrace cannot provide us the process ID so we have to make do with the processptr, which isn't globally
-		// unique but since iProcessId is only ever checked for things in iLoadedCodesegs it's just about ok
-		codeseg->iProcessId = (TProcessId)aProcessPtr;
+		codeseg->iProcess = aProcess;
 		}
 	}
 
@@ -534,48 +566,61 @@ const TLoadedCodeseg* CSymbolics::FindLoadedCodesegById(TKernelId aId, TTimeInte
 	return NULL;
 	}
 
-const TLoadedCodeseg* CSymbolics::LookupCodesegForAddress(quint32 aAddress, TProcessId aProcessId, TTimeInterval aTime) const
+const TLoadedCodeseg* CSymbolics::LookupCodesegForAddress(quint32 aAddress, TOpaqueProcessId aProcess, TTimeInterval aTime) const
 	{
+	UpdateCurrentCodesegListToTime(aTime);
+	if (iCurrentDllCodesegs.count() == 0) return NULL;
 	/*
-	if (aAddress == 0x0050133f)
+	if (aAddress == 0x40037f)
 		{
-		(++aAddress)--;
+		foreach (TLoadedCodeseg* c, iCurrentDllCodesegs)
+			{
+			qDebug("Dll Codeseg %s in process %s at 0x%x", qPrintable(c->iName), c->iProcess.ProcessPtr() ? qPrintable(c->iProcess.ProcessPtr()->Name()) : "0", c->iRunAddr);
+			}
+		foreach (TLoadedCodeseg* c, iCurrentExeCodesegs)
+			{
+			qDebug("Exe Codeseg %s in process %s at 0x%x", qPrintable(c->iName), c->iProcess.ProcessPtr() ? qPrintable(c->iProcess.ProcessPtr()->Name()) : "0", c->iRunAddr);
+			}
 		}
 	*/
-	UpdateCurrentCodesegListToTime(aTime);
-	if (iCurrentCodesegs.count() == 0) return NULL;
-
 	quint32 address = aAddress & 0xFFFFFFFE; // Mask bottom bit as it just indicates thumb mode
 	TLoadedCodeseg tempSeg(address);
-
-	QList<TLoadedCodeseg*>::const_iterator codesegIter = qLowerBound(iCurrentCodesegs.begin(), iCurrentCodesegs.end(), &tempSeg, PtrLessThan<TLoadedCodeseg>());
-
-	if (codesegIter != iCurrentCodesegs.begin() && (*(codesegIter - 1))->Contains(address, aProcessId))
+	QList<TLoadedCodeseg*>::const_iterator begin = iCurrentDllCodesegs.constBegin(), end = iCurrentDllCodesegs.constEnd();
+	QList<TLoadedCodeseg*>::const_iterator codesegIter = qUpperBound(begin, end, &tempSeg, PtrLessThan<TLoadedCodeseg>());
+	const TLoadedCodeseg* foundMatchingExe = NULL;
+	const TLoadedCodeseg* foundMatchingCodeseg = NULL;
+	if (codesegIter != begin) codesegIter--;
+	if ((*codesegIter)->Contains(address, aProcess)) foundMatchingCodeseg = *codesegIter;
+	if (!foundMatchingCodeseg)
 		{
-		// qLowerBound will return the codeseg after, if address > the codeseg run addr
-		codesegIter--;
-		}
-	else
-		{
-		while (codesegIter != iCurrentCodesegs.end() && (*codesegIter)->iRunAddr <= address && !(*codesegIter)->Contains(address, aProcessId))
+		if (gSymbolLookupDebug) qDebug("LookupCodesegForAddress no DLL codeseg found, searching EXE list");
+		// Try the exe list - we don't do this unless we couldn't find anything satisfactory in iCurrentDllCodesegs, because it involves a relatively expensive linear search
+		// Some special hacks for identifying and matching exe codesegs, because many can have the same address and priming doesn't emit CodesegMapped so they won't necessarily even be associated with a CProcess.
+		// Try and do some heuristics matching by name
+		QString exeCodesegName;
+#ifndef NO_THREADMODEL
+		if (aProcess.ProcessPtr())
 			{
-			// If we have specified that this address has to be in the right process (aProcessId != 0), then
-			// skip over codesegs that aren't in that process. Stop when we either:
-			// a) Get to the end of the codeseg list,
-			// b) Reach a codeseg whose run address is greater than our address (in which case no following codeseg could be the right one because they're sorted by runaddr and we're using qLowerBound
-			// c) Find a codeseg whose process matches
-			codesegIter++;
+			int dotexe = aProcess.ProcessPtr()->Name().indexOf(".exe");
+			if (dotexe != -1) exeCodesegName = QString("\\%1").arg(aProcess.ProcessPtr()->Name().left(dotexe+4));
+			}
+#endif
+
+		foreach (const TLoadedCodeseg* c, iCurrentExeCodesegs)
+			{
+			if (c->Contains(address, aProcess) && (c->iProcess.ProcessPtr() || (exeCodesegName.length() && c->iName.contains(exeCodesegName))))
+				{
+				if (gSymbolLookupDebug) qDebug("found matching EXE %s", qPrintable(c->iName));
+				foundMatchingExe = c;
+				break;
+				}
 			}
 		}
 
-	if (codesegIter != iCurrentCodesegs.end() && (*codesegIter)->Contains(address, aProcessId))
-		{
-		return *codesegIter;
-		}
-	else
-		{
-		return NULL;
-		}
+	// If we found a matching exe codeseg with the right name, prefer that
+	if (foundMatchingExe) return foundMatchingExe;
+	if (gSymbolLookupDebug && foundMatchingCodeseg) qDebug("found matching codeseg %s at run addr 0x%08x", qPrintable(foundMatchingCodeseg->iName), foundMatchingCodeseg->iRunAddr);
+	return foundMatchingCodeseg;
 	}
 
 void CSymbolics::UpdateCurrentCodesegListToTime(TTimeInterval aTime) const
@@ -586,22 +631,30 @@ void CSymbolics::UpdateCurrentCodesegListToTime(TTimeInterval aTime) const
 		{
 		// Don't support rewinding. Go back to start, do not pass go.
 		iCurrentTime = 0;
-		iCurrentCodesegs.clear();
+		iLoadedCodesegsNextIdx = 0;
+		iCurrentDllCodesegs.clear();
+		iCurrentExeCodesegs.clear();
 		}
-	while (iCurrentTime <= aTime && iCurrentCodesegs.count() < iLoadedCodesegs.count())
+	while (iCurrentTime <= aTime && iLoadedCodesegsNextIdx < iLoadedCodesegs.count())
 		{
-		TLoadedCodeseg* nextCodeseg = iLoadedCodesegs.at(iCurrentCodesegs.count());
+		TLoadedCodeseg* nextCodeseg = iLoadedCodesegs.at(iLoadedCodesegsNextIdx);
 		if (nextCodeseg->iCreateTime > aTime) break;
-		iCurrentCodesegs.append(nextCodeseg);
+		if (nextCodeseg->iName.endsWith(".exe", Qt::CaseInsensitive)) iCurrentExeCodesegs.append(nextCodeseg);
+		else iCurrentDllCodesegs.append(nextCodeseg);
 		iCurrentTime = nextCodeseg->iCreateTime;
+		iLoadedCodesegsNextIdx++;
 		}
 	// Need to make sure we remove any expired segments
-	for (int i = iCurrentCodesegs.count() - 1; i >= 0; i--)
+	for (int i = iCurrentDllCodesegs.count() - 1; i >= 0; i--)
 		{
-		if (iCurrentCodesegs[i]->iDestroyTime <= iCurrentTime) iCurrentCodesegs.removeAt(i);
+		if (iCurrentDllCodesegs[i]->iDestroyTime <= iCurrentTime) iCurrentDllCodesegs.removeAt(i);
+		}
+	for (int i = iCurrentExeCodesegs.count() - 1; i >= 0; i--)
+		{
+		if (iCurrentExeCodesegs[i]->iDestroyTime <= iCurrentTime) iCurrentExeCodesegs.removeAt(i);
 		}
 	// And finally re-sort the list by address
-	qSort(iCurrentCodesegs.begin(), iCurrentCodesegs.end(), PtrLessThan<TLoadedCodeseg>());
+	qSort(iCurrentDllCodesegs.begin(), iCurrentDllCodesegs.end(), PtrLessThan<TLoadedCodeseg>());
 	}
 
 //////////////////////
@@ -683,6 +736,11 @@ CBsymFile::~CBsymFile()
 		}
 	}
 
+QString CBsymFile::Filename() const
+	{
+	return iFile.fileName();
+	}
+
 quint32 CBsymFile::StringTableLen(int len)
 	{
 	if (len >= 255) len += 2; // String longer than 254 require 2 extra bytes to store
@@ -750,7 +808,7 @@ QString TLookupResult::RichDescription() const
 	return QString("%1 + 0x%2").arg(RichSymbolDescription()).arg(iOffsetInSymbol, 0, 16);
 	}
 
-bool CSymbolics::AddMapFile(const QString& aFilePath, quint32 aLoadAddress, quint32 aCodeSize)
+bool CSymbolics::AddMapFile(const QString& aFilePath, quint32 aLoadAddress)
 	{
 	if (Busy()) return false;
 
@@ -790,6 +848,7 @@ bool CSymbolics::AddMapFile(const QString& aFilePath, quint32 aLoadAddress, quin
 			lex.seek(spp);
 			quint32 rawAddress;
 			lex >> rawAddress;
+			if (rawAddress == 0 && textOffset != 0) continue; // Looks like this is yet another way of indicating something that isn't actually important?
 			symbol.iAddress = rawAddress + aLoadAddress - textOffset;
 			lex.skipWhiteSpace();
 			QString symbolType = line.mid(lex.pos(), 8).trimmed();
@@ -798,6 +857,11 @@ bool CSymbolics::AddMapFile(const QString& aFilePath, quint32 aLoadAddress, quin
 			lex >> symbol.iLength;
 			if (!foundOffset && symbol.iLength != 0)
 				{
+				if (symbol.iName != ".emb_text" && symbol.iName != ".text")
+					{
+					qWarning("Failed to identify relocation offset for map file %s", qPrintable(aFilePath));
+					return false;
+					}
 				// The text offset is the address of the first non-zero length symbol (at least, that's the most reliable way of figuring it out)
 				foundOffset = true;
 				textOffset = symbol.iAddress - aLoadAddress;
@@ -805,12 +869,15 @@ bool CSymbolics::AddMapFile(const QString& aFilePath, quint32 aLoadAddress, quin
 				}
 			if (symbolType == "Section") continue; // Sections aren't symbols as such - they can contain multiple symbols thus we don't want them confusing matters
 			if (line.endsWith("Undefined Reference")) continue;
-			if (aCodeSize != 0 && rawAddress - textOffset > aCodeSize) continue; // Loads of strange data sections appear at odd relocations - maksym doesn't include them so I won't either
+			if (symbolType == "Data" && line.indexOf(QRegExp("\\(\\.constdata.*\\)$")) == -1) continue; // Only allow data in constdata sections - they are the only things within the code section
 			if (symbol.iLength == 0)
 				{
 				continue; // todo thunks lie about their size...
 				}
-
+			//if (rawAddress >= 0x00400000)
+			//	{
+			//	qWarning("Symbol %s of %s possibly in the data section", qPrintable(symbol.iName), qPrintable(aFilePath));
+			//	}
 			codeseg.iSymbols.append(symbol);
 			}
 		qSort(codeseg.iSymbols); // For all I moaned about GCC not sorting them, neither does RVCT (well it does, but it separates local and global symbols)
@@ -841,7 +908,10 @@ bool CSymbolics::AddMapFile(const QString& aFilePath, quint32 aLoadAddress, quin
 			lex >> addrString;
 			symbol.iAddress = addrString.toInt(&ok, 0);
 			if (!ok) continue;
-			if (aCodeSize != 0 && symbol.iAddress > aCodeSize) continue; // Loads of strange data sections appear at odd relocations - maksym doesn't include them so I won't bother either
+			if (symbol.iAddress == 0 && textOffset != 0) continue; // Don't know if GCC actually does this but better safe than laminated across the walls
+			//TODO fix limit check for gcce
+			//if (aCodeSize != 0 && symbol.iAddress > aCodeSize) continue; // Loads of strange data sections appear at odd relocations - maksym doesn't include them so I won't bother either
+			//if (symbolType == "Data" && line.indexOf(QRegExp("\\(\\.constdata.*\\)$")) == -1) continue; // Only allow data in constdata sections - they are the only things within the code section
 			symbol.iAddress = symbol.iAddress + aLoadAddress - textOffset;
 			lex.skipWhiteSpace();
 			if (lex.pos() < 42) continue; // Code symbols have space up to column 42
@@ -879,34 +949,28 @@ bool CSymbolics::AddRombuildLogFile(const QString& aFilePath)
 	// First find all the map files
 	static const QString KProcessing = "Processing file ";
 	static const QString KLoadLine = "Code start addr:         ";
-	static const QString KCodeSizeLine = "Code size:               ";
 	static const QString KReadingStart = "Reading file \\";
 	static const QString KReadingEnd = " to image";
 	static const QString KChecksum = "Checksum word:           ";
+	QHash<QString, int> seenBinaries; // Maps binaries to num times seen - so we can keep track of things added to the rom more than once and avoid creating duplicate codesegs for them
 	while (!stream.atEnd())
 		{
 		QString line = stream.readLine();
 		if (line.startsWith(KProcessing))
 			{
 			// rombuild log
-			QString file = line.mid(KProcessing.length()+1).trimmed().append(".map"); // Plus one to skip the first backslash, so the file name looks relative (which I think it is, relative to epocroot)
-			file = QDir::toNativeSeparators(QFileInfo(epocroot.absoluteFilePath(file)).absoluteFilePath());
+			QString file = line.mid(KProcessing.length()+1).trimmed(); // Plus one to skip the first backslash, so the file name looks relative (which I think it is, relative to epocroot)
+			file = QDir::toNativeSeparators(QFileInfo(epocroot.absoluteFilePath(file)).absoluteFilePath().toLower());
 			QString loadline = stream.readLine();
 			quint32 loadAddress = 0;
-			quint32 size = 0;
 			while (loadline.length() && !loadline.startsWith(KLoadLine)) loadline = stream.readLine(); // There can be an extra line between the two (it says "[primary]" for ekern)
 			if (loadline.startsWith(KLoadLine))
 				{
 				loadAddress = loadline.mid(KLoadLine.length()).toUInt(NULL, 16);
 				}
-			QString sizeLine = stream.readLine();
-			while (sizeLine.length() && !sizeLine.startsWith(KCodeSizeLine)) sizeLine = stream.readLine();
-			if (sizeLine.startsWith(KCodeSizeLine))
-				{
-				size = sizeLine.mid(25).toUInt(NULL, 16);
-				}
 
-			AddMapFile(file, loadAddress, size);
+			if (seenBinaries[file] == 0) AddMapFile(QString(file).append(".map"), loadAddress);
+			seenBinaries[file]++;
 			//if (!ok) qWarning("couldn't load map file %s", qPrintable(file));
 			// It isn't actually an error for the map file not to be present
 
@@ -917,10 +981,9 @@ bool CSymbolics::AddRombuildLogFile(const QString& aFilePath)
 			{
 			// rofsbuild log
 			QString file = line.mid(KReadingStart.length(), line.length() - KReadingStart.length() - KReadingEnd.length());
-			file = QDir::toNativeSeparators(QFileInfo(epocroot.absoluteFilePath(file)).absoluteFilePath());
-			quint32 size = QFileInfo(file).size(); // rofsbuild logs don't tell us the actual file size
-
-			AddMapFile(file.append(".map"), 0, size);
+			file = QDir::toNativeSeparators(QFileInfo(epocroot.absoluteFilePath(file)).absoluteFilePath().toLower());
+			if (seenBinaries[file] == 0) AddMapFile(QString(file).append(".map"));
+			seenBinaries[file]++;
 			progress++;
 			if ((progress & KProgressFactor) == 0) emit Progress(progress);
 			}
@@ -928,27 +991,23 @@ bool CSymbolics::AddRombuildLogFile(const QString& aFilePath)
 			{
 			iLastSeenChecksum = line.mid(KChecksum.length()).toUInt(NULL, 16);
 			}
-		if (line.startsWith("Summary of file sizes in rom:")) break;
-		}
-
-	//qDebug("Checking for renames");
-
-	// Now check for files that have been renamed
-	while (!stream.atEnd())
-		{
-		QString line = stream.readLine();
-		if (!line.startsWith("\\")) continue;
-		QString from = line.left(line.indexOf('\t'));
-		QString to = line.mid(line.lastIndexOf('\t')+1);
-		static const QString KSysBin = "sys\\bin\\";
-		if (to.startsWith(KSysBin, Qt::CaseInsensitive))
+		else if (line.startsWith("\\"))
 			{
-			QString srcName = QFileInfo(from).fileName().toLower();
-			QString destName = to.mid(KSysBin.length()).toLower();
-			QString destPath = to.toLower().prepend("z:\\");
-			if (srcName.compare(destName) != 0) iRomNameMappings.insert(from.toLower(), destPath);
-			progress++;
-			if ((progress & KProgressFactor) == 0) emit Progress(progress);
+			QString from = line.left(line.indexOf('\t'));
+			QString to = line.mid(line.lastIndexOf('\t')+1);
+			static const QString KSysBin = "sys\\bin\\";
+			if (to.startsWith(KSysBin, Qt::CaseInsensitive))
+				{
+				QString srcPath = QDir::toNativeSeparators(QFileInfo(epocroot.absoluteFilePath(from)).absoluteFilePath()).toLower();
+				QString srcName = QFileInfo(srcPath).fileName();
+				QString destName = to.mid(KSysBin.length());
+				QString destPath = to.toLower().prepend("z:\\");
+				// Be sure to always include a file in the rename mappings even if its name is unchanged, if it is added to the image more than once
+				// This is because the original name would get hidden by the rename if we didn't also explicitly say the original name was there too
+				if (srcName.compare(destName, Qt::CaseInsensitive) != 0 || seenBinaries[srcPath] > 1) iRomNameMappings.insert(destPath, srcPath);
+				progress++;
+				if ((progress & KProgressFactor) == 0) emit Progress(progress);
+				}
 			}
 		}
 
@@ -956,6 +1015,7 @@ bool CSymbolics::AddRombuildLogFile(const QString& aFilePath)
 	qStableSort(iCodeSegs);
 
 	emit Progress((int)file.size());
+	emit SymbolicsChanged();
 	return true;
 	}
 
@@ -969,4 +1029,32 @@ quint32 CSymbolics::RomChecksum() const
 		if (checksum) return checksum;
 		}
 	return 0;
+	}
+
+QStringList CSymbolics::LoadedBsyms() const
+	{
+	QStringList result;
+	foreach (const CBsymFile* bsym, iBsymFiles)
+		{
+		result.append(bsym->Filename());
+		}
+	return result;
+	}
+
+void CSymbolics::DumpBsyms(bool aVerbose)
+	{
+	foreach (const CBsymFile* bsym, iBsymFiles)
+		{
+		bsym->Dump(aVerbose);
+		}
+	}
+
+bool CSymbolics::DebugLookup() const
+	{
+	return gSymbolLookupDebug;
+	}
+
+void CSymbolics::SetDebugLookup(bool aDebug)
+	{
+	gSymbolLookupDebug = aDebug;
 	}

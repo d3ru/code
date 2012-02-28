@@ -1,6 +1,6 @@
 // bsym_v2.cpp
 // 
-// Copyright (c) 2010 - 2011 Accenture. All rights reserved.
+// Copyright (c) 2010 - 2012 Accenture. All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of the "Eclipse Public License v1.0"
 // which accompanies this distribution, and is available
@@ -45,11 +45,13 @@ void CheckEntity(QHash<const void*, quint32>& bsymEntities, const void* entity, 
 #else
 #define DECLARE_ENTITIES
 #define RECORD_ENTITY(entity, addr)
-#define CHECK_ENTITY(entity, position, description...)
+#define CHECK_ENTITY(entity, position, ...)
 #endif
 
 char const*const*const Tokens();
 extern const int KTokenCount;
+
+extern bool gSymbolLookupDebug;
 
 CBsymV2::CBsymV2(QObject *parent)
 	: CBsymFile(parent), iCodesegOffset(0), iSymbolsOffset(0), iTokensOffset(0)
@@ -116,8 +118,8 @@ bool CBsymV2::Open()
 		int renameCount = (renamesSection == 0) ? 0 : Uint(renamesSection);
 		for (int i = 0; i < renameCount; i++)
 			{
-			quint32 codesegIdx = Uint(renamesSection + 4 + i*4);
-			quint32 nameOffset = Uint(renamesSection + 4 + i*4 + 4);
+			quint32 codesegIdx = Uint(renamesSection + 4 + i*8);
+			quint32 nameOffset = Uint(renamesSection + 4 + i*8 + 4);
 			QString name = GetString(nameOffset);
 			if (iVersion < EVersion2_3) name.prepend("z:\\sys\\bin\\"); // As per spec prior to v2.3 the name didn't include the path
 			const TCodeSeg* codeseg = CodeSegs() + codesegIdx;
@@ -125,14 +127,18 @@ bool CBsymV2::Open()
 			}
 		}
 
+	//Dump(); // DEBUG
+
 	// If we didn't have a renames section, or it didn't have every binary in it, scan the codesegs too
 	const TCodeSeg* c = CodeSegs();
 	const TCodeSeg* end = c + CodeSegCount();
 	while (c < end)
 		{
 		QString name = SymbolName(c);
-		name = name.mid(name.lastIndexOf('\\') + 1); // Remove the \epoc32\release\armv5\urel
-		name.prepend("z:\\sys\\bin\\");
+		int lastSlash = name.lastIndexOf('\\'); // Might get forward or backward slashes, depending on what platform the bsym was created on
+		if (lastSlash == -1) lastSlash = name.lastIndexOf('/');
+		name = name.mid(lastSlash + 1); // Remove the \epoc32\release\armv5\urel
+		// Don't prepend z:\sys\bin\ - without rename info we've no idea if this ended up in ROM or on the C drive
 		if (!iFileNameToCodeSeg.contains(name))
 			{
 			iFileNameToCodeSeg.insert(name, c);
@@ -140,7 +146,7 @@ bool CBsymV2::Open()
 		c++;
 		}
 
-	//Dump(); // DEBUG
+	//DumpCodeSeg(iFileNameToCodeSeg.value("z:\\sys\\bin\\phoneinfoserver.exe"));
 	return true;
 	}
 
@@ -216,15 +222,21 @@ CBsymV2::TCodeAndSym CBsymV2::DoLookup(quint32 aAddress) const
 const CBsymV2::TCodeSeg* CBsymV2::FindCodesegForName(const QString& aCodesegName) const
 	{
 	// Find the codeseg - aCodesegName is of the form Z:\sys\bin\whatever.dll
-
+	if (gSymbolLookupDebug) qDebug("FindCodesegForName(%s)", qPrintable(aCodesegName));
 	const TCodeSeg* codeseg = iFileNameToCodeSeg.value(aCodesegName.toLower());
+	if (gSymbolLookupDebug) qDebug("Lookup of %s returned codeseg %s", qPrintable(aCodesegName.toLower()), codeseg ? qPrintable(SymbolName(codeseg)) : "NULL");
+	if (codeseg) return codeseg;
+	// Also try looking up just "whatever.dll" - depending on how the bsym was created the exact path of the binary might not have been known - we should give it the benefit of the doubt
+	QString binName = aCodesegName.mid(aCodesegName.lastIndexOf('\\')+1).toLower();
+	codeseg = iFileNameToCodeSeg.value(binName);
+	if (gSymbolLookupDebug) qDebug("Lookup of %s returned codeseg %s", qPrintable(binName), codeseg ? qPrintable(SymbolName(codeseg)) : "NULL");
 	if (codeseg) return codeseg;
 
 	if (iVersion < EVersion2_1)
 		{
 		// Try and guess - check if we've already cached the correct name
-		QString binName = aCodesegName.mid(aCodesegName.lastIndexOf('\\')+1).toLower();
 		codeseg = iFileNameToCodeSeg.value(iCodesegNameToFileNameCache.value(binName));
+		if (gSymbolLookupDebug) qDebug("Lookup of %s returned codeseg %s from the guess cache", qPrintable(aCodesegName.toLower()), codeseg ? qPrintable(SymbolName(codeseg)) : "NULL");
 		if (codeseg) return codeseg;
 
 		// Finally, hunt for it by looking at all codesegs that look about right
@@ -243,10 +255,11 @@ const CBsymV2::TCodeSeg* CBsymV2::FindCodesegForName(const QString& aCodesegName
 			{
 			const QString& name = possibleNames[0];
 			iCodesegNameToFileNameCache.insert(aCodesegName.toLower(), name);
+			if (gSymbolLookupDebug) qDebug("Lookup of %s guessing this means %s", qPrintable(aCodesegName.toLower()), qPrintable(name));
 			return iFileNameToCodeSeg.value(name);
 			}
 		}
-	//qDebug("Can't find codeseg for %s", qPrintable(aCodesegName));
+	if (gSymbolLookupDebug) qDebug("BSYM %s couldn't find codeseg for %s", qPrintable(Filename()), qPrintable(aCodesegName));
 	return NULL;
 	}
 
@@ -281,12 +294,22 @@ CBsymV2::TCodeAndSym CBsymV2::DoCodesegLookup(const TCodeSeg& aCodeSeg, quint32 
 TLookupResult CBsymV2::LookupRomSymbol(quint32 aAddress) const
 	{
 	QPair<const TCodeSeg*, const TSymbol*> sym = DoLookup(aAddress);
-	if (sym.first == NULL || sym.first->Address() == 0) return TLookupResult(); // Isn't a rom symbol - if we don't return false here we'll get false positives if someone tries looking up a small number
+	if (sym.first == NULL)
+		{
+		if (gSymbolLookupDebug) qDebug("No ROM codeseg found for 0x%08x", aAddress);
+		return TLookupResult();
+		}
+	else if (sym.first->Address() == 0)
+		{
+		if (gSymbolLookupDebug) qDebug("Codeseg found for 0x%08x during LookupRomSymbol but it wasn't a ROM codeseg", aAddress);
+		return TLookupResult(); // Isn't a rom symbol - if we don't return false here we'll get false positives if someone tries looking up a small number
+		}
 
 	quint32 offsetInSymbol = 0;
 	if (sym.second != NULL) offsetInSymbol = aAddress - sym.second->Address();
 	else offsetInSymbol = aAddress - sym.first->Address();
 
+	if (gSymbolLookupDebug) qDebug("Found in codeseg %s of ROM section of BSYM %s", qPrintable(SymbolName(sym.first)), qPrintable(Filename()));
 	return ConvertSymbol(sym, offsetInSymbol);
 	}
 
@@ -366,22 +389,31 @@ bool CBsymV2::WriteBsym(const QString& aFileName, const QVector<CSymbolics::Code
 		}
 
 	// We have to calculate renames early on otherwise we won't know how big the renames section will be (because aRenamedBinaries can contain non-executable files so the rename section is not necessarily the same size)
-	QMap<int, QString> renames; // mapping of codeseg index to new name
-	// By using a QMap here we guarantee that the renames are in the same order as the codesegs
+	QList<QPair<int, QString> > renames;// mapping of codeseg index to on-device name
 	if (version >= EVersion2_1)
 		{
 		// Associate the renamed binaries with codesegs, and sort them using the ordering of aCodeSegs
+		QMultiHash<QString, QString> reverseRenameHash; // Mapping codeseg name to potentially mulitple on-device names
+		foreach (const QString& onDeviceName, aRenamedBinaries.keys())
+			{
+			reverseRenameHash.insert(aRenamedBinaries[onDeviceName], onDeviceName);
+			}
+
 		const int codesegCount = aCodeSegs.count();
 		for (int i = 0; i < codesegCount; i++)
 			{
-			if (aRenamedBinaries.contains(aCodeSegs[i].iFileName))
+			if (reverseRenameHash.contains(aCodeSegs[i].iFileName))
 				{
-				QString theRename = aRenamedBinaries.value(aCodeSegs[i].iFileName);
-				if (version < EVersion2_3) theRename.remove(0, 11); // Drop the z:\sys\bin\ on the floor
-				renames.insert(i, theRename);
+				QList<QString> onDeviceNames = reverseRenameHash.values(aCodeSegs[i].iFileName);
+				foreach (QString onDeviceName, onDeviceNames)
+					{
+					if (version < EVersion2_3) onDeviceName.remove(0, 11); // Drop the z:\sys\bin\ on the floor
+					renames.append(QPair<int,QString>(i, onDeviceName));
+					}
 				}
 			}
 		}
+	qSort(renames);
 
 	QDataStream stream(&file);
 	stream.setByteOrder(QDataStream::BigEndian); // I like big endian, easier to debug
@@ -510,12 +542,10 @@ bool CBsymV2::WriteBsym(const QString& aFileName, const QVector<CSymbolics::Code
 		{
 		ASSERT_EQ(file.pos(), renameOffset);
 		stream << renames.count();
-		QMapIterator<int, QString> iter(renames);
-		while (iter.hasNext())
+		for (int i = 0; i < renames.count(); i++)
 			{
-			//RECORD_ENTITY(key.constData(), currentStringOffset);
-			stream << iter.key();
-			const QString& val = iter.value();
+			stream << renames[i].first;
+			const QString& val = renames[i].second;
 			RECORD_ENTITY(val.constData(), currentStringOffset);
 			stream << currentStringOffset;
 			currentStringOffset += StringTableLen(version, val);
@@ -598,11 +628,10 @@ bool CBsymV2::WriteBsym(const QString& aFileName, const QVector<CSymbolics::Code
 	// Finally finally, the renames
 	if (version >= EVersion2_1)
 		{
-		QMapIterator<int, QString> iter(renames);
-		while (iter.hasNext())
+		for (int i = 0; i < renames.count(); i++)
 			{
-			const QString& val = iter.value();
-			CHECK_ENTITY(val.constData(), file.pos(), "rename %s -> %s", qPrintable(aCodeSegs[iter.key()].iFileName), qPrintable(val));
+			const QString& val = renames[i].second;
+			CHECK_ENTITY(val.constData(), file.pos(), "rename %s -> %s", qPrintable(aCodeSegs[renames[i].first].iFileName), qPrintable(val));
 			WriteString(stream, version, val);
 			}
 		}
@@ -701,11 +730,34 @@ quint32 CBsymV2::RomChecksum() const
 	return 0;
 	}
 
-void CBsymV2::Dump() const
+void CBsymV2::Dump(bool aVerbose) const
 	{
 	for (int i = 0; i < CodeSegCount(); i++)
 		{
 		const TCodeSeg& codeseg = CodeSegs()[i];
-		qDebug("Codeseg %d: %08x len=%d %s", i, codeseg.Address(), CodeSegLength(&codeseg), qPrintable(SymbolName(&codeseg)));
+		qDebug("Codeseg %d: %08x len=%d count=%d %s", i, codeseg.Address(), CodeSegLength(&codeseg), codeseg.SymbolCount(), qPrintable(SymbolName(&codeseg)));
+		}
+	foreach (const QString& key, iFileNameToCodeSeg.keys())
+		{
+		qDebug("Device file %s -> codeseg %s", qPrintable(key), qPrintable(SymbolName(iFileNameToCodeSeg[key])));
+		}
+
+	if (aVerbose)
+		{
+		for (int i = 0; i < CodeSegCount(); i++)
+			{
+			DumpCodeSeg(CodeSegs() + i);
+			}
+		}
+	}
+
+void CBsymV2::DumpCodeSeg(const TCodeSeg* aCodeSeg) const
+	{
+	if (!aCodeSeg) return;
+	qDebug("\n%s count=%d", qPrintable(SymbolName(aCodeSeg)), aCodeSeg->SymbolCount());
+	for (int i = 0; i < (int)aCodeSeg->SymbolCount(); i++)
+		{
+		const TSymbol* sym = Symbols() + aCodeSeg->SymbolStart() + i;
+		qDebug("%d\t%08x\t%08x\t%s", i, sym->Address(), sym->Length(), qPrintable(SymbolName(sym, aCodeSeg)));
 		}
 	}
